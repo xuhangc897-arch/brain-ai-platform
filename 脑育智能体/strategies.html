@@ -1,0 +1,841 @@
+<!doctype html>
+<html lang="zh-CN">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>实验四：改善长时记忆的策略有哪些？</title>
+  <style>
+    :root {
+      --bg: #f6f8fb;
+      --panel: #fff;
+      --ink: #172033;
+      --muted: #667085;
+      --line: #dbe3ef;
+      --primary: #2563eb;
+      --primary-dark: #1d4ed8;
+      --primary-soft: #eaf1ff;
+      --teal: #0f766e;
+      --green: #16a34a;
+      --amber: #d97706;
+      --red: #dc2626;
+      --shadow: 0 16px 40px rgba(23, 32, 51, 0.08);
+      font-family: "Microsoft YaHei", "PingFang SC", "Segoe UI", Arial, sans-serif;
+    }
+    * { box-sizing: border-box; }
+    body { margin: 0; background: var(--bg); color: var(--ink); line-height: 1.6; }
+    button, input, textarea, select { font: inherit; }
+    button { border: 0; border-radius: 8px; cursor: pointer; font-weight: 800; }
+    button:disabled { cursor: not-allowed; opacity: .55; }
+    .topbar { position: sticky; top: 0; z-index: 20; background: rgba(255,255,255,.96); border-bottom: 1px solid var(--line); box-shadow: 0 8px 24px rgba(23,32,51,.06); backdrop-filter: blur(10px); }
+    .topbar-inner { max-width: 1240px; margin: 0 auto; padding: 14px 24px 12px; }
+    .brand-row { display: flex; align-items: center; justify-content: space-between; gap: 16px; margin-bottom: 10px; }
+    .brand-title h1 { margin: 0; font-size: 20px; line-height: 1.2; }
+    .identity-pill { color: var(--muted); font-size: 13px; }
+    .top-actions { display: flex; gap: 10px; align-items: center; }
+    .progress { display: grid; grid-template-columns: repeat(7, minmax(88px, 1fr)); gap: 8px; overflow-x: auto; padding-bottom: 2px; }
+    .progress-step { min-height: 44px; padding: 8px 10px; border: 1px solid var(--line); background: #f9fbff; color: var(--muted); border-radius: 8px; text-align: left; display: flex; align-items: center; gap: 8px; }
+    .progress-step strong { display: inline-grid; place-items: center; width: 22px; height: 22px; border-radius: 50%; background: #edf2f7; color: #475467; font-size: 12px; }
+    .progress-step span { font-size: 13px; white-space: nowrap; }
+    .progress-step.is-active { background: var(--primary-soft); border-color: #9ec5ff; color: var(--primary-dark); }
+    .progress-step.is-active strong { background: var(--primary); color: #fff; }
+    .progress-step.is-done { background: #eefaf6; border-color: #bde7d5; color: var(--teal); }
+    .progress-step.is-done strong { background: var(--teal); color: #fff; }
+    .main { max-width: 1240px; margin: 0 auto; padding: 28px 24px 44px; }
+    .panel { background: var(--panel); border: 1px solid var(--line); border-radius: 8px; box-shadow: var(--shadow); }
+    .panel-head { padding: 20px 22px 12px; border-bottom: 1px solid #eef2f7; }
+    .panel-head h2, .panel-head h3 { margin: 0; font-size: 22px; line-height: 1.25; }
+    .panel-head p { margin: 8px 0 0; color: var(--muted); font-size: 14px; }
+    .panel-body { padding: 20px 22px 22px; }
+    .step-layout { display: grid; grid-template-columns: 1fr 1fr; gap: 22px; align-items: start; }
+    .reading-list { display: grid; gap: 14px; }
+    .reading-card { border: 1px solid #e5edf7; border-radius: 8px; padding: 16px; background: #fbfdff; }
+    .reading-card h4 { margin: 0 0 8px; color: #1e3a8a; font-size: 16px; }
+    .reading-card p { margin: 0 0 10px; color: #344054; font-size: 14px; }
+    .field { margin-bottom: 18px; }
+    label { display: block; margin-bottom: 7px; color: #344054; font-size: 14px; font-weight: 700; }
+    input, textarea, select { width: 100%; border: 1px solid var(--line); background: #fff; color: var(--ink); border-radius: 8px; padding: 11px 12px; outline: none; }
+    textarea { min-height: 112px; resize: vertical; }
+    input:focus, textarea:focus, select:focus { border-color: #93c5fd; box-shadow: 0 0 0 3px rgba(37,99,235,.12); }
+    .form-grid { display: grid; grid-template-columns: repeat(2, 1fr); gap: 16px; }
+    .actions { display: flex; justify-content: space-between; gap: 12px; margin-top: 22px; }
+    .btn { display: inline-flex; align-items: center; justify-content: center; gap: 8px; min-height: 42px; padding: 10px 16px; background: var(--primary); color: #fff; }
+    .btn:hover { background: var(--primary-dark); }
+    .btn.secondary { background: #fff; color: #344054; border: 1px solid var(--line); }
+    .btn.secondary:hover { background: #f8fafc; }
+    .btn.success { background: var(--green); }
+    .btn.danger { background: #fff; color: var(--red); border: 1px solid #fecaca; }
+    .toolbar { display: flex; flex-wrap: wrap; gap: 12px; align-items: end; margin-bottom: 16px; }
+    .toolbar .field { min-width: 150px; flex: 1; margin-bottom: 0; }
+    .strategy-game { display: grid; grid-template-columns: 1fr 360px; gap: 18px; align-items: stretch; }
+    .stage { position: relative; display: grid; place-items: center; min-height: 460px; border: 1px solid #dbeafe; border-radius: 8px; background: linear-gradient(180deg,#fff 0%,#f8fbff 100%); overflow: hidden; }
+    .stage-meta { position: absolute; top: 14px; left: 16px; right: 16px; display: flex; justify-content: space-between; color: var(--muted); font-size: 13px; font-weight: 700; }
+    .timer { position: absolute; left: 16px; right: 16px; bottom: 16px; height: 10px; border-radius: 999px; background: #dbeafe; overflow: hidden; }
+    .timer-fill { width: 100%; height: 100%; border-radius: inherit; background: linear-gradient(90deg, var(--green), var(--amber)); transition: width .08s linear; }
+    .task-card { width: min(820px, 92%); padding: 24px; border: 1px solid #bfdbfe; border-radius: 8px; background: #eff6ff; color: #1e3a8a; text-align: center; }
+    .task-card h3 { margin: 0 0 12px; font-size: 30px; }
+    .memory-items { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 10px; margin-top: 14px; text-align: left; }
+    .memory-item { padding: 9px 12px; border-radius: 8px; background: #fff; border: 1px solid #bfdbfe; font-size: 16px; font-weight: 800; }
+    .difficulty-controls { display: grid; gap: 12px; }
+    .difficulty-row { display: grid; grid-template-columns: 76px 1fr 76px; gap: 12px; align-items: center; padding: 12px; border: 1px solid var(--line); border-radius: 8px; background: #fbfdff; }
+    .difficulty-row b { color: #344054; }
+    .difficulty-row input[type="range"] { padding: 0; }
+    .difficulty-value { display: inline-grid; place-items: center; min-height: 34px; border-radius: 8px; background: var(--primary-soft); color: var(--primary-dark); font-weight: 900; }
+    .puzzle-wrap { display: grid; gap: 14px; justify-items: center; }
+    .puzzle-grid { display: grid; grid-template-columns: repeat(9, 36px); gap: 6px; justify-content: center; margin-top: 8px; }
+    .puzzle-cell { display: grid; place-items: center; height: 36px; border-radius: 6px; background: #fff; border: 1px solid #bfdbfe; font-size: 20px; font-weight: 900; }
+    .puzzle-cell.hit { background: #dcfce7; border-color: #86efac; color: #166534; }
+    .puzzle-target { font-size: 15px; color: #344054; font-weight: 800; }
+    .answer-box { display: none; width: min(760px, 90%); }
+    .answer-box.is-visible { display: block; }
+    .answer-box textarea { min-height: 190px; font-size: 18px; }
+    .recall-grid { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 12px; margin-top: 12px; }
+    .recall-cell { min-height: 54px; font-size: 18px; }
+    .game-side { display: flex; flex-direction: column; gap: 12px; }
+    .stat-grid { display: grid; grid-template-columns: repeat(2, 1fr); gap: 10px; }
+    .mini-stat { border: 1px solid var(--line); border-radius: 8px; padding: 12px; background: #fff; }
+    .mini-stat span { display: block; color: var(--muted); font-size: 12px; }
+    .mini-stat b { font-size: 22px; line-height: 1.2; }
+    .game-log { max-height: 300px; overflow: auto; border: 1px solid var(--line); border-radius: 8px; background: #fff; }
+    table { width: 100%; border-collapse: collapse; font-size: 13px; }
+    th, td { border-bottom: 1px solid #edf2f7; padding: 9px 10px; text-align: left; vertical-align: middle; }
+    th { position: sticky; top: 0; background: #f8fafc; color: #475467; font-weight: 800; }
+    .tag { display: inline-flex; min-width: 38px; justify-content: center; padding: 2px 8px; border-radius: 999px; background: #eef2ff; color: #3730a3; font-size: 12px; font-weight: 800; }
+    .summary-grid { display: grid; grid-template-columns: repeat(4, 1fr); gap: 14px; margin-bottom: 18px; }
+    .chart { display: grid; gap: 12px; margin-top: 14px; }
+    .bar-row { display: grid; grid-template-columns: 180px 1fr 70px; gap: 12px; align-items: center; }
+    .bar-track { height: 22px; border-radius: 8px; background: #eef2f7; overflow: hidden; }
+    .bar-fill { height: 100%; min-width: 2px; background: linear-gradient(90deg, var(--primary), var(--teal)); }
+    .empty-state { border: 1px dashed #cbd5e1; border-radius: 8px; padding: 22px; background: #f8fafc; color: var(--muted); text-align: center; }
+    body.is-focus-mode { background: #08111f; }
+    body.is-focus-mode .topbar { display: none; }
+    body.is-focus-mode .main { max-width: none; min-height: 100vh; padding: 0; }
+    body.is-focus-mode .main > .panel { min-height: 100vh; border: 0; border-radius: 0; box-shadow: none; background: #08111f; }
+    body.is-focus-mode .main > .panel > .panel-head,
+    body.is-focus-mode .main > .panel > .panel-body > .actions,
+    body.is-focus-mode .strategy-toolbar,
+    body.is-focus-mode .game-log,
+    body.is-focus-mode .game-side .stat-grid { display: none; }
+    body.is-focus-mode .main > .panel > .panel-body { min-height: 100vh; padding: 0; }
+    body.is-focus-mode .strategy-game { min-height: 100vh; grid-template-columns: 1fr; gap: 0; background: #08111f; }
+    body.is-focus-mode .stage { min-height: 100vh; border: 0; border-radius: 0; background: radial-gradient(circle at center, #12213a 0%, #08111f 66%); }
+    body.is-focus-mode .stage-meta { top: 30px; left: 36px; right: 36px; color: #dbeafe; font-size: 20px; }
+    body.is-focus-mode .task-card { width: min(920px, calc(100vw - 48px)); padding: 34px; border: 1px solid rgba(255,255,255,.16); background: rgba(248,251,255,.96); box-shadow: 0 28px 90px rgba(37,99,235,.22); }
+    body.is-focus-mode .task-card h3 { font-size: 42px; }
+    body.is-focus-mode .memory-item { font-size: 19px; }
+    body.is-focus-mode .puzzle-grid { grid-template-columns: repeat(9, 46px); gap: 8px; }
+    body.is-focus-mode .puzzle-cell { height: 46px; font-size: 24px; }
+    body.is-focus-mode .answer-box { width: min(860px, calc(100vw - 48px)); padding: 28px; border: 1px solid rgba(255,255,255,.16); border-radius: 8px; background: rgba(15,23,42,.88); box-shadow: 0 28px 90px rgba(0,0,0,.34); }
+    body.is-focus-mode .answer-box label { color: #dbeafe; font-size: 20px; text-align: center; }
+    body.is-focus-mode .answer-box textarea { min-height: 230px; font-size: 22px; background: #f8fbff; }
+    body.is-focus-mode .recall-grid { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+    body.is-focus-mode .recall-cell { min-height: 62px; font-size: 22px; background: #f8fbff; }
+    body.is-focus-mode .answer-box .btn { min-height: 58px; font-size: 20px; }
+    body.is-focus-mode .timer { left: 36px; right: 36px; bottom: 36px; height: 14px; background: rgba(219,234,254,.22); }
+    body.is-focus-mode .game-side { position: fixed; left: 50%; bottom: 36px; width: min(620px, calc(100vw - 32px)); transform: translateX(-50%); z-index: 30; pointer-events: none; }
+    body.is-focus-mode .answer-box, body.is-focus-mode .answer-box * { pointer-events: auto; }
+    .focus-prep { position: fixed; inset: 0; z-index: 60; display: none; place-items: center; padding: 24px; background: rgba(8,17,31,.88); color: #fff; }
+    .focus-prep.is-visible { display: grid; }
+    .focus-prep-card { width: min(560px, 100%); border: 1px solid rgba(255,255,255,.16); border-radius: 8px; padding: 28px; background: #111827; box-shadow: 0 24px 80px rgba(0,0,0,.36); }
+    .focus-prep-card h3 { margin: 0 0 10px; font-size: 26px; }
+    .focus-prep-card p { margin: 0 0 12px; color: #cbd5e1; }
+    @media (max-width: 980px) { .step-layout, .strategy-game { grid-template-columns: 1fr; } .progress { grid-template-columns: repeat(7, 132px); } .summary-grid { grid-template-columns: repeat(2, 1fr); } }
+    @media (max-width: 640px) { .topbar-inner, .main { padding-left: 14px; padding-right: 14px; } .brand-row, .actions { align-items: stretch; flex-direction: column; } .top-actions, .form-grid, .summary-grid { grid-template-columns: 1fr; flex-direction: column; } .memory-items, .bar-row { grid-template-columns: 1fr; } }
+
+    .survey-shell { display: grid; gap: 18px; }
+    .survey-intro { padding: 18px; border: 1px solid var(--line); border-radius: 8px; background: linear-gradient(135deg, #ffffff, #eef6ff); }
+    .survey-intro h3 { margin: 0 0 8px; font-size: 20px; }
+    .survey-intro p { margin: 0; color: var(--muted); line-height: 1.8; }
+    .survey-card { border: 1px solid var(--line); border-radius: 8px; background: #fff; overflow: hidden; }
+    .survey-card-head { padding: 14px 16px; background: #f8fbff; border-bottom: 1px solid var(--line); }
+    .survey-card-head h4 { margin: 0; font-size: 17px; }
+    .survey-card-note { margin: 6px 0 0; color: var(--muted); font-size: 13px; line-height: 1.6; }
+    .survey-items { display: grid; gap: 0; }
+    .survey-item { padding: 16px; border-bottom: 1px solid var(--line); }
+    .survey-item:last-child { border-bottom: 0; }
+    .survey-item p { margin: 0 0 12px; font-weight: 700; line-height: 1.6; }
+    .survey-scale { display: grid; grid-template-columns: repeat(auto-fit, minmax(86px, 1fr)); gap: 10px; max-width: 860px; }
+    .survey-option { min-width: 0; }
+    .survey-option input { position: absolute; opacity: 0; pointer-events: none; }
+    .survey-option-card { display: grid; place-items: center; min-height: 66px; padding: 10px 8px; border-radius: 12px; border: 1px solid var(--line); background: #fff; color: var(--muted); cursor: pointer; transition: transform .16s ease, border-color .16s ease, box-shadow .16s ease, background .16s ease, color .16s ease; }
+    .survey-score { display: block; font-size: 20px; line-height: 1; font-weight: 900; color: var(--text); }
+    .survey-label { display: block; margin-top: 7px; font-size: 13px; line-height: 1.2; font-weight: 700; text-align: center; color: var(--muted); }
+    .survey-option:hover .survey-option-card { transform: translateY(-2px); border-color: rgba(37, 99, 235, 0.38); box-shadow: 0 10px 22px rgba(37, 99, 235, 0.12); }
+    .survey-option.is-selected .survey-option-card, .survey-option input:checked + .survey-option-card { background: linear-gradient(135deg, rgba(37, 99, 235, 0.98), rgba(79, 124, 255, 0.9)); border-color: var(--primary); color: #fff; box-shadow: 0 12px 24px rgba(37, 99, 235, 0.24); }
+    .survey-option.is-selected .survey-score, .survey-option.is-selected .survey-label, .survey-option input:checked + .survey-option-card .survey-score, .survey-option input:checked + .survey-option-card .survey-label { color: #fff; }
+    .survey-summary { display: grid; grid-template-columns: repeat(5, minmax(120px, 1fr)); gap: 10px; }
+    .survey-summary div { padding: 14px; border: 1px solid var(--line); border-radius: 8px; background: #fff; }
+    .survey-summary strong { display: block; font-size: 22px; color: var(--primary); }
+    .survey-summary span { color: var(--muted); font-size: 13px; }
+    @media (max-width: 760px) { .survey-scale { grid-template-columns: repeat(auto-fit, minmax(72px, 1fr)); } .survey-option-card { min-height: 60px; padding: 9px 6px; } .survey-score { font-size: 18px; } .survey-label { font-size: 12px; } .survey-summary { grid-template-columns: 1fr 1fr; } }
+
+
+
+    .inquiry-helper { display: grid; gap: 14px; margin-top: 16px; }
+    .helper-grid { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 12px; }
+    .helper-card, .template-card, .case-card { border: 1px solid #e5edf7; border-radius: 14px; background: linear-gradient(135deg, #ffffff, #f8fbff); box-shadow: 0 10px 24px rgba(23, 32, 51, 0.05); }
+    .helper-card { padding: 14px; }
+    .helper-card h4, .template-card h4 { margin: 0 0 10px; color: #1e3a8a; font-size: 15px; }
+    .helper-card ul { margin: 0; padding-left: 18px; color: #344054; font-size: 14px; }
+    .template-card { padding: 14px; background: linear-gradient(135deg, #f8fbff, #eef6ff); }
+    .case-list { display: grid; gap: 10px; margin-top: 16px; }
+    .case-card { overflow: hidden; }
+    .case-card summary { display: flex; align-items: center; justify-content: space-between; gap: 12px; padding: 13px 14px; color: #172033; cursor: pointer; font-weight: 900; }
+    .case-card summary::after { content: "+"; display: inline-grid; place-items: center; width: 24px; height: 24px; border-radius: 999px; background: #eef4ff; color: #2563eb; }
+    .case-card[open] summary::after { content: "-"; }
+    .case-body { padding: 0 14px 14px; color: #344054; font-size: 14px; }
+    .case-body p { margin: 8px 0; }
+    .case-tags { display: flex; flex-wrap: wrap; gap: 8px; margin-top: 10px; }
+    .case-tag { padding: 5px 9px; border-radius: 999px; background: #eefbf6; color: #0f766e; font-size: 12px; font-weight: 900; }
+    @media (max-width: 760px) { .helper-grid { grid-template-columns: 1fr; } .case-card summary { align-items: flex-start; } }
+
+  </style>
+</head>
+<body>
+  <header class="topbar">
+    <div class="topbar-inner">
+      <div class="brand-row">
+        <div class="brand-title">
+          <h1>实验四：改善长时记忆的策略有哪些？</h1>
+          <span id="identityPill" class="identity-pill"></span>
+        </div>
+        <div class="top-actions">
+          <button class="btn secondary" id="homeBtn" type="button">回到首页</button>
+          <button class="btn secondary" id="exportBtn" type="button">导出 Excel</button>
+          <button class="btn danger" id="resetBtn" type="button">重置本实验</button>
+        </div>
+      </div>
+      <nav id="progress" class="progress" aria-label="活动进度"></nav>
+    </div>
+  </header>
+  <main id="main" class="main"></main>
+  <script>
+    const CONTEXT_KEY = "science-inquiry-context-v1";
+    const STORAGE_KEY = "longterm-strategies-state-v1";
+    const steps = [
+      
+      { id: "pretest", title: "前测", minutes: "10分钟" },{ id: "question", title: "提出问题", minutes: "10分钟" },
+      { id: "hypothesis", title: "作出假设", minutes: "10分钟" },
+      { id: "plan", title: "制定计划", minutes: "20分钟" },
+      { id: "evidence", title: "搜集证据", minutes: "45分钟" },
+      { id: "analysis", title: "处理信息", minutes: "15分钟" },
+      { id: "conclusion", title: "得出结论", minutes: "5分钟" },
+      { id: "reflection", title: "反思交流", minutes: "15分钟" },
+      { id: "posttest", title: "后测", minutes: "15分钟" }
+    ];
+    const materialBank = {
+      word: {
+        low: ["unity 团结", "legacy 遗产", "nudge 轻推", "frown 皱眉", "insane 疯狂的", "democracy 民主"],
+        mid: ["quadratic 二次的", "circumference 圆周", "revolution 革命", "organism 生物", "mitochondrion 线粒体", "photosynthesis 光合作用"],
+        high: ["onomatopoeia 拟声", "renaissance 文艺复兴", "stoichiometry 化学计量学", "metamorphosis 变形", "photosphere 光球层", "electromagnetism 电磁学"]
+      },
+      poem: {
+        low: ["落日五湖游，烟波处处愁。", "木末芙蓉花，山中发红萼。", "江旷春潮白，山长晓青。", "小浦闻鱼跃，横林待鹤归。", "花弄影，月流辉。", "寻芳不觉醉流霞。"],
+        mid: ["雨过山村六月凉，田田流水稻花香。", "蜂蝶不知春已去，又衔花瓣到兰房。", "匡床尽日临门坐，闲看青山起白云。", "一江秋水浸寒空，渔笛无端弄晚风。", "上有六龙回日之高标。", "间关莺语花底滑。"],
+        high: ["熊咆龙吟岩泉，深林兮惊层巅。", "江离与辟芷兮，纫秋兰以为佩。", "下有冲波逆折之回川。", "幽咽泉流冰下难。", "雪衰白布袍，笑携鲤换村醪。", "梦游天姥吟留别。"]
+      },
+      formula: {
+        low: ["导数公式 (x^n)'=nx^(n-1)", "焦耳定律 Q=I^2Rt", "三角形面积 S=ah/2", "动能公式 Ek=mv^2/2", "分数加法通分", "抛物线标准方程"],
+        mid: ["万有引力 F=Gm1m2/r^2", "欧拉公式 e^(iπ)+1=0", "二倍角公式 sin2A=2sinAcosA", "余弦定理 c^2=a^2+b^2-2abcosC", "排列组合 C(n,m)", "三角恒等式"],
+        high: ["泰勒展开式", "平方数列求和 n(n+1)(2n+1)/6", "轮换对称式展开", "化学计量比守恒", "矩阵乘法规则", "复合函数求导链式法则"]
+      }
+    };
+    const SURVEY_DEFS = {
+      meta: {
+        title: "记忆相关知识元认知情况调查问卷",
+        scale: [1, 2, 3, 4, 5],
+        anchors: "1=完全否，2=较少，3=一般，4=较多，5=完全是",
+        labels: { 1: "完全否", 2: "较少", 3: "一般", 4: "较多", 5: "完全是" },
+        note: "请选择最符合你真实想法的一项。得分越高，表示你越认同题目内容。",
+        items: [
+          "我能够理解老师所讲的有关记忆的知识。",
+          "这些有关记忆的知识对我很有用，我会继续使用。",
+          "在学习这些知识时，我会与现实生活进行联系。",
+          "我会根据今天学到的知识反思之前的学习过程中做的不足的地方并加以改进。",
+          "在学习这些知识时，我会联想到之前学过或了解过的知识。"
+        ]
+      },
+      load: {
+        title: "认知负荷情况调查问卷",
+        scale: [1, 2, 3, 4, 5, 6, 7, 8, 9, 10],
+        anchors: "1=非常低，10=非常高",
+        labels: { 1: "非常低", 2: "很低", 3: "较低", 4: "稍低", 5: "中等偏低", 6: "中等偏高", 7: "稍高", 8: "较高", 9: "很高", 10: "非常高" },
+        note: "请选择最符合你刚才活动体验的一项。得分越高，表示材料难度或心理努力越高。",
+        items: [
+          "你认为刚才科学探究活动的学习材料难度如何？（得分越高，难度越大）",
+          "你在刚才的科学探究活动中投入了多少心理努力？（得分越高，投入的心理努力越多）"
+        ]
+      },
+      inquiry: {
+        title: "科学探究活动参与情况调查问卷",
+        scale: [1, 2, 3, 4, 5],
+        anchors: "1=完全否，2=较少，3=一般，4=较多，5=完全是",
+        labels: { 1: "完全否", 2: "较少", 3: "一般", 4: "较多", 5: "完全是" },
+        note: "请选择最符合你真实想法的一项。得分越高，表示你越认同题目内容。",
+        items: [
+          "我能清晰地表达我想要研究的问题。",
+          "我可以针对问题的答案提出合乎科学事实的假设。",
+          "我能明确探究目标，提出可操作的探究步骤。",
+          "我能积极参与并顺利完成实验操作。",
+          "我学会了运用实验收集解决问题所需要的证据。",
+          "我能分析归纳获得的证据，并得出科学结论。",
+          "我能发现探究过程中未解决的问题，发现新的问题。",
+          "我在探究活动中能够与他人很好地合作。",
+          "在探究活动中，我既能表达自己的观点，又能听取他人建议。"
+        ]
+      }
+    };
+
+    function createDefaultSurveys() {
+      return { preMeta: {}, postMeta: {}, cognitiveLoad: {}, inquiryParticipation: {} };
+    }
+
+    function mergeSurveys(incoming = {}) {
+      const merged = createDefaultSurveys();
+      Object.keys(merged).forEach((key) => {
+        merged[key] = Object.assign({}, merged[key], incoming[key] || {});
+      });
+      return merged;
+    }
+
+    const defaultState = {
+      studentId: "",
+      groupId: "",
+      currentStep: 0,
+      fields: {
+        question: "",
+        hypothesis1: "简单复述能帮助记忆，但保持效果有限。",
+        hypothesis2: "主动回忆等策略能提升长时记忆的回忆率。",
+        strategy1: "简单复述",
+        strategy2: "主动回忆",
+        materialType: "word",
+        lowCount: 2,
+        midCount: 2,
+        highCount: 2,
+        memorySeconds: 60,
+        puzzleSeconds: 45,
+        testSeconds: 120,
+        leader: "",
+        recorder: "",
+        memberA: "",
+        memberB: "",
+        headband: "",
+        scoreAccuracy: 3,
+        scoreUse: 3,
+        scoreConfidence: 3,
+        scoreTransfer: 3,
+        conclusion: "",
+        designImprove: "",
+        surprise: "",
+        applicability: ""
+      },
+      records: [],
+      surveys: createDefaultSurveys(),
+      savedAt: ""
+    };
+    let state = loadState();
+    let session = null;
+    let timerId = null;
+    let tickId = null;
+    let phaseStartedAt = 0;
+    const progress = document.getElementById("progress");
+    const main = document.getElementById("main");
+    const identityPill = document.getElementById("identityPill");
+    function loadState() {
+      let saved = null;
+      try { saved = JSON.parse(localStorage.getItem(STORAGE_KEY) || "null"); } catch (event) { localStorage.removeItem(STORAGE_KEY); }
+      const merged = mergeState(defaultState, saved || {});
+      try {
+        const context = JSON.parse(localStorage.getItem(CONTEXT_KEY) || "null");
+        if (context) {
+          merged.studentId = context.studentId || merged.studentId;
+          merged.groupId = context.groupId || merged.groupId;
+        }
+      } catch (event) { localStorage.removeItem(CONTEXT_KEY); }
+      return merged;
+    }
+    function mergeState(base, incoming) {
+      const merged = structuredClone(base);
+      Object.assign(merged, incoming);
+      merged.fields = Object.assign({}, base.fields, incoming.fields || {});
+      merged.records = Array.isArray(incoming.records) ? incoming.records : [];
+      merged.surveys = mergeSurveys(incoming.surveys);
+      if (!incoming.surveys) merged.currentStep = 0;
+      return merged;
+    }
+    function normalizeCurrentStep() {
+      const index = Number(state.currentStep);
+      if (!Number.isInteger(index) || index < 0 || index >= steps.length) {
+        state.currentStep = 0;
+        saveState();
+      }
+    }
+
+    function saveState() { state.savedAt = new Date().toISOString(); localStorage.setItem(STORAGE_KEY, JSON.stringify(state)); }
+    function escapeHtml(value) { return String(value ?? "").replaceAll("&","&amp;").replaceAll("<","&lt;").replaceAll(">","&gt;").replaceAll('"',"&quot;").replaceAll("'","&#039;"); }
+    function selected(field, value) { return state.fields[field] === value ? "selected" : ""; }
+    function renderApp() {
+      if (!state.studentId || !state.groupId) {
+        main.innerHTML = `<section class="panel"><div class="panel-head"><h2>需要先填写学生编号和小组编号</h2><p>请返回实验选择页录入身份信息后再进入实验。</p></div><div class="panel-body"><button class="btn" type="button" onclick="location.href='index.html'">返回实验选择</button></div></section>`;
+        return;
+      }
+      identityPill.textContent = `学生：${state.studentId}　小组：${state.groupId}`;
+      normalizeCurrentStep();
+      renderProgress();
+      renderStep();
+    }
+    function renderProgress() {
+      progress.innerHTML = steps.map((step, index) => {
+        const cls = index === state.currentStep ? "is-active" : index < state.currentStep ? "is-done" : "";
+        return `<button class="progress-step ${cls}" type="button" data-step="${index}"><strong>${index + 1}</strong><span>${step.title}</span></button>`;
+      }).join("");
+      progress.querySelectorAll("[data-step]").forEach((button)=>button.addEventListener("click",()=>{ const targetStep = Number(button.dataset.step); state.currentStep = targetStep; saveState(); renderApp(); }));
+    }
+    function renderStep() {
+      const step = steps[state.currentStep];
+      main.innerHTML = `<section class="panel"><div class="panel-head"><h2>${state.currentStep + 1}. ${step.title}</h2><p>建议时长：${step.minutes}</p></div><div class="panel-body">${getStepHtml(step.id)}${renderNavigation()}</div></section>`;
+      bindInputs();
+      bindStepEvents(step.id);
+    }
+    function renderNavigation() {
+      return `<div class="actions"><button class="btn secondary" type="button" id="prevStep" ${state.currentStep === 0 ? "disabled" : ""}>上一步</button><button class="btn" type="button" id="nextStep" ${state.currentStep === steps.length - 1 ? "disabled" : ""}>下一步</button></div>`;
+    }
+    function getStepHtml(stepId) {
+      return {
+        pretest: renderPretestStep,
+        question: renderQuestionStep,
+        hypothesis: renderHypothesisStep,
+        plan: renderPlanStep,
+        evidence: renderEvidenceStep,
+        analysis: renderAnalysisStep,
+        conclusion: renderConclusionStep,
+        reflection: renderReflectionStep
+      ,
+        posttest: renderPosttestStep}[stepId]();
+    }
+    function renderPretestStep() { return renderSurveyPage("pretest"); }
+    function renderPosttestStep() { return renderSurveyPage("posttest"); }
+
+    function renderSurveyPage(kind) {
+      if (kind === "pretest") {
+        return '<div class="survey-shell">' +
+          '<div class="survey-intro"><h3>前测：记忆相关知识元认知情况调查问卷</h3><p>亲爱的同学们：你们好！本次调查是为了了解你目前与记忆相关知识的元认知情况，问卷结果仅用于本次学习活动的数据分析，不会影响你的成绩或其他学习活动，也不会泄露你的个人信息。请根据真实想法选择最符合的一项，所有答案会自动保存，并在导出 Excel 时一并导出。</p></div>' +
+          renderSurveyForm("preMeta", "meta") +
+        '</div>';
+      }
+      return '<div class="survey-shell">' +
+        '<div class="survey-intro"><h3>后测：活动结束后的学习反馈</h3><p>亲爱的同学们：你们好！本次后测用于了解活动后你对记忆相关知识的认识变化、活动中的认知负荷和科学探究参与情况。问卷结果仅用于本次学习活动改进与数据分析，不会影响成绩或其他学习活动，也不会泄露个人信息。请根据真实体验作答，感谢你的支持与配合。</p></div>' +
+        renderSurveyForm("postMeta", "meta") +
+        renderSurveyForm("cognitiveLoad", "load") +
+        renderSurveyForm("inquiryParticipation", "inquiry") +
+        renderSurveySummaryCards() +
+      '</div>';
+    }
+
+    function renderSurveyForm(surveyKey, defKey) {
+      const def = SURVEY_DEFS[defKey];
+      const answers = state.surveys?.[surveyKey] || {};
+      return '<section class="survey-card">' +
+        '<div class="survey-card-head"><h4>' + def.title + '</h4><p class="survey-card-note">' + def.note + '</p></div>' +
+        '<div class="survey-items">' +
+          def.items.map((item, index) => {
+            const itemKey = 'q' + (index + 1);
+            return '<div class="survey-item"><p>' + (index + 1) + '. ' + escapeHtml(item) + '</p>' +
+              '<div class="survey-scale" role="radiogroup" aria-label="' + escapeHtml(item) + '">' +
+                def.scale.map((score) => {
+                  const checked = Number(answers[itemKey]) === score;
+                  const label = def.labels?.[score] || '';
+                  return '<label class="survey-option ' + (checked ? 'is-selected' : '') + '">' +
+                    '<input type="radio" name="' + surveyKey + '-' + itemKey + '" data-survey="' + surveyKey + '" data-question="' + itemKey + '" value="' + score + '" ' + (checked ? 'checked' : '') + '>' +
+                    '<span class="survey-option-card"><span class="survey-score">' + score + '</span><span class="survey-label">' + escapeHtml(label) + '</span></span></label>';
+                }).join('') +
+              '</div></div>';
+          }).join('') +
+        '</div></section>';
+    }
+
+    function renderSurveySummaryCards() {
+      const pre = summarizeSurvey("preMeta", "meta");
+      const post = summarizeSurvey("postMeta", "meta");
+      const load = summarizeSurvey("cognitiveLoad", "load");
+      const inquiry = summarizeSurvey("inquiryParticipation", "inquiry");
+      const delta = post.answered && pre.answered ? Number((post.total - pre.total).toFixed(1)) : "待完成";
+      return '<div class="survey-summary">' +
+        '<div><strong>' + (pre.total || '待完成') + '</strong><span>前测元认知总分</span></div>' +
+        '<div><strong>' + (post.total || '待完成') + '</strong><span>后测元认知总分</span></div>' +
+        '<div><strong>' + delta + '</strong><span>元认知变化</span></div>' +
+        '<div><strong>' + (load.average || '待完成') + '</strong><span>认知负荷均分</span></div>' +
+        '<div><strong>' + (inquiry.average || '待完成') + '</strong><span>探究参与均分</span></div>' +
+      '</div>';
+    }
+
+    function bindSurveyInputs() {
+      main.querySelectorAll("[data-survey]").forEach((input) => {
+        input.addEventListener("change", () => {
+          const surveyKey = input.dataset.survey;
+          const questionKey = input.dataset.question;
+          state.surveys = mergeSurveys(state.surveys);
+          state.surveys[surveyKey][questionKey] = Number(input.value);
+          saveState();
+          renderApp();
+        });
+      });
+    }
+
+    function summarizeSurvey(surveyKey, defKey) {
+      const def = SURVEY_DEFS[defKey];
+      const answers = state.surveys?.[surveyKey] || {};
+      const values = def.items.map((_, index) => Number(answers['q' + (index + 1)] || 0)).filter(Boolean);
+      const total = values.reduce((sum, value) => sum + value, 0);
+      return { answered: values.length, total, average: values.length ? Number((total / values.length).toFixed(2)) : 0, complete: values.length === def.items.length };
+    }
+
+    function isSurveyStepComplete(stepId) {
+      if (stepId === "pretest") return summarizeSurvey("preMeta", "meta").complete;
+      if (stepId === "posttest") return summarizeSurvey("postMeta", "meta").complete && summarizeSurvey("cognitiveLoad", "load").complete && summarizeSurvey("inquiryParticipation", "inquiry").complete;
+      return true;
+    }
+
+    function getSurveySheets() {
+      const makeSheet = (title, surveyKey, defKey) => {
+        const def = SURVEY_DEFS[defKey];
+        const answers = state.surveys?.[surveyKey] || {};
+        const summary = summarizeSurvey(surveyKey, defKey);
+        return [title, [
+          ["题号", "题目", "得分"],
+          ...def.items.map((item, index) => [String(index + 1), item, answers['q' + (index + 1)] || ""]),
+          ["合计", "总分", summary.total],
+          ["合计", "均分", summary.average]
+        ]];
+      };
+      const pre = summarizeSurvey("preMeta", "meta");
+      const post = summarizeSurvey("postMeta", "meta");
+      const load = summarizeSurvey("cognitiveLoad", "load");
+      const inquiry = summarizeSurvey("inquiryParticipation", "inquiry");
+      return [
+        makeSheet("前测-元认知", "preMeta", "meta"),
+        makeSheet("后测-元认知", "postMeta", "meta"),
+        makeSheet("后测-认知负荷", "cognitiveLoad", "load"),
+        makeSheet("后测-探究参与", "inquiryParticipation", "inquiry"),
+        ["问卷汇总", [
+          ["问卷", "已答题数", "总分", "均分", "完成情况"],
+          ["前测元认知", pre.answered, pre.total, pre.average, pre.complete ? "已完成" : "未完成"],
+          ["后测元认知", post.answered, post.total, post.average, post.complete ? "已完成" : "未完成"],
+          ["元认知前后测变化", "", Number((post.total - pre.total).toFixed(1)), "", pre.complete && post.complete ? "可比较" : "待补全"],
+          ["后测认知负荷", load.answered, load.total, load.average, load.complete ? "已完成" : "未完成"],
+          ["后测科学探究参与", inquiry.answered, inquiry.total, inquiry.average, inquiry.complete ? "已完成" : "未完成"]
+        ]]
+      ];
+    }
+
+
+    function renderInquiryScaffold(type) {
+      if (type === "hypothesis") {
+        return '<div class="inquiry-helper">' +
+          '<div class="helper-card"><h4>\u7814\u7a76\u5047\u8bbe\u601d\u8003\u70b9</h4><ul><li>\u5b83\u662f\u5426\u56de\u5e94\u4e86\u4f60\u4eec\u7684\u7814\u7a76\u95ee\u9898\uff1f</li><li>\u5b83\u662f\u5426\u8bf4\u660e\u4e86\u4f60\u4eec\u5bf9\u7ed3\u679c\u7684\u9884\u6d4b\uff1f</li><li>\u5b83\u662f\u5426\u53ef\u4ee5\u88ab\u540e\u9762\u7684\u6570\u636e\u652f\u6301\u6216\u53cd\u9a73\uff1f</li></ul></div>' +
+        '</div>';
+      }
+      return '<div class="inquiry-helper">' +
+        '<div class="helper-card"><h4>\u7814\u7a76\u95ee\u9898\u601d\u8003\u70b9</h4><ul><li>\u4f60\u4eec\u60f3\u89c2\u5bdf\u6216\u6bd4\u8f83\u7684\u73b0\u8c61\u662f\u4ec0\u4e48\uff1f</li><li>\u95ee\u9898\u4e2d\u7684\u53d8\u91cf\u662f\u5426\u6bd4\u8f83\u6e05\u695a\uff1f</li><li>\u662f\u5426\u80fd\u901a\u8fc7\u5b9e\u9a8c\u8bb0\u5f55\u6216\u6570\u636e\u6765\u5bfb\u627e\u8bc1\u636e\uff1f</li></ul></div>' +
+      '</div>';
+    }
+
+    function renderInquiryCases() {
+      const cases = [
+        { title: "\u5de7\u514b\u529b\u4e0e\u8bb0\u5fc6", question: "\u6444\u5165\u5c11\u91cf\u5de7\u514b\u529b\u662f\u5426\u4f1a\u5f71\u54cd\u5b66\u751f\u5bf9\u8bcd\u8bed\u7684\u56de\u5fc6\u6570\u91cf\uff1f", hypothesis: "\u76f8\u6bd4\u4e8e\u672a\u6444\u5165\u5de7\u514b\u529b\uff0c\u6444\u5165\u5c11\u91cf\u5de7\u514b\u529b\u53ef\u80fd\u4f1a\u6539\u53d8\u8bcd\u8bed\u56de\u5fc6\u6570\u91cf\u3002" },
+        { title: "\u7761\u7720\u4e0e\u5b66\u4e60\u6548\u679c", question: "\u4e0d\u540c\u7761\u7720\u65f6\u957f\u662f\u5426\u4f1a\u5f71\u54cd\u7b2c\u4e8c\u5929\u7684\u5355\u8bcd\u6d4b\u9a8c\u6210\u7ee9\uff1f", hypothesis: "\u76f8\u6bd4\u4e8e\u7761\u7720\u65f6\u95f4\u8f83\u77ed\uff0c\u7761\u7720\u65f6\u95f4\u8f83\u5145\u8db3\u53ef\u80fd\u4f1a\u5bfc\u81f4\u6d4b\u9a8c\u6210\u7ee9\u66f4\u9ad8\u3002" },
+        { title: "\u97f3\u4e50\u4e0e\u4e13\u6ce8\u529b", question: "\u80cc\u666f\u97f3\u4e50\u662f\u5426\u4f1a\u5f71\u54cd\u5b66\u751f\u5b8c\u6210\u9605\u8bfb\u4efb\u52a1\u7684\u4e13\u6ce8\u8868\u73b0\uff1f", hypothesis: "\u76f8\u6bd4\u4e8e\u5b89\u9759\u73af\u5883\uff0c\u6709\u80cc\u666f\u97f3\u4e50\u65f6\u5b66\u751f\u7684\u4e13\u6ce8\u8868\u73b0\u53ef\u80fd\u4f1a\u53d1\u751f\u53d8\u5316\u3002" },
+        { title: "\u827e\u5bbe\u6d69\u65af\u9057\u5fd8\u5b9e\u9a8c", question: "\u5b66\u4e60\u540e\u7ecf\u8fc7\u7684\u65f6\u95f4\u662f\u5426\u4f1a\u5f71\u54cd\u65e0\u610f\u4e49\u97f3\u8282\u7684\u4fdd\u6301\u7387\uff1f", hypothesis: "\u76f8\u6bd4\u4e8e\u5b66\u4e60\u540e\u7acb\u5373\u6d4b\u8bd5\uff0c\u95f4\u9694\u65f6\u95f4\u66f4\u957f\u53ef\u80fd\u4f1a\u5bfc\u81f4\u4fdd\u6301\u7387\u4e0b\u964d\u3002" },
+        { title: "\u7c73\u52d2\u8bb0\u5fc6\u5bb9\u91cf\u5b9e\u9a8c", question: "\u4fe1\u606f\u5355\u4f4d\u6570\u91cf\u662f\u5426\u4f1a\u5f71\u54cd\u53c2\u4e0e\u8005\u51c6\u786e\u590d\u8ff0\u7684\u8868\u73b0\uff1f", hypothesis: "\u76f8\u6bd4\u4e8e\u4fe1\u606f\u5355\u4f4d\u8f83\u5c11\u65f6\uff0c\u4fe1\u606f\u5355\u4f4d\u8f83\u591a\u53ef\u80fd\u4f1a\u5bfc\u81f4\u51c6\u786e\u590d\u8ff0\u7387\u4e0b\u964d\u3002" },
+        { title: "\u65af\u7279\u9c81\u666e\u5b9e\u9a8c", question: "\u989c\u8272\u8bcd\u7684\u8bcd\u4e49\u4e0e\u58a8\u8272\u662f\u5426\u4e00\u81f4\u4f1a\u5f71\u54cd\u989c\u8272\u547d\u540d\u901f\u5ea6\uff1f", hypothesis: "\u76f8\u6bd4\u4e8e\u8bcd\u4e49\u4e0e\u58a8\u8272\u4e00\u81f4\u65f6\uff0c\u4e0d\u4e00\u81f4\u6761\u4ef6\u53ef\u80fd\u4f1a\u5bfc\u81f4\u547d\u540d\u65f6\u95f4\u53d8\u957f\u3002" }
+      ];
+      return '<div class="case-list"><div class="template-card"><h4>\u79d1\u5b66\u63a2\u7a76\u6848\u4f8b</h4><p>\u4ee5\u4e0b\u6848\u4f8b\u53ea\u4f5c\u4e3a\u7075\u611f\u53c2\u8003\uff0c\u53ef\u4ee5\u5b66\u4e60\u601d\u8003\u65b9\u5f0f\uff0c\u4e0d\u9700\u8981\u7167\u7740\u53e5\u5f0f\u5199\u3002</p></div>' +
+        cases.map((item) => '<details class="case-card"><summary>' + item.title + '</summary><div class="case-body"><p><strong>\u7814\u7a76\u95ee\u9898\uff1a</strong>' + item.question + '</p><p><strong>\u7814\u7a76\u5047\u8bbe\uff1a</strong>' + item.hypothesis + '</p><div class="case-tags"><span class="case-tag">\u2713 \u6709\u660e\u786e\u53d8\u91cf</span><span class="case-tag">\u2713 \u53ef\u4ee5\u9a8c\u8bc1</span><span class="case-tag">\u2713 \u6709\u53ef\u6d4b\u91cf\u7ed3\u679c</span></div></div></details>').join('') +
+      '</div>';
+    }
+
+    function renderQuestionStep() {
+      return `<div class="step-layout"><div class="panel"><div class="panel-head"><h3>阅读材料</h3><p>提取与长时记忆和学习策略有关的信息。</p></div><div class="panel-body reading-list">
+        <article class="reading-card"><h4>长时记忆形成</h4><p>长时记忆形成涉及突触可塑性改变，海马体反复处理相同信息会增强神经元连接，这一过程与长时程增强有关。</p></article>
+        <article class="reading-card"><h4>记忆类型</h4><p>长时记忆包括情景记忆、语义记忆和程序记忆。不同内容适合不同记忆策略。</p></article>
+        <article class="reading-card"><h4>遗忘与复习</h4><p>遗忘在学习后立即开始。间隔复习、主动回忆、将新知识与旧知识关联，都能提升保持效果。</p></article>
+        <article class="reading-card"><h4>有效学习策略</h4><p>提取线索、分散学习、信息可视化、主动提取通常比单纯划重点或重复阅读更有效。</p></article>
+      </div></div><div class="panel"><div class="panel-head"><h3>提出研究问题</h3></div><div class="panel-body"><textarea data-field="question" placeholder="写下你们小组真正想探究的问题">${escapeHtml(state.fields.question)}</textarea>${renderInquiryScaffold("question")}${renderInquiryCases()}</div></div></div>`;
+    }
+    function renderHypothesisStep() {
+      return `<div class="step-layout"><div class="panel"><div class="panel-head"><h3>研究假设小助手</h3></div><div class="panel-body">${renderInquiryScaffold("hypothesis")}${renderInquiryCases()}</div></div><div class="panel"><div class="panel-head"><h3>研究假设</h3></div><div class="panel-body"><div class="field"><label>策略 1 假设</label><textarea data-field="hypothesis1" placeholder="写下你们小组对结果的预测">${escapeHtml(state.fields.hypothesis1)}</textarea></div><div class="field"><label>策略 2 假设</label><textarea data-field="hypothesis2" placeholder="写下你们小组对结果的预测">${escapeHtml(state.fields.hypothesis2)}</textarea></div></div></div></div>`;
+    }
+    function renderPlanStep() {
+      return `<div class="step-layout"><div class="panel"><div class="panel-head"><h3>实验计划</h3><p>阶段 1 默认使用简单复述；阶段 2 使用选择的改善策略。</p></div><div class="panel-body"><div class="form-grid">
+        <div class="field"><label>策略 1</label><select data-field="strategy1"><option value="简单复述" ${selected("strategy1","简单复述")}>简单复述</option></select></div>
+        <div class="field"><label>策略 2</label><select data-field="strategy2"><option value="主动回忆" ${selected("strategy2","主动回忆")}>主动回忆</option><option value="新旧知识关联" ${selected("strategy2","新旧知识关联")}>新旧知识关联</option><option value="信息可视化" ${selected("strategy2","信息可视化")}>信息可视化</option><option value="线索提取" ${selected("strategy2","线索提取")}>线索提取</option><option value="分散学习" ${selected("strategy2","分散学习")}>分散学习</option></select></div>
+        <div class="field"><label>材料类型</label><select data-field="materialType"><option value="word" ${selected("materialType","word")}>单词</option><option value="poem" ${selected("materialType","poem")}>古诗</option><option value="formula" ${selected("materialType","formula")}>公式</option></select></div>
+        <div class="field"><label>题目总数</label><input type="text" value="${getPlannedItemCount()} 道" readonly></div>
+        <div class="field" style="grid-column:1 / -1;">
+          <label>数量与难度调节</label>
+          <div class="difficulty-controls">
+            ${renderDifficultyControl("lowCount", "初级")}
+            ${renderDifficultyControl("midCount", "中级")}
+            ${renderDifficultyControl("highCount", "高级")}
+          </div>
+        </div>
+        <div class="field"><label>记忆时间（秒）</label><input type="number" min="10" max="180" data-field="memorySeconds" value="${escapeHtml(state.fields.memorySeconds)}"></div>
+        <div class="field"><label>找不同时间（秒）</label><input type="number" min="10" max="180" data-field="puzzleSeconds" value="${escapeHtml(state.fields.puzzleSeconds)}"></div>
+        <div class="field"><label>测试时间（秒）</label><input type="number" min="20" max="240" data-field="testSeconds" value="${escapeHtml(state.fields.testSeconds)}"></div>
+      </div></div></div><div class="panel"><div class="panel-head"><h3>小组分工</h3></div><div class="panel-body form-grid">
+        <div class="field"><label>组长</label><input data-field="leader" value="${escapeHtml(state.fields.leader)}"></div>
+        <div class="field"><label>记录员</label><input data-field="recorder" value="${escapeHtml(state.fields.recorder)}"></div>
+        <div class="field"><label>组员 A</label><input data-field="memberA" value="${escapeHtml(state.fields.memberA)}"></div>
+        <div class="field"><label>组员 B</label><input data-field="memberB" value="${escapeHtml(state.fields.memberB)}"></div>
+      </div></div></div>`;
+    }
+    function renderEvidenceStep() {
+      return `<div class="panel"><div class="panel-head"><h3>策略记忆网页实验</h3><p>阶段 1 使用简单复述；阶段 2 使用改善策略。每阶段包含记忆、找不同和低干扰测试。</p></div><div class="panel-body">
+        <div class="toolbar strategy-toolbar"><div class="field"><label>实验阶段</label><select id="stageSelect"><option value="1">阶段 1：简单复述</option><option value="2">阶段 2：改善策略</option></select></div><button class="btn" type="button" id="startRunBtn">开始本阶段</button></div>
+        <div class="strategy-game"><div class="stage"><div class="stage-meta"><span id="phaseStatus">请选择阶段并开始</span><span id="conditionStatus">${escapeHtml(state.fields.strategy2)}</span></div><div id="taskCard" class="task-card"><h3>长时记忆策略</h3><p>准备开始实验</p></div><div id="answerBox" class="answer-box"><label>请在每个格子中填写一个回忆内容</label><div id="recallGrid" class="recall-grid"></div><div class="field" style="margin-top:12px;"><label>头环/脑活动观察</label><input id="headbandInput" type="text" placeholder="例如：使用策略时前额叶颜色更红"></div><button class="btn" type="button" id="submitRecallBtn" style="width:100%;margin-top:12px;">提交本阶段结果</button></div><div class="timer"><div id="timerFill" class="timer-fill"></div></div></div>
+        <aside class="game-side"><div class="stat-grid"><div class="mini-stat"><span>阶段</span><b id="phaseStat">--</b></div><div class="mini-stat"><span>剩余时间</span><b id="timeStat">--</b></div><div class="mini-stat"><span>正确数</span><b id="correctStat">0</b></div><div class="mini-stat"><span>回忆率</span><b id="accuracyStat">0%</b></div></div><div class="game-log"><table><thead><tr><th>阶段</th><th>策略</th><th>正确</th><th>回忆率</th></tr></thead><tbody id="gameLogBody"><tr><td colspan="4">暂无记录</td></tr></tbody></table></div></aside></div>
+        <div id="focusPrep" class="focus-prep" role="dialog" aria-modal="true"><div class="focus-prep-card"><h3>准备开始策略记忆实验</h3><p>页面将切换到低干扰模式，并尝试进入浏览器全屏。记忆、找不同、测试阶段会按设定时间推进。</p><p>测试阶段请尽可能完整地回忆目标材料，完成后提交。</p><button class="btn" type="button" id="confirmStartRunBtn">进入实验</button><button class="btn secondary" type="button" id="cancelStartRunBtn">取消</button></div></div>
+      </div></div>`;
+    }
+    function renderAnalysisStep() {
+      const summary = summarizeRecords();
+      const rows = summary.map((item)=>`<tr><td>${escapeHtml(item.strategy)}</td><td>${item.count}</td><td>${item.avgCorrect}</td><td>${item.avgAccuracy}%</td><td>${item.avgRt ? item.avgRt + "ms" : "--"}</td></tr>`).join("");
+      const chart = summary.length ? summary.map((item)=>`<div class="bar-row"><div>${escapeHtml(item.strategy)}</div><div class="bar-track"><div class="bar-fill" style="width:${item.avgAccuracy}%"></div></div><div>${item.avgAccuracy}%</div></div>`).join("") : `<div class="empty-state">完成实验后会自动生成策略对比图。</div>`;
+      return `<div class="step-layout"><div class="panel"><div class="panel-head"><h3>策略汇总</h3></div><div class="panel-body">${summary.length ? `<table><thead><tr><th>策略</th><th>次数</th><th>平均正确数</th><th>平均回忆率</th><th>平均反应时</th></tr></thead><tbody>${rows}</tbody></table>` : `<div class="empty-state">还没有实验数据。请先完成至少一个阶段。</div>`}</div></div><div class="panel"><div class="panel-head"><h3>图表与策略评分</h3></div><div class="panel-body"><div class="chart">${chart}</div><div class="form-grid" style="margin-top:18px;">${renderScoreField("scoreAccuracy","答案准确性")}${renderScoreField("scoreUse","策略利用率")}${renderScoreField("scoreConfidence","记忆信心度")}${renderScoreField("scoreTransfer","策略迁移性")}</div><div class="mini-stat"><span>评分总分</span><b>${getScoreTotal()}</b></div><div class="field" style="margin-top:18px;"><label>头环观察</label><textarea data-field="headband">${escapeHtml(state.fields.headband)}</textarea></div></div></div></div>`;
+    }
+    function renderScoreField(field, label) {
+      return `<div class="field"><label>${label}</label><select data-field="${field}">${[1,2,3,4,5].map((n)=>`<option value="${n}" ${Number(state.fields[field])===n ? "selected" : ""}>${n} 分</option>`).join("")}</select></div>`;
+    }
+    function renderDifficultyControl(field, label) {
+      const value = Number(state.fields[field]) || 0;
+      return `<div class="difficulty-row">
+        <b>${label}</b>
+        <input type="range" min="0" max="8" step="1" data-field="${field}" value="${value}">
+        <span class="difficulty-value">${value} 道</span>
+      </div>`;
+    }
+    function getPlannedItemCount() {
+      return (Number(state.fields.lowCount) || 0) + (Number(state.fields.midCount) || 0) + (Number(state.fields.highCount) || 0);
+    }
+    function renderConclusionStep() {
+      return `<div class="step-layout"><div class="panel"><div class="panel-head"><h3>得出结论</h3></div><div class="panel-body"><textarea data-field="conclusion" placeholder="通过实验，我们发现改善长时记忆可以通过哪些策略？">${escapeHtml(state.fields.conclusion)}</textarea></div></div><div class="panel"><div class="panel-head"><h3>结论提示</h3></div><div class="panel-body"><div class="reading-card"><h4>提示</h4><p>结论应结合两个阶段的回忆率、策略评分和头环观察，说明哪种策略更有效。</p></div></div></div></div>`;
+    }
+    function renderReflectionStep() {
+      return `<div class="step-layout"><div class="panel"><div class="panel-head"><h3>反思交流</h3></div><div class="panel-body"><div class="field"><label>实验设计有什么可以改进？</label><textarea data-field="designImprove">${escapeHtml(state.fields.designImprove)}</textarea></div><div class="field"><label>结果是否出乎意料？为什么？</label><textarea data-field="surprise">${escapeHtml(state.fields.surprise)}</textarea></div><div class="field"><label>以上策略适用于所有学习内容吗？</label><textarea data-field="applicability">${escapeHtml(state.fields.applicability)}</textarea></div></div></div><div class="panel"><div class="panel-head"><h3>完成与导出</h3></div><div class="panel-body"><div class="summary-grid"><div class="mini-stat"><span>学生编号</span><b>${escapeHtml(state.studentId)}</b></div><div class="mini-stat"><span>小组编号</span><b>${escapeHtml(state.groupId)}</b></div><div class="mini-stat"><span>实验记录</span><b>${state.records.length}</b></div><div class="mini-stat"><span>评分总分</span><b>${getScoreTotal()}</b></div></div><button class="btn success" type="button" id="finalExportBtn">一键导出 Excel</button></div></div></div>`;
+    }
+    function bindInputs() {
+      main.querySelectorAll("[data-field]").forEach((element)=>{ const field = element.dataset.field; element.addEventListener("change",()=>updateField(element, field)); element.addEventListener("input",()=>updateField(element, field)); });
+    }
+    function updateField(element, field) {
+      state.fields[field] = element.type === "number" || element.type === "range" || element.tagName === "SELECT" && field.startsWith("score") ? Number(element.value) : element.value;
+      saveState();
+      if (["lowCount", "midCount", "highCount"].includes(field) && state.currentStep === 2) renderApp();
+    }
+    function bindStepEvents(stepId) {
+      bindSurveyInputs();
+      const prev = document.getElementById("prevStep");
+      const next = document.getElementById("nextStep");
+      if (prev) prev.addEventListener("click",()=>{ if (state.currentStep > 0) { state.currentStep -= 1; saveState(); renderApp(); }});
+      if (next) next.addEventListener("click",()=>{ if (state.currentStep < steps.length - 1) {
+            state.currentStep += 1; saveState(); renderApp(); }});
+      if (stepId === "evidence") bindGameEvents();
+      const finalExport = document.getElementById("finalExportBtn");
+      if (finalExport) finalExport.addEventListener("click", exportExcel);
+    }
+    function bindGameEvents() {
+      document.getElementById("startRunBtn").addEventListener("click", showFocusPrep);
+      document.getElementById("confirmStartRunBtn").addEventListener("click", startRun);
+      document.getElementById("cancelStartRunBtn").addEventListener("click", hideFocusPrep);
+      document.getElementById("submitRecallBtn").addEventListener("click", submitRecall);
+      updateGameUi();
+    }
+    function showFocusPrep() { document.getElementById("focusPrep").classList.add("is-visible"); }
+    function hideFocusPrep() { document.getElementById("focusPrep").classList.remove("is-visible"); }
+    function startRun() {
+      hideFocusPrep();
+      clearTimers();
+      const stage = Number(document.getElementById("stageSelect").value);
+      const strategy = stage === 1 ? state.fields.strategy1 : state.fields.strategy2;
+      const items = pickMaterials();
+      session = { id: crypto.randomUUID ? crypto.randomUUID() : String(Date.now()), stage, strategy, items, phase: "memory", startedAt: new Date().toISOString(), recallStartedAt: 0, puzzleHits: 0, puzzleAttempts: 0, puzzleTarget: -1 };
+      enterFocusMode();
+      runPhase("memory");
+    }
+    function pickMaterials() {
+      const type = state.fields.materialType;
+      const bank = materialBank[type] || materialBank.word;
+      const low = sample(bank.low, Number(state.fields.lowCount) || 0);
+      const mid = sample(bank.mid, Number(state.fields.midCount) || 0);
+      const high = sample(bank.high, Number(state.fields.highCount) || 0);
+      const items = low.concat(mid, high);
+      return items.length ? items : sample(bank.low.concat(bank.mid, bank.high), 6);
+    }
+    function sample(items, count) { return items.slice().sort(()=>Math.random()-.5).slice(0, count); }
+    function runPhase(phase) {
+      if (!session) return;
+      clearTimers();
+      session.phase = phase;
+      const answerBox = document.getElementById("answerBox");
+      answerBox.classList.remove("is-visible");
+      const taskCard = document.getElementById("taskCard");
+      taskCard.style.display = "block";
+      let seconds = 0;
+      if (phase === "memory") {
+        seconds = clamp(Number(state.fields.memorySeconds), 10, 180, 60);
+        taskCard.innerHTML = `<h3>记忆阶段</h3><p>请使用“${escapeHtml(session.strategy)}”策略记住以下材料</p>${renderItems(session.items)}`;
+      } else if (phase === "puzzle") {
+        seconds = clamp(Number(state.fields.puzzleSeconds), 10, 180, 45);
+        taskCard.innerHTML = `<h3>高强度找不同</h3><p>在限定时间内连续点击每一题中唯一不同的图形</p><div id="puzzleMount"></div>`;
+        renderPuzzle();
+      } else {
+        showRecall();
+        return;
+      }
+      phaseStartedAt = performance.now();
+      updateGameUi(seconds);
+      startCountdown(seconds, () => runPhase(phase === "memory" ? "puzzle" : "recall"));
+    }
+    function renderItems(items) { return `<div class="memory-items">${items.map((item)=>`<span class="memory-item">${escapeHtml(item)}</span>`).join("")}</div>`; }
+    function renderPuzzle() {
+      if (!session) return;
+      const pairs = [
+        ["O", "0"], ["B", "8"], ["S", "5"], ["Z", "2"], ["I", "1"],
+        ["◆", "◇"], ["■", "□"], ["●", "○"], ["▲", "△"], ["✚", "✖"]
+      ];
+      const pair = pairs[Math.floor(Math.random() * pairs.length)];
+      const swap = Math.random() > 0.5;
+      const base = swap ? pair[1] : pair[0];
+      const odd = swap ? pair[0] : pair[1];
+      const total = 54;
+      const oddIndex = Math.floor(Math.random() * total);
+      session.puzzleTarget = oddIndex;
+      const mount = document.getElementById("puzzleMount");
+      if (!mount) return;
+      mount.innerHTML = `
+        <div class="puzzle-wrap">
+          <div class="puzzle-target">已找出 ${session.puzzleHits} 个，请继续保持专注</div>
+          <div class="puzzle-grid">
+            ${Array.from({ length: total }, (_, index) => `<button class="puzzle-cell" type="button" data-puzzle-index="${index}">${index === oddIndex ? odd : base}</button>`).join("")}
+          </div>
+        </div>
+      `;
+      mount.querySelectorAll("[data-puzzle-index]").forEach((button) => {
+        button.addEventListener("click", () => handlePuzzleClick(Number(button.dataset.puzzleIndex), button));
+      });
+    }
+    function handlePuzzleClick(index, button) {
+      if (!session || session.phase !== "puzzle") return;
+      session.puzzleAttempts += 1;
+      if (index === session.puzzleTarget) {
+        session.puzzleHits += 1;
+        button.classList.add("hit");
+        window.setTimeout(renderPuzzle, 160);
+      }
+    }
+    function showRecall() {
+      clearTimers();
+      if (!session) return;
+      session.phase = "recall";
+      session.recallStartedAt = performance.now();
+      document.getElementById("taskCard").style.display = "none";
+      document.getElementById("answerBox").classList.add("is-visible");
+      const grid = document.getElementById("recallGrid");
+      grid.innerHTML = session.items.map((item, index) => `<input class="recall-cell" data-recall-index="${index}" type="text" autocomplete="off" placeholder="第 ${index + 1} 个">`).join("");
+      const firstInput = grid.querySelector("input");
+      if (firstInput) firstInput.focus();
+      phaseStartedAt = performance.now();
+      const seconds = clamp(Number(state.fields.testSeconds), 20, 240, 120);
+      updateGameUi(seconds);
+      startCountdown(seconds, submitRecall);
+    }
+    function startCountdown(seconds, done) { tickId = window.setInterval(()=>updateCountdown(seconds),80); timerId = window.setTimeout(done, seconds*1000); updateCountdown(seconds); }
+    function updateCountdown(seconds) {
+      const elapsed = (performance.now() - phaseStartedAt) / 1000;
+      const remaining = Math.max(0, seconds - elapsed);
+      const fill = document.getElementById("timerFill");
+      if (fill) fill.style.width = `${Math.round((remaining / seconds) * 100)}%`;
+      const timeStat = document.getElementById("timeStat");
+      if (timeStat) timeStat.textContent = `${Math.ceil(remaining)}s`;
+    }
+    function clearTimers() { if (timerId) window.clearTimeout(timerId); if (tickId) window.clearInterval(tickId); timerId = null; tickId = null; }
+    function submitRecall() {
+      if (!session || session.phase !== "recall") return;
+      clearTimers();
+      const recallValues = Array.from(document.querySelectorAll("[data-recall-index]")).map((input) => input.value.trim()).filter(Boolean);
+      const recall = recallValues.join("；");
+      const headband = document.getElementById("headbandInput").value.trim();
+      const correct = scoreRecall(recallValues, session.items);
+      const accuracy = session.items.length ? Math.round((correct.length / session.items.length) * 100) : 0;
+      const reactionTime = Math.round(performance.now() - session.recallStartedAt);
+      const record = { runId: session.id, studentId: state.studentId, groupId: state.groupId, stage: session.stage, strategy: session.strategy, materialType: state.fields.materialType, itemCount: session.items.length, memorySeconds: state.fields.memorySeconds, puzzleSeconds: state.fields.puzzleSeconds, testSeconds: state.fields.testSeconds, items: session.items.join("；"), recall, correctItems: correct.join("；"), correctCount: correct.length, accuracy, reactionTime, puzzleHits: session.puzzleHits, puzzleAttempts: session.puzzleAttempts, headband, scoreTotal: getScoreTotal(), createdAt: new Date().toLocaleString() };
+      state.records.push(record);
+      saveState();
+      const finished = session;
+      session = null;
+      exitFocusMode();
+      updateGameUi();
+      alert(`${finished.strategy} 已保存，回忆率 ${accuracy}%。`);
+    }
+    function scoreRecall(responses, items) {
+      const normalized = responses.join(" ").toLowerCase().replace(/\s+/g,"");
+      return items.filter((item)=>{
+        const key = item.toLowerCase().split(/[ /（(]/)[0].replace(/\s+/g,"");
+        return key && normalized.includes(key);
+      });
+    }
+    function updateGameUi(totalSeconds) {
+      const status = document.getElementById("phaseStatus");
+      if (!status) return;
+      const log = document.getElementById("gameLogBody");
+      if (!session) {
+        status.textContent = "请选择阶段并开始";
+        document.getElementById("phaseStat").textContent = "--";
+        document.getElementById("timeStat").textContent = "--";
+        const latest = state.records[state.records.length - 1];
+        document.getElementById("correctStat").textContent = latest ? latest.correctCount : "0";
+        document.getElementById("accuracyStat").textContent = latest ? `${latest.accuracy}%` : "0%";
+      } else {
+        const phaseNames = { memory: "记忆", puzzle: "找不同", recall: "测试" };
+        status.textContent = `${phaseNames[session.phase]}阶段：${session.strategy}`;
+        document.getElementById("phaseStat").textContent = phaseNames[session.phase];
+        if (totalSeconds) document.getElementById("timeStat").textContent = `${totalSeconds}s`;
+      }
+      log.innerHTML = state.records.length ? state.records.slice().reverse().map((r)=>`<tr><td>${r.stage}</td><td>${escapeHtml(r.strategy)}</td><td>${r.correctCount}/${r.itemCount}</td><td><span class="tag">${r.accuracy}%</span></td></tr>`).join("") : `<tr><td colspan="4">暂无记录</td></tr>`;
+    }
+    async function enterFocusMode() { document.body.classList.add("is-focus-mode"); try { if (!document.fullscreenElement && document.documentElement.requestFullscreen) await document.documentElement.requestFullscreen(); } catch (event) {} }
+    async function exitFocusMode() { document.body.classList.remove("is-focus-mode"); try { if (document.fullscreenElement && document.exitFullscreen) await document.exitFullscreen(); } catch (event) {} }
+    function clamp(value, min, max, fallback) { const number = Number(value); if (!Number.isFinite(number)) return fallback; return Math.min(max, Math.max(min, number)); }
+    function getScoreTotal() { return Number(state.fields.scoreAccuracy||0)+Number(state.fields.scoreUse||0)+Number(state.fields.scoreConfidence||0)+Number(state.fields.scoreTransfer||0); }
+    function summarizeRecords() {
+      const groups = new Map();
+      state.records.forEach((r)=>{ if (!groups.has(r.strategy)) groups.set(r.strategy,{strategy:r.strategy,count:0,correct:0,accuracy:0,rt:0}); const g=groups.get(r.strategy); g.count+=1; g.correct+=Number(r.correctCount)||0; g.accuracy+=Number(r.accuracy)||0; g.rt+=Number(r.reactionTime)||0; });
+      return Array.from(groups.values()).map((g)=>({strategy:g.strategy,count:g.count,avgCorrect:g.count?Number((g.correct/g.count).toFixed(1)):0,avgAccuracy:g.count?Math.round(g.accuracy/g.count):0,avgRt:g.count?Math.round(g.rt/g.count):0}));
+    }
+    function exportExcel() {
+      const summary = summarizeRecords();
+      const sheets = [
+        ["基本信息", [["项目","内容"],["实验","改善长时记忆的策略有哪些"],["学生编号",state.studentId],["小组编号",state.groupId],["导出时间",new Date().toLocaleString()]]],
+        ["探究填写内容", [["字段","内容"],["研究问题",state.fields.question],["策略1假设",state.fields.hypothesis1],["策略2假设",state.fields.hypothesis2],["策略1",state.fields.strategy1],["策略2",state.fields.strategy2],["材料类型",state.fields.materialType],["初级数量",state.fields.lowCount],["中级数量",state.fields.midCount],["高级数量",state.fields.highCount],["记忆时间s",state.fields.memorySeconds],["找不同时间s",state.fields.puzzleSeconds],["测试时间s",state.fields.testSeconds],["组长",state.fields.leader],["记录员",state.fields.recorder],["组员A",state.fields.memberA],["组员B",state.fields.memberB],["头环观察",state.fields.headband],["结论",state.fields.conclusion],["设计改进",state.fields.designImprove],["结果意外原因",state.fields.surprise],["适用性反思",state.fields.applicability]]],
+        ["测试明细", [["学生编号","小组编号","阶段","策略","材料类型","题目总数","记忆时间s","找不同时间s","测试时间s","题目","学生回答","正确项目","正确数","回忆率","找不同命中","找不同点击","反应时ms","头环观察","评分总分","记录时间"], ...state.records.map((r)=>[r.studentId,r.groupId,r.stage,r.strategy,r.materialType,r.itemCount,r.memorySeconds,r.puzzleSeconds,r.testSeconds,r.items,r.recall,r.correctItems,r.correctCount,`${r.accuracy}%`,r.puzzleHits || 0,r.puzzleAttempts || 0,r.reactionTime,r.headband,r.scoreTotal,r.createdAt])]],
+        ["策略汇总", [["策略","次数","平均正确数","平均回忆率","平均反应时ms"], ...summary.map((item)=>[item.strategy,item.count,item.avgCorrect,`${item.avgAccuracy}%`,item.avgRt])],
+        ],
+        ["评分表", [["评分维度","得分"],["答案准确性",state.fields.scoreAccuracy],["策略利用率",state.fields.scoreUse],["记忆信心度",state.fields.scoreConfidence],["策略迁移性",state.fields.scoreTransfer],["总分",getScoreTotal()]]],
+        ...getSurveySheets()
+      ];
+      const html = `<html><head><meta charset="utf-8"></head><body>${sheets.map(([title,rows])=>`<h2>${escapeHtml(title)}</h2><table border="1">${rows.map((row)=>`<tr>${row.map((cell)=>`<td>${escapeHtml(cell)}</td>`).join("")}</tr>`).join("")}</table><br>`).join("")}</body></html>`;
+      const blob = new Blob(["\ufeff", html], { type: "application/vnd.ms-excel;charset=utf-8" });
+      const url = URL.createObjectURL(blob);
+      const link = document.createElement("a");
+      link.href = url;
+      link.download = `长时记忆策略_${state.groupId}_${state.studentId}.xls`;
+      document.body.appendChild(link);
+      link.click();
+      document.body.removeChild(link);
+      URL.revokeObjectURL(url);
+    }
+    document.getElementById("homeBtn").addEventListener("click",()=>{ location.href = "index.html"; });
+    document.getElementById("exportBtn").addEventListener("click", exportExcel);
+    document.getElementById("resetBtn").addEventListener("click",()=>{ if (!confirm("确定要清空本实验在当前浏览器中保存的数据吗？")) return; localStorage.removeItem(STORAGE_KEY); state = loadState(); session = null; clearTimers(); renderApp(); });
+    renderApp();
+  </script>
+</body>
+</html>

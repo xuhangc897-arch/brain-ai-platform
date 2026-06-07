@@ -1,0 +1,943 @@
+<!doctype html>
+<html lang="zh-CN">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>脑育智能体学习平台</title>
+  <style>
+    :root {
+      --bg: #eef4ff;
+      --panel: rgba(255, 255, 255, 0.72);
+      --panel-strong: rgba(255, 255, 255, 0.9);
+      --ink: #142033;
+      --muted: #667085;
+      --line: rgba(111, 133, 170, 0.2);
+      --primary: #4f7cff;
+      --primary-dark: #315fe4;
+      --primary-soft: rgba(79, 124, 255, 0.12);
+      --mint: #7fd1ae;
+      --mint-dark: #2f9f79;
+      --warning: #f7b955;
+      --shadow: 0 24px 70px rgba(52, 79, 135, 0.14);
+      --soft-shadow: 0 14px 40px rgba(52, 79, 135, 0.1);
+      font-family: "Microsoft YaHei", "PingFang SC", "Segoe UI", Arial, sans-serif;
+    }
+
+    * { box-sizing: border-box; }
+
+    html {
+      scroll-behavior: smooth;
+    }
+
+    body {
+      margin: 0;
+      min-height: 100vh;
+      color: var(--ink);
+      line-height: 1.6;
+      background:
+        radial-gradient(circle at 12% 10%, rgba(127, 209, 174, 0.35), transparent 32%),
+        radial-gradient(circle at 88% 8%, rgba(79, 124, 255, 0.26), transparent 34%),
+        linear-gradient(135deg, #f8fbff 0%, #eef4ff 45%, #f5fbff 100%);
+      overflow-x: hidden;
+    }
+
+    body::before {
+      content: "";
+      position: fixed;
+      inset: 0;
+      pointer-events: none;
+      background-image:
+        linear-gradient(rgba(79, 124, 255, 0.05) 1px, transparent 1px),
+        linear-gradient(90deg, rgba(79, 124, 255, 0.05) 1px, transparent 1px);
+      background-size: 42px 42px;
+      mask-image: linear-gradient(to bottom, rgba(0, 0, 0, 0.7), transparent 70%);
+    }
+
+    button,
+    input {
+      font: inherit;
+    }
+
+    button {
+      border: 0;
+    }
+
+    .page {
+      width: min(1220px, calc(100% - 36px));
+      margin: 0 auto;
+      padding: 36px 0 48px;
+    }
+
+    .hero {
+      position: relative;
+      display: grid;
+      grid-template-columns: minmax(0, 1.05fr) minmax(360px, 0.95fr);
+      gap: 24px;
+      align-items: stretch;
+    }
+
+    .hero-panel,
+    .identity-panel,
+    .module-card,
+    .experiment-card {
+      border: 1px solid var(--line);
+      background: var(--panel);
+      box-shadow: var(--shadow);
+      backdrop-filter: blur(18px);
+      -webkit-backdrop-filter: blur(18px);
+      border-radius: 24px;
+    }
+
+    .hero-panel {
+      position: relative;
+      min-height: 520px;
+      padding: 38px;
+      overflow: hidden;
+      isolation: isolate;
+    }
+
+    .hero-panel::before,
+    .hero-panel::after {
+      content: "";
+      position: absolute;
+      pointer-events: none;
+      z-index: -1;
+    }
+
+    .hero-panel::before {
+      inset: -1px;
+      background:
+        radial-gradient(circle at 22% 18%, rgba(183, 196, 255, 0.28), transparent 30%),
+        radial-gradient(circle at 76% 26%, rgba(127, 209, 174, 0.26), transparent 28%),
+        linear-gradient(135deg, rgba(255, 255, 255, 0.64), rgba(255, 255, 255, 0.28));
+    }
+
+    .hero-panel::after {
+      right: -90px;
+      bottom: -120px;
+      width: 420px;
+      height: 420px;
+      border-radius: 50%;
+      background:
+        radial-gradient(circle at 50% 50%, rgba(111, 139, 255, 0.2), transparent 56%),
+        radial-gradient(circle at 34% 34%, rgba(127, 209, 174, 0.16), transparent 62%);
+      animation: auraFloat 11s ease-in-out infinite alternate;
+    }
+
+    .eyebrow {
+      display: inline-flex;
+      align-items: center;
+      gap: 8px;
+      width: fit-content;
+      margin-bottom: 22px;
+      padding: 8px 12px;
+      border: 1px solid rgba(79, 124, 255, 0.16);
+      border-radius: 999px;
+      background: rgba(255, 255, 255, 0.72);
+      color: var(--primary-dark);
+      font-size: 13px;
+      font-weight: 700;
+    }
+
+    .pulse {
+      width: 8px;
+      height: 8px;
+      border-radius: 999px;
+      background: var(--mint);
+      box-shadow: 0 0 0 6px rgba(127, 209, 174, 0.18);
+    }
+
+    .hero h1 {
+      position: relative;
+      z-index: 1;
+      max-width: 720px;
+      margin: 0;
+      font-size: clamp(38px, 6vw, 68px);
+      line-height: 1.05;
+      letter-spacing: 0;
+      font-weight: 650;
+    }
+
+    .title-main {
+      display: block;
+      color: #101828;
+      text-shadow: 0 18px 44px rgba(79, 124, 255, 0.08);
+    }
+
+    .gradient-text {
+      display: inline-block;
+      background: linear-gradient(110deg, #4f7cff 0%, #7b61ff 32%, #42b8ff 62%, #56c89c 100%);
+      background-size: 220% 100%;
+      -webkit-background-clip: text;
+      background-clip: text;
+      color: transparent;
+      animation: titleSheen 9s ease-in-out infinite alternate;
+    }
+
+    .lab-strip {
+      position: relative;
+      z-index: 1;
+      display: flex;
+      align-items: center;
+      gap: 12px;
+      width: fit-content;
+      margin-top: 18px;
+      padding: 10px 14px;
+      border: 1px solid rgba(79, 124, 255, 0.14);
+      border-radius: 18px;
+      background: rgba(255, 255, 255, 0.58);
+      color: #526074;
+      box-shadow: 0 12px 32px rgba(52, 79, 135, 0.08);
+      font-size: 13px;
+      font-weight: 800;
+      letter-spacing: 0;
+    }
+
+    .lab-strip span {
+      color: var(--primary-dark);
+    }
+
+    .data-orbit {
+      position: absolute;
+      right: 38px;
+      top: 38px;
+      width: 164px;
+      height: 164px;
+      border: 1px solid rgba(79, 124, 255, 0.13);
+      border-radius: 999px;
+      opacity: 0.9;
+      animation: orbitDrift 14s ease-in-out infinite alternate;
+    }
+
+    .data-orbit::before,
+    .data-orbit::after {
+      content: "";
+      position: absolute;
+      border-radius: 999px;
+      background: rgba(79, 124, 255, 0.78);
+      box-shadow: 0 0 18px rgba(79, 124, 255, 0.26);
+    }
+
+    .data-orbit::before {
+      width: 9px;
+      height: 9px;
+      left: 18px;
+      top: 28px;
+    }
+
+    .data-orbit::after {
+      width: 7px;
+      height: 7px;
+      right: 26px;
+      bottom: 34px;
+      background: var(--mint);
+      box-shadow: 0 0 18px rgba(127, 209, 174, 0.32);
+    }
+
+    .data-stream {
+      position: absolute;
+      right: 58px;
+      top: 76px;
+      width: 118px;
+      height: 70px;
+      border-radius: 18px;
+      background:
+        linear-gradient(90deg, rgba(79, 124, 255, 0.16) 0 26%, transparent 26% 38%, rgba(127, 209, 174, 0.2) 38% 68%, transparent 68%),
+        linear-gradient(180deg, transparent 0 28%, rgba(79, 124, 255, 0.18) 28% 31%, transparent 31% 64%, rgba(127, 209, 174, 0.2) 64% 67%, transparent 67%);
+      filter: blur(0.2px);
+      opacity: 0.75;
+      animation: dataPulse 5.8s ease-in-out infinite;
+    }
+
+    .hero-copy {
+      max-width: 660px;
+      margin: 22px 0 0;
+      color: #4b5873;
+      font-size: 17px;
+    }
+
+    .status-row {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 10px;
+      margin-top: 28px;
+    }
+
+    .status {
+      display: inline-flex;
+      align-items: center;
+      gap: 8px;
+      padding: 9px 12px;
+      border: 1px solid rgba(79, 124, 255, 0.14);
+      border-radius: 999px;
+      background: rgba(255, 255, 255, 0.68);
+      color: #43516d;
+      font-size: 13px;
+      font-weight: 700;
+      transition: transform 180ms ease, box-shadow 180ms ease, border-color 180ms ease;
+    }
+
+    .status:hover {
+      transform: translateY(-2px);
+      border-color: rgba(79, 124, 255, 0.24);
+      box-shadow: 0 12px 28px rgba(52, 79, 135, 0.1);
+    }
+
+    .status-dot {
+      width: 7px;
+      height: 7px;
+      border-radius: 999px;
+      background: var(--primary);
+    }
+
+    .hero-metrics {
+      position: relative;
+      z-index: 1;
+      display: grid;
+      grid-template-columns: repeat(3, 1fr);
+      gap: 12px;
+      margin-top: 42px;
+      max-width: 600px;
+    }
+
+    .hero-panel,
+    .identity-panel {
+      animation: fadeUp 620ms ease both;
+    }
+
+    .identity-panel {
+      animation-delay: 90ms;
+    }
+
+    @keyframes titleSheen {
+      0% { background-position: 0% 50%; }
+      100% { background-position: 100% 50%; }
+    }
+
+    @keyframes auraFloat {
+      0% { transform: translate3d(0, 0, 0) scale(1); opacity: 0.84; }
+      100% { transform: translate3d(-26px, -18px, 0) scale(1.06); opacity: 1; }
+    }
+
+    @keyframes orbitDrift {
+      0% { transform: translate3d(0, 0, 0) rotate(0deg); }
+      100% { transform: translate3d(-10px, 8px, 0) rotate(10deg); }
+    }
+
+    @keyframes dataPulse {
+      0%, 100% { opacity: 0.52; transform: translateY(0); }
+      50% { opacity: 0.9; transform: translateY(-3px); }
+    }
+
+    @keyframes fadeUp {
+      0% { opacity: 0; transform: translateY(14px); }
+      100% { opacity: 1; transform: translateY(0); }
+    }
+
+    .metric {
+      padding: 16px;
+      border: 1px solid rgba(111, 133, 170, 0.16);
+      border-radius: 20px;
+      background: rgba(255, 255, 255, 0.64);
+    }
+
+    .metric b {
+      display: block;
+      font-size: 28px;
+      line-height: 1;
+      color: var(--primary-dark);
+      font-weight: 700;
+    }
+
+    .metric span {
+      display: block;
+      margin-top: 8px;
+      color: var(--muted);
+      font-size: 13px;
+      font-weight: 700;
+    }
+
+    .identity-panel {
+      display: flex;
+      flex-direction: column;
+      padding: 26px;
+      background: rgba(255, 255, 255, 0.82);
+    }
+
+    .panel-kicker {
+      margin: 0 0 6px;
+      color: var(--primary-dark);
+      font-size: 13px;
+      font-weight: 800;
+    }
+
+    .identity-panel h2 {
+      margin: 0;
+      font-size: 28px;
+      line-height: 1.22;
+      font-weight: 650;
+    }
+
+    .identity-panel > p {
+      margin: 10px 0 22px;
+      color: var(--muted);
+      font-size: 14px;
+    }
+
+    .identity {
+      display: grid;
+      gap: 14px;
+      margin-bottom: 18px;
+    }
+
+    label {
+      display: block;
+      margin-bottom: 8px;
+      color: #344054;
+      font-size: 14px;
+      font-weight: 700;
+    }
+
+    input {
+      width: 100%;
+      min-height: 48px;
+      border: 1px solid rgba(111, 133, 170, 0.22);
+      border-radius: 16px;
+      padding: 12px 14px;
+      outline: none;
+      background: rgba(255, 255, 255, 0.78);
+      color: var(--ink);
+      transition: border-color 180ms ease, box-shadow 180ms ease, background 180ms ease;
+    }
+
+    input:focus {
+      border-color: rgba(79, 124, 255, 0.55);
+      background: rgba(255, 255, 255, 0.96);
+      box-shadow: 0 0 0 5px rgba(79, 124, 255, 0.11);
+    }
+
+    .module-grid {
+      display: grid;
+      gap: 14px;
+      margin-top: 6px;
+    }
+
+    .module-card {
+      position: relative;
+      min-height: 190px;
+      padding: 20px;
+      background: rgba(255, 255, 255, 0.74);
+      box-shadow: var(--soft-shadow);
+      overflow: hidden;
+      transition: transform 180ms ease, box-shadow 180ms ease, border-color 180ms ease;
+    }
+
+    .module-card:hover,
+    .experiment-card:hover {
+      transform: translateY(-4px);
+      border-color: rgba(79, 124, 255, 0.34);
+      box-shadow: 0 24px 62px rgba(52, 79, 135, 0.16);
+    }
+
+    .module-head,
+    .experiment-head {
+      display: flex;
+      align-items: flex-start;
+      gap: 13px;
+    }
+
+    .icon-bubble {
+      display: grid;
+      place-items: center;
+      flex: 0 0 auto;
+      width: 44px;
+      height: 44px;
+      border-radius: 16px;
+      background: linear-gradient(135deg, rgba(79, 124, 255, 0.16), rgba(127, 209, 174, 0.2));
+      color: var(--primary-dark);
+      font-weight: 900;
+    }
+
+    .module-card h3,
+    .experiment-card h3 {
+      margin: 0;
+      font-size: 20px;
+      line-height: 1.25;
+      font-weight: 650;
+    }
+
+    .module-card p,
+    .experiment-card p {
+      margin: 10px 0 16px;
+      color: var(--muted);
+      font-size: 14px;
+    }
+
+    .badges {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 8px;
+      margin-bottom: 18px;
+    }
+
+    .badge {
+      padding: 6px 10px;
+      border-radius: 999px;
+      background: rgba(79, 124, 255, 0.1);
+      color: var(--primary-dark);
+      font-size: 12px;
+      font-weight: 800;
+    }
+
+    .badge.green {
+      background: rgba(127, 209, 174, 0.18);
+      color: #21785a;
+    }
+
+    .btn {
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      width: 100%;
+      min-height: 46px;
+      padding: 0 18px;
+      border-radius: 999px;
+      background: linear-gradient(135deg, var(--primary), #6aa1ff);
+      color: #fff;
+      cursor: pointer;
+      font-weight: 800;
+      box-shadow: 0 14px 24px rgba(79, 124, 255, 0.22);
+      transition: transform 160ms ease, box-shadow 160ms ease, filter 160ms ease;
+    }
+
+    .btn:hover {
+      transform: translateY(-1px);
+      box-shadow: 0 18px 30px rgba(79, 124, 255, 0.28);
+      filter: saturate(1.04);
+    }
+
+    .btn.secondary {
+      background: linear-gradient(135deg, var(--mint-dark), var(--mint));
+      box-shadow: 0 14px 24px rgba(47, 159, 121, 0.2);
+    }
+
+    .btn.ghost {
+      width: auto;
+      min-height: 40px;
+      padding: 0 16px;
+      background: rgba(255, 255, 255, 0.82);
+      color: var(--primary-dark);
+      box-shadow: none;
+      border: 1px solid rgba(79, 124, 255, 0.18);
+    }
+
+    .error {
+      min-height: 22px;
+      margin: 12px 0 0;
+      color: #dc2626;
+      font-size: 13px;
+      font-weight: 800;
+    }
+
+    .science-section {
+      display: none;
+      margin-top: 26px;
+      padding: 24px;
+      border: 1px solid var(--line);
+      border-radius: 24px;
+      background: rgba(255, 255, 255, 0.62);
+      backdrop-filter: blur(16px);
+      -webkit-backdrop-filter: blur(16px);
+      box-shadow: var(--soft-shadow);
+    }
+
+    .science-section.is-visible {
+      display: block;
+    }
+
+    .section-title {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 16px;
+      margin-bottom: 18px;
+    }
+
+    .section-title h2 {
+      margin: 0;
+      font-size: 28px;
+      line-height: 1.25;
+      font-weight: 650;
+    }
+
+    .section-title p {
+      margin: 6px 0 0;
+      color: var(--muted);
+      font-size: 14px;
+    }
+
+    .experiments {
+      display: grid;
+      grid-template-columns: repeat(4, 1fr);
+      gap: 14px;
+    }
+
+    .experiment-card {
+      display: flex;
+      flex-direction: column;
+      min-height: 300px;
+      padding: 18px;
+      background: rgba(255, 255, 255, 0.7);
+      box-shadow: var(--soft-shadow);
+      transition: transform 180ms ease, box-shadow 180ms ease, border-color 180ms ease;
+    }
+
+    .experiment-card .badges {
+      margin-top: auto;
+    }
+
+    .brand-footer {
+      position: relative;
+      width: min(720px, 100%);
+      margin: 26px auto 0;
+      padding: 20px 22px;
+      border: 1px solid var(--line);
+      border-radius: 24px;
+      background: rgba(255, 255, 255, 0.58);
+      box-shadow: var(--soft-shadow);
+      backdrop-filter: blur(16px);
+      -webkit-backdrop-filter: blur(16px);
+      text-align: center;
+      overflow: hidden;
+    }
+
+    .brand-footer::before {
+      content: "";
+      position: absolute;
+      top: 0;
+      left: 50%;
+      width: min(420px, 72%);
+      height: 1px;
+      transform: translateX(-50%);
+      background: linear-gradient(90deg, transparent, rgba(79, 124, 255, 0.58), rgba(127, 209, 174, 0.58), transparent);
+    }
+
+    .brand-footer::after {
+      content: "";
+      position: absolute;
+      top: 17px;
+      left: 22px;
+      width: 8px;
+      height: 8px;
+      border-radius: 999px;
+      background: var(--mint);
+      box-shadow:
+        0 0 0 6px rgba(127, 209, 174, 0.12),
+        calc(100vw - 90px) 6px 0 -1px rgba(79, 124, 255, 0.48);
+      opacity: 0.86;
+    }
+
+    .brand-footer p {
+      position: relative;
+      margin: 0;
+      z-index: 1;
+    }
+
+    .brand-credit {
+      color: #64748b;
+      font-size: 13px;
+      font-weight: 700;
+    }
+
+    .brand-credit strong {
+      background: linear-gradient(105deg, var(--primary), #7b61ff 48%, var(--mint-dark));
+      -webkit-background-clip: text;
+      background-clip: text;
+      color: transparent;
+      font-weight: 900;
+    }
+
+    .brand-slogan {
+      margin-top: 6px !important;
+      color: #8a96aa;
+      font-size: 12px;
+      font-weight: 700;
+      letter-spacing: 0;
+    }
+
+    @media (max-width: 1100px) {
+      .hero,
+      .experiments {
+        grid-template-columns: 1fr 1fr;
+      }
+    }
+
+    @media (max-width: 760px) {
+      .page {
+        width: min(100% - 24px, 1220px);
+        padding: 18px 0 30px;
+      }
+
+      .hero,
+      .hero-metrics,
+      .experiments {
+        grid-template-columns: 1fr;
+      }
+
+      .hero-panel {
+        min-height: auto;
+        padding: 26px;
+      }
+
+      .data-orbit,
+      .data-stream {
+        display: none;
+      }
+
+      .identity-panel,
+      .science-section {
+        padding: 20px;
+      }
+
+      .section-title {
+        align-items: flex-start;
+        flex-direction: column;
+      }
+
+      .brand-footer {
+        margin-top: 18px;
+        padding: 18px 16px;
+      }
+    }
+
+    @media (prefers-reduced-motion: reduce) {
+      *,
+      *::before,
+      *::after {
+        animation-duration: 0.001ms !important;
+        animation-iteration-count: 1 !important;
+        scroll-behavior: auto !important;
+        transition-duration: 0.001ms !important;
+      }
+    }
+  </style>
+</head>
+<body>
+  <main class="page">
+    <section class="hero">
+      <div class="hero-panel">
+        <div class="data-orbit" aria-hidden="true"></div>
+        <div class="data-stream" aria-hidden="true"></div>
+        <div class="eyebrow"><span class="pulse"></span>AI 教育实验平台</div>
+        <h1><span class="title-main">脑育智能体</span><span class="gradient-text">学习平台</span></h1>
+        <div class="lab-strip">AI learning lab <span>for memory science</span></div>
+        <p class="hero-copy">把记忆科学探究、课堂实验、海报交流和学习数据整理到同一个轻量平台中。学生专注完成任务，数据自动保存在本机浏览器。</p>
+
+        <div class="status-row" aria-label="平台状态">
+          <span class="status"><span class="status-dot"></span>AI 助手在线</span>
+          <span class="status"><span class="status-dot"></span>学习数据已保存</span>
+          <span class="status"><span class="status-dot"></span>实验进度自动记录</span>
+          <span class="status"><span class="status-dot"></span>离线可用</span>
+        </div>
+
+        <div class="hero-metrics">
+          <div class="metric"><b>2</b><span>学习模块</span></div>
+          <div class="metric"><b>4</b><span>科学探究实验</span></div>
+          <div class="metric"><b>1</b><span>统一身份</span></div>
+        </div>
+      </div>
+
+      <aside class="identity-panel">
+        <p class="panel-kicker">Start Learning</p>
+        <h2>输入身份，选择学习路径</h2>
+        <p>学生编号和小组编号会用于保存进度与导出 Excel，不会上传到网络。</p>
+
+        <div class="identity">
+          <div>
+            <label for="studentId">学生编号</label>
+            <input id="studentId" type="text" autocomplete="off" placeholder="例如：S01" />
+          </div>
+          <div>
+            <label for="groupId">小组编号</label>
+            <input id="groupId" type="text" autocomplete="off" placeholder="例如：第3组" />
+          </div>
+        </div>
+
+        <div class="module-grid">
+          <article class="module-card">
+            <div class="module-head">
+              <div class="icon-bubble">AI</div>
+              <div>
+                <h3>科学探究</h3>
+                <p>进入短时记忆、N-back、长时记忆干扰和记忆策略四个实验。</p>
+              </div>
+            </div>
+            <div class="badges">
+              <span class="badge">前后测</span>
+              <span class="badge">低干扰实验</span>
+              <span class="badge">Excel 导出</span>
+            </div>
+            <button class="btn" type="button" data-module="science">进入科学探究</button>
+          </article>
+
+          <article class="module-card">
+            <div class="module-head">
+              <div class="icon-bubble">画</div>
+              <div>
+                <h3>海报制作</h3>
+                <p>记录海报方案、制作分工、提问交流和同伴评分。</p>
+              </div>
+            </div>
+            <div class="badges">
+              <span class="badge green">海报方案</span>
+              <span class="badge green">同伴评分</span>
+              <span class="badge green">Excel 导出</span>
+            </div>
+            <button class="btn secondary" type="button" data-module="poster">进入海报制作</button>
+          </article>
+        </div>
+
+        <p id="error" class="error"></p>
+      </aside>
+    </section>
+
+    <section class="science-section" id="scienceSection">
+      <div class="section-title" id="scienceTitle">
+        <div>
+          <h2>科学探究实验</h2>
+          <p>选择本节课要进入的实验页面。每个实验都会继续保存进度、记录数据并支持导出。</p>
+        </div>
+        <button class="btn ghost" type="button" id="hideScience">收起实验列表</button>
+      </div>
+
+      <div class="experiments" id="experiments">
+        <article class="experiment-card">
+          <div class="experiment-head">
+            <div class="icon-bubble">01</div>
+            <div>
+              <h3>探究短时记忆的容量</h3>
+              <p>基于顺背法、倒背法测量数字或字母记忆广度，记录测试过程并计算平均容量。</p>
+            </div>
+          </div>
+          <div class="badges">
+            <span class="badge">短时记忆</span>
+            <span class="badge">顺背/倒背</span>
+            <span class="badge">网页游戏</span>
+          </div>
+          <button class="btn secondary" type="button" data-target="memory.html">进入实验一</button>
+        </article>
+
+        <article class="experiment-card">
+          <div class="experiment-head">
+            <div class="icon-bubble">02</div>
+            <div>
+              <h3>探秘神奇的 N-back</h3>
+              <p>支持数字/图形刺激、限时作答、漏答记录、统计汇总与导出。</p>
+            </div>
+          </div>
+          <div class="badges">
+            <span class="badge">工作记忆</span>
+            <span class="badge">N-back</span>
+            <span class="badge">限时作答</span>
+          </div>
+          <button class="btn" type="button" data-target="nback.html">进入实验二</button>
+        </article>
+
+        <article class="experiment-card">
+          <div class="experiment-head">
+            <div class="icon-bubble">03</div>
+            <div>
+              <h3>干扰长时记忆的因素</h3>
+              <p>围绕倒摄干扰、材料相似性和情绪状态设计实验，完成记忆、干扰、测试和分析。</p>
+            </div>
+          </div>
+          <div class="badges">
+            <span class="badge">长时记忆</span>
+            <span class="badge">干扰因素</span>
+            <span class="badge">低干扰测试</span>
+          </div>
+          <button class="btn secondary" type="button" data-target="interference.html">进入实验三</button>
+        </article>
+
+        <article class="experiment-card">
+          <div class="experiment-head">
+            <div class="icon-bubble">04</div>
+            <div>
+              <h3>改善长时记忆的策略</h3>
+              <p>比较简单复述与主动回忆、关联、可视化等策略，完成记忆测试和策略评分。</p>
+            </div>
+          </div>
+          <div class="badges">
+            <span class="badge">长时记忆</span>
+            <span class="badge">记忆策略</span>
+            <span class="badge">策略评分</span>
+          </div>
+          <button class="btn" type="button" data-target="strategies.html">进入实验四</button>
+        </article>
+      </div>
+    </section>
+
+    <footer class="brand-footer" aria-label="品牌署名">
+      <p class="brand-credit">由 <strong>ZJU BIElab</strong> 制作</p>
+      <p class="brand-slogan">揭秘大脑密码，塑造无限可能。</p>
+    </footer>
+  </main>
+
+  <script>
+    const CONTEXT_KEY = "science-inquiry-context-v1";
+    const studentInput = document.getElementById("studentId");
+    const groupInput = document.getElementById("groupId");
+    const error = document.getElementById("error");
+    const scienceSection = document.getElementById("scienceSection");
+
+    try {
+      const saved = JSON.parse(localStorage.getItem(CONTEXT_KEY) || "null");
+      if (saved) {
+        studentInput.value = saved.studentId || "";
+        groupInput.value = saved.groupId || "";
+      }
+    } catch (event) {
+      localStorage.removeItem(CONTEXT_KEY);
+    }
+
+    function saveIdentity() {
+      const studentId = studentInput.value.trim();
+      const groupId = groupInput.value.trim();
+      if (!studentId || !groupId) {
+        error.textContent = "请先填写学生编号和小组编号。";
+        return false;
+      }
+      error.textContent = "";
+      localStorage.setItem(CONTEXT_KEY, JSON.stringify({
+        studentId,
+        groupId,
+        savedAt: new Date().toISOString()
+      }));
+      return true;
+    }
+
+    document.querySelectorAll("[data-module]").forEach((button) => {
+      button.addEventListener("click", () => {
+        if (!saveIdentity()) return;
+        if (button.dataset.module === "science") {
+          scienceSection.classList.add("is-visible");
+          scienceSection.scrollIntoView({ behavior: "smooth", block: "start" });
+        } else {
+          window.location.href = "poster.html";
+        }
+      });
+    });
+
+    document.querySelectorAll("[data-target]").forEach((button) => {
+      button.addEventListener("click", () => {
+        if (!saveIdentity()) return;
+        window.location.href = button.dataset.target;
+      });
+    });
+
+    document.getElementById("hideScience").addEventListener("click", () => {
+      scienceSection.classList.remove("is-visible");
+    });
+  </script>
+</body>
+</html>
