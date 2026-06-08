@@ -71,6 +71,10 @@
   border-bottom: 1px solid rgba(126, 190, 255, 0.14);
 }
 
+.ai-heading {
+  min-width: 0;
+}
+
 .ai-title {
   margin: 0;
   font-size: 15px;
@@ -99,6 +103,51 @@
 .ai-close:hover {
   color: #fff;
   background: rgba(255, 255, 255, 0.1);
+}
+
+.ai-head-actions {
+  display: flex;
+  align-items: center;
+  justify-content: flex-end;
+  flex: 0 0 auto;
+  gap: 8px;
+}
+
+.ai-tool-btn {
+  appearance: none;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  height: 28px;
+  min-height: 28px;
+  padding: 0 10px;
+  border: 1px solid rgba(126, 190, 255, 0.18);
+  border-radius: 999px;
+  background: rgba(255, 255, 255, 0.075);
+  color: rgba(237, 246, 255, 0.78);
+  font: inherit;
+  font-size: 12px;
+  font-weight: 600;
+  line-height: 1;
+  white-space: nowrap;
+  cursor: pointer;
+  transition: background 160ms ease, border-color 160ms ease, color 160ms ease, transform 160ms ease;
+}
+
+.ai-tool-btn:hover {
+  transform: translateY(-1px);
+  border-color: rgba(126, 210, 255, 0.34);
+  background: rgba(255, 255, 255, 0.11);
+  color: #fff;
+}
+
+.ai-tool-btn.danger {
+  color: rgba(255, 205, 210, 0.86);
+}
+
+.ai-tool-btn.danger:hover {
+  border-color: rgba(248, 113, 113, 0.34);
+  background: rgba(248, 113, 113, 0.12);
 }
 
 .ai-messages {
@@ -199,6 +248,22 @@
 
   .ai-assistant.is-open .ai-panel {
     grid-template-rows: auto minmax(220px, 52vh) auto;
+  }
+
+  .ai-head {
+    gap: 8px;
+    padding: 14px 12px 10px;
+  }
+
+  .ai-head-actions {
+    gap: 6px;
+  }
+
+  .ai-tool-btn {
+    height: 28px;
+    min-height: 28px;
+    padding: 0 8px;
+    font-size: 12px;
   }
 }
 
