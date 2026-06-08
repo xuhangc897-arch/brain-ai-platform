@@ -127,8 +127,15 @@
     }
   });
 
-  document.addEventListener("DOMContentLoaded", () => {
+  function initAssistant() {
+    if (document.querySelector(".ai-assistant")) return;
     document.body.appendChild(root);
     appendMessage("ai", "你好，我可以解释概念、提醒你看材料、帮你梳理思路，但不会直接替你写实验答案。");
-  });
+  }
+
+  if (document.readyState === "loading") {
+    document.addEventListener("DOMContentLoaded", initAssistant);
+  } else {
+    initAssistant();
+  }
 })();
