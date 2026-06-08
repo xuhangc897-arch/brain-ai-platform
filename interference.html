@@ -204,6 +204,7 @@
     @media (max-width: 760px) { .helper-grid { grid-template-columns: 1fr; } .case-card summary { align-items: flex-start; } }
 
   </style>
+  <link rel="stylesheet" href="assets/ai-assistant.css">
 </head>
 <body>
   <header class="topbar">
@@ -941,5 +942,6 @@
     document.getElementById("resetBtn").addEventListener("click",()=>{ if (!confirm("确定要清空本实验在当前浏览器中保存的数据吗？")) return; localStorage.removeItem(STORAGE_KEY); state = loadState(); session = null; clearTimers(); renderApp(); });
     renderApp();
   </script>
+  <script src="assets/ai-assistant.js" defer></script>
 </body>
 </html>

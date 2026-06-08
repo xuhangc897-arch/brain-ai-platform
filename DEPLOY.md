@@ -74,3 +74,76 @@ const EXTERNAL_EMOTION_VIDEOS = {
 ```
 
 如果暂未配置视频地址，第三实验在情绪视频阶段会提示联系教师配置视频链接或线下观看视频，其他流程仍可继续。
+
+## AI 助手后端部署
+
+本项目的网页主体仍然是 GitHub Pages 静态页面，但 AI 助手需要一个后端接口转发 OpenAI 请求，避免把 API Key 暴露在前端。
+
+### 1. 前端部署
+
+前端继续使用 GitHub Pages：
+
+```bash
+echo "No build required"
+```
+
+输出目录仍然是：
+
+```bash
+.
+```
+
+### 2. Vercel 后端部署
+
+项目中已经新增：
+
+```text
+api/chat.js
+.env.example
+```
+
+可以把整个仓库导入 Vercel，也可以只把包含 `api/chat.js` 的项目部署到 Vercel。Vercel 会自动把 `api/chat.js` 作为 Serverless Function。
+
+### 3. 设置 OpenAI API Key
+
+在 Vercel 项目中进入：
+
+```text
+Project Settings -> Environment Variables
+```
+
+新增环境变量：
+
+```text
+OPENAI_API_KEY=你的 OpenAI API Key
+```
+
+不要把真实 API Key 写入 GitHub 仓库。`.env.example` 只是示例文件，真实 `.env` 已经加入 `.gitignore`。
+
+### 4. 配置前端 AI_API_ENDPOINT
+
+Vercel 部署完成后，会得到类似下面的网址：
+
+```text
+https://your-project.vercel.app
+```
+
+打开 `assets/ai-assistant.js`，找到：
+
+```js
+const AI_API_ENDPOINT = "";
+```
+
+改成：
+
+```js
+const AI_API_ENDPOINT = "https://your-project.vercel.app/api/chat";
+```
+
+然后重新上传到 GitHub Pages。
+
+### 5. 本地和上线检查
+
+未配置 `AI_API_ENDPOINT` 时，网页右下角 AI 助手会提示“请先配置 AI 后端地址”。配置完成后，在任意页面点击右下角 `AI` 按钮并输入问题，即可调用 Vercel 后端。
+
+AI 助手的系统提示词已经限制为“启发式提示”，不会直接代写实验答案。
