@@ -220,11 +220,12 @@
       throw new Error(detail);
     }
 
-    if (!data.answer) {
-      console.error("[AI Assistant] missing answer field:", data);
-      throw new Error("后端没有返回 answer 字段。");
+    const answer = data.reply || data.answer;
+    if (!answer) {
+      console.error("[AI Assistant] missing reply field:", data);
+      throw new Error("后端没有返回 reply 字段。");
     }
-    return data.answer;
+    return answer;
   }
 
   function csvCell(value) {
