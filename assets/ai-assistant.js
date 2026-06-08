@@ -1,7 +1,7 @@
 (function () {
   "use strict";
 
-  const AI_API_ENDPOINT = "https://brain-ai-platform.vercel.app/api/chat";
+  const AI_API_ENDPOINT = "https://1441391469-5jm5srurlk.ap-shanghai.tencentscf.com";
   const CONTEXT_KEY = "science-inquiry-context-v1";
   const LOG_KEY = "aiChatLogs";
   const MAX_QUESTION_LENGTH = 500;
@@ -182,8 +182,8 @@
     if (!endpoint) {
       throw new Error("AI 接口地址未配置，请在 assets/ai-assistant.js 中填写 AI_API_ENDPOINT。");
     }
-    if (!/\/api\/chat(?:$|\?)/.test(endpoint)) {
-      console.warn("[AI Assistant] endpoint does not look like /api/chat:", endpoint);
+    if (!/^(https?:\/\/|\/)/.test(endpoint)) {
+      console.warn("[AI Assistant] endpoint should be an absolute URL or a root-relative path:", endpoint);
     }
 
     let response;
@@ -202,7 +202,7 @@
       });
     } catch (error) {
       console.error("[AI Assistant] fetch failed:", endpoint, error);
-      throw new Error("后端接口无法访问，请检查 Vercel 地址、网络或 CORS 配置。");
+      throw new Error("后端接口无法访问，请检查 AI 接口地址、网络或 CORS 配置。");
     }
 
     const data = await response.json().catch((error) => {
