@@ -1,5 +1,5 @@
+const DEEPSEEK_API_URL = "https://api.deepseek.com/chat/completions";
 const MODEL = "deepseek-chat";
-const DEEPSEEK_BASE_URL = "https://api.deepseek.com";
 const MAX_QUESTION_LENGTH = 500;
 
 function setCors(res) {
@@ -22,18 +22,34 @@ function parseBody(req) {
   return req.body || {};
 }
 
-function getDeepSeekError(error) {
-  const status = error && error.status ? `HTTP ${error.status}` : "未知状态";
-  const message = error && error.message ? clean(error.message, 180) : "未返回具体错误。";
-  return `DeepSeek 返回错误（${status}）：${message}`;
+function buildContext(body, question) {
+  const lines = [
+    `学生姓名：${clean(body.studentName, 80) || "未填写"}`,
+    `学生年龄：${clean(body.studentAge, 20) || "未填写"}`,
+    `学生编号：${clean(body.studentId, 80) || "未填写"}`,
+    `小组编号：${clean(body.groupId, 80) || "未填写"}`,
+    `当前页面：${clean(body.pageTitle) || "未知"}`,
+    `当前实验/模块：${clean(body.experimentName) || "未知"}`,
+    `当前阶段：${clean(body.currentStep) || "未知"}`,
+    `页面路径：${clean(body.path, 120) || "未知"}`,
+    `学生问题：${question}`
+  ];
+  return lines.join("\n");
 }
 
-function getOpenAIClient() {
-  const OpenAI = require("openai");
-  return new OpenAI({
-    apiKey: process.env.OPENAI_API_KEY,
-    baseURL: DEEPSEEK_BASE_URL
-  });
+async function readDeepSeekError(response) {
+  const raw = await response.text().catch(() => "");
+  if (!raw) return `DeepSeek 返回错误（HTTP ${response.status}）。`;
+
+  try {
+    const data = JSON.parse(raw);
+    const message = data && data.error && data.error.message
+      ? data.error.message
+      : raw;
+    return `DeepSeek 返回错误（HTTP ${response.status}）：${clean(message, 220)}`;
+  } catch (error) {
+    return `DeepSeek 返回错误（HTTP ${response.status}）：${clean(raw, 220)}`;
+  }
 }
 
 module.exports = async function handler(req, res) {
@@ -68,61 +84,45 @@ module.exports = async function handler(req, res) {
     return;
   }
 
-  const context = {
-    studentName: clean(body.studentName, 80),
-    studentAge: clean(body.studentAge, 20),
-    studentId: clean(body.studentId, 80),
-    groupId: clean(body.groupId, 80),
-    experimentName: clean(body.experimentName),
-    pageTitle: clean(body.pageTitle),
-    currentStep: clean(body.currentStep),
-    path: clean(body.path, 120)
-  };
-
-  const systemPrompt = [
-    "你是“脑育智能体学习平台”的科学探究学习助手。",
-    "你的职责是帮助中学生理解科学探究任务、阅读材料、实验变量、证据分析和反思表达。",
-    "你只提供提示、解释、检查清单和思考方向；不得直接代写研究问题、研究假设、实验结论、反思、问卷答案或本实验标准答案。",
-    "如果学生要求直接答案，请用启发式问题引导他们根据材料和数据独立完成。",
-    "回答要简短、清晰、温和，适合中学生理解；通常不超过 160 个中文字符，必要时用 2-4 条短要点。",
-    "你可以提醒学生回到当前实验阶段和阅读材料中寻找证据。"
-  ].join("\n");
-
-  const userPrompt = [
-    `学生姓名：${context.studentName || "未填写"}`,
-    `学生年龄：${context.studentAge || "未填写"}`,
-    `学生编号：${context.studentId || "未填写"}`,
-    `小组编号：${context.groupId || "未填写"}`,
-    `当前页面：${context.pageTitle || "未知"}`,
-    `当前实验/模块：${context.experimentName || "未知"}`,
-    `当前阶段：${context.currentStep || "未知"}`,
-    `页面路径：${context.path || "未知"}`,
-    `学生问题：${question}`
-  ].join("\n");
+  const systemPrompt = "你是一个科学探究学习助手。\n你只负责启发、提示和帮助学生梳理思路。\n不要直接给出实验答案。\n回答尽量简洁，控制在100字以内。";
 
   try {
-    const client = getOpenAIClient();
-    const completion = await client.chat.completions.create({
-      model: MODEL,
-      messages: [
-        { role: "system", content: systemPrompt },
-        { role: "user", content: userPrompt }
-      ],
-      max_tokens: 350,
-      temperature: 0.4
+    const response = await fetch(DEEPSEEK_API_URL, {
+      method: "POST",
+      headers: {
+        "Content-Type": "application/json",
+        Authorization: `Bearer ${process.env.OPENAI_API_KEY}`
+      },
+      body: JSON.stringify({
+        model: MODEL,
+        messages: [
+          { role: "system", content: systemPrompt },
+          { role: "user", content: buildContext(body, question) }
+        ],
+        max_tokens: 220,
+        temperature: 0.4
+      })
     });
 
-    const answer = completion && completion.choices && completion.choices[0] && completion.choices[0].message
-      ? clean(completion.choices[0].message.content, 1200)
+    if (!response.ok) {
+      sendJson(res, 502, { error: await readDeepSeekError(response) });
+      return;
+    }
+
+    const data = await response.json();
+    const reply = data && data.choices && data.choices[0] && data.choices[0].message
+      ? clean(data.choices[0].message.content, 1200)
       : "";
 
-    if (!answer) {
+    if (!reply) {
       sendJson(res, 502, { error: "DeepSeek 已响应，但没有返回可显示的文本。" });
       return;
     }
 
-    sendJson(res, 200, { answer });
+    sendJson(res, 200, { reply });
   } catch (error) {
-    sendJson(res, 500, { error: getDeepSeekError(error) });
+    sendJson(res, 500, {
+      error: `DeepSeek 接口请求失败：${clean(error && error.message ? error.message : "未知错误", 220)}`
+    });
   }
 };
