@@ -9,7 +9,18 @@
   const root = document.createElement("div");
   root.className = "ai-assistant";
   root.innerHTML = `
-    <button class="ai-toggle" type="button" aria-label="打开 AI 助手">AI</button>
+    <button class="ai-toggle" type="button" aria-label="打开 AI 助手">
+      <span class="ai-brain-wrap" aria-hidden="true">
+        <svg class="ai-brain-icon" viewBox="0 0 64 64" focusable="false">
+          <path class="ai-brain-fill" d="M23.6 49.8c-6.3-.7-11-5.5-11-11.8 0-2.6.8-5 2.2-7-1.3-5.8 2.4-11.5 8.2-12.3 2-4.1 6-6.6 10.6-6.6 5.7 0 10.5 3.9 11.6 9.3 4.6 1.5 7.8 5.7 7.8 10.8 0 5.3-3.5 9.8-8.3 11.1-1.7 4.1-5.7 7-10.5 7-1.7 0-3.4-.4-4.8-1.1-1.7.8-3.7 1.1-5.8.6Z"/>
+          <path d="M23.1 19.1c-1.4 2.5-1.3 5.8.5 8.3M34 12.4c-2.6 2.2-3.5 5.8-2.2 8.9M45 21.6c-3.4-.2-6.6 1.5-8.2 4.4M15.1 31.1c2.5-.7 5.3-.1 7.3 1.8M29.1 48.9c1.6-2.5 1.8-5.7.5-8.3M44.7 43.3c-.6-3.4-2.9-6-6-7.1M24.2 32.7c2.3-2.1 5.8-2.6 8.6-1.2" />
+          <circle cx="39.8" cy="31.9" r="2.1" />
+          <circle cx="23.8" cy="39.1" r="2" />
+        </svg>
+        <span class="ai-brain-mark">?</span>
+      </span>
+      <span class="ai-toggle-label">点击与 AI 对话</span>
+    </button>
     <section class="ai-panel" aria-label="AI 学习助手">
       <header class="ai-head">
         <div class="ai-heading">

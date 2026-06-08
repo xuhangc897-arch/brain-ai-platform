@@ -12,17 +12,20 @@
 }
 
 .ai-toggle {
-  width: 58px;
-  height: 58px;
+  display: inline-flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 5px;
+  width: 92px;
+  min-height: 92px;
+  padding: 8px 8px 9px;
   border: 1px solid rgba(126, 190, 255, 0.34);
-  border-radius: 999px;
+  border-radius: 24px;
   background:
-    radial-gradient(circle at 32% 24%, rgba(90, 215, 255, 0.42), transparent 38%),
+    radial-gradient(circle at 50% 18%, rgba(90, 215, 255, 0.32), transparent 44%),
     linear-gradient(145deg, rgba(12, 31, 62, 0.96), rgba(7, 17, 31, 0.96));
   color: #e8f7ff;
-  font-size: 18px;
-  font-weight: 700;
-  letter-spacing: 0.04em;
   box-shadow: 0 18px 48px rgba(2, 9, 22, 0.38), 0 0 28px rgba(90, 215, 255, 0.16);
   cursor: pointer;
   transition: transform 180ms ease, box-shadow 180ms ease, border-color 180ms ease;
@@ -30,15 +33,85 @@
 }
 
 .ai-toggle:hover {
-  transform: translateY(-2px);
+  transform: translateY(-2px) scale(1.02);
   border-color: rgba(126, 210, 255, 0.56);
   box-shadow: 0 22px 56px rgba(2, 9, 22, 0.44), 0 0 34px rgba(90, 215, 255, 0.22);
+}
+
+.ai-brain-wrap {
+  position: relative;
+  display: grid;
+  place-items: center;
+  width: 58px;
+  height: 58px;
+  border-radius: 20px;
+  background:
+    radial-gradient(circle at 34% 24%, rgba(255, 255, 255, 0.16), transparent 32%),
+    linear-gradient(145deg, rgba(90, 215, 255, 0.14), rgba(79, 140, 255, 0.08));
+  box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.13), 0 10px 26px rgba(7, 17, 31, 0.32);
+}
+
+.ai-brain-icon {
+  width: 52px;
+  height: 52px;
+  color: #9ee8ff;
+  filter: drop-shadow(0 8px 16px rgba(90, 215, 255, 0.18));
+}
+
+.ai-brain-icon .ai-brain-fill {
+  fill: rgba(90, 215, 255, 0.11);
+  stroke: rgba(178, 236, 255, 0.88);
+  stroke-width: 2;
+}
+
+.ai-brain-icon path:not(.ai-brain-fill),
+.ai-brain-icon circle {
+  fill: none;
+  stroke: currentColor;
+  stroke-width: 2.2;
+  stroke-linecap: round;
+  stroke-linejoin: round;
+}
+
+.ai-brain-icon circle {
+  fill: rgba(90, 215, 255, 0.46);
+  stroke-width: 1.7;
+}
+
+.ai-brain-mark {
+  position: absolute;
+  top: -3px;
+  right: -4px;
+  display: grid;
+  place-items: center;
+  width: 22px;
+  height: 22px;
+  border: 1px solid rgba(255, 255, 255, 0.56);
+  border-radius: 999px;
+  background: linear-gradient(135deg, #78e6ff, #4f8cff);
+  color: #06111f;
+  font-size: 14px;
+  font-weight: 750;
+  line-height: 1;
+  box-shadow: 0 8px 20px rgba(79, 140, 255, 0.28);
+  animation: aiQuestionFloat 2.8s ease-in-out infinite;
+}
+
+.ai-toggle-label {
+  max-width: 76px;
+  color: rgba(237, 246, 255, 0.86);
+  font-size: 12px;
+  font-weight: 600;
+  line-height: 1.18;
+  letter-spacing: 0.02em;
+  text-align: center;
+  white-space: nowrap;
 }
 
 .ai-panel {
   position: absolute;
   right: 0;
-  bottom: 74px;
+  bottom: 106px;
   display: none;
   width: min(372px, calc(100vw - 28px));
   overflow: hidden;
@@ -240,10 +313,48 @@
   to { opacity: 1; transform: translateY(0) scale(1); }
 }
 
+@keyframes aiQuestionFloat {
+  0%, 100% { transform: translateY(0); }
+  50% { transform: translateY(-2px); }
+}
+
 @media (max-width: 520px) {
   .ai-assistant {
     right: 12px;
     bottom: 12px;
+  }
+
+  .ai-toggle {
+    width: 82px;
+    min-height: 84px;
+    padding: 7px 7px 8px;
+    border-radius: 22px;
+  }
+
+  .ai-brain-wrap {
+    width: 50px;
+    height: 50px;
+    border-radius: 18px;
+  }
+
+  .ai-brain-icon {
+    width: 46px;
+    height: 46px;
+  }
+
+  .ai-brain-mark {
+    width: 20px;
+    height: 20px;
+    font-size: 13px;
+  }
+
+  .ai-toggle-label {
+    max-width: 68px;
+    font-size: 11px;
+  }
+
+  .ai-panel {
+    bottom: 98px;
   }
 
   .ai-assistant.is-open .ai-panel {
@@ -269,6 +380,7 @@
 
 @media (prefers-reduced-motion: reduce) {
   .ai-toggle,
+  .ai-brain-mark,
   .ai-assistant.is-open .ai-panel {
     animation: none !important;
   }
