@@ -27,6 +27,17 @@ function extractText(data) {
   return chunks.join("\n").trim();
 }
 
+function parseBody(req) {
+  if (typeof req.body === "string") return JSON.parse(req.body || "{}");
+  return req.body || {};
+}
+
+function getOpenAIError(data, status) {
+  const message = data && data.error && data.error.message ? data.error.message : "";
+  if (!message) return `OpenAI 返回错误（HTTP ${status}）。`;
+  return `OpenAI 返回错误（HTTP ${status}）：${clean(message, 180)}`;
+}
+
 module.exports = async function handler(req, res) {
   setCors(res);
 
@@ -36,17 +47,18 @@ module.exports = async function handler(req, res) {
   }
 
   if (req.method !== "POST") {
-    res.status(405).json({ error: "Only POST requests are supported." });
+    res.status(405).json({ error: "只支持 POST 请求。" });
     return;
   }
 
   let body;
   try {
-    body = typeof req.body === "string" ? JSON.parse(req.body || "{}") : (req.body || {});
+    body = parseBody(req);
   } catch (error) {
-    res.status(400).json({ error: "请求格式不正确。" });
+    res.status(400).json({ error: "请求格式不正确，请发送 JSON 数据。" });
     return;
   }
+
   const question = clean(body.question, MAX_QUESTION_LENGTH);
   if (!question) {
     res.status(400).json({ error: "请输入一个问题。" });
@@ -54,11 +66,15 @@ module.exports = async function handler(req, res) {
   }
 
   if (!process.env.OPENAI_API_KEY) {
-    res.status(500).json({ error: "AI 后端尚未配置 OPENAI_API_KEY。" });
+    res.status(500).json({ error: "API Key 未配置：请在 Vercel 环境变量中设置 OPENAI_API_KEY，并重新部署。" });
     return;
   }
 
   const context = {
+    studentName: clean(body.studentName, 80),
+    studentAge: clean(body.studentAge, 20),
+    studentId: clean(body.studentId, 80),
+    groupId: clean(body.groupId, 80),
     experimentName: clean(body.experimentName),
     pageTitle: clean(body.pageTitle),
     currentStep: clean(body.currentStep),
@@ -67,18 +83,21 @@ module.exports = async function handler(req, res) {
 
   const instructions = [
     "你是“脑育智能体学习平台”的科学探究学习助手。",
-    "你的目标是帮助学生理解材料、概念和科学探究流程。",
-    "你可以解释概念、提醒学生查看阅读材料、提示变量/证据/结论之间的关系、鼓励学生自己完成。",
-    "不要直接提供本实验的标准答案，不要代写研究问题、研究假设、实验结论、反思或问卷答案。",
-    "如果学生要求直接答案，请改用启发式问题或检查清单引导。",
-    "回答要简洁，通常不超过 160 个中文字；必要时使用 2-4 条短要点。",
-    "语气温和、清楚、适合中学生课堂学习。"
+    "你的职责是帮助中学生理解科学探究任务、阅读材料、实验变量、证据分析和反思表达。",
+    "你只提供提示、解释、检查清单和思考方向；不得直接代写研究问题、研究假设、实验结论、反思、问卷答案或本实验标准答案。",
+    "如果学生要求直接答案，请用启发式问题引导他们根据材料和数据独立完成。",
+    "回答要简短、清晰、温和，适合中学生理解；通常不超过 160 个中文字符，必要时用 2-4 条短要点。",
+    "你可以提醒学生回到当前实验阶段和阅读材料中寻找证据。"
   ].join("\n");
 
   const input = [
+    `学生姓名：${context.studentName || "未填写"}`,
+    `学生年龄：${context.studentAge || "未填写"}`,
+    `学生编号：${context.studentId || "未填写"}`,
+    `小组编号：${context.groupId || "未填写"}`,
     `当前页面：${context.pageTitle || "未知"}`,
     `当前实验/模块：${context.experimentName || "未知"}`,
-    `当前步骤：${context.currentStep || "未知"}`,
+    `当前阶段：${context.currentStep || "未知"}`,
     `页面路径：${context.path || "未知"}`,
     `学生问题：${question}`
   ].join("\n");
@@ -98,14 +117,20 @@ module.exports = async function handler(req, res) {
       })
     });
 
-    const data = await response.json();
+    const data = await response.json().catch(() => ({}));
     if (!response.ok) {
-      res.status(response.status).json({ error: "AI 助手暂时无法回答，请稍后再试。" });
+      res.status(response.status).json({ error: getOpenAIError(data, response.status) });
       return;
     }
 
-    res.status(200).json({ answer: extractText(data) || "我暂时没有生成有效回答。你可以换一种问法试试。" });
+    const answer = extractText(data);
+    if (!answer) {
+      res.status(502).json({ error: "OpenAI 已响应，但没有返回可显示的文本。" });
+      return;
+    }
+
+    res.status(200).json({ answer });
   } catch (error) {
-    res.status(500).json({ error: "AI 助手连接失败，请稍后再试。" });
+    res.status(500).json({ error: `后端接口无法访问 OpenAI：${clean(error.message || error, 160)}` });
   }
 };
