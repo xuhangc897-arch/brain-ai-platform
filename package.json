@@ -1,0 +1,8 @@
+{
+  "name": "brain-ai-platform",
+  "version": "1.0.0",
+  "private": true,
+  "dependencies": {
+    "openai": "^4.104.0"
+  }
+}
