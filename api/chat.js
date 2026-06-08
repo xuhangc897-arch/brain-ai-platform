@@ -1,5 +1,5 @@
-const OPENAI_RESPONSES_URL = "https://api.openai.com/v1/responses";
-const MODEL = "gpt-5-mini";
+const MODEL = "deepseek-chat";
+const DEEPSEEK_BASE_URL = "https://api.deepseek.com";
 const MAX_QUESTION_LENGTH = 500;
 
 function setCors(res) {
@@ -8,23 +8,13 @@ function setCors(res) {
   res.setHeader("Access-Control-Allow-Headers", "Content-Type");
 }
 
-function clean(value, maxLength = 240) {
-  return String(value || "").replace(/\s+/g, " ").trim().slice(0, maxLength);
+function sendJson(res, statusCode, payload) {
+  setCors(res);
+  res.status(statusCode).json(payload);
 }
 
-function extractText(data) {
-  if (typeof data.output_text === "string" && data.output_text.trim()) {
-    return data.output_text.trim();
-  }
-
-  const chunks = [];
-  for (const item of data.output || []) {
-    for (const content of item.content || []) {
-      if (content.type === "output_text" && content.text) chunks.push(content.text);
-      if (content.type === "text" && content.text) chunks.push(content.text);
-    }
-  }
-  return chunks.join("\n").trim();
+function clean(value, maxLength = 240) {
+  return String(value || "").replace(/\s+/g, " ").trim().slice(0, maxLength);
 }
 
 function parseBody(req) {
@@ -32,22 +22,30 @@ function parseBody(req) {
   return req.body || {};
 }
 
-function getOpenAIError(data, status) {
-  const message = data && data.error && data.error.message ? data.error.message : "";
-  if (!message) return `OpenAI 返回错误（HTTP ${status}）。`;
-  return `OpenAI 返回错误（HTTP ${status}）：${clean(message, 180)}`;
+function getDeepSeekError(error) {
+  const status = error && error.status ? `HTTP ${error.status}` : "未知状态";
+  const message = error && error.message ? clean(error.message, 180) : "未返回具体错误。";
+  return `DeepSeek 返回错误（${status}）：${message}`;
+}
+
+function getOpenAIClient() {
+  const OpenAI = require("openai");
+  return new OpenAI({
+    apiKey: process.env.OPENAI_API_KEY,
+    baseURL: DEEPSEEK_BASE_URL
+  });
 }
 
 module.exports = async function handler(req, res) {
   setCors(res);
 
   if (req.method === "OPTIONS") {
-    res.status(204).end();
+    res.status(200).end();
     return;
   }
 
   if (req.method !== "POST") {
-    res.status(405).json({ error: "只支持 POST 请求。" });
+    sendJson(res, 405, { error: "只支持 POST 请求。" });
     return;
   }
 
@@ -55,18 +53,18 @@ module.exports = async function handler(req, res) {
   try {
     body = parseBody(req);
   } catch (error) {
-    res.status(400).json({ error: "请求格式不正确，请发送 JSON 数据。" });
+    sendJson(res, 400, { error: "请求格式不正确，请发送 JSON 数据。" });
     return;
   }
 
   const question = clean(body.question, MAX_QUESTION_LENGTH);
   if (!question) {
-    res.status(400).json({ error: "请输入一个问题。" });
+    sendJson(res, 400, { error: "请输入一个问题。" });
     return;
   }
 
   if (!process.env.OPENAI_API_KEY) {
-    res.status(500).json({ error: "API Key 未配置：请在 Vercel 环境变量中设置 OPENAI_API_KEY，并重新部署。" });
+    sendJson(res, 500, { error: "OPENAI_API_KEY 未配置。" });
     return;
   }
 
@@ -81,7 +79,7 @@ module.exports = async function handler(req, res) {
     path: clean(body.path, 120)
   };
 
-  const instructions = [
+  const systemPrompt = [
     "你是“脑育智能体学习平台”的科学探究学习助手。",
     "你的职责是帮助中学生理解科学探究任务、阅读材料、实验变量、证据分析和反思表达。",
     "你只提供提示、解释、检查清单和思考方向；不得直接代写研究问题、研究假设、实验结论、反思、问卷答案或本实验标准答案。",
@@ -90,7 +88,7 @@ module.exports = async function handler(req, res) {
     "你可以提醒学生回到当前实验阶段和阅读材料中寻找证据。"
   ].join("\n");
 
-  const input = [
+  const userPrompt = [
     `学生姓名：${context.studentName || "未填写"}`,
     `学生年龄：${context.studentAge || "未填写"}`,
     `学生编号：${context.studentId || "未填写"}`,
@@ -103,34 +101,28 @@ module.exports = async function handler(req, res) {
   ].join("\n");
 
   try {
-    const response = await fetch(OPENAI_RESPONSES_URL, {
-      method: "POST",
-      headers: {
-        "Content-Type": "application/json",
-        "Authorization": `Bearer ${process.env.OPENAI_API_KEY}`
-      },
-      body: JSON.stringify({
-        model: MODEL,
-        instructions,
-        input,
-        max_output_tokens: 350
-      })
+    const client = getOpenAIClient();
+    const completion = await client.chat.completions.create({
+      model: MODEL,
+      messages: [
+        { role: "system", content: systemPrompt },
+        { role: "user", content: userPrompt }
+      ],
+      max_tokens: 350,
+      temperature: 0.4
     });
 
-    const data = await response.json().catch(() => ({}));
-    if (!response.ok) {
-      res.status(response.status).json({ error: getOpenAIError(data, response.status) });
-      return;
-    }
+    const answer = completion && completion.choices && completion.choices[0] && completion.choices[0].message
+      ? clean(completion.choices[0].message.content, 1200)
+      : "";
 
-    const answer = extractText(data);
     if (!answer) {
-      res.status(502).json({ error: "OpenAI 已响应，但没有返回可显示的文本。" });
+      sendJson(res, 502, { error: "DeepSeek 已响应，但没有返回可显示的文本。" });
       return;
     }
 
-    res.status(200).json({ answer });
+    sendJson(res, 200, { answer });
   } catch (error) {
-    res.status(500).json({ error: `后端接口无法访问 OpenAI：${clean(error.message || error, 160)}` });
+    sendJson(res, 500, { error: getDeepSeekError(error) });
   }
 };
