@@ -1,7 +1,7 @@
 (function () {
   "use strict";
 
-  const AI_API_ENDPOINT = "https://1441391469-5jm5srurlk.ap-shanghai.tencentscf.com";
+  const AI_API_ENDPOINT = "https://1441391469-9hgtvw28m0.ap-shanghai.tencentscf.com";
   const CONTEXT_KEY = "science-inquiry-context-v1";
   const LOG_KEY = "aiChatLogs";
   const MAX_QUESTION_LENGTH = 500;
