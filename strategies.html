@@ -298,6 +298,8 @@
     }
 
     const defaultState = {
+      studentName: "",
+      studentAge: "",
       studentId: "",
       groupId: "",
       currentStep: 0,
@@ -347,6 +349,8 @@
       try {
         const context = JSON.parse(localStorage.getItem(CONTEXT_KEY) || "null");
         if (context) {
+          merged.studentName = context.studentName || merged.studentName || "";
+          merged.studentAge = context.studentAge || merged.studentAge || "";
           merged.studentId = context.studentId || merged.studentId;
           merged.groupId = context.groupId || merged.groupId;
         }
@@ -378,7 +382,7 @@
         main.innerHTML = `<section class="panel"><div class="panel-head"><h2>需要先填写学生编号和小组编号</h2><p>请返回实验选择页录入身份信息后再进入实验。</p></div><div class="panel-body"><button class="btn" type="button" onclick="location.href='index.html'">返回实验选择</button></div></section>`;
         return;
       }
-      identityPill.textContent = `学生：${state.studentId}　小组：${state.groupId}`;
+      identityPill.textContent = `${state.studentName ? `姓名：${state.studentName}　` : ""}${state.studentAge ? `年龄：${state.studentAge}　` : ""}学生：${state.studentId}　小组：${state.groupId}`;
       normalizeCurrentStep();
       renderProgress();
       renderStep();
@@ -766,7 +770,7 @@
       const correct = scoreRecall(recallValues, session.items);
       const accuracy = session.items.length ? Math.round((correct.length / session.items.length) * 100) : 0;
       const reactionTime = Math.round(performance.now() - session.recallStartedAt);
-      const record = { runId: session.id, studentId: state.studentId, groupId: state.groupId, stage: session.stage, strategy: session.strategy, materialType: state.fields.materialType, itemCount: session.items.length, memorySeconds: state.fields.memorySeconds, puzzleSeconds: state.fields.puzzleSeconds, testSeconds: state.fields.testSeconds, items: session.items.join("；"), recall, correctItems: correct.join("；"), correctCount: correct.length, accuracy, reactionTime, puzzleHits: session.puzzleHits, puzzleAttempts: session.puzzleAttempts, headband, scoreTotal: getScoreTotal(), createdAt: new Date().toLocaleString() };
+      const record = { runId: session.id, studentName: state.studentName, studentAge: state.studentAge, studentId: state.studentId, groupId: state.groupId, stage: session.stage, strategy: session.strategy, materialType: state.fields.materialType, itemCount: session.items.length, memorySeconds: state.fields.memorySeconds, puzzleSeconds: state.fields.puzzleSeconds, testSeconds: state.fields.testSeconds, items: session.items.join("；"), recall, correctItems: correct.join("；"), correctCount: correct.length, accuracy, reactionTime, puzzleHits: session.puzzleHits, puzzleAttempts: session.puzzleAttempts, headband, scoreTotal: getScoreTotal(), createdAt: new Date().toLocaleString() };
       state.records.push(record);
       saveState();
       const finished = session;
@@ -813,9 +817,9 @@
     function exportExcel() {
       const summary = summarizeRecords();
       const sheets = [
-        ["基本信息", [["项目","内容"],["实验","改善长时记忆的策略有哪些"],["学生编号",state.studentId],["小组编号",state.groupId],["导出时间",new Date().toLocaleString()]]],
+        ["基本信息", [["项目","内容"],["实验","改善长时记忆的策略有哪些"],["学生姓名",state.studentName || ""],["学生年龄",state.studentAge || ""],["学生编号",state.studentId],["小组编号",state.groupId],["导出时间",new Date().toLocaleString()]]],
         ["探究填写内容", [["字段","内容"],["研究问题",state.fields.question],["策略1假设",state.fields.hypothesis1],["策略2假设",state.fields.hypothesis2],["策略1",state.fields.strategy1],["策略2",state.fields.strategy2],["材料类型",state.fields.materialType],["初级数量",state.fields.lowCount],["中级数量",state.fields.midCount],["高级数量",state.fields.highCount],["记忆时间s",state.fields.memorySeconds],["找不同时间s",state.fields.puzzleSeconds],["测试时间s",state.fields.testSeconds],["组长",state.fields.leader],["记录员",state.fields.recorder],["组员A",state.fields.memberA],["组员B",state.fields.memberB],["头环观察",state.fields.headband],["结论",state.fields.conclusion],["设计改进",state.fields.designImprove],["结果意外原因",state.fields.surprise],["适用性反思",state.fields.applicability]]],
-        ["测试明细", [["学生编号","小组编号","阶段","策略","材料类型","题目总数","记忆时间s","找不同时间s","测试时间s","题目","学生回答","正确项目","正确数","回忆率","找不同命中","找不同点击","反应时ms","头环观察","评分总分","记录时间"], ...state.records.map((r)=>[r.studentId,r.groupId,r.stage,r.strategy,r.materialType,r.itemCount,r.memorySeconds,r.puzzleSeconds,r.testSeconds,r.items,r.recall,r.correctItems,r.correctCount,`${r.accuracy}%`,r.puzzleHits || 0,r.puzzleAttempts || 0,r.reactionTime,r.headband,r.scoreTotal,r.createdAt])]],
+        ["测试明细", [["学生姓名","学生年龄","学生编号","小组编号","阶段","策略","材料类型","题目总数","记忆时间s","找不同时间s","测试时间s","题目","学生回答","正确项目","正确数","回忆率","找不同命中","找不同点击","反应时ms","头环观察","评分总分","记录时间"], ...state.records.map((r)=>[r.studentName || "",r.studentAge || "",r.studentId,r.groupId,r.stage,r.strategy,r.materialType,r.itemCount,r.memorySeconds,r.puzzleSeconds,r.testSeconds,r.items,r.recall,r.correctItems,r.correctCount,`${r.accuracy}%`,r.puzzleHits || 0,r.puzzleAttempts || 0,r.reactionTime,r.headband,r.scoreTotal,r.createdAt])]],
         ["策略汇总", [["策略","次数","平均正确数","平均回忆率","平均反应时ms"], ...summary.map((item)=>[item.strategy,item.count,item.avgCorrect,`${item.avgAccuracy}%`,item.avgRt])],
         ],
         ["评分表", [["评分维度","得分"],["答案准确性",state.fields.scoreAccuracy],["策略利用率",state.fields.scoreUse],["记忆信心度",state.fields.scoreConfidence],["策略迁移性",state.fields.scoreTransfer],["总分",getScoreTotal()]]],

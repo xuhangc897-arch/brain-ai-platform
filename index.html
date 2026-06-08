@@ -720,6 +720,879 @@
         transition-duration: 0.001ms !important;
       }
     }
+
+    /* Dark neuroscience + AI platform theme override */
+    :root {
+      --bg: #07111f;
+      --panel: rgba(9, 22, 43, 0.68);
+      --panel-strong: rgba(12, 28, 54, 0.84);
+      --ink: #edf6ff;
+      --muted: #9fb2ce;
+      --line: rgba(122, 174, 255, 0.18);
+      --primary: #4f8cff;
+      --primary-dark: #8eb8ff;
+      --primary-soft: rgba(79, 140, 255, 0.14);
+      --mint: #5ad7ff;
+      --mint-dark: #3bb8df;
+      --shadow: 0 28px 90px rgba(2, 9, 22, 0.42);
+      --soft-shadow: 0 18px 54px rgba(2, 9, 22, 0.32);
+      font-family: "PingFang SC", "Microsoft YaHei UI", "HarmonyOS Sans SC", "MiSans", "Microsoft YaHei", "Segoe UI", system-ui, sans-serif;
+    }
+
+    body {
+      color: var(--ink);
+      background:
+        radial-gradient(circle at 16% 10%, rgba(90, 215, 255, 0.18), transparent 28%),
+        radial-gradient(circle at 82% 18%, rgba(79, 140, 255, 0.22), transparent 32%),
+        radial-gradient(circle at 48% 92%, rgba(35, 81, 148, 0.24), transparent 38%),
+        linear-gradient(145deg, #07111f 0%, #0b1630 48%, #102a43 100%);
+      background-size: 160% 160%, 150% 150%, 180% 180%, 140% 140%;
+      animation: backgroundDrift 36s ease-in-out infinite alternate;
+    }
+
+    body::before {
+      opacity: 0.86;
+      background-image:
+        linear-gradient(rgba(90, 215, 255, 0.055) 1px, transparent 1px),
+        linear-gradient(90deg, rgba(90, 215, 255, 0.055) 1px, transparent 1px),
+        radial-gradient(circle, rgba(90, 215, 255, 0.18) 1px, transparent 1.7px);
+      background-size: 54px 54px, 54px 54px, 118px 118px;
+      mask-image: linear-gradient(to bottom, rgba(0, 0, 0, 0.9), transparent 82%);
+      animation: subtleGridDrift 42s linear infinite;
+    }
+
+    body::after {
+      content: "";
+      position: fixed;
+      inset: 0;
+      pointer-events: none;
+      background:
+        linear-gradient(115deg, transparent 0 18%, rgba(90, 215, 255, 0.08) 18.2%, transparent 18.6% 52%, rgba(79, 140, 255, 0.08) 52.2%, transparent 52.6%),
+        linear-gradient(34deg, transparent 0 28%, rgba(90, 215, 255, 0.055) 28.2%, transparent 28.55% 72%, rgba(79, 140, 255, 0.05) 72.2%, transparent 72.55%);
+      opacity: 0.55;
+      animation: softBeamMove 28s ease-in-out infinite alternate;
+    }
+
+    .page {
+      width: min(1180px, calc(100% - 40px));
+      padding: 46px 0 54px;
+    }
+
+    .hero {
+      grid-template-columns: 1fr;
+      gap: 22px;
+    }
+
+    .hero-panel,
+    .identity-panel,
+    .module-card,
+    .experiment-card,
+    .science-section,
+    .brand-footer {
+      border-color: var(--line);
+      background:
+        linear-gradient(145deg, rgba(13, 31, 60, 0.76), rgba(7, 17, 31, 0.56));
+      box-shadow: var(--shadow), inset 0 1px 0 rgba(255, 255, 255, 0.06);
+      backdrop-filter: blur(22px);
+      -webkit-backdrop-filter: blur(22px);
+    }
+
+    .hero-panel {
+      min-height: 440px;
+      padding: clamp(30px, 6vw, 64px);
+    }
+
+    .hero-panel::before {
+      background:
+        radial-gradient(circle at 18% 16%, rgba(90, 215, 255, 0.22), transparent 28%),
+        radial-gradient(circle at 82% 30%, rgba(79, 140, 255, 0.2), transparent 30%),
+        linear-gradient(135deg, rgba(255, 255, 255, 0.06), rgba(255, 255, 255, 0.015));
+    }
+
+    .hero-panel::after {
+      right: -120px;
+      bottom: -160px;
+      width: 520px;
+      height: 520px;
+      background:
+        radial-gradient(circle at 50% 50%, rgba(90, 215, 255, 0.16), transparent 58%),
+        radial-gradient(circle at 35% 35%, rgba(79, 140, 255, 0.14), transparent 64%);
+    }
+
+    .eyebrow,
+    .lab-strip,
+    .status,
+    .metric,
+    .badge,
+    .btn.ghost {
+      border-color: rgba(122, 174, 255, 0.2);
+      background: rgba(8, 21, 41, 0.54);
+      color: #c9dcf8;
+    }
+
+    .eyebrow {
+      color: #bfeeff;
+    }
+
+    .pulse,
+    .status-dot {
+      background: var(--mint);
+      box-shadow: 0 0 0 6px rgba(90, 215, 255, 0.12), 0 0 18px rgba(90, 215, 255, 0.54);
+    }
+
+    .hero h1 {
+      max-width: 900px;
+      font-size: clamp(42px, 7vw, 86px);
+      font-weight: 560;
+      letter-spacing: 0.02em;
+    }
+
+    .title-main {
+      color: #f4f9ff;
+      text-shadow: 0 24px 70px rgba(79, 140, 255, 0.22);
+    }
+
+    .gradient-text {
+      background: linear-gradient(110deg, #f6fbff 0%, #8dc0ff 34%, #5ad7ff 72%, #dff7ff 100%);
+      background-size: 210% 100%;
+    }
+
+    .lab-strip {
+      margin-top: 20px;
+      color: #d4edff;
+      font-size: 15px;
+      box-shadow: 0 14px 36px rgba(2, 9, 22, 0.24);
+    }
+
+    .hero-copy {
+      max-width: 760px;
+      color: #aebfd6;
+      font-size: 18px;
+    }
+
+    .status {
+      color: #b9cbe5;
+    }
+
+    .data-orbit {
+      border-color: rgba(90, 215, 255, 0.18);
+      box-shadow: inset 0 0 28px rgba(79, 140, 255, 0.08);
+    }
+
+    .data-orbit::before,
+    .data-orbit::after {
+      background: #5ad7ff;
+      box-shadow: 0 0 22px rgba(90, 215, 255, 0.74);
+    }
+
+    .data-stream {
+      background:
+        linear-gradient(90deg, rgba(90, 215, 255, 0.22) 0 26%, transparent 26% 38%, rgba(79, 140, 255, 0.18) 38% 68%, transparent 68%),
+        linear-gradient(180deg, transparent 0 28%, rgba(90, 215, 255, 0.16) 28% 31%, transparent 31% 64%, rgba(79, 140, 255, 0.17) 64% 67%, transparent 67%);
+    }
+
+    .hero-metrics {
+      max-width: 640px;
+    }
+
+    .metric {
+      background: rgba(8, 21, 41, 0.48);
+    }
+
+    .metric b {
+      color: #9bdfff;
+      font-weight: 650;
+    }
+
+    .metric span,
+    .identity-panel > p,
+    .module-card p,
+    .experiment-card p,
+    .section-title p,
+    .brand-credit,
+    .brand-slogan {
+      color: var(--muted);
+    }
+
+    .identity-panel {
+      width: min(720px, 100%);
+      margin: 0 auto;
+      padding: 28px;
+    }
+
+    .panel-kicker {
+      color: #8bdfff;
+      letter-spacing: 0.08em;
+      text-transform: uppercase;
+    }
+
+    .identity-panel h2,
+    .section-title h2,
+    .module-card h3,
+    .experiment-card h3 {
+      color: #f3f8ff;
+      font-weight: 560;
+    }
+
+    label {
+      color: #dbeaff;
+    }
+
+    input {
+      border-color: rgba(122, 174, 255, 0.22);
+      background: rgba(5, 14, 28, 0.54);
+      color: #f5fbff;
+    }
+
+    input::placeholder {
+      color: rgba(185, 203, 229, 0.58);
+    }
+
+    input:focus {
+      border-color: rgba(90, 215, 255, 0.62);
+      background: rgba(6, 18, 36, 0.72);
+      box-shadow: 0 0 0 5px rgba(90, 215, 255, 0.11), 0 0 26px rgba(79, 140, 255, 0.18);
+    }
+
+    .module-card,
+    .experiment-card {
+      background:
+        linear-gradient(145deg, rgba(13, 31, 60, 0.82), rgba(8, 20, 39, 0.66));
+    }
+
+    .module-card:hover,
+    .experiment-card:hover {
+      border-color: rgba(90, 215, 255, 0.42);
+      box-shadow: 0 26px 74px rgba(2, 9, 22, 0.44), 0 0 34px rgba(79, 140, 255, 0.16);
+    }
+
+    .icon-bubble {
+      background: linear-gradient(135deg, rgba(79, 140, 255, 0.24), rgba(90, 215, 255, 0.18));
+      color: #ccefff;
+      box-shadow: inset 0 0 18px rgba(90, 215, 255, 0.1);
+    }
+
+    .badge {
+      color: #bfe6ff;
+      background: rgba(79, 140, 255, 0.13);
+    }
+
+    .badge.green {
+      color: #c4f4ff;
+      background: rgba(90, 215, 255, 0.13);
+    }
+
+    .btn {
+      background: linear-gradient(135deg, #1d4fd8, #4f8cff 52%, #5ad7ff);
+      box-shadow: 0 16px 34px rgba(79, 140, 255, 0.25);
+    }
+
+    .btn:hover {
+      transform: translateY(-2px);
+      box-shadow: 0 20px 42px rgba(90, 215, 255, 0.28), 0 0 24px rgba(79, 140, 255, 0.16);
+    }
+
+    .btn.secondary {
+      background: linear-gradient(135deg, #103b72, #246baf 55%, #5ad7ff);
+      box-shadow: 0 16px 34px rgba(36, 107, 175, 0.24);
+    }
+
+    .btn.ghost {
+      color: #cdefff;
+      box-shadow: none;
+    }
+
+    .error {
+      color: #ff9fa8;
+    }
+
+    .science-section {
+      background: rgba(9, 22, 43, 0.62);
+    }
+
+    .science-section.is-visible {
+      animation: fadeUp 520ms ease both;
+    }
+
+    .brand-footer {
+      background: rgba(8, 21, 41, 0.52);
+    }
+
+    .brand-credit strong {
+      background: linear-gradient(105deg, #8eb8ff, #5ad7ff 70%, #ffffff);
+      -webkit-background-clip: text;
+      background-clip: text;
+      color: transparent;
+    }
+
+    .hero-panel,
+    .identity-panel,
+    .module-card,
+    .hero h1,
+    .lab-strip,
+    .hero-copy,
+    .status-row,
+    .hero-metrics {
+      opacity: 0;
+      animation: darkFadeUp 760ms cubic-bezier(.2, .75, .2, 1) both;
+    }
+
+    .hero-panel { animation-delay: 0ms; }
+    .hero h1 { animation-delay: 140ms; }
+    .lab-strip { animation-delay: 320ms; }
+    .hero-copy { animation-delay: 430ms; }
+    .status-row { animation-delay: 540ms; }
+    .hero-metrics { animation-delay: 620ms; }
+    .identity-panel { animation-delay: 760ms; }
+    .module-card:nth-child(1) { animation-delay: 980ms; }
+    .module-card:nth-child(2) { animation-delay: 1080ms; }
+
+    @keyframes darkFadeUp {
+      0% { opacity: 0; transform: translateY(18px); filter: blur(8px); }
+      100% { opacity: 1; transform: translateY(0); filter: blur(0); }
+    }
+
+    @keyframes backgroundDrift {
+      0% { background-position: 0% 0%, 100% 18%, 48% 100%, 0% 50%; }
+      100% { background-position: 12% 8%, 84% 4%, 58% 86%, 100% 50%; }
+    }
+
+    @keyframes subtleGridDrift {
+      0% { background-position: 0 0, 0 0, 0 0; }
+      100% { background-position: 54px 38px, 54px 38px, 118px 86px; }
+    }
+
+    @keyframes softBeamMove {
+      0% { opacity: 0.42; transform: translate3d(-1.2%, -0.8%, 0); }
+      100% { opacity: 0.58; transform: translate3d(1.4%, 1%, 0); }
+    }
+
+    @media (max-width: 1100px) {
+      .hero {
+        grid-template-columns: 1fr;
+      }
+
+      .experiments {
+        grid-template-columns: 1fr 1fr;
+      }
+    }
+
+    @media (max-width: 760px) {
+      .page {
+        width: min(100% - 24px, 1180px);
+        padding: 22px 0 34px;
+      }
+
+      .hero-panel {
+        padding: 28px 22px;
+      }
+
+      .hero h1 {
+        font-size: clamp(38px, 12vw, 58px);
+      }
+
+      .hero-copy {
+        font-size: 15px;
+      }
+
+      .identity-panel {
+        padding: 20px;
+      }
+
+      .experiments,
+      .hero-metrics {
+        grid-template-columns: 1fr;
+      }
+
+      .module-card {
+        min-height: auto;
+      }
+    }
+
+    @media (prefers-reduced-motion: reduce) {
+      .hero-panel,
+      .identity-panel,
+      .module-card,
+      .experiment-card,
+      .hero h1,
+      .lab-strip,
+      .hero-copy,
+      .status-row,
+      .hero-metrics,
+      .science-section.is-visible {
+        opacity: 1 !important;
+        transform: none !important;
+        filter: none !important;
+        animation: none !important;
+        transition: none !important;
+      }
+
+      body,
+      body::before,
+      body::after {
+        animation: none !important;
+      }
+    }
+
+    /* Apple-inspired light hero on a dark neural background */
+    .page {
+      width: min(1400px, 90vw);
+      min-height: 100vh;
+      padding: clamp(12px, 2vh, 24px) 0 32px;
+    }
+
+    .hero {
+      min-height: min(760px, calc(100vh - 118px));
+      display: grid;
+      grid-template-columns: 1fr;
+      align-content: center;
+      gap: 10px;
+    }
+
+    .hero-panel {
+      min-height: 0;
+      padding: 0;
+      border: 0;
+      background: transparent;
+      box-shadow: none;
+      backdrop-filter: none;
+      -webkit-backdrop-filter: none;
+      text-align: center;
+      overflow: visible;
+    }
+
+    .hero-panel::before,
+    .hero-panel::after,
+    .data-orbit,
+    .data-stream,
+    .eyebrow,
+    .hero-copy,
+    .status-row,
+    .hero-metrics {
+      display: none !important;
+    }
+
+    .hero h1 {
+      margin: 0 auto;
+      max-width: 960px;
+      font-family: "PingFang SC", "HarmonyOS Sans SC", "Microsoft YaHei UI", "MiSans", system-ui, -apple-system, BlinkMacSystemFont, sans-serif;
+      font-size: clamp(48px, 6.4vw, 92px);
+      line-height: 1.05;
+      letter-spacing: 0.04em;
+      font-weight: 650;
+      text-align: center;
+    }
+
+    .title-main {
+      display: inline;
+      color: rgba(255, 255, 255, 0.92);
+      text-shadow: 0 18px 60px rgba(90, 215, 255, 0.18);
+    }
+
+    .gradient-text {
+      display: none;
+    }
+
+    .lab-strip {
+      justify-content: center;
+      width: fit-content;
+      margin: 10px auto 0;
+      padding: 0;
+      border: 0;
+      background: transparent;
+      box-shadow: none;
+      color: rgba(255, 255, 255, 0.68);
+      font-size: clamp(13px, 1.35vw, 17px);
+      font-weight: 400;
+      letter-spacing: 0;
+    }
+
+    .identity-panel {
+      width: min(1180px, 100%);
+      margin: 6px auto 0;
+      padding: 20px 22px 22px;
+      border-radius: 28px;
+      border: 1px solid rgba(255, 255, 255, 0.76);
+      background: rgba(255, 255, 255, 0.9);
+      box-shadow: 0 24px 70px rgba(2, 9, 22, 0.24);
+      color: #0f172a;
+    }
+
+    .panel-kicker,
+    .identity-panel h2,
+    .identity-panel > p {
+      display: none;
+    }
+
+    .identity {
+      grid-template-columns: repeat(2, minmax(0, 1fr));
+      gap: 12px;
+      margin-bottom: 12px;
+    }
+
+    label {
+      margin-bottom: 6px;
+      color: #475569;
+      font-size: 13px;
+      font-weight: 650;
+    }
+
+    input {
+      min-height: 46px;
+      border-radius: 18px;
+      border-color: rgba(15, 23, 42, 0.1);
+      background: rgba(248, 250, 252, 0.88);
+      color: #0f172a;
+      box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.88);
+    }
+
+    input::placeholder {
+      color: #94a3b8;
+    }
+
+    input:focus {
+      border-color: rgba(79, 140, 255, 0.58);
+      background: #fff;
+      box-shadow: 0 0 0 5px rgba(79, 140, 255, 0.14);
+    }
+
+    .module-grid {
+      grid-template-columns: repeat(2, minmax(0, 1fr));
+      gap: 18px;
+      margin-top: 0;
+    }
+
+    .module-card {
+      min-height: 260px;
+      padding: 30px;
+      border-radius: 30px;
+      border: 1px solid rgba(15, 23, 42, 0.08);
+      background: #ffffff;
+      box-shadow: 0 18px 42px rgba(15, 23, 42, 0.1);
+      color: #0f172a;
+      display: flex;
+      flex-direction: column;
+      align-items: flex-start;
+    }
+
+    .module-card::after {
+      display: none;
+    }
+
+    .module-card:hover {
+      transform: translateY(-3px);
+      border-color: rgba(79, 140, 255, 0.18);
+      box-shadow: 0 24px 54px rgba(15, 23, 42, 0.15);
+    }
+
+    .module-head {
+      display: block;
+      gap: 0;
+    }
+
+    .module-card h3 {
+      color: #111827;
+      font-size: clamp(28px, 3vw, 38px);
+      line-height: 1.08;
+      font-weight: 620;
+      letter-spacing: -0.01em;
+    }
+
+    .module-card p {
+      max-width: 360px;
+      margin: 12px 0 20px;
+      color: #64748b;
+      font-size: 14px;
+    }
+
+    .module-card > .btn {
+      margin-top: auto;
+      align-self: flex-start;
+    }
+
+    .icon-bubble {
+      width: 42px;
+      height: 42px;
+      border-radius: 15px;
+      background: linear-gradient(135deg, #eef5ff, #dff8ff);
+      color: #2563eb;
+      box-shadow: inset 0 0 18px rgba(79, 140, 255, 0.12);
+    }
+
+    .badges {
+      display: none;
+    }
+
+    .btn {
+      position: relative;
+      z-index: 1;
+      width: auto;
+      min-height: 46px;
+      padding: 0 24px;
+      border-radius: 999px;
+      background: linear-gradient(135deg, #0f172a, #2563eb);
+      box-shadow: 0 12px 26px rgba(37, 99, 235, 0.22);
+      font-size: 14px;
+    }
+
+    .btn.secondary {
+      background: linear-gradient(135deg, #102a43, #0ea5e9);
+      box-shadow: 0 12px 26px rgba(14, 165, 233, 0.2);
+    }
+
+    .btn:hover {
+      transform: translateY(-2px);
+      box-shadow: 0 18px 34px rgba(37, 99, 235, 0.26);
+    }
+
+    .error {
+      min-height: 18px;
+      margin: 8px 0 0;
+      color: #dc2626;
+      text-align: center;
+      font-size: 13px;
+    }
+
+    .science-section {
+      margin-top: 28px;
+      padding: 24px;
+      background: rgba(255, 255, 255, 0.92);
+      color: #0f172a;
+      border-color: rgba(255, 255, 255, 0.72);
+    }
+
+    .section-title {
+      display: grid;
+      grid-template-columns: 1fr auto 1fr;
+      align-items: center;
+      margin-bottom: 18px;
+      text-align: center;
+    }
+
+    .section-title h2,
+    .experiment-card h3 {
+      color: #111827;
+    }
+
+    .section-title p,
+    .experiment-card p {
+      display: none;
+    }
+
+    .section-title > div {
+      grid-column: 2;
+    }
+
+    .section-title .btn {
+      grid-column: 3;
+      justify-self: end;
+    }
+
+    .section-title h2 {
+      color: rgba(10, 20, 40, 0.92);
+      font-size: clamp(22px, 2.2vw, 30px);
+      font-weight: 600;
+      letter-spacing: 0.03em;
+    }
+
+    .experiments {
+      gap: 16px;
+    }
+
+    .experiment-card {
+      min-height: 210px;
+      padding: 22px;
+      background: #fff;
+      color: #0f172a;
+      border-color: rgba(15, 23, 42, 0.08);
+      box-shadow: 0 16px 38px rgba(15, 23, 42, 0.08);
+    }
+
+    .experiment-card .badges {
+      display: none;
+    }
+
+    .experiment-head {
+      align-items: flex-start;
+      gap: 14px;
+    }
+
+    .experiment-card h3 {
+      margin-top: 3px;
+      font-size: clamp(19px, 1.7vw, 25px);
+      line-height: 1.22;
+      font-weight: 640;
+    }
+
+    .experiment-card .icon-bubble {
+      flex: 0 0 auto;
+      width: 46px;
+      height: 46px;
+      border-radius: 16px;
+      font-size: 13px;
+      font-weight: 750;
+    }
+
+    .experiment-card .btn {
+      align-self: flex-start;
+      margin-top: auto;
+    }
+
+    .btn.ghost {
+      background: #f8fafc;
+      color: #2563eb;
+      border-color: rgba(37, 99, 235, 0.16);
+    }
+
+    .brand-footer {
+      width: min(520px, 100%);
+      margin: 18px auto 0;
+      padding: 6px 12px 0;
+      border: 0;
+      border-radius: 0;
+      background: transparent;
+      box-shadow: none;
+      backdrop-filter: none;
+      -webkit-backdrop-filter: none;
+      color: rgba(255, 255, 255, 0.72);
+    }
+
+    .brand-footer::before,
+    .brand-footer::after {
+      display: none;
+    }
+
+    .brand-credit {
+      color: rgba(255, 255, 255, 0.78);
+      font-size: 12px;
+      font-weight: 500;
+    }
+
+    .brand-credit strong {
+      background: none;
+      -webkit-background-clip: initial;
+      background-clip: initial;
+      color: #8ddfff;
+      font-weight: 650;
+    }
+
+    .brand-slogan {
+      margin-top: 2px !important;
+      color: rgba(255, 255, 255, 0.56);
+      font-size: 11px;
+      font-weight: 500;
+    }
+
+    .hero h1 {
+      animation-delay: 80ms;
+    }
+
+    .lab-strip {
+      animation-delay: 210ms;
+    }
+
+    .identity-panel {
+      animation-delay: 360ms;
+    }
+
+    .module-card:nth-child(1) {
+      animation-delay: 520ms;
+    }
+
+    .module-card:nth-child(2) {
+      animation-delay: 620ms;
+    }
+
+    @media (min-width: 1101px) and (max-height: 820px) {
+      .page {
+        width: min(1340px, 92vw);
+        padding-top: 12px;
+      }
+
+      .hero {
+        min-height: calc(100vh - 112px);
+        gap: 8px;
+      }
+
+      .hero h1 {
+        font-size: clamp(44px, 6vw, 76px);
+      }
+
+      .lab-strip {
+        margin-top: 8px;
+        font-size: 14px;
+      }
+
+      .identity-panel {
+        margin-top: 2px;
+        padding: 16px 18px 18px;
+      }
+
+      .module-card {
+        min-height: 224px;
+        padding: 24px;
+      }
+
+      .module-card h3 {
+        font-size: clamp(25px, 2.6vw, 32px);
+      }
+
+      .btn {
+        min-height: 42px;
+      }
+
+      .experiment-card {
+        min-height: 180px;
+        padding: 18px;
+      }
+    }
+
+    @media (max-width: 760px) {
+      .page {
+        width: min(100% - 20px, 1120px);
+        min-height: auto;
+        padding: 18px 0 30px;
+      }
+
+      .hero {
+        min-height: auto;
+        align-content: start;
+      }
+
+      .hero h1 {
+        font-size: clamp(38px, 11vw, 58px);
+      }
+
+      .lab-strip {
+        font-size: 14px;
+      }
+
+      .identity-panel {
+        padding: 16px;
+        border-radius: 24px;
+      }
+
+      .identity,
+      .module-grid {
+        grid-template-columns: 1fr;
+      }
+
+      .module-card {
+        min-height: 190px;
+        border-radius: 26px;
+      }
+
+      .section-title {
+        grid-template-columns: 1fr;
+        justify-items: center;
+      }
+
+      .section-title > div,
+      .section-title .btn {
+        grid-column: 1;
+        justify-self: center;
+      }
+    }
   </style>
 </head>
 <body>
@@ -730,8 +1603,8 @@
         <div class="data-stream" aria-hidden="true"></div>
         <div class="eyebrow"><span class="pulse"></span>AI 教育实验平台</div>
         <h1><span class="title-main">脑育智能体</span><span class="gradient-text">学习平台</span></h1>
-        <div class="lab-strip">AI learning lab <span>for memory science</span></div>
-        <p class="hero-copy">把记忆科学探究、课堂实验、海报交流和学习数据整理到同一个轻量平台中。学生专注完成任务，数据自动保存在本机浏览器。</p>
+        <div class="lab-strip">揭秘大脑密码，塑造无限可能。</div>
+        <p class="hero-copy">面向课堂的脑科学与 AI 教育实验平台，把记忆科学探究、海报交流和学习数据整理到同一个清晰流程中。</p>
 
         <div class="status-row" aria-label="平台状态">
           <span class="status"><span class="status-dot"></span>AI 助手在线</span>
@@ -754,6 +1627,14 @@
 
         <div class="identity">
           <div>
+            <label for="studentName">学生姓名</label>
+            <input id="studentName" type="text" autocomplete="off" placeholder="例如：张同学" />
+          </div>
+          <div>
+            <label for="studentAge">学生年龄</label>
+            <input id="studentAge" type="number" min="1" max="99" autocomplete="off" placeholder="例如：12" />
+          </div>
+          <div>
             <label for="studentId">学生编号</label>
             <input id="studentId" type="text" autocomplete="off" placeholder="例如：S01" />
           </div>
@@ -766,7 +1647,6 @@
         <div class="module-grid">
           <article class="module-card">
             <div class="module-head">
-              <div class="icon-bubble">AI</div>
               <div>
                 <h3>科学探究</h3>
                 <p>进入短时记忆、N-back、长时记忆干扰和记忆策略四个实验。</p>
@@ -782,7 +1662,6 @@
 
           <article class="module-card">
             <div class="module-head">
-              <div class="icon-bubble">画</div>
               <div>
                 <h3>海报制作</h3>
                 <p>记录海报方案、制作分工、提问交流和同伴评分。</p>
@@ -885,6 +1764,8 @@
 
   <script>
     const CONTEXT_KEY = "science-inquiry-context-v1";
+    const studentNameInput = document.getElementById("studentName");
+    const studentAgeInput = document.getElementById("studentAge");
     const studentInput = document.getElementById("studentId");
     const groupInput = document.getElementById("groupId");
     const error = document.getElementById("error");
@@ -893,6 +1774,8 @@
     try {
       const saved = JSON.parse(localStorage.getItem(CONTEXT_KEY) || "null");
       if (saved) {
+        studentNameInput.value = saved.studentName || "";
+        studentAgeInput.value = saved.studentAge || "";
         studentInput.value = saved.studentId || "";
         groupInput.value = saved.groupId || "";
       }
@@ -901,6 +1784,8 @@
     }
 
     function saveIdentity() {
+      const studentName = studentNameInput.value.trim();
+      const studentAge = studentAgeInput.value.trim();
       const studentId = studentInput.value.trim();
       const groupId = groupInput.value.trim();
       if (!studentId || !groupId) {
@@ -909,6 +1794,8 @@
       }
       error.textContent = "";
       localStorage.setItem(CONTEXT_KEY, JSON.stringify({
+        studentName,
+        studentAge,
         studentId,
         groupId,
         savedAt: new Date().toISOString()

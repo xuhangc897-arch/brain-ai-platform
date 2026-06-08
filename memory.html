@@ -861,6 +861,8 @@
 
     const defaultState = {
       started: true,
+      studentName: "",
+      studentAge: "",
       studentId: "",
       groupId: "",
       currentStep: 0,
@@ -916,6 +918,8 @@
       try {
         const context = JSON.parse(localStorage.getItem(CONTEXT_KEY) || "null");
         if (context) {
+          merged.studentName = context.studentName || merged.studentName || "";
+          merged.studentAge = context.studentAge || merged.studentAge || "";
           merged.studentId = context.studentId || merged.studentId;
           merged.groupId = context.groupId || merged.groupId;
         }
@@ -971,7 +975,7 @@
         `;
         return;
       }
-      identityPill.textContent = `学生：${state.studentId}　小组：${state.groupId}`;
+      identityPill.textContent = `${state.studentName ? `姓名：${state.studentName}　` : ""}${state.studentAge ? `年龄：${state.studentAge}　` : ""}学生：${state.studentId}　小组：${state.groupId}`;
       normalizeCurrentStep();
       renderProgress();
       renderStep();
@@ -1642,6 +1646,8 @@
       const isCorrect = answer.join("") === expected.join("");
       const record = {
         runId: game.id,
+        studentName: state.studentName,
+        studentAge: state.studentAge,
         studentId: state.studentId,
         groupId: state.groupId,
         subject: game.subject,
@@ -1797,6 +1803,8 @@
         ["基本信息", [
           ["项目", "内容"],
           ["实验", "探究短时记忆的容量"],
+          ["学生姓名", state.studentName || ""],
+          ["学生年龄", state.studentAge || ""],
           ["学生编号", state.studentId],
           ["小组编号", state.groupId],
           ["导出时间", new Date().toLocaleString()]
@@ -1827,8 +1835,10 @@
           ["探究环节反思", state.fields.inquiryReflection]
         ]],
         ["记忆任务明细", [
-          ["学生编号", "小组编号", "参与者", "测量次数", "方法", "材料", "呈现间隔s", "长度", "原始序列", "正确答案", "学生回答", "是否正确", "本次最终容量", "记录时间"],
+          ["学生姓名", "学生年龄", "学生编号", "小组编号", "参与者", "测量次数", "方法", "材料", "呈现间隔s", "长度", "原始序列", "正确答案", "学生回答", "是否正确", "本次最终容量", "记录时间"],
           ...state.records.map((record) => [
+            record.studentName || "",
+            record.studentAge || "",
             record.studentId,
             record.groupId,
             record.subject,

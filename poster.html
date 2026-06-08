@@ -422,6 +422,8 @@
     const groupLabels = ["第1组", "第2组", "第3组", "第4组", "第5组", "第6组"];
 
     const defaultState = {
+      studentName: "",
+      studentAge: "",
       studentId: "",
       groupId: "",
       currentStep: 0,
@@ -470,6 +472,8 @@
       try {
         const context = JSON.parse(localStorage.getItem(CONTEXT_KEY) || "null");
         if (context) {
+          merged.studentName = context.studentName || merged.studentName || "";
+          merged.studentAge = context.studentAge || merged.studentAge || "";
           merged.studentId = context.studentId || merged.studentId;
           merged.groupId = context.groupId || merged.groupId;
         }
@@ -519,7 +523,7 @@
         `;
         return;
       }
-      identityPill.textContent = `学生：${state.studentId}　小组：${state.groupId}`;
+      identityPill.textContent = `${state.studentName ? `姓名：${state.studentName}　` : ""}${state.studentAge ? `年龄：${state.studentAge}　` : ""}学生：${state.studentId}　小组：${state.groupId}`;
       renderProgress();
       renderStep();
     }
@@ -926,6 +930,8 @@
         ["基本信息", [
           ["项目", "内容"],
           ["模块", "海报制作与分享交流"],
+          ["学生姓名", state.studentName || ""],
+          ["学生年龄", state.studentAge || ""],
           ["学生编号", state.studentId],
           ["小组编号", state.groupId],
           ["导出时间", new Date().toLocaleString()]

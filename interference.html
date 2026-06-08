@@ -376,6 +376,8 @@
     };
 
     const defaultState = {
+      studentName: "",
+      studentAge: "",
       studentId: "",
       groupId: "",
       currentStep: 0,
@@ -423,6 +425,8 @@
       try {
         const context = JSON.parse(localStorage.getItem(CONTEXT_KEY) || "null");
         if (context) {
+          merged.studentName = context.studentName || merged.studentName || "";
+          merged.studentAge = context.studentAge || merged.studentAge || "";
           merged.studentId = context.studentId || merged.studentId;
           merged.groupId = context.groupId || merged.groupId;
         }
@@ -459,7 +463,7 @@
         main.innerHTML = `<section class="panel"><div class="panel-head"><h2>需要先填写学生编号和小组编号</h2><p>请返回实验选择页录入身份信息后再进入实验。</p></div><div class="panel-body"><button class="btn" type="button" onclick="location.href='index.html'">返回实验选择</button></div></section>`;
         return;
       }
-      identityPill.textContent = `学生：${state.studentId}　小组：${state.groupId}`;
+      identityPill.textContent = `${state.studentName ? `姓名：${state.studentName}　` : ""}${state.studentAge ? `年龄：${state.studentAge}　` : ""}学生：${state.studentId}　小组：${state.groupId}`;
       normalizeCurrentStep();
       renderProgress();
       renderStep();
@@ -855,7 +859,7 @@
       const accuracy = Math.round((score / fullScore) * 100);
       if (emotionRatingInput) state.fields.emotionRating = emotionRatingInput.value;
       const reactionTime = Math.round(performance.now() - session.recallStartedAt);
-      const record = { runId: session.id, studentId: state.studentId, groupId: state.groupId, participant: session.participant, round: session.round, factor: session.factor, materialSource: session.materialSource, materialType: session.materialType, difficulty: session.difficulty, difficultyLabel: session.difficultyLabel, condition: session.condition, videoCondition: session.videoCondition, videoSrc: session.videoSrc, memorySeconds: state.fields.memorySeconds, restSeconds: state.fields.restSeconds, interferenceSeconds: state.fields.interferenceSeconds, itemCount: session.memoryItems.length, memoryItems: session.memoryItems.join("；"), interferenceItems: session.interferenceItems.join("；"), scoreRule: session.scoreRule, fullScore, score, recall, correctItems: "人工评分", correctCount: score, accuracy, reactionTime, emotionRating: state.fields.emotionRating, headband, createdAt: new Date().toLocaleString() };
+      const record = { runId: session.id, studentName: state.studentName, studentAge: state.studentAge, studentId: state.studentId, groupId: state.groupId, participant: session.participant, round: session.round, factor: session.factor, materialSource: session.materialSource, materialType: session.materialType, difficulty: session.difficulty, difficultyLabel: session.difficultyLabel, condition: session.condition, videoCondition: session.videoCondition, videoSrc: session.videoSrc, memorySeconds: state.fields.memorySeconds, restSeconds: state.fields.restSeconds, interferenceSeconds: state.fields.interferenceSeconds, itemCount: session.memoryItems.length, memoryItems: session.memoryItems.join("；"), interferenceItems: session.interferenceItems.join("；"), scoreRule: session.scoreRule, fullScore, score, recall, correctItems: "人工评分", correctCount: score, accuracy, reactionTime, emotionRating: state.fields.emotionRating, headband, createdAt: new Date().toLocaleString() };
       state.records.push(record);
       saveState();
       const finished = session;
@@ -915,9 +919,9 @@
     function exportExcel() {
       const summary = summarizeRecords();
       const sheets = [
-        ["基本信息", [["项目","内容"],["实验","探究干扰长时记忆的因素"],["学生编号",state.studentId],["小组编号",state.groupId],["导出时间",new Date().toLocaleString()]]],
+        ["基本信息", [["项目","内容"],["实验","探究干扰长时记忆的因素"],["学生姓名",state.studentName || ""],["学生年龄",state.studentAge || ""],["学生编号",state.studentId],["小组编号",state.groupId],["导出时间",new Date().toLocaleString()]]],
         ["探究填写内容", [["字段","内容"],["生活干扰因素",state.fields.lifeFactors],["材料干扰因素",state.fields.materialFactors],["探究因素",state.fields.factor],["研究问题",state.fields.question],["研究假设",state.fields.hypothesis],["参与者",state.fields.participant],["难度",state.fields.difficulty],["情绪条件",state.fields.emotionCondition],["记忆时间s",state.fields.memorySeconds],["休息/视频时间s",state.fields.restSeconds],["干扰时间s",state.fields.interferenceSeconds],["头环观察",state.fields.headband],["结论",state.fields.conclusion],["假设支持",state.fields.support],["可信度",state.fields.credibility],["优点",state.fields.strengths],["改进",state.fields.improvements],["学习启发",state.fields.learningInsight]]],
-        ["实验明细", [["学生编号","小组编号","参与者","轮次","实验类型","材料来源","材料类型","难度","条件","视频条件","记忆时间s","休息/视频时间s","干扰时间s","记忆材料","干扰材料","评分规则","满分","得分","正确率","回忆内容","头环观察","情绪强度","反应时ms","记录时间"], ...state.records.map((record)=>[record.studentId,record.groupId,record.participant,record.round,record.factor,record.materialSource,record.materialType,record.difficultyLabel || record.difficulty,record.condition,record.videoCondition,record.memorySeconds,record.restSeconds,record.interferenceSeconds,record.memoryItems,record.interferenceItems,record.scoreRule,record.fullScore,record.score ?? record.correctCount,`${record.accuracy}%`,record.recall,record.headband,record.emotionRating,record.reactionTime,record.createdAt])]],
+        ["实验明细", [["学生姓名","学生年龄","学生编号","小组编号","参与者","轮次","实验类型","材料来源","材料类型","难度","条件","视频条件","记忆时间s","休息/视频时间s","干扰时间s","记忆材料","干扰材料","评分规则","满分","得分","正确率","回忆内容","头环观察","情绪强度","反应时ms","记录时间"], ...state.records.map((record)=>[record.studentName || "",record.studentAge || "",record.studentId,record.groupId,record.participant,record.round,record.factor,record.materialSource,record.materialType,record.difficultyLabel || record.difficulty,record.condition,record.videoCondition,record.memorySeconds,record.restSeconds,record.interferenceSeconds,record.memoryItems,record.interferenceItems,record.scoreRule,record.fullScore,record.score ?? record.correctCount,`${record.accuracy}%`,record.recall,record.headband,record.emotionRating,record.reactionTime,record.createdAt])]],
         ["条件汇总", [["条件","次数","平均得分","平均正确率","平均反应时ms"], ...summary.map((item)=>[item.condition,item.count,item.avgCorrect,`${item.avgAccuracy}%`,item.avgRt])]],
         ...getSurveySheets()
       ];
