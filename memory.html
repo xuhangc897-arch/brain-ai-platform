@@ -323,6 +323,84 @@
       margin-bottom: 0;
     }
 
+    .method-card {
+      border: 1px solid #dbeafe;
+      border-radius: 10px;
+      padding: 18px;
+      background: #f8fbff;
+    }
+
+    .method-card h4 {
+      margin: 0 0 10px;
+      color: #1e3a8a;
+      font-size: 16px;
+    }
+
+    .method-card p {
+      margin: 0 0 12px;
+      color: #344054;
+      font-size: 14px;
+      line-height: 1.8;
+    }
+
+    .plan-flow {
+      display: grid;
+      grid-template-columns: repeat(5, minmax(0, 1fr));
+      gap: 12px;
+    }
+
+    .flow-card {
+      position: relative;
+      border: 1px solid #dbeafe;
+      border-radius: 10px;
+      padding: 16px 14px 14px;
+      background: linear-gradient(180deg, #fff 0%, #f8fbff 100%);
+    }
+
+    .flow-index {
+      display: inline-grid;
+      place-items: center;
+      width: 28px;
+      height: 28px;
+      margin-bottom: 10px;
+      border-radius: 50%;
+      background: var(--primary);
+      color: #fff;
+      font-weight: 900;
+      font-size: 13px;
+    }
+
+    .flow-card h4 {
+      margin: 0 0 8px;
+      color: #172033;
+      font-size: 15px;
+    }
+
+    .flow-card p {
+      margin: 0;
+      color: var(--muted);
+      font-size: 13px;
+      line-height: 1.7;
+    }
+
+    .formula-card {
+      margin-bottom: 18px;
+      border: 1px solid #bfdbfe;
+      border-radius: 10px;
+      padding: 18px;
+      background: linear-gradient(135deg, #ffffff, #eff6ff);
+    }
+
+    .formula-box {
+      margin: 10px 0 14px;
+      padding: 12px 14px;
+      border-radius: 8px;
+      background: #fff;
+      border: 1px solid #dbeafe;
+      color: #1e3a8a;
+      font-weight: 800;
+    }
+
     .field {
       margin-bottom: 18px;
     }
@@ -740,6 +818,10 @@
         .step-layout,
         .analysis-layout,
         .memory-game {
+          grid-template-columns: 1fr;
+        }
+
+        .plan-flow {
           grid-template-columns: 1fr;
         }
 
@@ -1275,16 +1357,11 @@
             <div class="panel-body reading-list">
               <article class="reading-card">
                 <h4>材料一：什么是短时记忆？</h4>
-                <p>短时记忆是感觉记忆和长时记忆之间的缓冲器，负责暂时储存信息。经“注意”后的信息会在短时记忆中得到登记和保存，时间大概在 1 分钟左右。</p>
-                <p>短时记忆容量不是无限的，它像一个有大小限制的容器，只能容纳一定数量的信息单位。</p>
+                <p>短时记忆是感觉记忆和长时记忆之间的缓冲器，负责暂时储存信息。经“注意”后的信息，会在短时记忆中得到登记和保存，时间大概在1分钟左右。短时记忆的容量并不是无限的，它就像一个有大小限制的容器，只能容纳一定数量的信息单位。当我们尝试同时记住多个不同的信息时，会发现随着信息数量的增加，记住所有信息变得越来越困难。比如，当第一次听到别人的电话号码时，我们很难完全正确地进行复述。这就表明短时记忆一次能够处理和保持的信息数量是有一定范围的，不会无限制地容纳过多的信息单位。</p>
               </article>
               <article class="reading-card">
-                <h4>材料二：科学家如何研究容量？</h4>
-                <p>科学家逐渐增加数字、字母、词语等信息序列的长度，观察参与者能够准确记住的信息单位数量。米勒的经典研究提出短时记忆容量约为 7±2 个信息单位。</p>
-              </article>
-              <article class="reading-card">
-                <h4>材料三：头环介绍</h4>
-                <p>头环可以监测短时记忆任务中前额叶活动水平。暖色通常表示大脑区域激活强度高，冷色表示激活程度低或变化不大。</p>
+                <h4>材料二：科学家们是如何探究短时记忆的容量的？</h4>
+                <p>为了探究短时记忆的容量大约是多少个信息单位，科学家们进行了大量的实验研究，其中心理学家乔治·米勒（George Miller）的实验具有重要意义。米勒设计了一系列实验，他让参与实验的人记忆不同类型的信息序列，比如数字、字母、词语等。在实验过程中，科学家们逐渐增加信息序列的长度，观察参与者能够准确记住的信息单位数量。他们发现，当信息序列较短时，参与者能够比较轻松地记住；而当信息序列超过一定长度后，参与者的记忆准确率就会明显下降。</p>
               </article>
             </div>
           </div>
@@ -1367,6 +1444,40 @@
                   <label class="choice"><input type="checkbox" data-field="controlContent" ${state.fields.controlContent ? "checked" : ""}>记忆的具体内容由网页随机生成并保持呈现速度一致</label>
                 </div>
                 <input type="text" data-field="controlOther" value="${escapeHtml(state.fields.controlOther)}" placeholder="其他控制变量" />
+              </div>
+            </div>
+          </div>
+          <div class="panel">
+            <div class="panel-head">
+              <h3>实验材料与测量方法</h3>
+              <p>以下内容用于帮助小组制定实验计划。</p>
+            </div>
+            <div class="panel-body reading-list">
+              <article class="reading-card">
+                <h4>材料三：头环的介绍</h4>
+                <p>头环是我们用来测量参与者在进行顺背法或倒背法任务时大脑前额叶（主要负责记忆和工作的大脑区域）活动水平的工具。在开展实验时，只要把它戴在头上，它就能通过监测大脑血氧浓度的变化等来收集信息，并在电脑上生成一幅3D的脑激活图。这张图可以直观呈现被激活脑区的位置、范围和强度，它会用颜色告诉你，在实验过程中大脑中哪些地方被激活，图中用暖色调（红-黄）表示大脑区域激活强度高，即正在非常努力地工作；用冷色调（蓝）表示激活程度低或变化不大。当我们测试短时记忆容量时，参与者需要复述一串串长度逐渐增加的数字或者字母。头环会实时捕捉参与者大脑前额叶的活动变化。因此，通过观察脑激活图上前额叶区域的颜色如何随着数字串变长而变化，再结合参与者复述的准确性，我们就能科学地推断出：参与者的大脑短时记忆容量大约是多少个信息单位了！</p>
+              </article>
+              <article class="method-card">
+                <h4>测量短时记忆容量的方法</h4>
+                <p><strong>顺背法：</strong></p>
+                <p>由一位同学担任测试员、一位同学担任参与者。测试员按照固定的速度（比如1秒钟念1个）清晰地朗读一串数字或者字母（例如：5-8-3-1-7）。念完后，参与者需要立刻按顺序重复说出这些数字或者字母。测试员从短序列开始（比如3位），如果参与者连续两次都能完全正确复述，就增加1位数字或者字母（比如4位），再测试。这样不断增加序列长度，直到参与者在某个长度上连续两次都复述错误为止。参与者最后能完全正确复述的最长序列长度，就是他的数字或者字母记忆广度，也就是短时记忆的容量。（注意： 朗读速度要严格一致，序列长度一般从3位开始，到10位左右。）</p>
+                <p><strong>倒背法：</strong></p>
+                <p>和顺背法类似，测试员按固定速度念一串数字或者字母（如：2-9-4-6），参与者听完后需要立刻按完全相反的顺序把数字或者字母复述出来（针对上述例子，正确复述是：6-4-9-2）。同样从短序列开始（如3位），参与者连续两次正确则加长1位，直到连续两次失败。参与者最后能完全正确倒背出来的最长序列长度，就是他的倒背广度，也就是参与者短时记忆的容量。</p>
+              </article>
+            </div>
+          </div>
+          <div class="panel">
+            <div class="panel-head">
+              <h3>实验计划流程图</h3>
+              <p>按照流程完成分工、测量、记录、分析与结论。</p>
+            </div>
+            <div class="panel-body">
+              <div class="plan-flow">
+                <article class="flow-card"><span class="flow-index">1</span><h4>分工</h4><p>小组成员自行分工，决定实验顺序。</p></article>
+                <article class="flow-card"><span class="flow-index">2</span><h4>测量</h4><p>通过所选方法测量参与者的短时记忆容量：通过（顺背法/倒背法），测量参与者能正确记忆的（最长数字长度/最长字母长度），每位参与者测量三次，计算平均值可得每位参与者的短时记忆容量。</p></article>
+                <article class="flow-card"><span class="flow-index">3</span><h4>记录数据</h4><p>将实验所得的数据记录在数据记录表中。</p></article>
+                <article class="flow-card"><span class="flow-index">4</span><h4>处理分析数据</h4><p>对数据进行处理分析。</p></article>
+                <article class="flow-card"><span class="flow-index">5</span><h4>得出结论</h4><p>根据实验处理分析的数据检验假设、回答研究问题。</p></article>
               </div>
             </div>
           </div>
@@ -1549,6 +1660,19 @@
       }).join("") : `<div class="empty-state">完成测量后会自动生成容量平均值。</div>`;
       const totalAverage = getOverallAverage(summary);
       return `
+        <div class="single-step-layout">
+          <div class="formula-card">
+            <h3>短时记忆容量计算公式</h3>
+            <p>计算短时记忆的容量。</p>
+            <div class="formula-box">公式：小组短时记忆的容量＝每位参与者三次测试能正确记忆的最长数字或字母长度平均值 / 3</div>
+            <p><strong>示例：</strong></p>
+            <p>如果三位参与者三次测试得到的平均短时记忆容量分别为：</p>
+            <p>参与者1：6<br>参与者2：7<br>参与者3：5</p>
+            <p>那么小组短时记忆容量为：</p>
+            <div class="formula-box">（6 + 7 + 5）/ 3 = 6</div>
+            <p>因此，该小组的平均短时记忆容量为 6 个信息单位。</p>
+          </div>
+        </div>
         <div class="analysis-layout">
           <div class="panel">
             <div class="panel-head"><h3>容量平均值</h3></div>
@@ -1638,15 +1762,15 @@
             <div class="panel-head"><h3>反思交流</h3></div>
             <div class="panel-body">
               <div class="field">
-                <label>实验设计有哪些地方可以完善？</label>
+                <label>我们的实验设计有哪些地方可以进一步完善？</label>
                 <textarea data-field="designImprove">${escapeHtml(state.fields.designImprove)}</textarea>
               </div>
               <div class="field">
-                <label>小组合作是否高效？</label>
+                <label>在小组合作过程中，每个成员是否都积极参与并承担了相应的任务？我们的团队合作是否高效？是否存在需要改进的地方？</label>
                 <textarea data-field="teamwork">${escapeHtml(state.fields.teamwork)}</textarea>
               </div>
               <div class="field">
-                <label>哪些探究环节表现较好，哪些还需提高？</label>
+                <label>通过本次探究活动，我们对科学探究的各个环节（提出问题、作出假设、制定计划、搜集证据、处理信息、得出结论、表达交流、反思评价）有了更深入的理解和实践经验。我们认为自己在哪些环节表现较好？哪些环节还需要进一步提高？</label>
                 <textarea data-field="inquiryReflection">${escapeHtml(state.fields.inquiryReflection)}</textarea>
               </div>
             </div>
