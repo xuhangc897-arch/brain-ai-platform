@@ -93,7 +93,11 @@
     .material-chip { display: inline-flex; align-items: center; padding: 5px 9px; border-radius: 999px; background: #eef6ff; color: #1d4ed8; font-weight: 800; }
     .material-block { display: grid; gap: 12px; text-align: left; }
     .material-line { padding: 12px; border-radius: 8px; background: #fff; border: 1px solid #bfdbfe; color: #1e3a8a; font-size: 20px; font-weight: 800; line-height: 1.55; }
-    .interference-video { width: min(760px, 100%); max-height: 54vh; border-radius: 8px; background: #000; box-shadow: 0 18px 42px rgba(0,0,0,.18); }
+    .interference-video { display: block; width: min(760px, 100%); max-height: 54vh; margin: 16px auto 0; border-radius: 8px; background: #000; box-shadow: 0 18px 42px rgba(0,0,0,.18); }
+    .video-status { margin-top: 14px; padding: 12px 14px; border-radius: 8px; background: #fff; border: 1px solid #bfdbfe; color: #1e3a8a; font-size: 14px; font-weight: 800; }
+    .video-status.warning { border-color: #fed7aa; background: #fff7ed; color: #9a3412; }
+    .video-status.error { border-color: #fecaca; background: #fef2f2; color: #b91c1c; }
+    .video-actions { margin-top: 14px; display: flex; justify-content: center; gap: 10px; flex-wrap: wrap; }
     .score-row { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; margin-top: 12px; }
     .score-row input { font-size: 18px; font-weight: 900; text-align: center; }
     .score-rule { margin-top: 12px; padding: 12px; border-radius: 8px; background: #f8fbff; color: #344054; font-size: 14px; }
@@ -230,9 +234,9 @@
     const CONTEXT_KEY = "science-inquiry-context-v1";
     const STORAGE_KEY = "longterm-interference-state-v1";
     const EXTERNAL_EMOTION_VIDEOS = {
-      "中性": "",
-      "悲伤": "",
-      "愉悦": ""
+      "中性": "https://brain-ai-video-1441391469.cos.ap-shanghai.myqcloud.com/neutral.mp4",
+      "悲伤": "https://brain-ai-video-1441391469.cos.ap-shanghai.myqcloud.com/sad.mp4",
+      "愉悦": "https://brain-ai-video-1441391469.cos.ap-shanghai.myqcloud.com/pleasant.mp4"
     };
     const steps = [
       
@@ -788,10 +792,8 @@
       taskCard.style.display = "block";
       let seconds = 0;
       if (phase === "video") {
-        seconds = clamp(Number(state.fields.restSeconds), 5, 240, 180);
-        taskCard.innerHTML = session.videoSrc
-          ? `<h3>${escapeHtml(session.videoCondition)}情绪视频</h3><p>请安静观看视频，随后进入记忆阶段。</p><video class="interference-video" src="${escapeHtml(session.videoSrc)}" controls autoplay playsinline></video>`
-          : `<h3>${escapeHtml(session.videoCondition)}情绪视频</h3><p>当前网页还没有配置公开视频链接。请联系教师在 interference.html 中填写 EXTERNAL_EMOTION_VIDEOS，或按课堂安排线下观看对应视频。倒计时结束后会继续进入记忆阶段。</p>`;
+        renderEmotionVideoPhase(taskCard);
+        return;
       } else if (phase === "memory") {
         seconds = clamp(Number(state.fields.memorySeconds), 10, 180, 60);
         taskCard.innerHTML = `<h3>记忆阶段</h3><p>${escapeHtml(session.instruction)}</p>${renderMaterialItems(session.memoryItems)}`;
@@ -808,6 +810,71 @@
       updateGameUi(seconds);
       const next = phase === "video" ? "memory" : phase === "memory" ? "interference" : "recall";
       startCountdown(seconds, () => runPhase(next));
+    }
+    function renderEmotionVideoPhase(taskCard) {
+      phaseStartedAt = performance.now();
+      updateGameUi(0);
+      setVideoStatus("请完整观看视频，视频结束后才会进入记忆阶段。");
+      const title = `${escapeHtml(session.videoCondition)}情绪视频`;
+      if (!session.videoSrc) {
+        taskCard.innerHTML = `<h3>${title}</h3><p>当前视频尚未配置，请联系实验管理员。</p><div class="video-status warning">请在 interference.html 顶部的 EXTERNAL_EMOTION_VIDEOS 中填写 ${escapeHtml(session.videoCondition)} 视频的公开视频直链。</div><div class="video-actions"><button class="btn secondary" type="button" id="skipVideoBtn">跳过视频并进入记忆阶段</button></div>`;
+        bindSkipVideoButton();
+        setVideoStatus("视频未配置");
+        return;
+      }
+      taskCard.innerHTML = `<h3>${title}</h3><p>请安静观看完整视频，播放结束后自动进入记忆阶段。</p><video class="interference-video" id="emotionVideoPlayer" src="${escapeHtml(session.videoSrc)}" controls preload="metadata" playsinline></video><div class="video-status" id="videoStatusBox">正在加载视频信息...</div>`;
+      const video = document.getElementById("emotionVideoPlayer");
+      const statusBox = document.getElementById("videoStatusBox");
+      if (!video) return;
+      let maxWatchedTime = 0;
+      let restoringSeek = false;
+      video.addEventListener("timeupdate", () => {
+        if (!video.seeking) maxWatchedTime = Math.max(maxWatchedTime, video.currentTime);
+      });
+      video.addEventListener("seeking", () => {
+        if (restoringSeek || !Number.isFinite(video.duration)) return;
+        if (video.currentTime > maxWatchedTime + 1.5) {
+          restoringSeek = true;
+          video.currentTime = Math.max(0, maxWatchedTime);
+          if (statusBox) statusBox.textContent = "请按顺序完整观看视频，视频结束后会自动进入下一阶段。";
+          window.setTimeout(() => { restoringSeek = false; }, 120);
+        }
+      });
+      video.addEventListener("loadedmetadata", () => {
+        if (statusBox) statusBox.textContent = "视频已加载，请完整观看。";
+        setVideoStatus("请完整观看");
+      });
+      video.addEventListener("ended", () => {
+        if (!session || session.phase !== "video") return;
+        if (statusBox) textStatus(statusBox, "视频已播放完毕，即将进入记忆阶段。", "");
+        setVideoStatus("视频已完成");
+        timerId = window.setTimeout(() => runPhase("memory"), 700);
+      }, { once: true });
+      video.addEventListener("error", () => {
+        if (statusBox) textStatus(statusBox, "视频加载失败，请检查公开视频链接或网络连接。", "error");
+        setVideoStatus("视频加载失败");
+        const actions = document.createElement("div");
+        actions.className = "video-actions";
+        actions.innerHTML = `<button class="btn secondary" type="button" id="skipVideoBtn">跳过视频并进入记忆阶段</button>`;
+        taskCard.appendChild(actions);
+        bindSkipVideoButton();
+      }, { once: true });
+    }
+    function textStatus(element, text, type) {
+      element.textContent = text;
+      element.className = `video-status${type ? " " + type : ""}`;
+    }
+    function bindSkipVideoButton() {
+      const button = document.getElementById("skipVideoBtn");
+      if (button) button.addEventListener("click", () => runPhase("memory"));
+    }
+    function setVideoStatus(text) {
+      const timeStat = document.getElementById("timeStat");
+      const phaseStat = document.getElementById("phaseStat");
+      const fill = document.getElementById("timerFill");
+      if (timeStat) timeStat.textContent = text;
+      if (phaseStat) phaseStat.textContent = "情绪视频";
+      if (fill) fill.style.width = "100%";
     }
     function renderItems(items) { return renderMaterialItems(items); }
     function showRecall() {
