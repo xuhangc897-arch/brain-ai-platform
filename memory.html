@@ -893,7 +893,13 @@
         finalConclusion: "",
         designImprove: "",
         teamwork: "",
-        inquiryReflection: ""
+        inquiryReflection: "",
+        participantId: "",
+        teammate1Id: "",
+        teammate1Result: "",
+        teammate2Id: "",
+        teammate2Result: "",
+        groupAverageShortTermMemory: ""
       },
       records: [],
       surveys: createDefaultSurveys(),
@@ -1058,7 +1064,12 @@
         renderSurveyForm("cognitiveLoad", "load") +
         renderSurveyForm("inquiryParticipation", "inquiry") +
         renderSurveySummaryCards() +
+        renderPosttestExportArea() +
       '</div>';
+    }
+
+    function renderPosttestExportArea() {
+      return '<div class="actions" style="justify-content:flex-end;"><button class="btn success" type="button" id="finalExportBtn">导出完整实验记录</button></div>';
     }
 
     function renderSurveyForm(surveyKey, defKey) {
@@ -1366,6 +1377,98 @@
       `;
     }
 
+    function getPersonalShortTermMemory(summary) {
+      const value = getOverallAverage(summary || summarizeRecords());
+      return value || "";
+    }
+
+    function getShortTermGroupAverage(personalResult) {
+      const values = [personalResult, state.fields.teammate1Result, state.fields.teammate2Result]
+        .map((value) => Number(value))
+        .filter((value) => Number.isFinite(value) && value > 0);
+      return values.length ? Number((values.reduce((sum, value) => sum + value, 0) / values.length).toFixed(1)) : "";
+    }
+
+    function renderTeamResultTable(summary) {
+      const personalResult = getPersonalShortTermMemory(summary);
+      const average = getShortTermGroupAverage(personalResult);
+      state.fields.groupAverageShortTermMemory = average;
+      const filledCount = [personalResult, state.fields.teammate1Result, state.fields.teammate2Result]
+        .filter((value) => Number(value) > 0).length;
+      const note = filledCount === 2 ? "仍可补充另一名组员结果。" : "请记录三名成员的有效短时记忆容量。";
+      return `
+        <div class="panel" style="margin-top:18px;">
+          <div class="panel-head"><h3>三人小组结果记录</h3><p>实验一根据三人的有效短时记忆容量计算小组平均值。</p></div>
+          <div class="panel-body">
+            <table>
+              <thead><tr><th>成员</th><th>组员编号</th><th>实验结果</th></tr></thead>
+              <tbody>
+                <tr>
+                  <td>本人</td>
+                  <td><input type="text" data-field="participantId" value="${escapeHtml(state.fields.participantId || state.studentId)}" placeholder="本人编号"></td>
+                  <td><input type="number" value="${escapeHtml(personalResult)}" placeholder="自动带入本人结果" disabled></td>
+                </tr>
+                <tr>
+                  <td>组员</td>
+                  <td><input type="text" data-field="teammate1Id" value="${escapeHtml(state.fields.teammate1Id)}" placeholder="请输入编号"></td>
+                  <td><input type="text" inputmode="decimal" data-field="teammate1Result" value="${escapeHtml(state.fields.teammate1Result)}" placeholder="请输入短时记忆容量"></td>
+                </tr>
+                <tr>
+                  <td>组员</td>
+                  <td><input type="text" data-field="teammate2Id" value="${escapeHtml(state.fields.teammate2Id)}" placeholder="请输入编号"></td>
+                  <td><input type="text" inputmode="decimal" data-field="teammate2Result" value="${escapeHtml(state.fields.teammate2Result)}" placeholder="请输入短时记忆容量"></td>
+                </tr>
+              </tbody>
+            </table>
+            <div class="reading-card" style="margin-top:16px;">
+              <h4>小组平均短时记忆容量</h4>
+              <p>当前小组平均短时记忆容量：<strong>${average || "--"}</strong>${average ? " 个信息单位。" : ""}</p>
+              <p>${note}</p>
+            </div>
+          </div>
+        </div>`;
+    }
+
+    function getTeamResultSheet(summary) {
+      const personalResult = getPersonalShortTermMemory(summary);
+      const average = getShortTermGroupAverage(personalResult);
+      return ["小组记录", [
+        ["本人编号", "本人结果", "组员1编号", "组员1结果", "组员2编号", "组员2结果", "小组平均短时记忆容量"],
+        [state.fields.participantId || state.studentId, personalResult, state.fields.teammate1Id, state.fields.teammate1Result, state.fields.teammate2Id, state.fields.teammate2Result, average]
+      ]];
+    }
+
+    function getSystemInfoSheet(recordCount) {
+      return ["系统信息", [
+        ["项目", "内容"],
+        ["实验版本", "science-inquiry-static-v1"],
+        ["localStorage key", STORAGE_KEY],
+        ["保存时间", state.savedAt || ""],
+        ["导出时间", new Date().toLocaleString()],
+        ["当前步骤", `${state.currentStep + 1}/${steps.length}`],
+        ["过程性实验记录数", recordCount],
+        ["AI聊天记录", "不包含，AI 对话请在 AI 助手窗口单独导出"]
+      ]];
+    }
+
+    function getRawStorageSheet() {
+      return ["localStorage原始数据", [
+        ["localStorage key", "JSON"],
+        [STORAGE_KEY, localStorage.getItem(STORAGE_KEY) || ""]
+      ]];
+    }
+
+    function getHeadbandSummarySheet() {
+      return ["头环数据摘要", [
+        ["项目", "内容"],
+        ["上传文件名", ""],
+        ["头环颜色趋势", state.fields.colorTrend || ""],
+        ["前额叶活跃程度", state.fields.activityTrend || ""],
+        ["数据摘要", state.fields.brainFinding || ""],
+        ["统计结果", ""]
+      ]];
+    }
+
     function renderAnalysisStep() {
       const summary = summarizeRecords();
       const rows = summary.map((item) => `
@@ -1404,6 +1507,7 @@
               </div>
             </div>
           </div>
+          ${renderTeamResultTable(summary)}
           <div class="panel">
             <div class="panel-head"><h3>结果图与脑活动记录</h3></div>
             <div class="panel-body">
@@ -1489,18 +1593,6 @@
               </div>
             </div>
           </div>
-          <div class="panel">
-            <div class="panel-head"><h3>完成与导出</h3></div>
-            <div class="panel-body">
-              <div class="summary-grid">
-                <div class="mini-stat"><span>学生编号</span><b>${escapeHtml(state.studentId)}</b></div>
-                <div class="mini-stat"><span>小组编号</span><b>${escapeHtml(state.groupId)}</b></div>
-                <div class="mini-stat"><span>实验记录</span><b>${state.records.length}</b></div>
-                <div class="mini-stat"><span>当前步骤</span><b>${state.currentStep + 1}/7</b></div>
-              </div>
-              <button class="btn success" type="button" id="finalExportBtn">一键导出 Excel</button>
-            </div>
-          </div>
         </div>
       `;
     }
@@ -1526,6 +1618,9 @@
         state.fields[field] = Number(element.value);
       } else {
         state.fields[field] = element.value;
+      }
+      if (["participantId", "teammate1Result", "teammate2Result"].includes(field)) {
+        state.fields.groupAverageShortTermMemory = getShortTermGroupAverage(getPersonalShortTermMemory());
       }
       saveState();
     }
@@ -1808,9 +1903,10 @@
           ["学生年龄", state.studentAge || ""],
           ["学生编号", state.studentId],
           ["小组编号", state.groupId],
+          ["实验时间", state.savedAt || ""],
           ["导出时间", new Date().toLocaleString()]
         ]],
-        ["探究填写内容", [
+        ["实验过程", [
           ["字段", "内容"],
           ["研究问题", state.fields.question],
           ["研究假设", state.fields.hypothesis],
@@ -1860,6 +1956,10 @@
           ["参与者", "各次容量", "平均容量", "有效次数"],
           ...summary.map((item) => [item.subject, item.runs.join("、"), item.average, item.count])
         ]],
+        getTeamResultSheet(summary),
+        getHeadbandSummarySheet(),
+        getSystemInfoSheet(state.records.length),
+        getRawStorageSheet(),
         ...getSurveySheets()
       ];
       const html = `

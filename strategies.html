@@ -329,7 +329,12 @@
         conclusion: "",
         designImprove: "",
         surprise: "",
-        applicability: ""
+        applicability: "",
+        participantId: "",
+        teammate1Id: "",
+        teammate1Result: "",
+        teammate2Id: "",
+        teammate2Result: ""
       },
       records: [],
       surveys: createDefaultSurveys(),
@@ -433,7 +438,12 @@
         renderSurveyForm("cognitiveLoad", "load") +
         renderSurveyForm("inquiryParticipation", "inquiry") +
         renderSurveySummaryCards() +
+        renderPosttestExportArea() +
       '</div>';
+    }
+
+    function renderPosttestExportArea() {
+      return '<div class="actions" style="justify-content:flex-end;"><button class="btn success" type="button" id="finalExportBtn">导出完整实验记录</button></div>';
     }
 
     function renderSurveyForm(surveyKey, defKey) {
@@ -601,11 +611,34 @@
         <div id="focusPrep" class="focus-prep" role="dialog" aria-modal="true"><div class="focus-prep-card"><h3>准备开始策略记忆实验</h3><p>页面将切换到低干扰模式，并尝试进入浏览器全屏。记忆、找不同、测试阶段会按设定时间推进。</p><p>测试阶段请尽可能完整地回忆目标材料，完成后提交。</p><button class="btn" type="button" id="confirmStartRunBtn">进入实验</button><button class="btn secondary" type="button" id="cancelStartRunBtn">取消</button></div></div>
       </div></div>`;
     }
+    function getPersonalStrategyResult(summary) {
+      const items = summary || summarizeRecords();
+      if (!items.length) return "";
+      const avgCorrect = Number((items.reduce((sum, item) => sum + Number(item.avgCorrect || 0), 0) / items.length).toFixed(1));
+      const avgAccuracy = Math.round(items.reduce((sum, item) => sum + Number(item.avgAccuracy || 0), 0) / items.length);
+      return `平均正确数 ${avgCorrect}，平均回忆率 ${avgAccuracy}%`;
+    }
+    function renderTeamResultTable(summary) {
+      const personalResult = getPersonalStrategyResult(summary);
+      return `<div class="panel" style="margin-top:18px;"><div class="panel-head"><h3>其他组员实验结果记录</h3><p>仅用于留痕和对比，不参与统计计算。</p></div><div class="panel-body"><table><thead><tr><th>成员</th><th>组员编号</th><th>实验结果</th></tr></thead><tbody><tr><td>本人</td><td><input type="text" data-field="participantId" value="${escapeHtml(state.fields.participantId || state.studentId)}" placeholder="本人编号"></td><td><input type="text" value="${escapeHtml(personalResult)}" placeholder="自动带入本人结果" disabled></td></tr><tr><td>组员</td><td><input type="text" data-field="teammate1Id" value="${escapeHtml(state.fields.teammate1Id)}" placeholder="请输入编号"></td><td><input type="text" data-field="teammate1Result" value="${escapeHtml(state.fields.teammate1Result)}" placeholder="请输入该组员实验结果"></td></tr><tr><td>组员</td><td><input type="text" data-field="teammate2Id" value="${escapeHtml(state.fields.teammate2Id)}" placeholder="请输入编号"></td><td><input type="text" data-field="teammate2Result" value="${escapeHtml(state.fields.teammate2Result)}" placeholder="请输入该组员实验结果"></td></tr></tbody></table></div></div>`;
+    }
+    function getTeamResultSheet(summary) {
+      return ["小组记录", [["本人编号","本人结果","组员1编号","组员1结果","组员2编号","组员2结果"], [state.fields.participantId || state.studentId, getPersonalStrategyResult(summary), state.fields.teammate1Id, state.fields.teammate1Result, state.fields.teammate2Id, state.fields.teammate2Result]]];
+    }
+    function getSystemInfoSheet(recordCount) {
+      return ["系统信息", [["项目","内容"],["实验版本","science-inquiry-static-v1"],["localStorage key",STORAGE_KEY],["保存时间",state.savedAt || ""],["导出时间",new Date().toLocaleString()],["当前步骤",`${state.currentStep + 1}/${steps.length}`],["过程性实验记录数",recordCount],["AI聊天记录","不包含，AI 对话请在 AI 助手窗口单独导出"]]];
+    }
+    function getRawStorageSheet() {
+      return ["localStorage原始数据", [["localStorage key","JSON"],[STORAGE_KEY, localStorage.getItem(STORAGE_KEY) || ""]]];
+    }
+    function getHeadbandSummarySheet() {
+      return ["头环数据摘要", [["项目","内容"],["上传文件名",""],["总体头环观察",state.fields.headband || ""],["记录内头环观察",state.records.map((record)=>record.headband).filter(Boolean).join("；")],["数据摘要",state.fields.headband || ""],["统计结果",""]]];
+    }
     function renderAnalysisStep() {
       const summary = summarizeRecords();
       const rows = summary.map((item)=>`<tr><td>${escapeHtml(item.strategy)}</td><td>${item.count}</td><td>${item.avgCorrect}</td><td>${item.avgAccuracy}%</td><td>${item.avgRt ? item.avgRt + "ms" : "--"}</td></tr>`).join("");
       const chart = summary.length ? summary.map((item)=>`<div class="bar-row"><div>${escapeHtml(item.strategy)}</div><div class="bar-track"><div class="bar-fill" style="width:${item.avgAccuracy}%"></div></div><div>${item.avgAccuracy}%</div></div>`).join("") : `<div class="empty-state">完成实验后会自动生成策略对比图。</div>`;
-      return `<div class="step-layout"><div class="panel"><div class="panel-head"><h3>策略汇总</h3></div><div class="panel-body">${summary.length ? `<table><thead><tr><th>策略</th><th>次数</th><th>平均正确数</th><th>平均回忆率</th><th>平均反应时</th></tr></thead><tbody>${rows}</tbody></table>` : `<div class="empty-state">还没有实验数据。请先完成至少一个阶段。</div>`}</div></div><div class="panel"><div class="panel-head"><h3>图表与策略评分</h3></div><div class="panel-body"><div class="chart">${chart}</div><div class="form-grid" style="margin-top:18px;">${renderScoreField("scoreAccuracy","答案准确性")}${renderScoreField("scoreUse","策略利用率")}${renderScoreField("scoreConfidence","记忆信心度")}${renderScoreField("scoreTransfer","策略迁移性")}</div><div class="mini-stat"><span>评分总分</span><b>${getScoreTotal()}</b></div><div class="field" style="margin-top:18px;"><label>头环观察</label><textarea data-field="headband">${escapeHtml(state.fields.headband)}</textarea></div></div></div></div>`;
+      return `<div class="step-layout"><div class="panel"><div class="panel-head"><h3>策略汇总</h3></div><div class="panel-body">${summary.length ? `<table><thead><tr><th>策略</th><th>次数</th><th>平均正确数</th><th>平均回忆率</th><th>平均反应时</th></tr></thead><tbody>${rows}</tbody></table>` : `<div class="empty-state">还没有实验数据。请先完成至少一个阶段。</div>`}</div></div>${renderTeamResultTable(summary)}<div class="panel"><div class="panel-head"><h3>图表与策略评分</h3></div><div class="panel-body"><div class="chart">${chart}</div><div class="form-grid" style="margin-top:18px;">${renderScoreField("scoreAccuracy","答案准确性")}${renderScoreField("scoreUse","策略利用率")}${renderScoreField("scoreConfidence","记忆信心度")}${renderScoreField("scoreTransfer","策略迁移性")}</div><div class="mini-stat"><span>评分总分</span><b>${getScoreTotal()}</b></div><div class="field" style="margin-top:18px;"><label>头环观察</label><textarea data-field="headband">${escapeHtml(state.fields.headband)}</textarea></div></div></div></div>`;
     }
     function renderScoreField(field, label) {
       return `<div class="field"><label>${label}</label><select data-field="${field}">${[1,2,3,4,5].map((n)=>`<option value="${n}" ${Number(state.fields[field])===n ? "selected" : ""}>${n} 分</option>`).join("")}</select></div>`;
@@ -625,7 +658,7 @@
       return `<div class="step-layout"><div class="panel"><div class="panel-head"><h3>得出结论</h3></div><div class="panel-body"><textarea data-field="conclusion" placeholder="通过实验，我们发现改善长时记忆可以通过哪些策略？">${escapeHtml(state.fields.conclusion)}</textarea></div></div><div class="panel"><div class="panel-head"><h3>结论提示</h3></div><div class="panel-body"><div class="reading-card"><h4>提示</h4><p>结论应结合两个阶段的回忆率、策略评分和头环观察，说明哪种策略更有效。</p></div></div></div></div>`;
     }
     function renderReflectionStep() {
-      return `<div class="step-layout"><div class="panel"><div class="panel-head"><h3>反思交流</h3></div><div class="panel-body"><div class="field"><label>实验设计有什么可以改进？</label><textarea data-field="designImprove">${escapeHtml(state.fields.designImprove)}</textarea></div><div class="field"><label>结果是否出乎意料？为什么？</label><textarea data-field="surprise">${escapeHtml(state.fields.surprise)}</textarea></div><div class="field"><label>以上策略适用于所有学习内容吗？</label><textarea data-field="applicability">${escapeHtml(state.fields.applicability)}</textarea></div></div></div><div class="panel"><div class="panel-head"><h3>完成与导出</h3></div><div class="panel-body"><div class="summary-grid"><div class="mini-stat"><span>学生编号</span><b>${escapeHtml(state.studentId)}</b></div><div class="mini-stat"><span>小组编号</span><b>${escapeHtml(state.groupId)}</b></div><div class="mini-stat"><span>实验记录</span><b>${state.records.length}</b></div><div class="mini-stat"><span>评分总分</span><b>${getScoreTotal()}</b></div></div><button class="btn success" type="button" id="finalExportBtn">一键导出 Excel</button></div></div></div>`;
+      return `<div class="step-layout"><div class="panel"><div class="panel-head"><h3>反思交流</h3></div><div class="panel-body"><div class="field"><label>实验设计有什么可以改进？</label><textarea data-field="designImprove">${escapeHtml(state.fields.designImprove)}</textarea></div><div class="field"><label>结果是否出乎意料？为什么？</label><textarea data-field="surprise">${escapeHtml(state.fields.surprise)}</textarea></div><div class="field"><label>以上策略适用于所有学习内容吗？</label><textarea data-field="applicability">${escapeHtml(state.fields.applicability)}</textarea></div></div></div></div>`;
     }
     function bindInputs() {
       main.querySelectorAll("[data-field]").forEach((element)=>{ const field = element.dataset.field; element.addEventListener("change",()=>updateField(element, field)); element.addEventListener("input",()=>updateField(element, field)); });
@@ -818,11 +851,15 @@
     function exportExcel() {
       const summary = summarizeRecords();
       const sheets = [
-        ["基本信息", [["项目","内容"],["实验","改善长时记忆的策略有哪些"],["学生姓名",state.studentName || ""],["学生年龄",state.studentAge || ""],["学生编号",state.studentId],["小组编号",state.groupId],["导出时间",new Date().toLocaleString()]]],
-        ["探究填写内容", [["字段","内容"],["研究问题",state.fields.question],["策略1假设",state.fields.hypothesis1],["策略2假设",state.fields.hypothesis2],["策略1",state.fields.strategy1],["策略2",state.fields.strategy2],["材料类型",state.fields.materialType],["初级数量",state.fields.lowCount],["中级数量",state.fields.midCount],["高级数量",state.fields.highCount],["记忆时间s",state.fields.memorySeconds],["找不同时间s",state.fields.puzzleSeconds],["测试时间s",state.fields.testSeconds],["组长",state.fields.leader],["记录员",state.fields.recorder],["组员A",state.fields.memberA],["组员B",state.fields.memberB],["头环观察",state.fields.headband],["结论",state.fields.conclusion],["设计改进",state.fields.designImprove],["结果意外原因",state.fields.surprise],["适用性反思",state.fields.applicability]]],
+        ["基本信息", [["项目","内容"],["实验","改善长时记忆的策略有哪些"],["学生姓名",state.studentName || ""],["学生年龄",state.studentAge || ""],["学生编号",state.studentId],["小组编号",state.groupId],["实验时间",state.savedAt || ""],["导出时间",new Date().toLocaleString()]]],
+        ["实验过程", [["字段","内容"],["研究问题",state.fields.question],["策略1假设",state.fields.hypothesis1],["策略2假设",state.fields.hypothesis2],["策略1",state.fields.strategy1],["策略2",state.fields.strategy2],["材料类型",state.fields.materialType],["初级数量",state.fields.lowCount],["中级数量",state.fields.midCount],["高级数量",state.fields.highCount],["记忆时间s",state.fields.memorySeconds],["找不同时间s",state.fields.puzzleSeconds],["测试时间s",state.fields.testSeconds],["组长",state.fields.leader],["记录员",state.fields.recorder],["组员A",state.fields.memberA],["组员B",state.fields.memberB],["头环观察",state.fields.headband],["结论",state.fields.conclusion],["设计改进",state.fields.designImprove],["结果意外原因",state.fields.surprise],["适用性反思",state.fields.applicability]]],
         ["测试明细", [["学生姓名","学生年龄","学生编号","小组编号","阶段","策略","材料类型","题目总数","记忆时间s","找不同时间s","测试时间s","题目","学生回答","正确项目","正确数","回忆率","找不同命中","找不同点击","反应时ms","头环观察","评分总分","记录时间"], ...state.records.map((r)=>[r.studentName || "",r.studentAge || "",r.studentId,r.groupId,r.stage,r.strategy,r.materialType,r.itemCount,r.memorySeconds,r.puzzleSeconds,r.testSeconds,r.items,r.recall,r.correctItems,r.correctCount,`${r.accuracy}%`,r.puzzleHits || 0,r.puzzleAttempts || 0,r.reactionTime,r.headband,r.scoreTotal,r.createdAt])]],
         ["策略汇总", [["策略","次数","平均正确数","平均回忆率","平均反应时ms"], ...summary.map((item)=>[item.strategy,item.count,item.avgCorrect,`${item.avgAccuracy}%`,item.avgRt])],
         ],
+        getTeamResultSheet(summary),
+        getHeadbandSummarySheet(),
+        getSystemInfoSheet(state.records.length),
+        getRawStorageSheet(),
         ["评分表", [["评分维度","得分"],["答案准确性",state.fields.scoreAccuracy],["策略利用率",state.fields.scoreUse],["记忆信心度",state.fields.scoreConfidence],["策略迁移性",state.fields.scoreTransfer],["总分",getScoreTotal()]]],
         ...getSurveySheets()
       ];

@@ -407,7 +407,12 @@
         credibility: "不确定",
         strengths: "",
         improvements: "",
-        learningInsight: ""
+        learningInsight: "",
+        participantId: "",
+        teammate1Id: "",
+        teammate1Result: "",
+        teammate2Id: "",
+        teammate2Result: ""
       },
       records: [],
       surveys: createDefaultSurveys(),
@@ -522,7 +527,12 @@
         renderSurveyForm("cognitiveLoad", "load") +
         renderSurveyForm("inquiryParticipation", "inquiry") +
         renderSurveySummaryCards() +
+        renderPosttestExportArea() +
       '</div>';
+    }
+
+    function renderPosttestExportArea() {
+      return '<div class="actions" style="justify-content:flex-end;"><button class="btn success" type="button" id="finalExportBtn">导出完整实验记录</button></div>';
     }
 
     function renderSurveyForm(surveyKey, defKey) {
@@ -703,17 +713,40 @@
         <div id="focusPrep" class="focus-prep" role="dialog" aria-modal="true"><div class="focus-prep-card"><h3>准备开始材料化实验</h3><p>页面将切换到低干扰模式，并尝试进入全屏。实验会按固定材料流程推进。</p><p>测试阶段请根据评分标准输入回忆内容和得分。</p><button class="btn" type="button" id="confirmStartRunBtn">进入实验</button><button class="btn secondary" type="button" id="cancelStartRunBtn">取消</button></div></div>
       </div></div>`;
     }
+    function getPersonalInterferenceResult(summary) {
+      const items = summary || summarizeRecords();
+      if (!items.length) return "";
+      const avgScore = Number((items.reduce((sum, item) => sum + Number(item.avgCorrect || 0), 0) / items.length).toFixed(1));
+      const avgAccuracy = Math.round(items.reduce((sum, item) => sum + Number(item.avgAccuracy || 0), 0) / items.length);
+      return `平均得分 ${avgScore}，平均正确率 ${avgAccuracy}%`;
+    }
+    function renderTeamResultTable(summary) {
+      const personalResult = getPersonalInterferenceResult(summary);
+      return `<div class="panel" style="margin-top:18px;"><div class="panel-head"><h3>其他组员实验结果记录</h3><p>仅用于留痕和对比，不参与统计计算。</p></div><div class="panel-body"><table><thead><tr><th>成员</th><th>组员编号</th><th>实验结果</th></tr></thead><tbody><tr><td>本人</td><td><input type="text" data-field="participantId" value="${escapeHtml(state.fields.participantId || state.studentId)}" placeholder="本人编号"></td><td><input type="text" value="${escapeHtml(personalResult)}" placeholder="自动带入本人结果" disabled></td></tr><tr><td>组员</td><td><input type="text" data-field="teammate1Id" value="${escapeHtml(state.fields.teammate1Id)}" placeholder="请输入编号"></td><td><input type="text" data-field="teammate1Result" value="${escapeHtml(state.fields.teammate1Result)}" placeholder="请输入该组员实验结果"></td></tr><tr><td>组员</td><td><input type="text" data-field="teammate2Id" value="${escapeHtml(state.fields.teammate2Id)}" placeholder="请输入编号"></td><td><input type="text" data-field="teammate2Result" value="${escapeHtml(state.fields.teammate2Result)}" placeholder="请输入该组员实验结果"></td></tr></tbody></table></div></div>`;
+    }
+    function getTeamResultSheet(summary) {
+      return ["小组记录", [["本人编号","本人结果","组员1编号","组员1结果","组员2编号","组员2结果"], [state.fields.participantId || state.studentId, getPersonalInterferenceResult(summary), state.fields.teammate1Id, state.fields.teammate1Result, state.fields.teammate2Id, state.fields.teammate2Result]]];
+    }
+    function getSystemInfoSheet(recordCount) {
+      return ["系统信息", [["项目","内容"],["实验版本","science-inquiry-static-v1"],["localStorage key",STORAGE_KEY],["保存时间",state.savedAt || ""],["导出时间",new Date().toLocaleString()],["当前步骤",`${state.currentStep + 1}/${steps.length}`],["过程性实验记录数",recordCount],["AI聊天记录","不包含，AI 对话请在 AI 助手窗口单独导出"]]];
+    }
+    function getRawStorageSheet() {
+      return ["localStorage原始数据", [["localStorage key","JSON"],[STORAGE_KEY, localStorage.getItem(STORAGE_KEY) || ""]]];
+    }
+    function getHeadbandSummarySheet() {
+      return ["头环数据摘要", [["项目","内容"],["上传文件名",""],["总体头环观察",state.fields.headband || ""],["记录内头环观察",state.records.map((record)=>record.headband).filter(Boolean).join("；")],["数据摘要",state.fields.headband || ""],["统计结果",""]]];
+    }
     function renderAnalysisStep() {
       const summary = summarizeRecords();
       const rows = summary.map((item)=>`<tr><td>${escapeHtml(item.condition)}</td><td>${item.count}</td><td>${item.avgCorrect}</td><td>${item.avgAccuracy}%</td><td>${item.avgRt ? item.avgRt + "ms" : "--"}</td></tr>`).join("");
       const chart = summary.length ? summary.map((item)=>`<div class="bar-row"><div>${escapeHtml(item.condition)}</div><div class="bar-track"><div class="bar-fill" style="width:${item.avgAccuracy}%"></div></div><div>${item.avgAccuracy}%</div></div>`).join("") : `<div class="empty-state">完成实验后会自动生成条件对比图。</div>`;
-      return `<div class="step-layout"><div class="panel"><div class="panel-head"><h3>条件汇总</h3></div><div class="panel-body">${summary.length ? `<table><thead><tr><th>条件</th><th>次数</th><th>平均正确数</th><th>平均正确率</th><th>平均反应时</th></tr></thead><tbody>${rows}</tbody></table>` : `<div class="empty-state">还没有实验数据。请先完成至少一轮实验。</div>`}</div></div><div class="panel"><div class="panel-head"><h3>结果展示与头环记录</h3></div><div class="panel-body"><div class="chart">${chart}</div><div class="field" style="margin-top:18px;"><label>总体头环观察</label><textarea data-field="headband">${escapeHtml(state.fields.headband)}</textarea></div></div></div></div>`;
+      return `<div class="step-layout"><div class="panel"><div class="panel-head"><h3>条件汇总</h3></div><div class="panel-body">${summary.length ? `<table><thead><tr><th>条件</th><th>次数</th><th>平均正确数</th><th>平均正确率</th><th>平均反应时</th></tr></thead><tbody>${rows}</tbody></table>` : `<div class="empty-state">还没有实验数据。请先完成至少一轮实验。</div>`}</div></div>${renderTeamResultTable(summary)}<div class="panel"><div class="panel-head"><h3>结果展示与头环记录</h3></div><div class="panel-body"><div class="chart">${chart}</div><div class="field" style="margin-top:18px;"><label>总体头环观察</label><textarea data-field="headband">${escapeHtml(state.fields.headband)}</textarea></div></div></div></div>`;
     }
     function renderConclusionStep() {
       return `<div class="step-layout"><div class="panel"><div class="panel-head"><h3>得出结论</h3></div><div class="panel-body"><div class="form-grid"><div class="field"><label>结论是否支持假设</label><select data-field="support"><option value="是" ${selected("support","是")}>是</option><option value="否" ${selected("support","否")}>否</option><option value="不确定" ${selected("support","不确定")}>不确定</option></select></div><div class="field"><label>结论是否可信</label><select data-field="credibility"><option value="是" ${selected("credibility","是")}>是</option><option value="否" ${selected("credibility","否")}>否</option><option value="不确定" ${selected("credibility","不确定")}>不确定</option></select></div></div><textarea data-field="conclusion" placeholder="通过实验，我们得到以下结论">${escapeHtml(state.fields.conclusion)}</textarea></div></div><div class="panel"><div class="panel-head"><h3>原因说明</h3></div><div class="panel-body"><div class="reading-card"><h4>提示</h4><p>结论需要回到数据：哪一轮/哪一条件正确率更低，是否说明该因素造成了更强干扰。</p></div></div></div></div>`;
     }
     function renderReflectionStep() {
-      return `<div class="step-layout"><div class="panel"><div class="panel-head"><h3>反思评价</h3></div><div class="panel-body"><div class="field"><label>本组实验设计有什么优点？</label><textarea data-field="strengths">${escapeHtml(state.fields.strengths)}</textarea></div><div class="field"><label>还有哪些可以改进？</label><textarea data-field="improvements">${escapeHtml(state.fields.improvements)}</textarea></div><div class="field"><label>本实验结论对学习有什么启发？</label><textarea data-field="learningInsight">${escapeHtml(state.fields.learningInsight)}</textarea></div></div></div><div class="panel"><div class="panel-head"><h3>完成与导出</h3></div><div class="panel-body"><div class="summary-grid"><div class="mini-stat"><span>学生编号</span><b>${escapeHtml(state.studentId)}</b></div><div class="mini-stat"><span>小组编号</span><b>${escapeHtml(state.groupId)}</b></div><div class="mini-stat"><span>实验记录</span><b>${state.records.length}</b></div><div class="mini-stat"><span>当前步骤</span><b>${state.currentStep + 1}/7</b></div></div><button class="btn success" type="button" id="finalExportBtn">一键导出 Excel</button></div></div></div>`;
+      return `<div class="step-layout"><div class="panel"><div class="panel-head"><h3>反思评价</h3></div><div class="panel-body"><div class="field"><label>本组实验设计有什么优点？</label><textarea data-field="strengths">${escapeHtml(state.fields.strengths)}</textarea></div><div class="field"><label>还有哪些可以改进？</label><textarea data-field="improvements">${escapeHtml(state.fields.improvements)}</textarea></div><div class="field"><label>本实验结论对学习有什么启发？</label><textarea data-field="learningInsight">${escapeHtml(state.fields.learningInsight)}</textarea></div></div></div></div>`;
     }
     function bindInputs() {
       main.querySelectorAll("[data-field]").forEach((element)=>{
@@ -987,10 +1020,14 @@
     function exportExcel() {
       const summary = summarizeRecords();
       const sheets = [
-        ["基本信息", [["项目","内容"],["实验","探究干扰长时记忆的因素"],["学生姓名",state.studentName || ""],["学生年龄",state.studentAge || ""],["学生编号",state.studentId],["小组编号",state.groupId],["导出时间",new Date().toLocaleString()]]],
-        ["探究填写内容", [["字段","内容"],["生活干扰因素",state.fields.lifeFactors],["材料干扰因素",state.fields.materialFactors],["探究因素",state.fields.factor],["研究问题",state.fields.question],["研究假设",state.fields.hypothesis],["参与者",state.fields.participant],["难度",state.fields.difficulty],["情绪条件",state.fields.emotionCondition],["记忆时间s",state.fields.memorySeconds],["休息/视频时间s",state.fields.restSeconds],["干扰时间s",state.fields.interferenceSeconds],["头环观察",state.fields.headband],["结论",state.fields.conclusion],["假设支持",state.fields.support],["可信度",state.fields.credibility],["优点",state.fields.strengths],["改进",state.fields.improvements],["学习启发",state.fields.learningInsight]]],
+        ["基本信息", [["项目","内容"],["实验","探究干扰长时记忆的因素"],["学生姓名",state.studentName || ""],["学生年龄",state.studentAge || ""],["学生编号",state.studentId],["小组编号",state.groupId],["实验时间",state.savedAt || ""],["导出时间",new Date().toLocaleString()]]],
+        ["实验过程", [["字段","内容"],["生活干扰因素",state.fields.lifeFactors],["材料干扰因素",state.fields.materialFactors],["探究因素",state.fields.factor],["研究问题",state.fields.question],["研究假设",state.fields.hypothesis],["参与者",state.fields.participant],["难度",state.fields.difficulty],["情绪条件",state.fields.emotionCondition],["记忆时间s",state.fields.memorySeconds],["休息/视频时间s",state.fields.restSeconds],["干扰时间s",state.fields.interferenceSeconds],["头环观察",state.fields.headband],["结论",state.fields.conclusion],["假设支持",state.fields.support],["可信度",state.fields.credibility],["优点",state.fields.strengths],["改进",state.fields.improvements],["学习启发",state.fields.learningInsight]]],
         ["实验明细", [["学生姓名","学生年龄","学生编号","小组编号","参与者","轮次","实验类型","材料来源","材料类型","难度","条件","视频条件","记忆时间s","休息/视频时间s","干扰时间s","记忆材料","干扰材料","评分规则","满分","得分","正确率","回忆内容","头环观察","情绪强度","反应时ms","记录时间"], ...state.records.map((record)=>[record.studentName || "",record.studentAge || "",record.studentId,record.groupId,record.participant,record.round,record.factor,record.materialSource,record.materialType,record.difficultyLabel || record.difficulty,record.condition,record.videoCondition,record.memorySeconds,record.restSeconds,record.interferenceSeconds,record.memoryItems,record.interferenceItems,record.scoreRule,record.fullScore,record.score ?? record.correctCount,`${record.accuracy}%`,record.recall,record.headband,record.emotionRating,record.reactionTime,record.createdAt])]],
         ["条件汇总", [["条件","次数","平均得分","平均正确率","平均反应时ms"], ...summary.map((item)=>[item.condition,item.count,item.avgCorrect,`${item.avgAccuracy}%`,item.avgRt])]],
+        getTeamResultSheet(summary),
+        getHeadbandSummarySheet(),
+        getSystemInfoSheet(state.records.length),
+        getRawStorageSheet(),
         ...getSurveySheets()
       ];
       const html = `<html><head><meta charset="utf-8"></head><body>${sheets.map(([title, rows])=>`<h2>${escapeHtml(title)}</h2><table border="1">${rows.map((row)=>`<tr>${row.map((cell)=>`<td>${escapeHtml(cell)}</td>`).join("")}</tr>`).join("")}</table><br>`).join("")}</body></html>`;

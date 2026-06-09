@@ -1115,7 +1115,12 @@
         conclusionSupported: "尚未判断",
         conclusion: "",
         improvement: "",
-        persuasiveness: ""
+        persuasiveness: "",
+        participantId: "",
+        teammate1Id: "",
+        teammate1Result: "",
+        teammate2Id: "",
+        teammate2Result: ""
       },
       testRuns: [],
       surveys: createDefaultSurveys(),
@@ -1285,7 +1290,12 @@
         renderSurveyForm("cognitiveLoad", "load") +
         renderSurveyForm("inquiryParticipation", "inquiry") +
         renderSurveySummaryCards() +
+        renderPosttestExportArea() +
       '</div>';
+    }
+
+    function renderPosttestExportArea() {
+      return '<div class="actions" style="justify-content:flex-end;"><button class="btn success" type="button" id="finalExportBtn">导出完整实验记录</button></div>';
     }
 
     function renderSurveyForm(surveyKey, defKey) {
@@ -1629,6 +1639,82 @@
       `;
     }
 
+    function getPersonalNbackResult(summary) {
+      const items = summary || summarizeRuns();
+      if (!items.length) return "";
+      const avgAccuracy = Math.round(items.reduce((sum, item) => sum + Number(item.accuracy || 0), 0) / items.length);
+      const avgMissRate = Math.round(items.reduce((sum, item) => sum + Number(item.missRate || 0), 0) / items.length);
+      return `平均正确率 ${avgAccuracy}%，平均漏答率 ${avgMissRate}%`;
+    }
+
+    function renderTeamResultTable(summary) {
+      const personalResult = getPersonalNbackResult(summary);
+      return `
+        <div class="panel" style="margin-top:18px;">
+          <div class="panel-head"><h3>其他组员实验结果记录</h3><p>仅用于留痕和对比，不参与统计计算。</p></div>
+          <div class="panel-body">
+            <table>
+              <thead><tr><th>成员</th><th>组员编号</th><th>实验结果</th></tr></thead>
+              <tbody>
+                <tr>
+                  <td>本人</td>
+                  <td><input type="text" data-field="participantId" value="${escapeHtml(state.fields.participantId || state.studentId)}" placeholder="本人编号"></td>
+                  <td><input type="text" value="${escapeHtml(personalResult)}" placeholder="自动带入本人结果" disabled></td>
+                </tr>
+                <tr>
+                  <td>组员</td>
+                  <td><input type="text" data-field="teammate1Id" value="${escapeHtml(state.fields.teammate1Id)}" placeholder="请输入编号"></td>
+                  <td><input type="text" data-field="teammate1Result" value="${escapeHtml(state.fields.teammate1Result)}" placeholder="请输入该组员实验结果"></td>
+                </tr>
+                <tr>
+                  <td>组员</td>
+                  <td><input type="text" data-field="teammate2Id" value="${escapeHtml(state.fields.teammate2Id)}" placeholder="请输入编号"></td>
+                  <td><input type="text" data-field="teammate2Result" value="${escapeHtml(state.fields.teammate2Result)}" placeholder="请输入该组员实验结果"></td>
+                </tr>
+              </tbody>
+            </table>
+          </div>
+        </div>`;
+    }
+
+    function getTeamResultSheet(summary) {
+      return ["小组记录", [
+        ["本人编号", "本人结果", "组员1编号", "组员1结果", "组员2编号", "组员2结果"],
+        [state.fields.participantId || state.studentId, getPersonalNbackResult(summary), state.fields.teammate1Id, state.fields.teammate1Result, state.fields.teammate2Id, state.fields.teammate2Result]
+      ]];
+    }
+
+    function getSystemInfoSheet(recordCount) {
+      return ["系统信息", [
+        ["项目", "内容"],
+        ["实验版本", "science-inquiry-static-v1"],
+        ["localStorage key", STORAGE_KEY],
+        ["保存时间", state.savedAt || ""],
+        ["导出时间", new Date().toLocaleString()],
+        ["当前步骤", `${state.currentStep + 1}/${steps.length}`],
+        ["过程性实验记录数", recordCount],
+        ["AI聊天记录", "不包含，AI 对话请在 AI 助手窗口单独导出"]
+      ]];
+    }
+
+    function getRawStorageSheet() {
+      return ["localStorage原始数据", [
+        ["localStorage key", "JSON"],
+        [STORAGE_KEY, localStorage.getItem(STORAGE_KEY) || ""]
+      ]];
+    }
+
+    function getHeadbandSummarySheet() {
+      return ["头环数据摘要", [
+        ["项目", "内容"],
+        ["上传文件名", ""],
+        ["A 头环记录", state.fields.brainA || ""],
+        ["B 头环记录", state.fields.brainB || ""],
+        ["数据摘要", [state.fields.brainA, state.fields.brainB].filter(Boolean).join("；")],
+        ["统计结果", ""]
+      ]];
+    }
+
     function renderAnalysisStep() {
       const summary = summarizeRuns();
       const rows = summary.map((item) => `
@@ -1667,6 +1753,7 @@
               ` : `<div class="empty-state">还没有实验数据。请先到“搜集证据”步骤完成至少一轮实验。</div>`}
             </div>
           </div>
+          ${renderTeamResultTable(summary)}
           <div class="panel">
             <div class="panel-head"><h3>正确率柱状图</h3></div>
             <div class="panel-body">
@@ -1730,21 +1817,6 @@
                 <label>如何提高结果的说服力？</label>
                 <textarea data-field="persuasiveness" placeholder="例如：重复实验、扩大样本、减少无关变量影响等">${escapeHtml(state.fields.persuasiveness)}</textarea>
               </div>
-            </div>
-          </div>
-          <div class="panel">
-            <div class="panel-head">
-              <h3>完成与导出</h3>
-              <p>导出前请确认每一步填写内容和实验数据已经保存。</p>
-            </div>
-            <div class="panel-body">
-              <div class="summary-grid">
-                <div class="mini-stat"><span>学生编号</span><b>${escapeHtml(state.studentId)}</b></div>
-                <div class="mini-stat"><span>小组编号</span><b>${escapeHtml(state.groupId)}</b></div>
-                <div class="mini-stat"><span>实验记录</span><b>${state.testRuns.length}</b></div>
-                <div class="mini-stat"><span>已到步骤</span><b>${state.currentStep + 1}/7</b></div>
-              </div>
-              <button class="btn success" type="button" id="finalExportBtn">一键导出 Excel</button>
             </div>
           </div>
         </div>
@@ -2143,9 +2215,10 @@
           ["学生年龄", state.studentAge || ""],
           ["学生编号", state.studentId],
           ["小组编号", state.groupId],
+          ["实验时间", state.savedAt || ""],
           ["导出时间", new Date().toLocaleString()]
         ]],
-        ["探究填写内容", [
+        ["实验过程", [
           ["字段", "内容"],
           ["自变量", state.fields.independentVariable],
           ["因变量-工作记忆表现", state.fields.dependentMemory ? "是" : "否"],
@@ -2199,6 +2272,10 @@
           ["被测试者", "条件", "作答题数", "正确题数", "正确率", "漏答数", "漏答率", "平均反应时ms"],
           ...summary.map((item) => [item.subject, item.conditionLabel, item.totalAnswered, item.correct, `${item.accuracy}%`, item.missed, `${item.missRate}%`, item.avgRt || ""])
         ]],
+        getTeamResultSheet(summary),
+        getHeadbandSummarySheet(),
+        getSystemInfoSheet(state.testRuns.length),
+        getRawStorageSheet(),
         ...getSurveySheets()
       ];
 
