@@ -357,6 +357,69 @@
       align-items: start;
     }
 
+    .single-step-layout,
+    .reflection-layout {
+      display: grid;
+      gap: 22px;
+      width: 100%;
+      max-width: 1100px;
+      margin: 0 auto;
+    }
+
+    .reflection-layout {
+      max-width: 1000px;
+    }
+
+    .analysis-layout {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 22px;
+      align-items: start;
+    }
+
+    .analysis-layout .panel,
+    .single-step-layout .panel,
+    .reflection-layout .panel {
+      border-radius: 10px;
+    }
+
+    .panel-head h2,
+    .panel-head h3 {
+      font-size: 20px;
+    }
+
+    .single-step-layout .panel-body,
+    .reflection-layout .panel-body {
+      padding: 24px;
+    }
+
+    input:not([type="checkbox"]):not([type="radio"]),
+    textarea,
+    select {
+      min-height: 42px;
+    }
+
+    .analysis-layout .empty-state {
+      min-height: 120px;
+      display: grid;
+      place-items: center;
+      padding: 18px;
+    }
+
+    .team-result-card table input {
+      min-height: 38px;
+      padding: 8px 10px;
+    }
+
+    .team-result-card th,
+    .team-result-card td {
+      padding: 8px 9px;
+    }
+
+    .reflection-layout textarea {
+      min-height: 140px;
+    }
+
     .panel {
       background: var(--panel);
       border: 1px solid var(--line);
@@ -840,10 +903,11 @@
 
     @media (max-width: 980px) {
       .login-card,
-      .step-layout,
-      .game-area {
-        grid-template-columns: 1fr;
-      }
+        .step-layout,
+        .analysis-layout,
+        .game-area {
+          grid-template-columns: 1fr;
+        }
 
       .progress {
         grid-template-columns: repeat(7, 132px);
@@ -1252,10 +1316,11 @@
     }
 
     function renderNavigation() {
+      const nextButton = state.currentStep === steps.length - 1 ? "" : '<button class="btn" type="button" id="nextStep">下一步</button>';
       return `
         <div class="actions">
           <button class="btn secondary" type="button" id="prevStep" ${state.currentStep === 0 ? "disabled" : ""}>上一步</button>
-          <button class="btn" type="button" id="nextStep" ${state.currentStep === steps.length - 1 ? "disabled" : ""}>下一步</button>
+          ${nextButton}
         </div>
       `;
     }
@@ -1513,7 +1578,7 @@
 
     function renderPlanStep() {
       return `
-        <div class="step-layout">
+        <div class="single-step-layout">
           <div class="panel">
             <div class="panel-head">
               <h3>实验设计</h3>
@@ -1638,7 +1703,7 @@
     function renderTeamResultTable(summary) {
       const personalResult = getPersonalNbackResult(summary);
       return `
-        <div class="panel" style="margin-top:18px;">
+        <div class="panel team-result-card">
           <div class="panel-head"><h3>其他组员实验结果记录</h3><p>仅用于留痕和对比，不参与统计计算。</p></div>
           <div class="panel-body">
             <table>
@@ -1726,7 +1791,7 @@
       `).join("") : `<div class="empty-state">完成 N-back 实验后，这里会自动生成正确率柱状图。</div>`;
 
       return `
-        <div class="step-layout">
+        <div class="analysis-layout">
           <div class="panel">
             <div class="panel-head">
               <h3>实验结果汇总</h3>
@@ -1793,7 +1858,7 @@
 
     function renderReflectionStep() {
       return `
-        <div class="step-layout">
+        <div class="reflection-layout">
           <div class="panel">
             <div class="panel-head"><h3>反思评价</h3></div>
             <div class="panel-body">

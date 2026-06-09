@@ -47,6 +47,17 @@
     .panel-head p { margin: 8px 0 0; color: var(--muted); font-size: 14px; }
     .panel-body { padding: 20px 22px 22px; }
     .step-layout { display: grid; grid-template-columns: 1fr 1fr; gap: 22px; align-items: start; }
+    .single-step-layout, .reflection-layout { display: grid; gap: 22px; width: 100%; max-width: 1100px; margin: 0 auto; }
+    .reflection-layout { max-width: 1000px; }
+    .analysis-layout { display: grid; grid-template-columns: 1fr 1fr; gap: 22px; align-items: start; }
+    .analysis-layout .panel, .single-step-layout .panel, .reflection-layout .panel { border-radius: 10px; }
+    .panel-head h2, .panel-head h3 { font-size: 20px; }
+    .single-step-layout .panel-body, .reflection-layout .panel-body { padding: 24px; }
+    input:not([type="checkbox"]):not([type="radio"]), textarea, select { min-height: 42px; }
+    .analysis-layout .empty-state { min-height: 120px; display: grid; place-items: center; padding: 18px; }
+    .team-result-card table input { min-height: 38px; padding: 8px 10px; }
+    .team-result-card th, .team-result-card td { padding: 8px 9px; }
+    .reflection-layout textarea { min-height: 140px; }
     .reading-list { display: grid; gap: 14px; }
     .reading-card { border: 1px solid #e5edf7; border-radius: 8px; padding: 16px; background: #fbfdff; }
     .reading-card h4 { margin: 0 0 8px; color: #1e3a8a; font-size: 16px; }
@@ -138,7 +149,7 @@
     .focus-prep-card { width: min(560px, 100%); border: 1px solid rgba(255,255,255,.16); border-radius: 8px; padding: 28px; background: #111827; box-shadow: 0 24px 80px rgba(0,0,0,.36); }
     .focus-prep-card h3 { margin: 0 0 10px; font-size: 26px; }
     .focus-prep-card p { margin: 0 0 12px; color: #cbd5e1; }
-    @media (max-width: 980px) { .step-layout, .strategy-game { grid-template-columns: 1fr; } .progress { grid-template-columns: repeat(7, 132px); } .summary-grid { grid-template-columns: repeat(2, 1fr); } }
+    @media (max-width: 980px) { .step-layout, .analysis-layout, .strategy-game { grid-template-columns: 1fr; } .progress { grid-template-columns: repeat(7, 132px); } .summary-grid { grid-template-columns: repeat(2, 1fr); } }
     @media (max-width: 640px) { .topbar-inner, .main { padding-left: 14px; padding-right: 14px; } .brand-row, .actions { align-items: stretch; flex-direction: column; } .top-actions, .form-grid, .summary-grid { grid-template-columns: 1fr; flex-direction: column; } .memory-items, .bar-row { grid-template-columns: 1fr; } }
 
     .survey-shell { display: grid; gap: 18px; }
@@ -407,7 +418,8 @@
       bindStepEvents(step.id);
     }
     function renderNavigation() {
-      return `<div class="actions"><button class="btn secondary" type="button" id="prevStep" ${state.currentStep === 0 ? "disabled" : ""}>上一步</button><button class="btn" type="button" id="nextStep" ${state.currentStep === steps.length - 1 ? "disabled" : ""}>下一步</button></div>`;
+      const nextButton = state.currentStep === steps.length - 1 ? "" : '<button class="btn" type="button" id="nextStep">下一步</button>';
+      return `<div class="actions"><button class="btn secondary" type="button" id="prevStep" ${state.currentStep === 0 ? "disabled" : ""}>上一步</button>${nextButton}</div>`;
     }
     function getStepHtml(stepId) {
       return {
@@ -580,7 +592,7 @@
       return `<div class="step-layout"><div class="panel"><div class="panel-head"><h3>研究假设小助手</h3></div><div class="panel-body">${renderInquiryScaffold("hypothesis")}${renderInquiryCases()}</div></div><div class="panel"><div class="panel-head"><h3>研究假设</h3></div><div class="panel-body"><div class="field"><label>策略 1 假设</label><textarea data-field="hypothesis1" placeholder="写下你们小组对结果的预测">${escapeHtml(state.fields.hypothesis1)}</textarea></div><div class="field"><label>策略 2 假设</label><textarea data-field="hypothesis2" placeholder="写下你们小组对结果的预测">${escapeHtml(state.fields.hypothesis2)}</textarea></div></div></div></div>`;
     }
     function renderPlanStep() {
-      return `<div class="step-layout"><div class="panel"><div class="panel-head"><h3>实验计划</h3><p>阶段 1 默认使用简单复述；阶段 2 使用选择的改善策略。</p></div><div class="panel-body"><div class="form-grid">
+      return `<div class="single-step-layout"><div class="panel"><div class="panel-head"><h3>实验计划</h3><p>阶段 1 默认使用简单复述；阶段 2 使用选择的改善策略。</p></div><div class="panel-body"><div class="form-grid">
         <div class="field"><label>策略 1</label><select data-field="strategy1"><option value="简单复述" ${selected("strategy1","简单复述")}>简单复述</option></select></div>
         <div class="field"><label>策略 2</label><select data-field="strategy2"><option value="主动回忆" ${selected("strategy2","主动回忆")}>主动回忆</option><option value="新旧知识关联" ${selected("strategy2","新旧知识关联")}>新旧知识关联</option><option value="信息可视化" ${selected("strategy2","信息可视化")}>信息可视化</option><option value="线索提取" ${selected("strategy2","线索提取")}>线索提取</option><option value="分散学习" ${selected("strategy2","分散学习")}>分散学习</option></select></div>
         <div class="field"><label>材料类型</label><select data-field="materialType"><option value="word" ${selected("materialType","word")}>单词</option><option value="poem" ${selected("materialType","poem")}>古诗</option><option value="formula" ${selected("materialType","formula")}>公式</option></select></div>
@@ -616,7 +628,7 @@
     }
     function renderTeamResultTable(summary) {
       const personalResult = getPersonalStrategyResult(summary);
-      return `<div class="panel" style="margin-top:18px;"><div class="panel-head"><h3>其他组员实验结果记录</h3><p>仅用于留痕和对比，不参与统计计算。</p></div><div class="panel-body"><table><thead><tr><th>成员</th><th>组员编号</th><th>实验结果</th></tr></thead><tbody><tr><td>本人</td><td><input type="text" data-field="participantId" value="${escapeHtml(state.fields.participantId || state.studentId)}" placeholder="本人编号"></td><td><input type="text" value="${escapeHtml(personalResult)}" placeholder="自动带入本人结果" disabled></td></tr><tr><td>组员</td><td><input type="text" data-field="teammate1Id" value="${escapeHtml(state.fields.teammate1Id)}" placeholder="请输入编号"></td><td><input type="text" data-field="teammate1Result" value="${escapeHtml(state.fields.teammate1Result)}" placeholder="请输入该组员实验结果"></td></tr><tr><td>组员</td><td><input type="text" data-field="teammate2Id" value="${escapeHtml(state.fields.teammate2Id)}" placeholder="请输入编号"></td><td><input type="text" data-field="teammate2Result" value="${escapeHtml(state.fields.teammate2Result)}" placeholder="请输入该组员实验结果"></td></tr></tbody></table></div></div>`;
+      return `<div class="panel team-result-card"><div class="panel-head"><h3>其他组员实验结果记录</h3><p>仅用于留痕和对比，不参与统计计算。</p></div><div class="panel-body"><table><thead><tr><th>成员</th><th>组员编号</th><th>实验结果</th></tr></thead><tbody><tr><td>本人</td><td><input type="text" data-field="participantId" value="${escapeHtml(state.fields.participantId || state.studentId)}" placeholder="本人编号"></td><td><input type="text" value="${escapeHtml(personalResult)}" placeholder="自动带入本人结果" disabled></td></tr><tr><td>组员</td><td><input type="text" data-field="teammate1Id" value="${escapeHtml(state.fields.teammate1Id)}" placeholder="请输入编号"></td><td><input type="text" data-field="teammate1Result" value="${escapeHtml(state.fields.teammate1Result)}" placeholder="请输入该组员实验结果"></td></tr><tr><td>组员</td><td><input type="text" data-field="teammate2Id" value="${escapeHtml(state.fields.teammate2Id)}" placeholder="请输入编号"></td><td><input type="text" data-field="teammate2Result" value="${escapeHtml(state.fields.teammate2Result)}" placeholder="请输入该组员实验结果"></td></tr></tbody></table></div></div>`;
     }
     function getTeamResultSheet(summary) {
       return ["小组记录", [["本人编号","本人结果","组员1编号","组员1结果","组员2编号","组员2结果"], [state.fields.participantId || state.studentId, getPersonalStrategyResult(summary), state.fields.teammate1Id, state.fields.teammate1Result, state.fields.teammate2Id, state.fields.teammate2Result]]];
@@ -634,7 +646,7 @@
       const summary = summarizeRecords();
       const rows = summary.map((item)=>`<tr><td>${escapeHtml(item.strategy)}</td><td>${item.count}</td><td>${item.avgCorrect}</td><td>${item.avgAccuracy}%</td><td>${item.avgRt ? item.avgRt + "ms" : "--"}</td></tr>`).join("");
       const chart = summary.length ? summary.map((item)=>`<div class="bar-row"><div>${escapeHtml(item.strategy)}</div><div class="bar-track"><div class="bar-fill" style="width:${item.avgAccuracy}%"></div></div><div>${item.avgAccuracy}%</div></div>`).join("") : `<div class="empty-state">完成实验后会自动生成策略对比图。</div>`;
-      return `<div class="step-layout"><div class="panel"><div class="panel-head"><h3>策略汇总</h3></div><div class="panel-body">${summary.length ? `<table><thead><tr><th>策略</th><th>次数</th><th>平均正确数</th><th>平均回忆率</th><th>平均反应时</th></tr></thead><tbody>${rows}</tbody></table>` : `<div class="empty-state">还没有实验数据。请先完成至少一个阶段。</div>`}</div></div>${renderTeamResultTable(summary)}<div class="panel"><div class="panel-head"><h3>图表与策略评分</h3></div><div class="panel-body"><div class="chart">${chart}</div><div class="form-grid" style="margin-top:18px;">${renderScoreField("scoreAccuracy","答案准确性")}${renderScoreField("scoreUse","策略利用率")}${renderScoreField("scoreConfidence","记忆信心度")}${renderScoreField("scoreTransfer","策略迁移性")}</div><div class="mini-stat"><span>评分总分</span><b>${getScoreTotal()}</b></div><div class="field" style="margin-top:18px;"><label>头环观察</label><textarea data-field="headband">${escapeHtml(state.fields.headband)}</textarea></div></div></div></div>`;
+      return `<div class="analysis-layout"><div class="panel"><div class="panel-head"><h3>策略汇总</h3></div><div class="panel-body">${summary.length ? `<table><thead><tr><th>策略</th><th>次数</th><th>平均正确数</th><th>平均回忆率</th><th>平均反应时</th></tr></thead><tbody>${rows}</tbody></table>` : `<div class="empty-state">还没有实验数据。请先完成至少一个阶段。</div>`}</div></div>${renderTeamResultTable(summary)}<div class="panel"><div class="panel-head"><h3>图表与策略评分</h3></div><div class="panel-body"><div class="chart">${chart}</div><div class="form-grid" style="margin-top:18px;">${renderScoreField("scoreAccuracy","答案准确性")}${renderScoreField("scoreUse","策略利用率")}${renderScoreField("scoreConfidence","记忆信心度")}${renderScoreField("scoreTransfer","策略迁移性")}</div><div class="mini-stat"><span>评分总分</span><b>${getScoreTotal()}</b></div><div class="field" style="margin-top:18px;"><label>头环观察</label><textarea data-field="headband">${escapeHtml(state.fields.headband)}</textarea></div></div></div></div>`;
     }
     function renderScoreField(field, label) {
       return `<div class="field"><label>${label}</label><select data-field="${field}">${[1,2,3,4,5].map((n)=>`<option value="${n}" ${Number(state.fields[field])===n ? "selected" : ""}>${n} 分</option>`).join("")}</select></div>`;
@@ -654,7 +666,7 @@
       return `<div class="step-layout"><div class="panel"><div class="panel-head"><h3>得出结论</h3></div><div class="panel-body"><textarea data-field="conclusion" placeholder="通过实验，我们发现改善长时记忆可以通过哪些策略？">${escapeHtml(state.fields.conclusion)}</textarea></div></div><div class="panel"><div class="panel-head"><h3>结论提示</h3></div><div class="panel-body"><div class="reading-card"><h4>提示</h4><p>结论应结合两个阶段的回忆率、策略评分和头环观察，说明哪种策略更有效。</p></div></div></div></div>`;
     }
     function renderReflectionStep() {
-      return `<div class="step-layout"><div class="panel"><div class="panel-head"><h3>反思交流</h3></div><div class="panel-body"><div class="field"><label>实验设计有什么可以改进？</label><textarea data-field="designImprove">${escapeHtml(state.fields.designImprove)}</textarea></div><div class="field"><label>结果是否出乎意料？为什么？</label><textarea data-field="surprise">${escapeHtml(state.fields.surprise)}</textarea></div><div class="field"><label>以上策略适用于所有学习内容吗？</label><textarea data-field="applicability">${escapeHtml(state.fields.applicability)}</textarea></div></div></div></div>`;
+      return `<div class="reflection-layout"><div class="panel"><div class="panel-head"><h3>反思交流</h3></div><div class="panel-body"><div class="field"><label>实验设计有什么可以改进？</label><textarea data-field="designImprove">${escapeHtml(state.fields.designImprove)}</textarea></div><div class="field"><label>结果是否出乎意料？为什么？</label><textarea data-field="surprise">${escapeHtml(state.fields.surprise)}</textarea></div><div class="field"><label>以上策略适用于所有学习内容吗？</label><textarea data-field="applicability">${escapeHtml(state.fields.applicability)}</textarea></div></div></div></div>`;
     }
     function bindInputs() {
       main.querySelectorAll("[data-field]").forEach((element)=>{ const field = element.dataset.field; element.addEventListener("change",()=>updateField(element, field)); element.addEventListener("input",()=>updateField(element, field)); });
