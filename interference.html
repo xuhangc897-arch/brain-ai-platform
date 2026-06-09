@@ -392,7 +392,7 @@
         factor: "倒摄干扰",
         question: "",
         hypothesis: "",
-        participant: "A",
+        participant: "",
         memorySeconds: 60,
         restSeconds: 60,
         interferenceSeconds: 120,
@@ -682,7 +682,7 @@
       return `<div class="step-layout">
         <div class="panel"><div class="panel-head"><h3>实验计划</h3><p>选择材料包后，搜集证据阶段会按 PPT 固定材料和两轮流程运行。</p></div><div class="panel-body"><div class="form-grid">
           <div class="field"><label>实验类型</label><select data-field="factor">${factorOptions}</select></div>
-          <div class="field"><label>参与者编号</label><input type="text" data-field="participant" value="${escapeHtml(state.fields.participant)}"></div>
+          <div class="field"><label>参与者编号</label><input type="text" data-field="participant" value="${escapeHtml(state.fields.participant)}" placeholder="请输入参与者编号"></div>
           <div class="field"><label>材料难度</label><select data-field="difficulty"><option value="easy" ${selected("difficulty","easy")}>初级</option><option value="medium" ${selected("difficulty","medium")}>中级</option><option value="hard" ${selected("difficulty","hard")}>高级</option></select></div>
           <div class="field"><label>情绪视频条件</label><select data-field="emotionCondition"><option value="中性" ${selected("emotionCondition","中性")}>中性</option><option value="悲伤" ${selected("emotionCondition","悲伤")}>悲伤</option><option value="愉悦" ${selected("emotionCondition","愉悦")}>愉悦</option></select></div>
           <div class="field"><label>记忆时间（秒）</label><input type="number" min="10" max="180" data-field="memorySeconds" value="${escapeHtml(state.fields.memorySeconds)}"></div>
@@ -704,7 +704,7 @@
       return `<div class="panel"><div class="panel-head"><h3>长时记忆干扰材料化实验</h3><p>当前使用固定材料包，不再随机生成核心记忆材料。</p><div class="material-source"><span class="material-chip">${escapeHtml(pack.source)}</span><span class="material-chip">${escapeHtml(set.materialType)}</span><span class="material-chip">${escapeHtml(pack.difficultyLabels[state.fields.difficulty] || state.fields.difficulty)}</span></div></div><div class="panel-body">
         <div class="toolbar interference-toolbar">
           <div class="field"><label>本次轮次</label><select id="roundSelect">${rounds.map((round)=>`<option value="${round.round}">第 ${round.round} 轮：${round.condition}</option>`).join("")}</select></div>
-          <div class="field"><label>参与者</label><input id="participantInput" type="text" value="${escapeHtml(state.fields.participant)}"></div>
+          <div class="field"><label>参与者编号</label><input id="participantInput" type="text" value="${escapeHtml(state.fields.participant)}" placeholder="请输入参与者编号"></div>
           <div class="field"><label>情绪条件</label><select id="emotionConditionSelect"><option value="中性" ${selected("emotionCondition","中性")}>中性</option><option value="悲伤" ${selected("emotionCondition","悲伤")}>悲伤</option><option value="愉悦" ${selected("emotionCondition","愉悦")}>愉悦</option></select></div>
           <button class="btn" type="button" id="startRunBtn">开始本轮</button>
         </div>
@@ -783,7 +783,7 @@
       hideFocusPrep();
       clearTimers();
       const round = Number(document.getElementById("roundSelect").value);
-      const participant = document.getElementById("participantInput").value.trim() || state.fields.participant || "A";
+      const participant = document.getElementById("participantInput").value.trim() || state.fields.participant || state.studentId;
       const emotionSelect = document.getElementById("emotionConditionSelect");
       state.fields.participant = participant;
       if (emotionSelect) state.fields.emotionCondition = emotionSelect.value;

@@ -1300,15 +1300,6 @@
               </div>
             </div>
           </div>
-          <div class="panel">
-            <div class="panel-head"><h3>小组分工</h3></div>
-            <div class="panel-body form-grid">
-              <div class="field"><label>测试员</label><input type="text" data-field="roleTester" value="${escapeHtml(state.fields.roleTester)}"></div>
-              <div class="field"><label>参与者</label><input type="text" data-field="roleParticipant" value="${escapeHtml(state.fields.roleParticipant)}"></div>
-              <div class="field"><label>记录员 1</label><input type="text" data-field="roleRecorder1" value="${escapeHtml(state.fields.roleRecorder1)}"></div>
-              <div class="field"><label>记录员 2</label><input type="text" data-field="roleRecorder2" value="${escapeHtml(state.fields.roleRecorder2)}"></div>
-            </div>
-          </div>
         </div>
       `;
     }
@@ -1323,11 +1314,8 @@
           <div class="panel-body">
             <div class="toolbar memory-toolbar">
               <div class="field">
-                <label for="subject">参与者</label>
-                <select id="subject">
-                  <option value="A">A</option>
-                  <option value="B">B</option>
-                </select>
+                <label for="subject">参与者编号</label>
+                <input id="subject" type="text" value="${escapeHtml(state.fields.participantId || state.studentId)}" placeholder="请输入参与者编号">
               </div>
               <div class="field">
                 <label for="runNumber">第几次测量</label>
@@ -1676,9 +1664,12 @@
       clearShowTimer();
       const startLength = clampNumber(state.fields.startLength, 2, 8, 3);
       const maxLength = clampNumber(state.fields.maxLength, startLength, 12, 12);
+      const subject = document.getElementById("subject").value.trim() || state.fields.participantId || state.studentId;
+      state.fields.participantId = subject;
+      saveState();
       game = {
         id: crypto.randomUUID ? crypto.randomUUID() : String(Date.now()),
-        subject: document.getElementById("subject").value,
+        subject,
         runNumber: Number(document.getElementById("runNumber").value),
         method: state.fields.method,
         material: state.fields.material,

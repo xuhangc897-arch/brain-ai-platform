@@ -584,6 +584,7 @@
         <div class="field"><label>策略 1</label><select data-field="strategy1"><option value="简单复述" ${selected("strategy1","简单复述")}>简单复述</option></select></div>
         <div class="field"><label>策略 2</label><select data-field="strategy2"><option value="主动回忆" ${selected("strategy2","主动回忆")}>主动回忆</option><option value="新旧知识关联" ${selected("strategy2","新旧知识关联")}>新旧知识关联</option><option value="信息可视化" ${selected("strategy2","信息可视化")}>信息可视化</option><option value="线索提取" ${selected("strategy2","线索提取")}>线索提取</option><option value="分散学习" ${selected("strategy2","分散学习")}>分散学习</option></select></div>
         <div class="field"><label>材料类型</label><select data-field="materialType"><option value="word" ${selected("materialType","word")}>单词</option><option value="poem" ${selected("materialType","poem")}>古诗</option><option value="formula" ${selected("materialType","formula")}>公式</option></select></div>
+        <div class="field"><label>参与者编号</label><input type="text" data-field="participantId" value="${escapeHtml(state.fields.participantId || state.studentId)}" placeholder="请输入参与者编号"></div>
         <div class="field"><label>题目总数</label><input type="text" value="${getPlannedItemCount()} 道" readonly></div>
         <div class="field" style="grid-column:1 / -1;">
           <label>数量与难度调节</label>
@@ -596,12 +597,7 @@
         <div class="field"><label>记忆时间（秒）</label><input type="number" min="10" max="180" data-field="memorySeconds" value="${escapeHtml(state.fields.memorySeconds)}"></div>
         <div class="field"><label>找不同时间（秒）</label><input type="number" min="10" max="180" data-field="puzzleSeconds" value="${escapeHtml(state.fields.puzzleSeconds)}"></div>
         <div class="field"><label>测试时间（秒）</label><input type="number" min="20" max="240" data-field="testSeconds" value="${escapeHtml(state.fields.testSeconds)}"></div>
-      </div></div></div><div class="panel"><div class="panel-head"><h3>小组分工</h3></div><div class="panel-body form-grid">
-        <div class="field"><label>组长</label><input data-field="leader" value="${escapeHtml(state.fields.leader)}"></div>
-        <div class="field"><label>记录员</label><input data-field="recorder" value="${escapeHtml(state.fields.recorder)}"></div>
-        <div class="field"><label>组员 A</label><input data-field="memberA" value="${escapeHtml(state.fields.memberA)}"></div>
-        <div class="field"><label>组员 B</label><input data-field="memberB" value="${escapeHtml(state.fields.memberB)}"></div>
-      </div></div></div>`;
+      </div></div></div></div>`;
     }
     function renderEvidenceStep() {
       return `<div class="panel"><div class="panel-head"><h3>策略记忆网页实验</h3><p>阶段 1 使用简单复述；阶段 2 使用改善策略。每阶段包含记忆、找不同和低干扰测试。</p></div><div class="panel-body">

@@ -1542,15 +1542,6 @@
               </div>
             </div>
           </div>
-          <div class="panel">
-            <div class="panel-head"><h3>小组分工</h3></div>
-            <div class="panel-body form-grid">
-              <div class="field"><label>A：被测试者 1</label><input type="text" data-field="roleA" value="${escapeHtml(state.fields.roleA)}" placeholder="成员编号或姓名"></div>
-              <div class="field"><label>B：被测试者 2</label><input type="text" data-field="roleB" value="${escapeHtml(state.fields.roleB)}" placeholder="成员编号或姓名"></div>
-              <div class="field"><label>C：指导与操作</label><input type="text" data-field="roleC" value="${escapeHtml(state.fields.roleC)}" placeholder="成员编号或姓名"></div>
-              <div class="field"><label>D：记录与统计</label><input type="text" data-field="roleD" value="${escapeHtml(state.fields.roleD)}" placeholder="成员编号或姓名"></div>
-            </div>
-          </div>
         </div>
       `;
     }
@@ -1565,11 +1556,8 @@
           <div class="panel-body">
             <div class="toolbar nback-toolbar">
               <div class="field">
-                <label for="gameSubject">被测试者</label>
-                <select id="gameSubject">
-                  <option value="A">A：被测试者 1</option>
-                  <option value="B">B：被测试者 2</option>
-                </select>
+                <label for="gameSubject">被测试者编号</label>
+                <input id="gameSubject" type="text" value="${escapeHtml(state.fields.participantId || state.studentId)}" placeholder="请输入被测试者编号">
               </div>
               <div class="field">
                 <label for="gameMode">实验设计</label>
@@ -1935,11 +1923,12 @@
     function startGame() {
       hideFocusPrep();
       const [nValue, totalValue] = document.getElementById("gameCondition").value.split("-").map(Number);
-      const subject = document.getElementById("gameSubject").value;
+      const subject = document.getElementById("gameSubject").value.trim() || state.fields.participantId || state.studentId;
       const mode = document.getElementById("gameMode").value;
       const stimulusType = document.getElementById("gameStimulus").value;
       const intervalSeconds = clampInterval(document.getElementById("stimulusInterval").value);
       state.fields.stimulusInterval = intervalSeconds;
+      state.fields.participantId = subject;
       saveState();
       const sequence = generateSequence(nValue, totalValue, stimulusType);
       currentGame = {
