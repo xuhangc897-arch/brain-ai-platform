@@ -478,6 +478,170 @@
       margin-bottom: 0;
     }
 
+    .memory-table-wrap {
+      margin-top: 12px;
+      overflow-x: auto;
+      border: 1px solid var(--line);
+      border-radius: 8px;
+      background: #fff;
+    }
+
+    .memory-table {
+      min-width: 520px;
+      margin: 0;
+      font-size: 13px;
+    }
+
+    .memory-table th,
+    .memory-table td {
+      border-bottom: 1px solid #edf2f7;
+      padding: 10px 12px;
+      vertical-align: top;
+    }
+
+    .memory-table tr:last-child td {
+      border-bottom: 0;
+    }
+
+    .memory-table th:first-child,
+    .memory-table td:first-child {
+      width: 120px;
+      font-weight: 800;
+      color: #1e3a8a;
+      white-space: nowrap;
+    }
+
+    .nback-example {
+      display: grid;
+      gap: 12px;
+      margin-top: 14px;
+    }
+
+    .nback-example-svg {
+      width: 100%;
+      max-width: 100%;
+      height: auto;
+      display: block;
+      border: 1px solid var(--line);
+      border-radius: 8px;
+      background: #fff;
+    }
+
+    .practice-entry {
+      display: flex;
+      justify-content: flex-start;
+    }
+
+    .practice-modal {
+      position: fixed;
+      inset: 0;
+      z-index: 70;
+      display: none;
+      place-items: center;
+      padding: 24px;
+      background: rgba(8, 17, 31, 0.68);
+    }
+
+    .practice-modal.is-visible {
+      display: grid;
+    }
+
+    .practice-card {
+      width: min(620px, 100%);
+      max-height: calc(100vh - 48px);
+      overflow: auto;
+      border: 1px solid var(--line);
+      border-radius: 8px;
+      background: #fff;
+      box-shadow: 0 24px 80px rgba(8, 17, 31, 0.26);
+    }
+
+    .practice-head {
+      padding: 20px 22px 12px;
+      border-bottom: 1px solid #eef2f7;
+    }
+
+    .practice-head h3 {
+      margin: 0;
+      font-size: 22px;
+    }
+
+    .practice-head p {
+      margin: 8px 0 0;
+      color: var(--muted);
+      font-size: 14px;
+    }
+
+    .practice-body {
+      display: grid;
+      gap: 16px;
+      padding: 20px 22px 22px;
+    }
+
+    .practice-settings {
+      display: grid;
+      grid-template-columns: repeat(4, 1fr);
+      gap: 10px;
+    }
+
+    .practice-settings div,
+    .practice-feedback {
+      border: 1px solid var(--line);
+      border-radius: 8px;
+      padding: 10px;
+      background: #f8fbff;
+    }
+
+    .practice-settings span,
+    .practice-feedback span {
+      display: block;
+      color: var(--muted);
+      font-size: 12px;
+      font-weight: 700;
+    }
+
+    .practice-settings b,
+    .practice-feedback b {
+      color: var(--ink);
+      font-size: 16px;
+    }
+
+    .practice-stage {
+      display: grid;
+      place-items: center;
+      min-height: 180px;
+      border: 1px solid #dbeafe;
+      border-radius: 8px;
+      background: linear-gradient(180deg, #ffffff 0%, #f8fbff 100%);
+    }
+
+    .practice-number {
+      display: grid;
+      place-items: center;
+      width: 116px;
+      aspect-ratio: 1 / 1;
+      border: 2px solid #bfdbfe;
+      border-radius: 8px;
+      background: #eff6ff;
+      color: #1e3a8a;
+      font-size: 56px;
+      line-height: 1;
+      font-weight: 900;
+    }
+
+    .practice-response-grid {
+      display: grid;
+      grid-template-columns: repeat(2, 1fr);
+      gap: 10px;
+    }
+
+    .practice-actions {
+      display: flex;
+      flex-wrap: wrap;
+      justify-content: flex-end;
+      gap: 10px;
+    }
+
     .form-grid {
       display: grid;
       grid-template-columns: repeat(2, 1fr);
@@ -961,6 +1125,15 @@
         font-size: 72px;
       }
 
+      .memory-table {
+        min-width: 440px;
+      }
+
+      .practice-settings,
+      .practice-response-grid {
+        grid-template-columns: 1fr;
+      }
+
       .bar-row {
         grid-template-columns: 1fr;
         gap: 6px;
@@ -1193,6 +1366,8 @@
 
     let state = loadState();
     let currentGame = null;
+    let practiceGame = null;
+    let practiceAdvanceTimerId = null;
     let trialStartedAt = 0;
     let trialTimeoutId = null;
     let countdownIntervalId = null;
@@ -1497,20 +1672,93 @@
               <article class="reading-card">
                 <h4>材料一：工作记忆</h4>
                 <p>工作记忆是指对信息进行暂时存储和加工的容量有限的记忆系统。工作记忆对信息的加工主要体现在维持和更新这两个方面。</p>
-                <p>例如完成口算 2×4×5×6 时，需要先记住 2×4=8，再记住 8×5=40，才能继续计算，这里就需要维持和更新每一步的结果。</p>
+                <p>例如，要完成口算任务2×4×5×6，你首先必须记住2×4等于8；接着还必须记住8×5等于40，这样才能顺利进行下一步的计算，这里需要在工作记忆中维持和更新每一步的计算结果，如8和40。假如工作记忆出了问题，就不可能计算成功。</p>
+                <div class="memory-table-wrap">
+                  <table class="memory-table" aria-label="工作记忆特点说明">
+                    <thead>
+                      <tr>
+                        <th>工作记忆特点</th>
+                        <th>在 N-back 任务中的体现</th>
+                      </tr>
+                    </thead>
+                    <tbody>
+                      <tr>
+                        <td>维持</td>
+                        <td>指个体在工作记忆中持续保存最近呈现的数字信息，以便将其与第 N 个数字进行对比。随着 N 的增加，个体需要在大脑中记忆的数字数量增加，维持信息的时间变长。</td>
+                      </tr>
+                      <tr>
+                        <td>更新</td>
+                        <td>指个体在每次新数字出现时，动态替换记忆中最旧的数字。随着关卡数的增加，个体需要更新信息的次数增加。</td>
+                      </tr>
+                    </tbody>
+                  </table>
+                </div>
               </article>
               <article class="reading-card">
-                <h4>材料二：N-back 任务</h4>
-                <p>N-back 任务是一种常用的工作记忆任务。人们需要根据当前刺激判断它是否与前 n 个刺激相同。</p>
-                <p>例如 n=2，序列为 7、5、6、5、8。当看到 6 时，它前 2 个数字是 7，所以按“否”；当看到后面的 5 时，它前 2 个数字也是 5，所以按“是”。</p>
+                <h4>材料二：N-back任务</h4>
+                <p>N-back任务是一种常用的工作记忆任务。在N-back任务中，人们需要根据当前的刺激（比如字母、数字、算式或图形及图形的位置）来判断是否与该刺激的第前n个刺激相同。这种任务要求被试者不仅要记住当前刺激，还要持续关注前面的刺激序列，以便做出正确的反应。</p>
+                <p>例如，假设n=2，屏幕上显示的数字是：7，5，6，5，8，3...当你看到数字6时，需回想：数字6的前2个数字是什么？是7，所以不一样，按否；下一个数字是5，你继续回想，数字5的前2个数字也是5，一致，按是。</p>
+                <div class="nback-example">
+                  <svg class="nback-example-svg" viewBox="0 0 720 320" role="img" aria-labelledby="nbackExampleTitle nbackExampleDesc">
+                    <title id="nbackExampleTitle">N-back活动举例：2-back数字实验</title>
+                    <desc id="nbackExampleDesc">数字序列7、5、6、5、8、3中，从第三个数字开始与前两个数字比较。</desc>
+                    <rect x="1" y="1" width="718" height="318" rx="8" fill="#ffffff" stroke="#dbe3ef" />
+                    <text x="360" y="36" text-anchor="middle" fill="#172033" font-size="22" font-weight="800">N-back活动举例：2-back数字实验</text>
+                    <g fill="none" stroke="#1e3a8a" stroke-width="3" stroke-linecap="round" stroke-linejoin="round">
+                      <path d="M74 76 Q94 58 114 76 Q94 94 74 76Z" />
+                      <circle cx="94" cy="76" r="5" fill="#1e3a8a" />
+                      <path d="M174 76 Q194 58 214 76 Q194 94 174 76Z" />
+                      <circle cx="194" cy="76" r="5" fill="#1e3a8a" />
+                    </g>
+                    <text x="94" y="112" text-anchor="middle" fill="#1e3a8a" font-size="16" font-weight="800">先看</text>
+                    <text x="194" y="112" text-anchor="middle" fill="#1e3a8a" font-size="16" font-weight="800">先看</text>
+                    <g fill="#fff" stroke="#bfdbfe" stroke-width="2">
+                      <rect x="50" y="130" width="88" height="70" rx="8" />
+                      <rect x="150" y="130" width="88" height="70" rx="8" />
+                      <rect x="250" y="130" width="88" height="70" rx="8" />
+                      <rect x="350" y="130" width="88" height="70" rx="8" />
+                      <rect x="450" y="130" width="88" height="70" rx="8" />
+                      <rect x="550" y="130" width="88" height="70" rx="8" />
+                    </g>
+                    <g fill="#172033" font-size="34" font-weight="900" text-anchor="middle">
+                      <text x="94" y="176">7</text>
+                      <text x="194" y="176">5</text>
+                      <text x="294" y="176">6</text>
+                      <text x="394" y="176">5</text>
+                      <text x="494" y="176">8</text>
+                      <text x="594" y="176">3</text>
+                    </g>
+                    <g fill="#0f766e" font-size="18" font-weight="900" text-anchor="middle">
+                      <text x="294" y="112">否</text>
+                      <text x="394" y="112">是</text>
+                      <text x="494" y="112">否</text>
+                      <text x="594" y="112">否</text>
+                    </g>
+                    <g fill="none" stroke="#1e3a8a" stroke-width="2.5" stroke-linecap="round">
+                      <path d="M94 218 C94 246 294 246 294 218" />
+                      <path d="M194 238 C194 266 394 266 394 238" />
+                      <path d="M294 258 C294 286 494 286 494 258" />
+                      <path d="M394 278 C394 306 594 306 594 278" />
+                    </g>
+                    <g fill="#475467" font-size="14" text-anchor="middle">
+                      <text x="194" y="242">6 与前2个数字7比较</text>
+                      <text x="294" y="270">5 与前2个数字5比较</text>
+                      <text x="394" y="292">8 与前2个数字6比较</text>
+                      <text x="494" y="312">3 与前2个数字5比较</text>
+                    </g>
+                  </svg>
+                  <div class="practice-entry">
+                    <button class="btn" id="openPracticeBtn" type="button">体验 N-back</button>
+                  </div>
+                </div>
               </article>
               <article class="reading-card">
                 <h4>材料三：控制变量</h4>
-                <p>控制变量是实验过程中需要控制的、除自变量以外可能影响结果的变量。只有控制好无关变量，才能更清楚地判断因果关系。</p>
+                <p>控制变量是指在实验的过程中需要控制那些除了自变量以外的所有影响实验结果的变量，这些变量不是本实验所要研究的变量，所以又称无关变量。只有将自变量以外的所有无关变量控制好，才能弄清实验中的因果关系。</p>
               </article>
               <article class="reading-card">
                 <h4>材料四：头环</h4>
-                <p>头环用于测量 N-back 活动中的大脑前额叶活动水平，并通过颜色呈现脑区激活状态。越偏红通常表示该区域越活跃，越偏蓝表示抑制或变化较小。</p>
+                <p>头环是我们用来测量N-back活动中大脑前额叶活动水平的工具。头环就像一个特殊的“脑力探测器”，只要把头环戴在头上就可以可以收集信息，并且可以在电脑显示屏上生成一幅3D的脑激活图，展示大脑在执行特定任务或接受刺激时，不同脑区神经活动的空间分布状态。这张图可以直观呈现被激活脑区的位置、范围和强度，它会用颜色告诉你，在实验过程中大脑中哪些地方被激活，用红-黄色表示激活强度高，蓝-冷色表示抑制或无变化。也就是说，图中的某个脑区越红说明越活跃，在努力“思考”。假设3-back比2-back需要消耗更多的大脑资源，导致前额叶的激活水平更高，那么头环收集信息生成的结果图中，3-back的结果图中某个区域的颜色应该比2-back的结果图中相应区域的颜色更红，说明在玩更难的3-back游戏时，大脑需要花比玩2-back多得多的“力气”。</p>
               </article>
             </div>
           </div>
@@ -1547,6 +1795,42 @@
               </div>
               ${renderInquiryScaffold("question")}
               ${renderInquiryCases()}
+            </div>
+          </div>
+        </div>
+        <div class="practice-modal" id="practiceModal" role="dialog" aria-modal="true" aria-labelledby="practiceTitle">
+          <div class="practice-card">
+            <div class="practice-head">
+              <h3 id="practiceTitle">体验 N-back</h3>
+              <p>这是一个练习任务，用来帮助你理解 N-back 的判断方式。体验结果不会进入正式实验数据。</p>
+            </div>
+            <div class="practice-body">
+              <div class="practice-settings" aria-label="任务设置">
+                <div><span>N 值</span><b>2-back</b></div>
+                <div><span>刺激类型</span><b>数字</b></div>
+                <div><span>数字范围</span><b>1-9</b></div>
+                <div><span>总试次数</span><b>10 次</b></div>
+              </div>
+              <div class="practice-feedback">
+                <span>当前进度</span>
+                <b id="practiceProgress">尚未开始</b>
+              </div>
+              <div class="practice-stage">
+                <div class="practice-number" id="practiceNumber">?</div>
+              </div>
+              <div class="practice-feedback">
+                <span>当前反馈</span>
+                <b id="practiceFeedback">点击“开始体验”后开始。</b>
+              </div>
+              <div class="practice-response-grid">
+                <button class="response-btn yes-btn" id="practiceYesBtn" type="button" disabled>是</button>
+                <button class="response-btn no-btn" id="practiceNoBtn" type="button" disabled>否</button>
+              </div>
+              <div class="practice-actions">
+                <button class="btn" id="practiceStartBtn" type="button">开始体验</button>
+                <button class="btn secondary" id="practiceRestartBtn" type="button">重新体验</button>
+                <button class="btn secondary" id="practiceCloseBtn" type="button">关闭</button>
+              </div>
             </div>
           </div>
         </div>
@@ -1928,8 +2212,147 @@
         });
       }
       if (stepId === "evidence") bindGameEvents();
+      if (stepId === "question") bindPracticeEvents();
       const finalExport = document.getElementById("finalExportBtn");
       if (finalExport) finalExport.addEventListener("click", exportExcel);
+    }
+
+    function bindPracticeEvents() {
+      const open = document.getElementById("openPracticeBtn");
+      const start = document.getElementById("practiceStartBtn");
+      const restart = document.getElementById("practiceRestartBtn");
+      const close = document.getElementById("practiceCloseBtn");
+      const yes = document.getElementById("practiceYesBtn");
+      const no = document.getElementById("practiceNoBtn");
+      if (!open || !start || !restart || !close || !yes || !no) return;
+      open.addEventListener("click", openPracticeModal);
+      start.addEventListener("click", handlePracticeStart);
+      restart.addEventListener("click", startPracticeGame);
+      close.addEventListener("click", closePracticeModal);
+      yes.addEventListener("click", () => submitPracticeResponse("是"));
+      no.addEventListener("click", () => submitPracticeResponse("否"));
+      updatePracticeUi();
+    }
+
+    function openPracticeModal() {
+      const modal = document.getElementById("practiceModal");
+      if (!modal) return;
+      modal.classList.add("is-visible");
+      practiceGame = null;
+      clearPracticeAdvanceTimer();
+      updatePracticeUi();
+    }
+
+    function closePracticeModal() {
+      const modal = document.getElementById("practiceModal");
+      if (!modal) return;
+      modal.classList.remove("is-visible");
+      practiceGame = null;
+      clearPracticeAdvanceTimer();
+      updatePracticeUi();
+    }
+
+    function handlePracticeStart() {
+      if (!practiceGame || practiceGame.finished) {
+        startPracticeGame();
+        return;
+      }
+      if (practiceGame.currentIndex < practiceGame.n) {
+        advancePracticeTrial();
+      }
+    }
+
+    function startPracticeGame() {
+      clearPracticeAdvanceTimer();
+      practiceGame = {
+        n: 2,
+        totalTrials: 10,
+        sequence: generateSequence(2, 10, "number"),
+        currentIndex: 0,
+        correct: 0,
+        answered: 0,
+        finished: false,
+        lastFeedback: "请先记住前两个数字。"
+      };
+      updatePracticeUi();
+    }
+
+    function submitPracticeResponse(response) {
+      if (!practiceGame || practiceGame.finished || practiceGame.currentIndex < practiceGame.n) return;
+      const index = practiceGame.currentIndex;
+      const expected = practiceGame.sequence[index] === practiceGame.sequence[index - practiceGame.n] ? "是" : "否";
+      const isCorrect = response === expected;
+      practiceGame.answered += 1;
+      if (isCorrect) practiceGame.correct += 1;
+      practiceGame.lastFeedback = isCorrect ? "正确" : "不正确";
+      updatePracticeUi(true);
+      clearPracticeAdvanceTimer();
+      practiceAdvanceTimerId = window.setTimeout(advancePracticeTrial, 650);
+    }
+
+    function advancePracticeTrial() {
+      if (!practiceGame) return;
+      clearPracticeAdvanceTimer();
+      practiceGame.currentIndex += 1;
+      if (practiceGame.currentIndex >= practiceGame.totalTrials) {
+        practiceGame.finished = true;
+        const accuracy = practiceGame.answered ? Math.round((practiceGame.correct / practiceGame.answered) * 100) : 0;
+        practiceGame.lastFeedback = `体验完成，正确率 ${accuracy}%`;
+      } else if (practiceGame.currentIndex < practiceGame.n) {
+        practiceGame.lastFeedback = "请先记住前两个数字。";
+      } else {
+        practiceGame.lastFeedback = `请判断当前数字是否与前 ${practiceGame.n} 个数字相同。`;
+      }
+      updatePracticeUi();
+    }
+
+    function clearPracticeAdvanceTimer() {
+      if (practiceAdvanceTimerId) {
+        window.clearTimeout(practiceAdvanceTimerId);
+        practiceAdvanceTimerId = null;
+      }
+    }
+
+    function updatePracticeUi(lockResponses = false) {
+      const progress = document.getElementById("practiceProgress");
+      const number = document.getElementById("practiceNumber");
+      const feedback = document.getElementById("practiceFeedback");
+      const yes = document.getElementById("practiceYesBtn");
+      const no = document.getElementById("practiceNoBtn");
+      const start = document.getElementById("practiceStartBtn");
+      if (!progress || !number || !feedback || !yes || !no || !start) return;
+
+      if (!practiceGame) {
+        progress.textContent = "尚未开始";
+        number.textContent = "?";
+        feedback.textContent = "点击“开始体验”后开始。";
+        yes.disabled = true;
+        no.disabled = true;
+        start.disabled = false;
+        start.textContent = "开始体验";
+        return;
+      }
+
+      if (practiceGame.finished) {
+        progress.textContent = `第 ${practiceGame.totalTrials} / ${practiceGame.totalTrials} 个`;
+        number.textContent = practiceGame.sequence[practiceGame.totalTrials - 1];
+        feedback.textContent = practiceGame.lastFeedback;
+        yes.disabled = true;
+        no.disabled = true;
+        start.disabled = false;
+        start.textContent = "开始体验";
+        return;
+      }
+
+      const index = practiceGame.currentIndex;
+      const isWarmup = index < practiceGame.n;
+      progress.textContent = `第 ${index + 1} / ${practiceGame.totalTrials} 个`;
+      number.textContent = practiceGame.sequence[index];
+      feedback.textContent = practiceGame.lastFeedback;
+      yes.disabled = isWarmup || lockResponses;
+      no.disabled = isWarmup || lockResponses;
+      start.disabled = !isWarmup;
+      start.textContent = isWarmup ? "继续体验" : "开始体验";
     }
 
     function bindGameEvents() {
