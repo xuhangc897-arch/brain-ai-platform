@@ -416,6 +416,7 @@
         lifeFactors: "",
         materialFactors: "",
         factor: "倒摄干扰",
+        questionFactor: "",
         question: "",
         independentVariablePlan: "",
         dependentVariablePlan: "",
@@ -478,6 +479,14 @@
       Object.assign(merged, incoming);
       merged.fields = Object.assign({}, base.fields, incoming.fields || {});
       if (merged.fields.materialFactors === "前摄干扰、倒摄干扰、材料相似性、情绪状态") merged.fields.materialFactors = "";
+      if (!merged.fields.questionFactor && merged.fields.question) {
+        merged.fields.questionFactor = String(merged.fields.question).replace(/会对长时记忆造成干扰吗？?$/, "");
+      }
+      if (merged.fields.questionFactor) {
+        merged.fields.question = `${merged.fields.questionFactor}会对长时记忆造成干扰吗？`;
+      } else {
+        merged.fields.question = "";
+      }
       merged.records = Array.isArray(incoming.records) ? incoming.records : [];
       merged.surveys = mergeSurveys(incoming.surveys);
       if (!incoming.surveys) merged.currentStep = 0;
@@ -716,28 +725,18 @@
         </div></div>
         <div class="panel"><div class="panel-head"><h3>提出研究问题</h3></div><div class="panel-body">
           <div class="field"><label>材料中列出的干扰因素</label><textarea data-field="materialFactors" placeholder="请根据阅读材料自行填写">${escapeHtml(state.fields.materialFactors)}</textarea></div>
-          <div class="field"><label>研究问题</label><p class="hint">选择你们感兴趣的1-2个因素进行探究活动，提出研究问题：</p><textarea data-field="question" placeholder="______________会对长时记忆造成干扰吗？">${escapeHtml(state.fields.question)}</textarea></div>
+          <div class="field"><label>研究问题</label><p class="hint">选择你们感兴趣的1-2个因素进行探究活动，提出研究问题：</p><div class="form-grid"><input type="text" data-field="questionFactor" value="${escapeHtml(state.fields.questionFactor)}" placeholder="请输入干扰因素"><p class="hint" style="align-self:center;margin:0;">会对长时记忆造成干扰吗？</p></div></div>
           ${renderInquiryScaffold("question")}
           ${renderInquiryCases()}
         </div></div>
       </div>`;
     }
     function renderHypothesisStep() {
-      return `<div class="step-layout"><div class="panel"><div class="panel-head"><h3>研究假设小助手</h3></div><div class="panel-body">${renderInquiryScaffold("hypothesis")}${renderInquiryCases()}</div></div><div class="panel"><div class="panel-head"><h3>研究假设</h3></div><div class="panel-body"><textarea data-field="hypothesis" placeholder="写下你们小组对结果的预测">${escapeHtml(state.fields.hypothesis)}</textarea></div></div></div>`;
+      return `<div class="single-step-layout"><div class="panel"><div class="panel-head"><h3>研究假设</h3></div><div class="panel-body"><textarea data-field="hypothesis" placeholder="写下你们小组对结果的预测">${escapeHtml(state.fields.hypothesis)}</textarea></div></div><div class="panel"><div class="panel-head"><h3>研究假设小助手</h3></div><div class="panel-body">${renderInquiryScaffold("hypothesis")}${renderInquiryCases()}</div></div></div>`;
     }
     function renderPlanStep() {
       const factorOptions = Object.keys(MATERIAL_SETS).map((factor) => `<option value="${factor}" ${selected("factor", factor)}>${factor}</option>`).join("");
       return `<div class="single-step-layout">
-        <div class="panel"><div class="panel-head"><h3>实验计划</h3><p>选择材料包后，搜集证据阶段会按 PPT 固定材料和两轮流程运行。</p></div><div class="panel-body"><div class="form-grid">
-          <div class="field"><label>实验类型</label><select data-field="factor">${factorOptions}</select></div>
-          <div class="field"><label>参与者编号</label><input type="text" data-field="participant" value="${escapeHtml(state.fields.participant)}" placeholder="请输入参与者编号"></div>
-          <div class="field"><label>材料难度</label><select data-field="difficulty"><option value="easy" ${selected("difficulty","easy")}>初级</option><option value="medium" ${selected("difficulty","medium")}>中级</option><option value="hard" ${selected("difficulty","hard")}>高级</option></select></div>
-          <div class="field"><label>情绪视频条件</label><select data-field="emotionCondition"><option value="中性" ${selected("emotionCondition","中性")}>中性</option><option value="悲伤" ${selected("emotionCondition","悲伤")}>悲伤</option><option value="愉悦" ${selected("emotionCondition","愉悦")}>愉悦</option></select></div>
-          <div class="field"><label>记忆时间（秒）</label><input type="number" min="10" max="180" data-field="memorySeconds" value="${escapeHtml(state.fields.memorySeconds)}"></div>
-          <div class="field"><label>休息/视频时间（秒）</label><input type="number" min="5" max="240" data-field="restSeconds" value="${escapeHtml(state.fields.restSeconds)}"></div>
-          <div class="field"><label>干扰时间（秒）</label><input type="number" min="5" max="240" data-field="interferenceSeconds" value="${escapeHtml(state.fields.interferenceSeconds)}"></div>
-          <div class="field"><label>测试轮次</label><input type="number" min="1" max="2" value="2" disabled></div>
-        </div></div></div>
         <div class="panel"><div class="panel-head"><h3>变量设计</h3><p>请根据小组选择的探究因素，填写变量。</p></div><div class="panel-body">
           <div class="variable-table-wrap">
             <table class="variable-table">
@@ -818,6 +817,16 @@
             <p>在没有任何提示的情况下，参与者回忆并尽可能多地在纸上写出记忆材料的内容。记录员需要在实验记录表中记录头环颜色、反应时间与复述正确率。</p>
           </div></details>
         </div></div>
+        <div class="panel"><div class="panel-head"><h3>实验计划</h3><p>选择材料包后，搜集证据阶段会按 PPT 固定材料和两轮流程运行。</p></div><div class="panel-body"><div class="form-grid">
+          <div class="field"><label>实验类型</label><select data-field="factor">${factorOptions}</select></div>
+          <div class="field"><label>参与者编号</label><input type="text" data-field="participant" value="${escapeHtml(state.fields.participant)}" placeholder="请输入参与者编号"></div>
+          <div class="field"><label>材料难度</label><select data-field="difficulty"><option value="easy" ${selected("difficulty","easy")}>初级</option><option value="medium" ${selected("difficulty","medium")}>中级</option><option value="hard" ${selected("difficulty","hard")}>高级</option></select></div>
+          <div class="field"><label>情绪视频条件</label><select data-field="emotionCondition"><option value="中性" ${selected("emotionCondition","中性")}>中性</option><option value="悲伤" ${selected("emotionCondition","悲伤")}>悲伤</option><option value="愉悦" ${selected("emotionCondition","愉悦")}>愉悦</option></select></div>
+          <div class="field"><label>记忆时间（秒）</label><input type="number" min="10" max="180" data-field="memorySeconds" value="${escapeHtml(state.fields.memorySeconds)}"></div>
+          <div class="field"><label>休息/视频时间（秒）</label><input type="number" min="5" max="240" data-field="restSeconds" value="${escapeHtml(state.fields.restSeconds)}"></div>
+          <div class="field"><label>干扰时间（秒）</label><input type="number" min="5" max="240" data-field="interferenceSeconds" value="${escapeHtml(state.fields.interferenceSeconds)}"></div>
+          <div class="field"><label>测试轮次</label><input type="number" min="1" max="2" value="2" disabled></div>
+        </div></div></div>
       </div>`;
     }
     function renderEvidenceStep() {
@@ -863,7 +872,7 @@
       const summary = summarizeRecords();
       const rows = summary.map((item)=>`<tr><td>${escapeHtml(item.condition)}</td><td>${item.count}</td><td>${item.avgCorrect}</td><td>${item.avgAccuracy}%</td><td>${item.avgRt ? item.avgRt + "ms" : "--"}</td></tr>`).join("");
       const chart = summary.length ? summary.map((item)=>`<div class="bar-row"><div>${escapeHtml(item.condition)}</div><div class="bar-track"><div class="bar-fill" style="width:${item.avgAccuracy}%"></div></div><div>${item.avgAccuracy}%</div></div>`).join("") : `<div class="empty-state">完成实验后会自动生成条件对比图。</div>`;
-      return `<div class="analysis-layout"><div class="panel"><div class="panel-head"><h3>条件汇总</h3></div><div class="panel-body">${summary.length ? `<table><thead><tr><th>条件</th><th>次数</th><th>平均正确数</th><th>平均正确率</th><th>平均反应时</th></tr></thead><tbody>${rows}</tbody></table>` : `<div class="empty-state">还没有实验数据。请先完成至少一轮实验。</div>`}</div></div>${renderTeamResultTable(summary)}<div class="panel"><div class="panel-head"><h3>结果展示与头环记录</h3></div><div class="panel-body"><div class="chart">${chart}</div><div class="field" style="margin-top:18px;"><label>总体头环观察</label><textarea data-field="headband">${escapeHtml(state.fields.headband)}</textarea></div></div></div></div>`;
+      return `<div class="single-step-layout"><div class="panel"><div class="panel-head"><h3>条件汇总</h3></div><div class="panel-body">${summary.length ? `<table><thead><tr><th>条件</th><th>次数</th><th>平均正确数</th><th>平均正确率</th><th>平均反应时</th></tr></thead><tbody>${rows}</tbody></table>` : `<div class="empty-state">还没有实验数据。请先完成至少一轮实验。</div>`}</div></div>${renderTeamResultTable(summary)}<div class="panel"><div class="panel-head"><h3>结果展示与头环记录</h3></div><div class="panel-body"><div class="chart">${chart}</div><div class="field" style="margin-top:18px;"><label>总体头环观察</label><textarea data-field="headband">${escapeHtml(state.fields.headband)}</textarea></div></div></div></div>`;
     }
     function renderConclusionStep() {
       return `<div class="step-layout"><div class="panel"><div class="panel-head"><h3>得出结论</h3></div><div class="panel-body"><div class="form-grid"><div class="field"><label>结论是否支持假设</label><select data-field="support"><option value="是" ${selected("support","是")}>是</option><option value="否" ${selected("support","否")}>否</option><option value="不确定" ${selected("support","不确定")}>不确定</option></select></div><div class="field"><label>结论是否可信</label><select data-field="credibility"><option value="是" ${selected("credibility","是")}>是</option><option value="否" ${selected("credibility","否")}>否</option><option value="不确定" ${selected("credibility","不确定")}>不确定</option></select></div></div><textarea data-field="conclusion" placeholder="通过实验，我们得到以下结论">${escapeHtml(state.fields.conclusion)}</textarea></div></div><div class="panel"><div class="panel-head"><h3>原因说明</h3></div><div class="panel-body"><div class="reading-card"><h4>提示</h4><p>结论需要回到数据：哪一轮/哪一条件正确率更低，是否说明该因素造成了更强干扰。</p></div></div></div></div>`;
@@ -880,6 +889,9 @@
     }
     function updateField(element, field) {
       state.fields[field] = element.type === "number" ? Number(element.value) : element.value;
+      if (field === "questionFactor") {
+        state.fields.question = state.fields.questionFactor ? `${state.fields.questionFactor}会对长时记忆造成干扰吗？` : "";
+      }
       saveState();
     }
     function bindStepEvents(stepId) {

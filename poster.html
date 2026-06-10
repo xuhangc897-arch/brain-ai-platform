@@ -438,7 +438,7 @@
       { id: "plan", title: "制定初步方案", minutes: "15分钟" },
       { id: "make", title: "制作海报", minutes: "30分钟" },
       { id: "share", title: "分享交流", minutes: "10分钟" },
-      { id: "questions", title: "提问记录", minutes: "15分钟" },
+      { id: "questions", title: "提问交流", minutes: "15分钟" },
       { id: "score", title: "海报评分", minutes: "20分钟" },
       { id: "reflection", title: "总结反思", minutes: "10分钟" }
     ];
@@ -476,6 +476,7 @@
         aiSupport: "",
         visualPlan: "",
         presenter: "",
+        presenterStudentId: "",
         speakingPoints: "",
         askedQuestions: "",
         answers: "",
@@ -619,7 +620,7 @@
       return `
         <div class="task-hero">
           <h3>分享交流大会</h3>
-          <p>小科学家们，请用海报展示你们的探究成果吧！这节课我们将：① 合作创作科学海报，分享研究问题、证据和发现；② 化身小评委与提问官，交流观点、互相学习！</p>
+          <p>小科学家们，请用海报展示你们的探究成果吧！<br>这节课我们将：① 合作创作科学海报，分享研究问题、证据和发现；② 化身小评委与提问官，交流观点、互相学习！</p>
           <p>海报制作</p>
           <p>30分钟</p>
         </div>
@@ -630,20 +631,20 @@
               <div class="task-card">
                 <h4>海报内容：</h4>
               <ol class="checklist">
-                <li>①研究问题</li>
-                <li>②研究假设</li>
-                <li>③研究计划：简单描述实验步骤</li>
-                <li>④实验数据：直观展示实验数据
+                <li>研究问题</li>
+                <li>研究假设</li>
+                <li>研究计划：简单描述实验步骤</li>
+                <li>实验数据：直观展示实验数据
                   <div class="tip-box">提示：1）可以采用表格、柱状图、折线图等形式呈现<br>2）证据要真实，图表要清晰标注（如标题、单位）</div>
                 </li>
-                <li>⑤研究结论：简单概括所得出的结论
+                <li>研究结论：简单概括所得出的结论
                   <div class="tip-box">提示：结论应基于证据，并说明是否支持假设</div>
                 </li>
-                <li>⑥反思不足：反思实验中的缺点
+                <li>反思不足：反思实验中的缺点
                   <div class="tip-box">提示：可以反思的方向：<br>实验设计（“步骤是否合理？”）<br>实验数据（“数据是否直观展示？”）<br>结论分析（“实验过程中有哪些因素会影响结论的科学性？”）<br>团队合作（“团队分工是否明确？”）</div>
                 </li>
-                <li>⑦启示：联系生活实际，解释本研究如何应用于生活</li>
-                <li>⑧小组分工：在海报上写出每个成员的贡献，包括姓名和任务</li>
+                <li>启示：联系生活实际，解释本研究如何应用于生活</li>
+                <li>小组分工：在海报上写出每个成员的贡献，包括姓名和任务</li>
               </ol>
               </div>
             </div>
@@ -756,10 +757,6 @@
 
     function renderShareStep() {
       return `
-        <div class="task-hero">
-          <h3>分享交流</h3>
-          <p>30分钟</p>
-        </div>
         <div class="step-layout">
           <div class="panel">
             <div class="panel-head"><h3>一、小小讲解员</h3></div>
@@ -771,6 +768,7 @@
             <div class="panel-head"><h3>分享交流记录</h3></div>
             <div class="panel-body form-grid">
               ${field("presenter", "小小讲解员", "input")}
+              <div class="field"><label>小小讲解员学生编号</label><input data-field="presenterStudentId" value="${escapeHtml(state.fields.presenterStudentId)}" placeholder="请输入学生编号"></div>
               ${field("speakingPoints", "讲解要点", "textarea")}
               ${field("askedQuestions", "被问到的问题", "textarea")}
               ${field("answers", "回答摘要", "textarea")}
@@ -783,7 +781,7 @@
     function renderQuestionsStep() {
       return `
         <div class="panel">
-          <div class="panel-head"><h3>二、提问交流</h3><p>每位同学将领取三枚“提问贴纸”。请针对各组的科学海报内容，至少提出三个不同的问题（可以向不同的小组提问）。</p></div>
+          <div class="panel-head"><p>每位同学将领取三枚“提问贴纸”。请针对各组的科学海报内容，至少提出三个不同的问题（可以向不同的小组提问）。</p></div>
           <div class="panel-body">
             <div class="task-card">
               <p>每提出一个问题后，请立即将一枚“提问贴纸”贴在该组海报的空白处，作为提问的标记。</p>
@@ -837,7 +835,7 @@
       const progressPercent = Math.round((currentDone / totalItems) * 100);
       const dimensions = [...new Set(indicators.map((indicator) => indicator.dimension))];
       return '<div class="score-workspace">' +
-        '<section class="task-hero"><h3>三、海报评分</h3><p>每位同学根据“海报评分表”的四个维度对每组海报评分，将分数记录在“海报评分表”上。并根据评分表，给你心中最优的海报点赞。</p></section>' +
+        '<section class="task-hero"><p>每位同学根据“海报评分表”的四个维度对每组海报评分，将分数记录在“海报评分表”上。并根据评分表，给你心中最优的海报点赞。</p></section>' +
         '<section class="score-hero">' +
           '<div class="score-hero-top">' +
             '<div><p class="score-kicker">\u5f53\u524d\u8bc4\u5206\u9636\u6bb5</p>' +
@@ -1078,6 +1076,7 @@
         ["分享交流记录", [
           ["字段", "内容"],
           ["小小讲解员", state.fields.presenter],
+          ["小小讲解员学生编号", state.fields.presenterStudentId],
           ["讲解要点", state.fields.speakingPoints],
           ["被问到的问题", state.fields.askedQuestions],
           ["回答摘要", state.fields.answers]

@@ -1853,7 +1853,7 @@
           <div class="panel">
             <div class="panel-head"><h3>研究假设</h3></div>
             <div class="panel-body">
-              <textarea data-field="hypothesis" placeholder="写下你们小组对结果的预测">${escapeHtml(state.fields.hypothesis)}</textarea>
+              <textarea data-field="hypothesis" placeholder="请填写你们小组的研究假设">${escapeHtml(state.fields.hypothesis)}</textarea>
             </div>
           </div>
         </div>
@@ -1869,6 +1869,60 @@
               <p>确定材料、实验变量和小组分工。</p>
             </div>
             <div class="panel-body">
+              <div class="reading-card">
+                <h4>实验设计思考</h4>
+                <p>在提出问题和假设之后，我们就要制定研究计划。首先请你思考，针对不同的自变量，我们应该如何设计实验呢？</p>
+                <p>请以下图示意图为基础，请在纸上画出①自变量为N的大小②自变量为关卡数量时的实验示意图</p>
+                <p>在上图中，我们采用的实验材料是【数字】，你也可以使用【图片】作为N-back的材料。请在讨论后与你的组员一起确定你们小组的实验材料吧！</p>
+                <div class="nback-example" aria-label="N-back活动举例">
+                  <svg class="nback-example-svg" viewBox="0 0 720 320" role="img" aria-labelledby="planNbackExampleTitle planNbackExampleDesc">
+                    <title id="planNbackExampleTitle">N-back活动举例：2-back数字实验</title>
+                    <desc id="planNbackExampleDesc">数字序列7、5、6、5、8、3，从第三个数字开始与前2个数字进行比较，结果依次为否、是、否、否。</desc>
+                    <rect x="1" y="1" width="718" height="318" rx="8" fill="#ffffff" stroke="#dbe3ef" />
+                    <text x="360" y="36" text-anchor="middle" fill="#172033" font-size="22" font-weight="800">N-back活动举例：2-back数字实验</text>
+                    <g fill="none" stroke="#1e3a8a" stroke-width="3" stroke-linecap="round" stroke-linejoin="round">
+                      <path d="M74 76 Q94 58 114 76 Q94 94 74 76Z" />
+                      <circle cx="94" cy="76" r="5" fill="#1e3a8a" />
+                      <path d="M174 76 Q194 58 214 76 Q194 94 174 76Z" />
+                      <circle cx="194" cy="76" r="5" fill="#1e3a8a" />
+                    </g>
+                    <g fill="#0f766e" font-size="18" font-weight="900" text-anchor="middle">
+                      <text x="294" y="84">否</text>
+                      <text x="394" y="84">是</text>
+                      <text x="494" y="84">否</text>
+                      <text x="594" y="84">否</text>
+                    </g>
+                    <g fill="#ffffff" stroke="#bfdbfe" stroke-width="2">
+                      <rect x="50" y="118" width="88" height="70" rx="8" />
+                      <rect x="150" y="118" width="88" height="70" rx="8" />
+                      <rect x="250" y="118" width="88" height="70" rx="8" />
+                      <rect x="350" y="118" width="88" height="70" rx="8" />
+                      <rect x="450" y="118" width="88" height="70" rx="8" />
+                      <rect x="550" y="118" width="88" height="70" rx="8" />
+                    </g>
+                    <g fill="#172033" font-size="34" font-weight="900" text-anchor="middle">
+                      <text x="94" y="164">7</text>
+                      <text x="194" y="164">5</text>
+                      <text x="294" y="164">6</text>
+                      <text x="394" y="164">5</text>
+                      <text x="494" y="164">8</text>
+                      <text x="594" y="164">3</text>
+                    </g>
+                    <g fill="none" stroke="#1e3a8a" stroke-width="2.5" stroke-linecap="round">
+                      <path d="M94 210 C94 238 294 238 294 210" />
+                      <path d="M194 232 C194 260 394 260 394 232" />
+                      <path d="M294 254 C294 282 494 282 494 254" />
+                      <path d="M394 276 C394 304 594 304 594 276" />
+                    </g>
+                    <g fill="#475467" font-size="14" text-anchor="middle">
+                      <text x="194" y="236">6 与前 2 个数字比较</text>
+                      <text x="294" y="264">5 与前 2 个数字比较</text>
+                      <text x="394" y="292">8 与前 2 个数字比较</text>
+                      <text x="494" y="314">3 与前 2 个数字比较</text>
+                    </g>
+                  </svg>
+                </div>
+              </div>
               <div class="form-grid">
                 <div class="field">
                   <label for="stimulusMaterial">实验材料</label>
@@ -2075,7 +2129,7 @@
       `).join("") : `<div class="empty-state">完成 N-back 实验后，这里会自动生成正确率柱状图。</div>`;
 
       return `
-        <div class="analysis-layout">
+        <div class="single-step-layout">
           <div class="panel">
             <div class="panel-head">
               <h3>实验结果汇总</h3>
