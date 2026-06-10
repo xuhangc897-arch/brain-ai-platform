@@ -62,6 +62,32 @@
     .reading-card { border: 1px solid #e5edf7; border-radius: 8px; padding: 16px; background: #fbfdff; }
     .reading-card h4 { margin: 0 0 8px; color: #1e3a8a; font-size: 16px; }
     .reading-card p { margin: 0 0 10px; color: #344054; font-size: 14px; }
+    .question-prompt-strip { border: 1px solid #bfdbfe; border-radius: 8px; padding: 18px 20px; background: linear-gradient(135deg, #eff6ff, #f8fbff); box-shadow: 0 12px 28px rgba(37,99,235,.08); }
+    .question-prompt-strip p { margin: 0; color: #24364f; font-size: 16px; line-height: 1.9; font-weight: 800; }
+    .material-details { border: 1px solid #e5edf7; border-radius: 8px; background: #fbfdff; overflow: hidden; }
+    .material-details summary { padding: 14px 16px; color: #1e3a8a; font-weight: 900; cursor: pointer; }
+    .material-details summary::marker { color: var(--primary); }
+    .material-details-body { display: grid; gap: 10px; padding: 0 16px 16px; color: #344054; font-size: 14px; }
+    .material-details-body p { margin: 0; line-height: 1.8; }
+    .strategy-mode-grid { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 14px; margin-bottom: 18px; }
+    .strategy-mode-card { border: 1px solid var(--line); border-radius: 8px; padding: 14px; background: #fbfdff; }
+    .strategy-mode-card h4 { margin: 0 0 8px; color: #1e3a8a; }
+    .strategy-mode-card p { margin: 0; color: #344054; font-size: 14px; }
+    .flow-grid { display: grid; gap: 12px; margin-bottom: 18px; }
+    .flow-card { border: 1px solid #dbeafe; border-radius: 8px; padding: 14px; background: #fbfdff; }
+    .flow-card h4 { margin: 0 0 8px; color: #1e3a8a; }
+    .flow-card p { margin: 0 0 7px; color: #344054; font-size: 14px; }
+    .score-layout { display: grid; grid-template-columns: 1.1fr .9fr; gap: 18px; align-items: start; }
+    .score-table-wrap { overflow-x: auto; border: 1px solid var(--line); border-radius: 8px; background: #fff; }
+    .score-table { min-width: 620px; }
+    .score-table td:nth-child(2) { min-width: 310px; }
+    .score-table select { min-height: 38px; padding: 8px 10px; }
+    .score-actions { display: flex; flex-wrap: wrap; gap: 10px; justify-content: flex-end; margin-top: 14px; }
+    .score-record-list { display: grid; gap: 10px; }
+    .score-record-card { border: 1px solid var(--line); border-radius: 8px; padding: 12px; background: #fbfdff; }
+    .score-record-card h4 { margin: 0 0 8px; color: #1e3a8a; }
+    .score-record-card p { margin: 0 0 8px; color: #344054; font-size: 13px; }
+    @media (max-width: 760px) { .strategy-mode-grid, .score-layout { grid-template-columns: 1fr; } }
     .field { margin-bottom: 18px; }
     label { display: block; margin-bottom: 7px; color: #344054; font-size: 14px; font-weight: 700; }
     input, textarea, select { width: 100%; border: 1px solid var(--line); background: #fff; color: var(--ink); border-radius: 8px; padding: 11px 12px; outline: none; }
@@ -317,10 +343,10 @@
       currentStep: 0,
       fields: {
         question: "",
-        hypothesis1: "简单复述能帮助记忆，但保持效果有限。",
-        hypothesis2: "主动回忆等策略能提升长时记忆的回忆率。",
-        strategy1: "简单复述",
-        strategy2: "主动回忆",
+        hypothesis1: "",
+        hypothesis2: "",
+        strategy1: "主动回忆",
+        strategy2: "信息可视化",
         materialType: "word",
         lowCount: 2,
         midCount: 2,
@@ -337,6 +363,8 @@
         scoreUse: 3,
         scoreConfidence: 3,
         scoreTransfer: 3,
+        scoreStrategyName: "",
+        scoreRecordViewId: "",
         conclusion: "",
         designImprove: "",
         surprise: "",
@@ -348,6 +376,7 @@
         teammate2Result: ""
       },
       records: [],
+      strategyScores: [],
       surveys: createDefaultSurveys(),
       savedAt: ""
     };
@@ -378,7 +407,9 @@
       const merged = structuredClone(base);
       Object.assign(merged, incoming);
       merged.fields = Object.assign({}, base.fields, incoming.fields || {});
+      if (merged.fields.strategy1 === "简单复述") merged.fields.strategy1 = "主动回忆";
       merged.records = Array.isArray(incoming.records) ? incoming.records : [];
+      merged.strategyScores = Array.isArray(incoming.strategyScores) ? incoming.strategyScores : [];
       merged.surveys = mergeSurveys(incoming.surveys);
       if (!incoming.surveys) merged.currentStep = 0;
       return merged;
@@ -580,21 +611,53 @@
       '</div>';
     }
 
+    function renderStrategyReadingMaterials() {
+      return `
+        <article class="reading-card"><h4>材料一</h4><p>大脑平均每天产生约70,000个想法，长时记忆的形成涉及突触可塑性的改变。当海马体（大脑边缘系统的组成部分）反复处理相同信息时，神经元之间的连接会增强。这个过程被称为长时程增强(LTP)，与短期记忆的电子信号传递不同。</p><p>——《记忆：从大脑到分子》</p></article>
+        <article class="reading-card"><h4>材料二</h4><p>长时记忆可分为情景记忆（例如，记得去年生日派对）和语义记忆（例如，知道巴黎是法国首都）。有趣的是，调查显示90%的人能记住自己7岁时的某个情景。程序记忆（例如，骑自行车）则存储在小脑中，这种记忆往往通过身体练习形成。</p><p>——《情景记忆和语义记忆》</p></article>
+        <article class="reading-card"><h4>材料三</h4><p>赫尔曼·艾宾浩斯通过无意义音节（如ZOF）实验发现，遗忘在学习后立即开始，20分钟后遗忘41.8%。现代研究证实，间隔复习可以打破这种曲线。此外，主动回忆比被动重读有效2-3倍，且将新知识与已有知识关联可提升记忆效率。</p><p>——《记忆：对实验心理学的贡献》</p></article>
+        <article class="reading-card"><h4>材料四</h4><p>一个探索记忆策略有效性的研究在近1000项实验的基础上得出结论，提取线索（关键信息，例如单词首字母）效果值达0.93，而划重点只有0.22。分散学习比集中学习效率高50%，但需要精确安排间隔时间。值得注意的是，将信息可视化（例如，思维导图或图像）能同时激活视觉和语言皮层。</p><p>——《运用有效的学习技巧提升学生的学习效果》</p></article>
+      `;
+    }
+
+    function renderPlanMaterials() {
+      return `
+        <details class="material-details" open><summary>材料五</summary><div class="material-details-body">
+          <p>心理学家亨利·罗迪格（Henry Roediger）在2006年进行了一项关于主动提取如何影响长时记忆的重要实验。首先选取了40组斯瓦希里语-英语单词组作为记忆材料，比如"mashua-boat"这样的组合。将参与者随机分成两组，一组采用传统的重复学习方法，另一组则采用主动提取的方式。在第一阶段的学习中，所有参与者都会完整地学习一遍40组单词对，每组单词会呈现5秒钟，让参与者形成初步记忆。</p>
+          <p>接下来的练习阶段体现出了关键差异：重复学习组的参与者会再次完整地阅读所有单词对4遍，每次阅读的顺序都随机打乱，模拟了"死记硬背"的学习方法；而主动提取组的参与者则只阅读单词对1遍，之后就要面对3轮回忆测试。在回忆阶段，研究人员会单独呈现斯瓦希里语单词，比如"mashua"，参与者需要通过主动提取来回忆对应的英语释义"boat"。</p>
+          <p>随后，研究人员对所有参与者进行了突袭测试，要求他们根据斯瓦希里语单词回忆对应的英语释义，以此来评估长时记忆的保持效果。测试结果非常明显：主动提取组的平均正确率达到了80%左右，而重复学习组只有约30%的正确率。这个差距有力地证明了主动回忆比被动复习更能促进长时记忆的保持。</p>
+        </div></details>
+        <details class="material-details"><summary>材料六</summary><div class="material-details-body">
+          <p>本次长时记忆探究活动中，头环将成为探索记忆奥秘的重要科学工具，它能帮助我们“看到”大脑在记忆时的活动情况。</p>
+          <p>头环主要通过两种方式来监测大脑活动：一种是记录脑电波（EEG），就像给大脑的活动“录音”；另一种是检测血流变化（fNIRS），相当于观察大脑哪个区域在工作时会“充血”。在实验中，当你使用不同的记忆方法时，头环会实时记录下大脑的反应，并通过软件将这些数据转化成直观的图表和3D脑图。在证据搜集环节，头环可以帮助你获得更科学的实验数据（例如，当用分组记忆法背单词时，头环能显示大脑哪些区域被激活），这些数据会成为研究假设的有力证据。在信息处理阶段，可以将头环采集到的脑活动热力图与回忆率进行对比分析，看看哪种记忆方法能让大脑更活跃，记忆效果更好。在得出结论时，头环提供的数据会让结论更有说服力。例如，如果数据显示使用图像联想记忆法时，大脑的视觉区域特别活跃，同时回忆率也最高，那么就可得出相应的科学结论。</p>
+          <p>使用头环时要注意：保持额头清洁，确保电极贴片贴紧；实验过程中保持专注；认真记录每个环节的数据变化。希望你能善用这个工具，在探究活动中获得更多发现！</p>
+        </div></details>
+      `;
+    }
+
+    function renderEvidenceFlow() {
+      return `<div class="flow-grid">
+        <div class="flow-card"><h4>1. 实验操作</h4><p>说明：阶段1、2实验材料在难度和数量上保持一致，但内容不能重复。</p><p><strong>阶段1：不使用策略</strong></p><p>记忆阶段：请只使用简单复述的策略进行记忆</p><p>休息阶段：完成“找不同”小游戏</p><p>测试阶段：回忆并写下记忆的单词/古诗/公式，尽可能完整</p><p><strong>阶段2：使用策略</strong></p><p>记忆阶段：采用记忆策略</p><p>休息阶段：完成“找不同”小游戏</p><p>测试阶段：回忆并写下记忆的单词/古诗/公式，尽可能完整</p></div>
+        <div class="flow-card"><h4>2. 记录数据</h4><p>将实验所得的数据记录在数据记录表中。</p></div>
+        <div class="flow-card"><h4>3. 处理分析数据</h4><p>对数据进行处理分析。</p></div>
+        <div class="flow-card"><h4>4. 得出结论</h4><p>根据实验处理分析的数据检验假设回答研究问题。</p></div>
+        <div class="flow-card"><h4>补充说明</h4><p>记录不同策略的回忆出的数量与题目总数，计算不同策略的回忆率。同时进行头环材料的学习，结合头环的显示热力图，判断策略的大脑活跃程度。</p><p>总回忆率=（正确数/抽取的题目总数）×100%</p><p>每道题回答错误情况示例（答案+回答+错误情况）：</p><p>nudge+nugde+两个字母位置错误</p></div>
+      </div>`;
+    }
+
     function renderQuestionStep() {
-      return `<div class="step-layout"><div class="panel"><div class="panel-head"><h3>阅读材料</h3><p>提取与长时记忆和学习策略有关的信息。</p></div><div class="panel-body reading-list">
-        <article class="reading-card"><h4>长时记忆形成</h4><p>长时记忆形成涉及突触可塑性改变，海马体反复处理相同信息会增强神经元连接，这一过程与长时程增强有关。</p></article>
-        <article class="reading-card"><h4>记忆类型</h4><p>长时记忆包括情景记忆、语义记忆和程序记忆。不同内容适合不同记忆策略。</p></article>
-        <article class="reading-card"><h4>遗忘与复习</h4><p>遗忘在学习后立即开始。间隔复习、主动回忆、将新知识与旧知识关联，都能提升保持效果。</p></article>
-        <article class="reading-card"><h4>有效学习策略</h4><p>提取线索、分散学习、信息可视化、主动提取通常比单纯划重点或重复阅读更有效。</p></article>
-      </div></div><div class="panel"><div class="panel-head"><h3>提出研究问题</h3></div><div class="panel-body"><textarea data-field="question" placeholder="写下你们小组真正想探究的问题">${escapeHtml(state.fields.question)}</textarea>${renderInquiryScaffold("question")}${renderInquiryCases()}</div></div></div>`;
+      return `<div class="single-step-layout">
+        <div class="question-prompt-strip"><p>思考：回忆最近学习的内容，为什么有些信息更容易长期记住？哪些方法可以帮助我们更好地记住学习内容？请基于以上内容提出研究问题。</p></div>
+        <div class="panel"><div class="panel-head"><h3>提出研究问题</h3></div><div class="panel-body"><textarea data-field="question" placeholder="写下你们小组真正想探究的问题">${escapeHtml(state.fields.question)}</textarea>${renderInquiryScaffold("question")}${renderInquiryCases()}</div></div>
+      </div>`;
     }
     function renderHypothesisStep() {
-      return `<div class="step-layout"><div class="panel"><div class="panel-head"><h3>研究假设小助手</h3></div><div class="panel-body">${renderInquiryScaffold("hypothesis")}${renderInquiryCases()}</div></div><div class="panel"><div class="panel-head"><h3>研究假设</h3></div><div class="panel-body"><div class="field"><label>策略 1 假设</label><textarea data-field="hypothesis1" placeholder="写下你们小组对结果的预测">${escapeHtml(state.fields.hypothesis1)}</textarea></div><div class="field"><label>策略 2 假设</label><textarea data-field="hypothesis2" placeholder="写下你们小组对结果的预测">${escapeHtml(state.fields.hypothesis2)}</textarea></div></div></div></div>`;
+      return `<div class="step-layout"><div class="panel"><div class="panel-head"><h3>阅读材料</h3><p>请从以下四则材料中提取与长时记忆相关的信息。</p></div><div class="panel-body reading-list">${renderStrategyReadingMaterials()}</div></div><div class="panel"><div class="panel-head"><h3>研究假设</h3></div><div class="panel-body"><p class="hint">在提出问题之后，我们需要根据研究问题提出假设。请阅读材料一至四，提出你的假设（两种改善长时记忆的策略）。</p><div class="field"><label>研究假设：策略1</label><input type="text" data-field="strategy1" value="${escapeHtml(state.fields.strategy1)}" placeholder="____________________"></div><div class="field"><label>策略 1 假设</label><textarea data-field="hypothesis1" placeholder="写下策略1对应的研究假设">${escapeHtml(state.fields.hypothesis1)}</textarea></div><div class="field"><label>研究假设：策略2</label><input type="text" data-field="strategy2" value="${escapeHtml(state.fields.strategy2)}" placeholder="____________________"></div><div class="field"><label>策略 2 假设</label><textarea data-field="hypothesis2" placeholder="写下策略2对应的研究假设">${escapeHtml(state.fields.hypothesis2)}</textarea></div>${renderInquiryScaffold("hypothesis")}</div></div></div>`;
     }
     function renderPlanStep() {
-      return `<div class="single-step-layout"><div class="panel"><div class="panel-head"><h3>实验计划</h3><p>阶段 1 默认使用简单复述；阶段 2 使用选择的改善策略。</p></div><div class="panel-body"><div class="form-grid">
-        <div class="field"><label>策略 1</label><select data-field="strategy1"><option value="简单复述" ${selected("strategy1","简单复述")}>简单复述</option></select></div>
-        <div class="field"><label>策略 2</label><select data-field="strategy2"><option value="主动回忆" ${selected("strategy2","主动回忆")}>主动回忆</option><option value="新旧知识关联" ${selected("strategy2","新旧知识关联")}>新旧知识关联</option><option value="信息可视化" ${selected("strategy2","信息可视化")}>信息可视化</option><option value="线索提取" ${selected("strategy2","线索提取")}>线索提取</option><option value="分散学习" ${selected("strategy2","分散学习")}>分散学习</option></select></div>
+      return `<div class="single-step-layout"><div class="panel"><div class="panel-head"><h3>实验计划</h3><p>请阅读材料五，学习实验设计的基本步骤，并根据提供的记忆实验材料设计一个可操作的实验。</p></div><div class="panel-body"><div class="strategy-mode-grid"><div class="strategy-mode-card"><h4>阶段一：不使用策略</h4><p>默认方法为简单复述。这是基线条件，不作为策略1。</p></div><div class="strategy-mode-card"><h4>阶段二：使用策略</h4><p>学生需要选择或填写两种长时记忆策略。阶段二运行时使用所选策略。</p></div></div><div class="form-grid">
+        <div class="field"><label>策略 1</label><input type="text" data-field="strategy1" value="${escapeHtml(state.fields.strategy1)}" placeholder="例如：主动回忆"></div>
+        <div class="field"><label>策略 2</label><input type="text" data-field="strategy2" value="${escapeHtml(state.fields.strategy2)}" placeholder="例如：信息可视化"></div>
         <div class="field"><label>材料类型</label><select data-field="materialType"><option value="word" ${selected("materialType","word")}>单词</option><option value="poem" ${selected("materialType","poem")}>古诗</option><option value="formula" ${selected("materialType","formula")}>公式</option></select></div>
         <div class="field"><label>参与者编号</label><input type="text" data-field="participantId" value="${escapeHtml(state.fields.participantId || state.studentId)}" placeholder="请输入参与者编号"></div>
         <div class="field"><label>题目总数</label><input type="text" value="${getPlannedItemCount()} 道" readonly></div>
@@ -609,11 +672,12 @@
         <div class="field"><label>记忆时间（秒）</label><input type="number" min="10" max="180" data-field="memorySeconds" value="${escapeHtml(state.fields.memorySeconds)}"></div>
         <div class="field"><label>找不同时间（秒）</label><input type="number" min="10" max="180" data-field="puzzleSeconds" value="${escapeHtml(state.fields.puzzleSeconds)}"></div>
         <div class="field"><label>测试时间（秒）</label><input type="number" min="20" max="240" data-field="testSeconds" value="${escapeHtml(state.fields.testSeconds)}"></div>
-      </div></div></div></div>`;
+      </div></div></div><div class="panel"><div class="panel-head"><h3>实验设计参考材料</h3></div><div class="panel-body reading-list">${renderPlanMaterials()}</div></div></div>`;
     }
     function renderEvidenceStep() {
-      return `<div class="panel"><div class="panel-head"><h3>策略记忆网页实验</h3><p>阶段 1 使用简单复述；阶段 2 使用改善策略。每阶段包含记忆、找不同和低干扰测试。</p></div><div class="panel-body">
-        <div class="toolbar strategy-toolbar"><div class="field"><label>实验阶段</label><select id="stageSelect"><option value="1">阶段 1：简单复述</option><option value="2">阶段 2：改善策略</option></select></div><button class="btn" type="button" id="startRunBtn">开始本阶段</button></div>
+      return `<div class="panel"><div class="panel-head"><h3>策略记忆网页实验</h3><p>阶段1不使用策略，阶段2使用选择的记忆策略。每阶段包含记忆、找不同和低干扰测试。</p></div><div class="panel-body">
+        ${renderEvidenceFlow()}
+        <div class="toolbar strategy-toolbar"><div class="field"><label>实验阶段</label><select id="stageSelect"><option value="1">阶段1：不使用策略</option><option value="2">阶段2：使用策略</option></select></div><div class="field"><label>阶段2使用策略</label><select id="strategySelect"><option value="${escapeHtml(state.fields.strategy1)}">${escapeHtml(state.fields.strategy1 || "策略1")}</option><option value="${escapeHtml(state.fields.strategy2)}">${escapeHtml(state.fields.strategy2 || "策略2")}</option></select></div><button class="btn" type="button" id="startRunBtn">开始本阶段</button></div>
         <div class="strategy-game"><div class="stage"><div class="stage-meta"><span id="phaseStatus">请选择阶段并开始</span><span id="conditionStatus">${escapeHtml(state.fields.strategy2)}</span></div><div id="taskCard" class="task-card"><h3>长时记忆策略</h3><p>准备开始实验</p></div><div id="answerBox" class="answer-box"><label>请在每个格子中填写一个回忆内容</label><div id="recallGrid" class="recall-grid"></div><div class="field" style="margin-top:12px;"><label>头环/脑活动观察</label><input id="headbandInput" type="text" placeholder="例如：使用策略时前额叶颜色更红"></div><button class="btn" type="button" id="submitRecallBtn" style="width:100%;margin-top:12px;">提交本阶段结果</button></div><div class="timer"><div id="timerFill" class="timer-fill"></div></div></div>
         <aside class="game-side"><div class="stat-grid"><div class="mini-stat"><span>阶段</span><b id="phaseStat">--</b></div><div class="mini-stat"><span>剩余时间</span><b id="timeStat">--</b></div><div class="mini-stat"><span>正确数</span><b id="correctStat">0</b></div><div class="mini-stat"><span>回忆率</span><b id="accuracyStat">0%</b></div></div><div class="game-log"><table><thead><tr><th>阶段</th><th>策略</th><th>正确</th><th>回忆率</th></tr></thead><tbody id="gameLogBody"><tr><td colspan="4">暂无记录</td></tr></tbody></table></div></aside></div>
         <div id="focusPrep" class="focus-prep" role="dialog" aria-modal="true"><div class="focus-prep-card"><h3>准备开始策略记忆实验</h3><p>页面将切换到低干扰模式，并尝试进入浏览器全屏。记忆、找不同、测试阶段会按设定时间推进。</p><p>测试阶段请尽可能完整地回忆目标材料，完成后提交。</p><button class="btn" type="button" id="confirmStartRunBtn">进入实验</button><button class="btn secondary" type="button" id="cancelStartRunBtn">取消</button></div></div>
@@ -646,10 +710,58 @@
       const summary = summarizeRecords();
       const rows = summary.map((item)=>`<tr><td>${escapeHtml(item.strategy)}</td><td>${item.count}</td><td>${item.avgCorrect}</td><td>${item.avgAccuracy}%</td><td>${item.avgRt ? item.avgRt + "ms" : "--"}</td></tr>`).join("");
       const chart = summary.length ? summary.map((item)=>`<div class="bar-row"><div>${escapeHtml(item.strategy)}</div><div class="bar-track"><div class="bar-fill" style="width:${item.avgAccuracy}%"></div></div><div>${item.avgAccuracy}%</div></div>`).join("") : `<div class="empty-state">完成实验后会自动生成策略对比图。</div>`;
-      return `<div class="analysis-layout"><div class="panel"><div class="panel-head"><h3>策略汇总</h3></div><div class="panel-body">${summary.length ? `<table><thead><tr><th>策略</th><th>次数</th><th>平均正确数</th><th>平均回忆率</th><th>平均反应时</th></tr></thead><tbody>${rows}</tbody></table>` : `<div class="empty-state">还没有实验数据。请先完成至少一个阶段。</div>`}</div></div>${renderTeamResultTable(summary)}<div class="panel"><div class="panel-head"><h3>图表与策略评分</h3></div><div class="panel-body"><div class="chart">${chart}</div><div class="form-grid" style="margin-top:18px;">${renderScoreField("scoreAccuracy","答案准确性")}${renderScoreField("scoreUse","策略利用率")}${renderScoreField("scoreConfidence","记忆信心度")}${renderScoreField("scoreTransfer","策略迁移性")}</div><div class="mini-stat"><span>评分总分</span><b>${getScoreTotal()}</b></div><div class="field" style="margin-top:18px;"><label>头环观察</label><textarea data-field="headband">${escapeHtml(state.fields.headband)}</textarea></div></div></div></div>`;
+      return `<div class="analysis-layout"><div class="panel"><div class="panel-head"><h3>策略汇总</h3></div><div class="panel-body">${summary.length ? `<table><thead><tr><th>策略</th><th>次数</th><th>平均正确数</th><th>平均回忆率</th><th>平均反应时</th></tr></thead><tbody>${rows}</tbody></table>` : `<div class="empty-state">还没有实验数据。请先完成至少一个阶段。</div>`}<div class="chart">${chart}</div></div></div>${renderTeamResultTable(summary)}<div class="panel"><div class="panel-head"><h3>长时记忆策略评分表</h3><p>请回答者和提问者共同完成以下表格。</p></div><div class="panel-body">${renderStrategyScoreTable()}</div></div><div class="panel"><div class="panel-head"><h3>头环观察</h3></div><div class="panel-body"><textarea data-field="headband">${escapeHtml(state.fields.headband)}</textarea></div></div></div>`;
     }
     function renderScoreField(field, label) {
       return `<div class="field"><label>${label}</label><select data-field="${field}">${[1,2,3,4,5].map((n)=>`<option value="${n}" ${Number(state.fields[field])===n ? "selected" : ""}>${n} 分</option>`).join("")}</select></div>`;
+    }
+    function renderStrategyScoreTable() {
+      const currentTotal = getScoreTotal();
+      const records = state.strategyScores || [];
+      const selectedId = state.fields.scoreRecordViewId || "";
+      const visibleRecords = selectedId ? records.filter((record)=>record.id === selectedId) : records;
+      return `<div class="score-layout">
+        <div>
+          <div class="field"><label>策略名称</label><input type="text" data-field="scoreStrategyName" value="${escapeHtml(state.fields.scoreStrategyName || state.fields.strategy1 || "")}" placeholder="请输入本次评分对应的策略名称"></div>
+          <div class="score-table-wrap"><table class="score-table"><thead><tr><th>评分维度</th><th>水平</th><th>得分</th></tr></thead><tbody>
+            ${renderScoreRow("答案准确性", "scoreAccuracy", ["5分：全部答案完全准确，无任何错误", "4分：1-2处非关键性错误（如拼写/符号轻微偏差）", "3分：3-4处错误，但关键内容保留（如古诗半句正确）", "2分：仅能回忆零碎片段（如单词首字母、公式局部）", "1分：答案完全错误或空白"])}
+            ${renderScoreRow("策略利用率", "scoreUse", ["5分：能高效运用记忆策略，准确回忆内容", "4分：策略使用恰当但略显常规", "3分：能通过策略回忆主要信息，但应用不够系统", "2分：回忆内容片段化，策略与信息关联性较弱", "1分：未能使用策略，与未使用策略相比差异较小"])}
+            ${renderScoreRow("记忆信心度", "scoreConfidence", ["5分：确信完全掌握所有内容", "4分：对大部分内容有信心", "3分：对部分内容有信心", "2分：对回忆能力不确定", "1分：确信自己记不住"])}
+            ${renderScoreRow("策略迁移性", "scoreTransfer", ["5分：能立即将策略应用到新材料上，无需指导", "4分：需简单思考后将策略应用于新场景", "3分：在特定条件下（如相似材料）可以迁移", "2分：需经过努力尝试，来探索能否进行迁移", "1分：策略完全绑定原始材料，无法进行迁移"])}
+            <tr><td colspan="2"><strong>总分</strong></td><td><strong>${currentTotal}</strong></td></tr>
+          </tbody></table></div>
+          <div class="score-actions"><button class="btn" type="button" id="addStrategyScoreBtn">新增策略评分</button></div>
+        </div>
+        <div class="score-record-list">
+          ${records.length ? `<div class="field"><label>切换查看不同策略的评分结果</label><select data-field="scoreRecordViewId"><option value="" ${selectedId ? "" : "selected"}>查看全部评分记录</option>${records.map((record)=>`<option value="${record.id}" ${selectedId === record.id ? "selected" : ""}>${escapeHtml(record.strategyName)}（${record.scoreTotal}分）</option>`).join("")}</select></div>` : ""}
+          ${visibleRecords.length ? visibleRecords.map((record) => `<div class="score-record-card"><h4>${escapeHtml(record.strategyName)}</h4><p>答案准确性 ${record.scoreAccuracy}；策略利用率 ${record.scoreUse}；记忆信心度 ${record.scoreConfidence}；策略迁移性 ${record.scoreTransfer}</p><p><strong>总分：${record.scoreTotal}</strong></p><button class="btn danger" type="button" data-delete-score="${record.id}">删除</button></div>`).join("") : `<div class="empty-state">还没有策略评分记录。完成评分后点击“新增策略评分”。</div>`}
+        </div>
+      </div>`;
+    }
+    function renderScoreRow(label, field, levels) {
+      return `<tr><td>${label}</td><td>${levels.map((item)=>`<p>${item}</p>`).join("")}</td><td><select data-field="${field}">${[1,2,3,4,5].map((n)=>`<option value="${n}" ${Number(state.fields[field])===n ? "selected" : ""}>${n} 分</option>`).join("")}</select></td></tr>`;
+    }
+    function addStrategyScoreRecord() {
+      const strategyName = (state.fields.scoreStrategyName || state.fields.strategy1 || "未命名策略").trim();
+      const record = {
+        id: crypto.randomUUID ? crypto.randomUUID() : String(Date.now()),
+        strategyName,
+        scoreAccuracy: Number(state.fields.scoreAccuracy) || 1,
+        scoreUse: Number(state.fields.scoreUse) || 1,
+        scoreConfidence: Number(state.fields.scoreConfidence) || 1,
+        scoreTransfer: Number(state.fields.scoreTransfer) || 1,
+        scoreTotal: getScoreTotal(),
+        createdAt: new Date().toLocaleString()
+      };
+      state.strategyScores.push(record);
+      saveState();
+      renderApp();
+    }
+    function deleteStrategyScoreRecord(id) {
+      state.strategyScores = (state.strategyScores || []).filter((record) => record.id !== id);
+      if (state.fields.scoreRecordViewId === id) state.fields.scoreRecordViewId = "";
+      saveState();
+      renderApp();
     }
     function renderDifficultyControl(field, label) {
       const value = Number(state.fields[field]) || 0;
@@ -674,7 +786,9 @@
     function updateField(element, field) {
       state.fields[field] = element.type === "number" || element.type === "range" || element.tagName === "SELECT" && field.startsWith("score") ? Number(element.value) : element.value;
       saveState();
-      if (["lowCount", "midCount", "highCount"].includes(field) && state.currentStep === 2) renderApp();
+      const stepId = steps[state.currentStep]?.id;
+      if (["lowCount", "midCount", "highCount"].includes(field) && stepId === "plan") renderApp();
+      if ((["scoreAccuracy", "scoreUse", "scoreConfidence", "scoreTransfer"].includes(field) || field === "scoreRecordViewId") && stepId === "analysis") renderApp();
     }
     function bindStepEvents(stepId) {
       bindSurveyInputs();
@@ -684,8 +798,16 @@
       if (next) next.addEventListener("click",()=>{ if (state.currentStep < steps.length - 1) {
             state.currentStep += 1; saveState(); renderApp(); }});
       if (stepId === "evidence") bindGameEvents();
+      if (stepId === "analysis") bindScoreEvents();
       const finalExport = document.getElementById("finalExportBtn");
       if (finalExport) finalExport.addEventListener("click", exportExcel);
+    }
+    function bindScoreEvents() {
+      const add = document.getElementById("addStrategyScoreBtn");
+      if (add) add.addEventListener("click", addStrategyScoreRecord);
+      main.querySelectorAll("[data-delete-score]").forEach((button)=>{
+        button.addEventListener("click",()=>deleteStrategyScoreRecord(button.dataset.deleteScore));
+      });
     }
     function bindGameEvents() {
       document.getElementById("startRunBtn").addEventListener("click", showFocusPrep);
@@ -700,7 +822,8 @@
       hideFocusPrep();
       clearTimers();
       const stage = Number(document.getElementById("stageSelect").value);
-      const strategy = stage === 1 ? state.fields.strategy1 : state.fields.strategy2;
+      const selectedStrategy = document.getElementById("strategySelect")?.value || state.fields.strategy1 || state.fields.strategy2;
+      const strategy = stage === 1 ? "不使用策略（简单复述）" : selectedStrategy;
       const items = pickMaterials();
       session = { id: crypto.randomUUID ? crypto.randomUUID() : String(Date.now()), stage, strategy, items, phase: "memory", startedAt: new Date().toISOString(), recallStartedAt: 0, puzzleHits: 0, puzzleAttempts: 0, puzzleTarget: -1 };
       enterFocusMode();
@@ -727,7 +850,8 @@
       let seconds = 0;
       if (phase === "memory") {
         seconds = clamp(Number(state.fields.memorySeconds), 10, 180, 60);
-        taskCard.innerHTML = `<h3>记忆阶段</h3><p>请使用“${escapeHtml(session.strategy)}”策略记住以下材料</p>${renderItems(session.items)}`;
+        const memoryInstruction = session.stage === 1 ? "请只使用简单复述的策略进行记忆" : `采用记忆策略：${escapeHtml(session.strategy)}`;
+        taskCard.innerHTML = `<h3>记忆阶段</h3><p>${memoryInstruction}</p>${renderItems(session.items)}`;
       } else if (phase === "puzzle") {
         seconds = clamp(Number(state.fields.puzzleSeconds), 10, 180, 45);
         taskCard.innerHTML = `<h3>高强度找不同</h3><p>在限定时间内连续点击每一题中唯一不同的图形</p><div id="puzzleMount"></div>`;
@@ -853,22 +977,28 @@
     function getScoreTotal() { return Number(state.fields.scoreAccuracy||0)+Number(state.fields.scoreUse||0)+Number(state.fields.scoreConfidence||0)+Number(state.fields.scoreTransfer||0); }
     function summarizeRecords() {
       const groups = new Map();
-      state.records.forEach((r)=>{ if (!groups.has(r.strategy)) groups.set(r.strategy,{strategy:r.strategy,count:0,correct:0,accuracy:0,rt:0}); const g=groups.get(r.strategy); g.count+=1; g.correct+=Number(r.correctCount)||0; g.accuracy+=Number(r.accuracy)||0; g.rt+=Number(r.reactionTime)||0; });
-      return Array.from(groups.values()).map((g)=>({strategy:g.strategy,count:g.count,avgCorrect:g.count?Number((g.correct/g.count).toFixed(1)):0,avgAccuracy:g.count?Math.round(g.accuracy/g.count):0,avgRt:g.count?Math.round(g.rt/g.count):0}));
+      state.records.forEach((r)=>{ if (!groups.has(r.strategy)) groups.set(r.strategy,{strategy:r.strategy,count:0,correct:0,accuracy:0,rt:0,headbands:[]}); const g=groups.get(r.strategy); g.count+=1; g.correct+=Number(r.correctCount)||0; g.accuracy+=Number(r.accuracy)||0; g.rt+=Number(r.reactionTime)||0; if (r.headband) g.headbands.push(r.headband); });
+      return Array.from(groups.values()).map((g)=>({strategy:g.strategy,count:g.count,avgCorrect:g.count?Number((g.correct/g.count).toFixed(1)):0,avgAccuracy:g.count?Math.round(g.accuracy/g.count):0,avgRt:g.count?Math.round(g.rt/g.count):0,headbandSummary:g.headbands.join("；")}));
+    }
+    function getStrategySummaryText(strategy, summary) {
+      const item = (summary || []).find((entry)=>entry.strategy === strategy);
+      return item ? `${item.strategy}：平均正确数${item.avgCorrect}，平均回忆率${item.avgAccuracy}%` : "";
     }
     function exportExcel() {
       const summary = summarizeRecords();
+      const noStrategyResult = getStrategySummaryText("不使用策略（简单复述）", summary);
+      const strategyResult = summary.filter((item)=>item.strategy !== "不使用策略（简单复述）").map((item)=>`${item.strategy}：平均正确数${item.avgCorrect}，平均回忆率${item.avgAccuracy}%`).join("；");
       const sheets = [
         ["基本信息", [["项目","内容"],["实验","改善长时记忆的策略有哪些"],["学生姓名",state.studentName || ""],["学生年龄",state.studentAge || ""],["学生编号",state.studentId],["小组编号",state.groupId],["实验时间",state.savedAt || ""],["导出时间",new Date().toLocaleString()]]],
-        ["实验过程", [["字段","内容"],["研究问题",state.fields.question],["策略1假设",state.fields.hypothesis1],["策略2假设",state.fields.hypothesis2],["策略1",state.fields.strategy1],["策略2",state.fields.strategy2],["材料类型",state.fields.materialType],["初级数量",state.fields.lowCount],["中级数量",state.fields.midCount],["高级数量",state.fields.highCount],["记忆时间s",state.fields.memorySeconds],["找不同时间s",state.fields.puzzleSeconds],["测试时间s",state.fields.testSeconds],["组长",state.fields.leader],["记录员",state.fields.recorder],["组员A",state.fields.memberA],["组员B",state.fields.memberB],["头环观察",state.fields.headband],["结论",state.fields.conclusion],["设计改进",state.fields.designImprove],["结果意外原因",state.fields.surprise],["适用性反思",state.fields.applicability]]],
+        ["实验过程", [["字段","内容"],["研究问题",state.fields.question],["策略1假设",state.fields.hypothesis1],["策略2假设",state.fields.hypothesis2],["策略1",state.fields.strategy1],["策略2",state.fields.strategy2],["阶段一：不使用策略结果",noStrategyResult],["阶段二：使用策略结果",strategyResult],["材料类型",state.fields.materialType],["初级数量",state.fields.lowCount],["中级数量",state.fields.midCount],["高级数量",state.fields.highCount],["记忆时间s",state.fields.memorySeconds],["找不同时间s",state.fields.puzzleSeconds],["测试时间s",state.fields.testSeconds],["组长",state.fields.leader],["记录员",state.fields.recorder],["组员A",state.fields.memberA],["组员B",state.fields.memberB],["头环观察",state.fields.headband],["结论",state.fields.conclusion],["设计改进",state.fields.designImprove],["结果意外原因",state.fields.surprise],["适用性反思",state.fields.applicability]]],
         ["测试明细", [["学生姓名","学生年龄","学生编号","小组编号","阶段","策略","材料类型","题目总数","记忆时间s","找不同时间s","测试时间s","题目","学生回答","正确项目","正确数","回忆率","找不同命中","找不同点击","反应时ms","头环观察","评分总分","记录时间"], ...state.records.map((r)=>[r.studentName || "",r.studentAge || "",r.studentId,r.groupId,r.stage,r.strategy,r.materialType,r.itemCount,r.memorySeconds,r.puzzleSeconds,r.testSeconds,r.items,r.recall,r.correctItems,r.correctCount,`${r.accuracy}%`,r.puzzleHits || 0,r.puzzleAttempts || 0,r.reactionTime,r.headband,r.scoreTotal,r.createdAt])]],
-        ["策略汇总", [["策略","次数","平均正确数","平均回忆率","平均反应时ms"], ...summary.map((item)=>[item.strategy,item.count,item.avgCorrect,`${item.avgAccuracy}%`,item.avgRt])],
+        ["策略汇总", [["策略","次数","平均正确数","平均回忆率","平均反应时ms","头环观察结果"], ...summary.map((item)=>[item.strategy,item.count,item.avgCorrect,`${item.avgAccuracy}%`,item.avgRt,item.headbandSummary || ""])],
         ],
         getTeamResultSheet(summary),
         getHeadbandSummarySheet(),
         getSystemInfoSheet(state.records.length),
         getRawStorageSheet(),
-        ["评分表", [["评分维度","得分"],["答案准确性",state.fields.scoreAccuracy],["策略利用率",state.fields.scoreUse],["记忆信心度",state.fields.scoreConfidence],["策略迁移性",state.fields.scoreTransfer],["总分",getScoreTotal()]]],
+        ["策略评分记录", [["策略名称","答案准确性得分","策略利用率得分","记忆信心度得分","策略迁移性得分","策略总分","记录时间"], ...(state.strategyScores || []).map((record)=>[record.strategyName, record.scoreAccuracy, record.scoreUse, record.scoreConfidence, record.scoreTransfer, record.scoreTotal, record.createdAt])]],
         ...getSurveySheets()
       ];
       const html = `<html><head><meta charset="utf-8"></head><body>${sheets.map(([title,rows])=>`<h2>${escapeHtml(title)}</h2><table border="1">${rows.map((row)=>`<tr>${row.map((cell)=>`<td>${escapeHtml(cell)}</td>`).join("")}</tr>`).join("")}</table><br>`).join("")}</body></html>`;
