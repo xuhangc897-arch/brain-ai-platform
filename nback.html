@@ -1347,8 +1347,7 @@
         roleB: "",
         roleC: "",
         roleD: "",
-        brainA: "",
-        brainB: "",
+        headbandObservation: "",
         conclusionSupported: "尚未判断",
         conclusion: "",
         improvement: "",
@@ -1405,6 +1404,9 @@
       const merged = structuredClone(base);
       Object.assign(merged, incoming);
       merged.fields = Object.assign({}, base.fields, incoming.fields || {});
+      if (!merged.fields.headbandObservation) {
+        merged.fields.headbandObservation = [incoming.fields?.brainA, incoming.fields?.brainB].filter(Boolean).join("；");
+      }
       merged.testRuns = Array.isArray(incoming.testRuns) ? incoming.testRuns : [];
       merged.surveys = mergeSurveys(incoming.surveys);
       if (!incoming.surveys) merged.currentStep = 0;
@@ -2099,9 +2101,8 @@
       return ["头环数据摘要", [
         ["项目", "内容"],
         ["上传文件名", ""],
-        ["A 头环记录", state.fields.brainA || ""],
-        ["B 头环记录", state.fields.brainB || ""],
-        ["数据摘要", [state.fields.brainA, state.fields.brainB].filter(Boolean).join("；")],
+        ["头环观察记录", state.fields.headbandObservation || ""],
+        ["数据摘要", state.fields.headbandObservation || ""],
         ["统计结果", ""]
       ]];
     }
@@ -2150,12 +2151,8 @@
             <div class="panel-body">
               <div class="chart">${chart}</div>
               <div class="field" style="margin-top:18px;">
-                <label>头环/前额叶激活记录（A）</label>
-                <textarea data-field="brainA" placeholder="记录 A 在不同条件下的头环观察结果">${escapeHtml(state.fields.brainA)}</textarea>
-              </div>
-              <div class="field">
-                <label>头环/前额叶激活记录（B）</label>
-                <textarea data-field="brainB" placeholder="记录 B 在不同条件下的头环观察结果">${escapeHtml(state.fields.brainB)}</textarea>
+                <label>头环观察记录</label>
+                <textarea data-field="headbandObservation" placeholder="记录不同条件下的头环观察结果">${escapeHtml(state.fields.headbandObservation)}</textarea>
               </div>
             </div>
           </div>
@@ -2202,11 +2199,11 @@
             <div class="panel-body">
               <div class="field">
                 <label>实验设计有什么可以改进？</label>
-                <textarea data-field="improvement" placeholder="例如：增加被测试者人数、统一指导语、控制练习次数等">${escapeHtml(state.fields.improvement)}</textarea>
+                <textarea data-field="improvement">${escapeHtml(state.fields.improvement)}</textarea>
               </div>
               <div class="field">
                 <label>如何提高结果的说服力？</label>
-                <textarea data-field="persuasiveness" placeholder="例如：重复实验、扩大样本、减少无关变量影响等">${escapeHtml(state.fields.persuasiveness)}</textarea>
+                <textarea data-field="persuasiveness">${escapeHtml(state.fields.persuasiveness)}</textarea>
               </div>
             </div>
           </div>
@@ -2764,8 +2761,7 @@
           ["B 被测试者", state.fields.roleB],
           ["C 指导与操作", state.fields.roleC],
           ["D 记录与统计", state.fields.roleD],
-          ["A 头环记录", state.fields.brainA],
-          ["B 头环记录", state.fields.brainB],
+          ["头环观察记录", state.fields.headbandObservation],
           ["假设判断", state.fields.conclusionSupported],
           ["结论", state.fields.conclusion],
           ["改进", state.fields.improvement],

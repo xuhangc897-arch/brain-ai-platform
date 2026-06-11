@@ -349,25 +349,31 @@
       gap: 12px;
     }
 
+    .plan-order-title {
+      margin: 0 0 14px;
+      color: #1e3a8a;
+      font-size: 16px;
+      font-weight: 900;
+    }
+
     .flow-card {
       position: relative;
       border: 1px solid #dbeafe;
       border-radius: 10px;
       padding: 16px 14px 14px;
       background: linear-gradient(180deg, #fff 0%, #f8fbff 100%);
+      cursor: grab;
+      touch-action: none;
+      user-select: none;
+      transition: border-color 0.16s ease, box-shadow 0.16s ease, opacity 0.16s ease;
     }
 
-    .flow-index {
-      display: inline-grid;
-      place-items: center;
-      width: 28px;
-      height: 28px;
-      margin-bottom: 10px;
-      border-radius: 50%;
-      background: var(--primary);
-      color: #fff;
-      font-weight: 900;
-      font-size: 13px;
+    .flow-card.is-dragging {
+      border-color: var(--primary);
+      box-shadow: 0 16px 34px rgba(37, 99, 235, 0.18);
+      cursor: grabbing;
+      opacity: 0.82;
+      z-index: 2;
     }
 
     .flow-card h4 {
@@ -381,6 +387,25 @@
       color: var(--muted);
       font-size: 13px;
       line-height: 1.7;
+    }
+
+    .plan-order-actions {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 12px;
+      margin-top: 16px;
+    }
+
+    .plan-order-feedback {
+      min-height: 22px;
+      color: #b45309;
+      font-size: 14px;
+      font-weight: 800;
+    }
+
+    .plan-settings-panel.is-hidden {
+      display: none;
     }
 
     .formula-card {
@@ -1011,6 +1036,16 @@
       return merged;
     }
 
+    const PLAN_ORDER_STEPS = [
+      { id: "division", title: "分工", description: "小组成员自行分工，决定实验顺序。" },
+      { id: "measure", title: "测量", description: "通过所选方法测量参与者的短时记忆容量：通过（顺背法/倒背法），测量参与者能正确记忆的（最长数字长度/最长字母长度），每位参与者测量三次，计算平均值可得每位参与者的短时记忆容量。" },
+      { id: "record", title: "记录数据", description: "将实验所得的数据记录在数据记录表中。" },
+      { id: "analysis", title: "处理分析数据", description: "对数据进行处理分析。" },
+      { id: "conclusion", title: "得出结论", description: "根据实验处理分析的数据检验假设、回答研究问题。" }
+    ];
+    const CORRECT_PLAN_ORDER = PLAN_ORDER_STEPS.map((step) => step.id);
+    const INITIAL_PLAN_ORDER = ["measure", "division", "record", "conclusion", "analysis"];
+
     const defaultState = {
       started: true,
       studentName: "",
@@ -1050,7 +1085,10 @@
         teammate1Result: "",
         teammate2Id: "",
         teammate2Result: "",
-        groupAverageShortTermMemory: ""
+        groupAverageShortTermMemory: "",
+        planOrder: INITIAL_PLAN_ORDER,
+        planOrderConfirmed: false,
+        planOrderFeedback: ""
       },
       records: [],
       surveys: createDefaultSurveys(),
@@ -1397,7 +1435,31 @@
       `;
     }
 
+    function getPlanOrder() {
+      const knownIds = new Set(CORRECT_PLAN_ORDER);
+      const savedOrder = Array.isArray(state.fields.planOrder) ? state.fields.planOrder : INITIAL_PLAN_ORDER;
+      const order = savedOrder.filter((id, index) => knownIds.has(id) && savedOrder.indexOf(id) === index);
+      CORRECT_PLAN_ORDER.forEach((id) => {
+        if (!order.includes(id)) order.push(id);
+      });
+      return order;
+    }
+
+    function renderPlanFlowCards() {
+      return getPlanOrder().map((id) => {
+        const step = PLAN_ORDER_STEPS.find((item) => item.id === id);
+        return `
+          <article class="flow-card" data-plan-step="${escapeHtml(step.id)}" tabindex="0" aria-label="${escapeHtml(step.title)}">
+            <h4>${escapeHtml(step.title)}</h4>
+            <p>${escapeHtml(step.description)}</p>
+          </article>
+        `;
+      }).join("");
+    }
+
     function renderPlanStep() {
+      const planFeedback = state.fields.planOrderFeedback ? `<div class="plan-order-feedback" id="planOrderFeedback">${escapeHtml(state.fields.planOrderFeedback)}</div>` : '<div class="plan-order-feedback" id="planOrderFeedback"></div>';
+      const measurementClass = state.fields.planOrderConfirmed === true ? "plan-settings-panel" : "plan-settings-panel is-hidden";
       return `
         <div class="single-step-layout">
           <div class="panel">
@@ -1425,15 +1487,17 @@
               <p>按照流程完成分工、测量、记录、分析与结论。</p>
             </div>
             <div class="panel-body">
-              <div class="plan-flow">
-                <article class="flow-card"><span class="flow-index">1</span><h4>分工</h4><p>小组成员自行分工，决定实验顺序。</p></article>
-                <article class="flow-card"><span class="flow-index">2</span><h4>测量</h4><p>通过所选方法测量参与者的短时记忆容量：通过（顺背法/倒背法），测量参与者能正确记忆的（最长数字长度/最长字母长度），每位参与者测量三次，计算平均值可得每位参与者的短时记忆容量。</p></article>
-                <article class="flow-card"><span class="flow-index">3</span><h4>记录数据</h4><p>将实验所得的数据记录在数据记录表中。</p></article>
-                <article class="flow-card"><span class="flow-index">4</span><h4>处理分析数据</h4><p>对数据进行处理分析。</p></article>
-                <article class="flow-card"><span class="flow-index">5</span><h4>得出结论</h4><p>根据实验处理分析的数据检验假设、回答研究问题。</p></article>
+              <p class="plan-order-title">请将实验计划步骤拖动到正确顺序</p>
+              <div class="plan-flow" id="planFlow" aria-label="实验计划步骤排序">
+                ${renderPlanFlowCards()}
+              </div>
+              <div class="plan-order-actions">
+                ${planFeedback}
+                <button class="btn" type="button" id="confirmPlanOrder">确认排序</button>
               </div>
             </div>
           </div>
+          <div class="${measurementClass}" id="measurementSettingsPanel">
           <div class="panel">
             <div class="panel-head">
               <h3>测量方法与实验设置</h3>
@@ -1480,6 +1544,7 @@
                 <input type="text" data-field="controlOther" value="${escapeHtml(state.fields.controlOther)}" placeholder="其他控制变量" />
               </div>
             </div>
+          </div>
           </div>
         </div>
       `;
@@ -1827,9 +1892,81 @@
           }
         });
       }
+      if (stepId === "plan") bindPlanOrderEvents();
       if (stepId === "evidence") bindGameEvents();
       const finalExport = document.getElementById("finalExportBtn");
       if (finalExport) finalExport.addEventListener("click", exportExcel);
+    }
+
+    function getCurrentPlanOrderFromDom() {
+      return Array.from(document.querySelectorAll("#planFlow .flow-card")).map((card) => card.dataset.planStep);
+    }
+
+    function savePlanOrderFromDom() {
+      state.fields.planOrder = getCurrentPlanOrderFromDom();
+      state.fields.planOrderConfirmed = false;
+      state.fields.planOrderFeedback = "";
+      const feedback = document.getElementById("planOrderFeedback");
+      const settingsPanel = document.getElementById("measurementSettingsPanel");
+      if (feedback) feedback.textContent = "";
+      if (settingsPanel) settingsPanel.classList.add("is-hidden");
+      saveState();
+    }
+
+    function bindPlanOrderEvents() {
+      const flow = document.getElementById("planFlow");
+      const confirm = document.getElementById("confirmPlanOrder");
+      if (!flow || !confirm) return;
+
+      let draggingCard = null;
+
+      flow.addEventListener("pointerdown", (event) => {
+        if (event.button !== undefined && event.button !== 0) return;
+        const card = event.target.closest(".flow-card");
+        if (!card || !flow.contains(card)) return;
+        draggingCard = card;
+        card.classList.add("is-dragging");
+        card.setPointerCapture(event.pointerId);
+        event.preventDefault();
+      });
+
+      flow.addEventListener("pointermove", (event) => {
+        if (!draggingCard) return;
+        event.preventDefault();
+        const target = document.elementFromPoint(event.clientX, event.clientY)?.closest(".flow-card");
+        if (!target || target === draggingCard || !flow.contains(target)) return;
+
+        const rect = target.getBoundingClientRect();
+        const centerX = rect.left + rect.width / 2;
+        const centerY = rect.top + rect.height / 2;
+        const beforeTarget = Math.abs(event.clientY - centerY) > rect.height * 0.35
+          ? event.clientY < centerY
+          : event.clientX < centerX;
+        flow.insertBefore(draggingCard, beforeTarget ? target : target.nextSibling);
+      });
+
+      const finishDrag = (event) => {
+        if (!draggingCard) return;
+        draggingCard.classList.remove("is-dragging");
+        if (draggingCard.hasPointerCapture(event.pointerId)) {
+          draggingCard.releasePointerCapture(event.pointerId);
+        }
+        draggingCard = null;
+        savePlanOrderFromDom();
+      };
+
+      flow.addEventListener("pointerup", finishDrag);
+      flow.addEventListener("pointercancel", finishDrag);
+
+      confirm.addEventListener("click", () => {
+        const currentOrder = getCurrentPlanOrderFromDom();
+        const isCorrect = currentOrder.join("|") === CORRECT_PLAN_ORDER.join("|");
+        state.fields.planOrder = currentOrder;
+        state.fields.planOrderConfirmed = isCorrect;
+        state.fields.planOrderFeedback = isCorrect ? "" : "顺序还不太对，请再调整一下。";
+        saveState();
+        renderApp();
+      });
     }
 
     function bindGameEvents() {

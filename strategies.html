@@ -714,7 +714,7 @@
       ];
     }
     function renderPlanStep() {
-      return `<div class="single-step-layout"><div class="panel"><div class="panel-head"><h3>实验计划</h3><p>请阅读材料五，学习实验设计的基本步骤，并根据提供的记忆实验材料设计一个可操作的实验。</p></div><div class="panel-body"><div class="strategy-mode-grid"><div class="strategy-mode-card"><h4>阶段一</h4><p>策略：简单复述。这是“不使用额外策略”的基线条件。</p></div><div class="strategy-mode-card"><h4>阶段二</h4><p>策略1 / 策略2 从六种策略中选择。建议选择简单复述以外的策略。</p></div></div><div class="form-grid">
+      return `<div class="single-step-layout"><div class="panel"><div class="panel-head"><h3>实验设计参考材料</h3></div><div class="panel-body reading-list">${renderPlanMaterials()}</div></div><div class="panel"><div class="panel-head"><h3>实验计划</h3><p>请阅读材料五，学习实验设计的基本步骤，并根据提供的记忆实验材料设计一个可操作的实验。</p></div><div class="panel-body"><div class="strategy-mode-grid"><div class="strategy-mode-card"><h4>阶段一</h4><p>策略：简单复述。这是“不使用额外策略”的基线条件。</p></div><div class="strategy-mode-card"><h4>阶段二</h4><p>策略1 / 策略2 从六种策略中选择。建议选择简单复述以外的策略。</p></div></div><div class="form-grid">
         <div class="field"><label>阶段一策略</label>${renderStrategySelect("stage1Strategy", "简单复述", true)}</div>
         <div class="field"><label>策略 1</label>${renderStrategySelect("strategy1")}</div>
         <div class="field"><label>策略 2</label>${renderStrategySelect("strategy2")}</div>
@@ -732,7 +732,7 @@
         <div class="field"><label>记忆时间（秒）</label><input type="number" min="10" max="180" data-field="memorySeconds" value="${escapeHtml(state.fields.memorySeconds)}"></div>
         <div class="field"><label>找不同时间（秒）</label><input type="number" min="10" max="180" data-field="puzzleSeconds" value="${escapeHtml(state.fields.puzzleSeconds)}"></div>
         <div class="field"><label>测试时间（秒）</label><input type="number" min="20" max="240" data-field="testSeconds" value="${escapeHtml(state.fields.testSeconds)}"></div>
-      </div></div></div><div class="panel"><div class="panel-head"><h3>实验设计参考材料</h3></div><div class="panel-body reading-list">${renderPlanMaterials()}</div></div></div>`;
+      </div></div></div></div>`;
     }
     function renderEvidenceStep() {
       return `<div class="panel"><div class="panel-head"><h3>策略记忆网页实验</h3><p>阶段1不使用策略，阶段2使用选择的记忆策略。每阶段包含记忆、找不同和低干扰测试。</p></div><div class="panel-body">
