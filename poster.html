@@ -191,6 +191,12 @@
       gap: 16px;
     }
 
+    .single-step-layout {
+      display: grid;
+      gap: 16px;
+      width: 100%;
+    }
+
     .form-grid {
       display: grid;
       grid-template-columns: repeat(2, 1fr);
@@ -330,7 +336,7 @@
 
     .summary-grid {
       display: grid;
-      grid-template-columns: repeat(6, 1fr);
+      grid-template-columns: repeat(auto-fit, minmax(130px, 1fr));
       gap: 10px;
       margin-top: 14px;
     }
@@ -367,6 +373,7 @@
     .score-progress-card span { color: var(--muted); font-size: 12px; font-weight: 700; }
     .score-progress-track { height: 8px; margin-top: 10px; overflow: hidden; border-radius: 999px; background: #e7eefb; }
     .score-progress-fill { height: 100%; border-radius: inherit; background: linear-gradient(90deg, var(--primary), #7fd1ae); }
+    .score-tabs-row { position: relative; z-index: 1; display: flex; flex-wrap: wrap; align-items: center; gap: 10px; }
     .score-group-tabs, .best-poster-picker { position: relative; z-index: 1; display: flex; flex-wrap: wrap; gap: 10px; }
     .score-group-btn, .best-poster-btn { min-height: 42px; padding: 0 15px; border: 1px solid var(--line); border-radius: 999px; background: rgba(255,255,255,.88); color: var(--ink); box-shadow: 0 8px 18px rgba(23,32,51,.05); transition: transform .16s ease, border-color .16s ease, box-shadow .16s ease, background .16s ease, color .16s ease; }
     .score-group-btn:hover, .best-poster-btn:hover { transform: translateY(-2px); border-color: rgba(37, 99, 235, 0.36); box-shadow: 0 12px 24px rgba(37, 99, 235, 0.12); }
@@ -492,6 +499,7 @@
         { group: "", type: "反思不足", question: "", answer: "" }
       ],
       scores: {},
+      posterGroups: groupLabels.slice(),
       savedAt: ""
     };
 
@@ -523,6 +531,7 @@
       merged.fields = Object.assign({}, base.fields, incoming.fields || {});
       merged.questions = Array.isArray(incoming.questions) && incoming.questions.length ? incoming.questions : base.questions;
       merged.scores = Object.assign({}, base.scores, incoming.scores || {});
+      merged.posterGroups = Array.isArray(incoming.posterGroups) && incoming.posterGroups.length ? incoming.posterGroups : base.posterGroups.slice();
       return merged;
     }
 
@@ -542,6 +551,22 @@
 
     function selected(field, value) {
       return state.fields[field] === value ? "selected" : "";
+    }
+
+    function getPosterGroups() {
+      if (!Array.isArray(state.posterGroups) || !state.posterGroups.length) {
+        state.posterGroups = groupLabels.slice();
+      }
+      return state.posterGroups;
+    }
+
+    function addPosterGroup() {
+      const groups = getPosterGroups();
+      const nextNumber = groups.length + 1;
+      groups.push(`第${nextNumber}组`);
+      activeScoreGroup = groups.length;
+      saveState();
+      renderApp();
     }
 
     function renderApp() {
@@ -621,8 +646,6 @@
         <div class="task-hero">
           <h3>分享交流大会</h3>
           <p>小科学家们，请用海报展示你们的探究成果吧！<br>这节课我们将：① 合作创作科学海报，分享研究问题、证据和发现；② 化身小评委与提问官，交流观点、互相学习！</p>
-          <p>海报制作</p>
-          <p>30分钟</p>
         </div>
         <div class="step-layout" style="margin-top:16px;">
           <div class="panel">
@@ -678,7 +701,6 @@
       return `
         <div class="step-layout">
           <div class="panel">
-            <div class="panel-head"><h3>二、制作海报</h3><p>根据初步方案正式制作海报。</p></div>
             <div class="panel-body">
               <div class="task-card"><p>根据初步方案正式制作海报：使用彩笔进行海报制作，保持整洁美观，可以添加图画或图标使海报更加生动。</p></div>
               <div class="task-card"><p>可以借助 AI 工具辅助海报设计，如生成图表建议、优化文字表述等。</p></div>
@@ -757,9 +779,8 @@
 
     function renderShareStep() {
       return `
-        <div class="step-layout">
+        <div class="single-step-layout">
           <div class="panel">
-            <div class="panel-head"><h3>一、小小讲解员</h3></div>
             <div class="panel-body">
               <div class="task-card"><p>每组指派一位代表作为本组的“小小讲解员”站在海报旁，当其他同学或者老师提问时，“小小讲解员”要进行回答。</p></div>
             </div>
@@ -781,12 +802,8 @@
     function renderQuestionsStep() {
       return `
         <div class="panel">
-          <div class="panel-head"><p>每位同学将领取三枚“提问贴纸”。请针对各组的科学海报内容，至少提出三个不同的问题（可以向不同的小组提问）。</p></div>
+          <div class="panel-head"><p>请认真观看其他小组的科学海报，并围绕研究问题、研究假设、研究计划、实验数据、研究结论和反思不足等方面提出问题。每提出一个问题后，请将问题记录在下方表格中，并简要记录对方的回答。</p></div>
           <div class="panel-body">
-            <div class="task-card">
-              <p>每提出一个问题后，请立即将一枚“提问贴纸”贴在该组海报的空白处，作为提问的标记。</p>
-              <div class="tip-box">提示：问题应基于海报内容</div>
-            </div>
             <div class="task-card">
               <h4>示例如下：</h4>
               <ul>
@@ -823,15 +840,16 @@
     }
 
     function renderScoreStep() {
-      activeScoreGroup = Math.min(Math.max(Number(activeScoreGroup) || 1, 1), groupLabels.length);
+      const posterGroups = getPosterGroups();
+      activeScoreGroup = Math.min(Math.max(Number(activeScoreGroup) || 1, 1), posterGroups.length);
       const summary = summarizeScores();
       const currentDone = indicators.filter((indicator) => getScore(indicator.key, activeScoreGroup)).length;
-      const overallDone = groupLabels.reduce((total, group, groupIndex) => {
+      const overallDone = posterGroups.reduce((total, group, groupIndex) => {
         const groupNumber = groupIndex + 1;
         return total + indicators.filter((indicator) => getScore(indicator.key, groupNumber)).length;
       }, 0);
       const totalItems = indicators.length;
-      const overallItems = indicators.length * groupLabels.length;
+      const overallItems = indicators.length * posterGroups.length;
       const progressPercent = Math.round((currentDone / totalItems) * 100);
       const dimensions = [...new Set(indicators.map((indicator) => indicator.dimension))];
       return '<div class="score-workspace">' +
@@ -839,20 +857,20 @@
         '<section class="score-hero">' +
           '<div class="score-hero-top">' +
             '<div><p class="score-kicker">\u5f53\u524d\u8bc4\u5206\u9636\u6bb5</p>' +
-              '<h3>\u6b63\u5728\u8bc4\u4ef7 ' + groupLabels[activeScoreGroup - 1] + '</h3>' +
+              '<h3>\u6b63\u5728\u8bc4\u4ef7 ' + posterGroups[activeScoreGroup - 1] + '</h3>' +
               '<p>\u5148\u9009\u62e9\u8981\u8bc4\u4ef7\u7684\u5c0f\u7ec4\uff0c\u518d\u9010\u9879\u70b9\u51fb 1-4 \u5206\u3002\u957f\u6bb5\u8bc4\u5206\u6807\u51c6\u9ed8\u8ba4\u6536\u8d77\uff0c\u9700\u8981\u65f6\u5c55\u5f00\u67e5\u770b\u3002</p></div>' +
             '<div class="score-progress-card"><strong>' + currentDone + ' / ' + totalItems + '</strong>' +
               '<span>\u5f53\u524d\u5c0f\u7ec4\u5df2\u5b8c\u6210\u8bc4\u5206</span>' +
               '<div class="score-progress-track"><div class="score-progress-fill" style="width:' + progressPercent + '%"></div></div>' +
               '<span>\u6574\u4f53\u5b8c\u6210 ' + overallDone + ' / ' + overallItems + ' \u9879</span></div>' +
           '</div>' +
-          '<div class="score-group-tabs" aria-label="\u9009\u62e9\u8bc4\u5206\u5c0f\u7ec4">' +
-            groupLabels.map((group, index) => {
+          '<div class="score-tabs-row"><div class="score-group-tabs" aria-label="\u9009\u62e9\u8bc4\u5206\u5c0f\u7ec4">' +
+            posterGroups.map((group, index) => {
               const groupNumber = index + 1;
               const done = indicators.filter((indicator) => getScore(indicator.key, groupNumber)).length;
               return '<button class="score-group-btn ' + (activeScoreGroup === groupNumber ? 'is-active' : '') + '" type="button" data-score-group="' + groupNumber + '">' + group + ' | ' + done + '/' + totalItems + '</button>';
             }).join('') +
-          '</div>' +
+          '</div><button class="btn ghost" type="button" id="addPosterGroupBtn">+ 添加组别</button></div>' +
         '</section>' +
         '<section class="score-dimensions">' +
           dimensions.map((dimension) => {
@@ -875,7 +893,7 @@
         '<section class="score-footer-card"><h4>\u6211\u5fc3\u4e2d\u7684\u6700\u4f18\u6d77\u62a5</h4>' +
           '<p>\u8bf7\u9009\u62e9\u4f60\u8ba4\u4e3a\u6574\u4f53\u8868\u73b0\u6700\u597d\u7684\u5c0f\u7ec4\uff0c\u5bfc\u51fa\u65f6\u4ecd\u5199\u5165\u539f\u6709\u5b57\u6bb5\u3002</p>' +
           '<div class="best-poster-picker" aria-label="\u9009\u62e9\u6700\u4f18\u6d77\u62a5">' +
-            groupLabels.map((group) => '<button class="best-poster-btn ' + (state.fields.bestPoster === group ? 'is-active' : '') + '" type="button" data-best-poster="' + escapeHtml(group) + '">' + group + '</button>').join('') +
+            posterGroups.map((group) => '<button class="best-poster-btn ' + (state.fields.bestPoster === group ? 'is-active' : '') + '" type="button" data-best-poster="' + escapeHtml(group) + '">' + group + '</button>').join('') +
           '</div></section>' +
         '<div class="summary-grid">' +
           summary.map((item) => '<div class="summary-card"><strong>' + item.total + '</strong><span>' + item.group + ' \u603b\u5206</span></div>').join('') +
@@ -925,7 +943,7 @@
     }
 
     function groupOptions(value) {
-      return `<option value="">请选择</option>${groupLabels.map((group) => `<option value="${group}" ${value === group ? "selected" : ""}>${group}</option>`).join("")}`;
+      return `<option value="">请选择</option>${getPosterGroups().map((group) => `<option value="${group}" ${value === group ? "selected" : ""}>${group}</option>`).join("")}`;
     }
 
     function typeOptions(value) {
@@ -964,6 +982,8 @@
           renderApp();
         });
       });
+      const addPosterGroupButton = document.getElementById("addPosterGroupBtn");
+      if (addPosterGroupButton) addPosterGroupButton.addEventListener("click", addPosterGroup);
       main.querySelectorAll("[data-best-poster]").forEach((element) => {
         element.addEventListener("click", () => {
           state.fields.bestPoster = element.dataset.bestPoster || "";
@@ -1019,7 +1039,7 @@
     }
 
     function summarizeScores() {
-      return groupLabels.map((group, groupIndex) => {
+      return getPosterGroups().map((group, groupIndex) => {
         const groupNumber = groupIndex + 1;
         const dimensionScores = {};
         indicators.forEach((indicator) => {
@@ -1041,7 +1061,7 @@
       const scoreSummary = summarizeScores();
       const scoreRows = [];
       indicators.forEach((indicator) => {
-        groupLabels.forEach((group, groupIndex) => {
+        getPosterGroups().forEach((group, groupIndex) => {
           scoreRows.push([indicator.dimension, indicator.title, group, getScore(indicator.key, groupIndex + 1) || ""]);
         });
       });
