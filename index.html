@@ -2338,6 +2338,279 @@
         gap: 10px;
       }
     }
+
+    /* Final compact homepage layout: keep the main entry screen within one desktop viewport. */
+    html,
+    body {
+      height: 100%;
+    }
+
+    body {
+      overflow: hidden;
+    }
+
+    .page {
+      display: grid;
+      grid-template-rows: minmax(0, 1fr) auto;
+      width: min(1280px, calc(100% - 32px));
+      height: 100vh;
+      min-height: 100vh;
+      padding: clamp(10px, 1.8vh, 18px) 0 clamp(8px, 1.4vh, 14px);
+      overflow: hidden;
+    }
+
+    .hero {
+      display: grid;
+      grid-template-columns: 1fr;
+      gap: clamp(10px, 1.6vh, 14px);
+      align-content: start;
+      min-height: 0;
+    }
+
+    .hero-panel {
+      min-height: 0;
+      padding: clamp(18px, 2.4vh, 26px) clamp(22px, 3vw, 34px);
+    }
+
+    .hero-panel::before,
+    .hero-panel::after,
+    .data-orbit,
+    .data-stream {
+      pointer-events: none;
+    }
+
+    .eyebrow {
+      margin-bottom: 8px;
+      padding: 5px 10px;
+      font-size: 12px;
+    }
+
+    .hero h1 {
+      max-width: none;
+      font-size: clamp(42px, 6.2vw, 66px);
+      line-height: 0.98;
+    }
+
+    .lab-strip {
+      margin-top: 10px;
+      padding: 7px 14px;
+      border-radius: 12px;
+      font-size: clamp(15px, 1.8vw, 19px);
+    }
+
+    .hero-copy {
+      max-width: 780px;
+      margin-top: 10px;
+      font-size: 14px;
+      line-height: 1.55;
+    }
+
+    .status-row,
+    .hero-metrics {
+      display: none !important;
+    }
+
+    .identity-panel {
+      min-height: 0;
+      padding: clamp(16px, 2vh, 22px);
+    }
+
+    .panel-kicker {
+      margin-bottom: 3px;
+      font-size: 12px;
+    }
+
+    .identity-panel h2 {
+      font-size: clamp(21px, 2.2vw, 26px);
+    }
+
+    .identity-panel > p {
+      margin: 5px 0 12px;
+      font-size: 13px;
+      line-height: 1.45;
+    }
+
+    .identity {
+      grid-template-columns: repeat(4, minmax(0, 1fr));
+      gap: 10px;
+      margin-bottom: 12px;
+    }
+
+    label {
+      margin-bottom: 5px;
+      font-size: 12px;
+    }
+
+    input {
+      min-height: 38px;
+      border-radius: 12px;
+      padding: 8px 11px;
+      font-size: 14px;
+    }
+
+    .module-grid {
+      grid-template-columns: repeat(2, minmax(0, 1fr));
+      gap: 12px;
+      margin-top: 2px;
+    }
+
+    .module-card {
+      min-height: 168px;
+      padding: 16px;
+      border-radius: 10px;
+    }
+
+    .module-head {
+      gap: 10px;
+    }
+
+    .case-stamp {
+      margin-bottom: 7px;
+      padding: 3px 8px;
+      font-size: 12px;
+    }
+
+    .module-card h3 {
+      font-size: clamp(21px, 2.4vw, 28px);
+    }
+
+    .module-card p {
+      margin: 6px 0 10px;
+      font-size: 13px;
+      line-height: 1.55;
+    }
+
+    .badges {
+      gap: 6px;
+      margin-bottom: 11px;
+    }
+
+    .badge {
+      padding: 4px 8px;
+      font-size: 11px;
+    }
+
+    .btn {
+      min-height: 38px;
+      padding: 0 15px;
+      font-size: 14px;
+    }
+
+    .error {
+      min-height: 18px;
+      margin: 7px 0 0;
+      font-size: 12px;
+    }
+
+    .brand-footer {
+      display: flex;
+      flex-wrap: wrap;
+      justify-content: center;
+      align-items: center;
+      gap: 6px 12px;
+      margin: clamp(7px, 1.2vh, 12px) 0 0;
+      padding: 6px 12px;
+      min-height: 0;
+      border-radius: 999px;
+    }
+
+    .brand-footer p {
+      margin: 0;
+      font-size: 13px;
+      line-height: 1.35;
+    }
+
+    .brand-credit::after {
+      content: "";
+    }
+
+    @media (max-height: 760px) and (min-width: 761px) {
+      .page {
+        padding-top: 8px;
+        padding-bottom: 6px;
+      }
+
+      .hero {
+        gap: 8px;
+      }
+
+      .hero-panel {
+        padding-top: 14px;
+        padding-bottom: 14px;
+      }
+
+      .eyebrow {
+        display: none;
+      }
+
+      .hero h1 {
+        font-size: clamp(38px, 5vw, 56px);
+      }
+
+      .lab-strip {
+        margin-top: 7px;
+      }
+
+      .hero-copy {
+        margin-top: 7px;
+      }
+
+      .identity-panel {
+        padding-top: 14px;
+        padding-bottom: 14px;
+      }
+
+      .module-card {
+        min-height: 150px;
+        padding: 14px;
+      }
+
+      .badges {
+        margin-bottom: 8px;
+      }
+    }
+
+    @media (max-width: 980px) {
+      .identity {
+        grid-template-columns: repeat(2, minmax(0, 1fr));
+      }
+    }
+
+    @media (max-width: 760px) {
+      body {
+        overflow-x: hidden;
+        overflow-y: auto;
+      }
+
+      .page {
+        display: block;
+        height: auto;
+        min-height: 100vh;
+        overflow: visible;
+      }
+
+      .hero {
+        display: grid;
+        grid-template-columns: 1fr;
+      }
+
+      .hero-panel {
+        padding: 24px 8px 14px;
+      }
+
+      .identity,
+      .module-grid {
+        grid-template-columns: 1fr;
+      }
+
+      .module-card {
+        min-height: 0;
+      }
+
+      .brand-footer {
+        border-radius: 16px;
+      }
+    }
   </style>
   <link rel="stylesheet" href="assets/ai-assistant.css">
 </head>
@@ -2348,22 +2621,9 @@
         <div class="data-orbit" aria-hidden="true"></div>
         <div class="data-stream" aria-hidden="true"></div>
         <div class="eyebrow"><span class="pulse"></span>TOP SECRET · 记忆研究档案</div>
-        <h1><span class="title-main">记忆侦探社</span><span class="gradient-text">案件档案</span></h1>
+        <h1><span class="title-main">记忆侦探社</span></h1>
         <div class="lab-strip">寻找遗忘线索，破解记忆谜题</div>
         <p class="hero-copy">进入秘密档案馆，登记侦探身份，选择案件档案，在科学探究和海报交流中追踪记忆的证据。</p>
-
-        <div class="status-row" aria-label="档案状态">
-          <span class="status"><span class="status-dot"></span>AI 助手在线</span>
-          <span class="status"><span class="status-dot"></span>线索自动保存</span>
-          <span class="status"><span class="status-dot"></span>实验记录留痕</span>
-          <span class="status"><span class="status-dot"></span>档案可导出</span>
-        </div>
-
-        <div class="hero-metrics">
-          <div class="metric"><b>02</b><span>案件入口</span></div>
-          <div class="metric"><b>04</b><span>记忆调查</span></div>
-          <div class="metric"><b>01</b><span>侦探身份</span></div>
-        </div>
       </div>
 
       <aside class="identity-panel">
