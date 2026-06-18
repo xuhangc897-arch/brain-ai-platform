@@ -478,6 +478,28 @@
       margin-bottom: 0;
     }
 
+    .headband-svg-card {
+      margin-top: 16px;
+      padding: 16px;
+      border: 1px solid #dbeafe;
+      border-radius: 10px;
+      background: #f8fbff;
+    }
+
+    .headband-svg-card h4 {
+      margin: 0 0 12px;
+      color: #1e3a8a;
+      font-size: 16px;
+    }
+
+    .headband-svg-card img {
+      display: block;
+      width: 100%;
+      max-width: 900px;
+      height: auto;
+      margin: 0 auto;
+    }
+
     .memory-table-wrap {
       margin-top: 12px;
       overflow-x: auto;
@@ -1191,6 +1213,18 @@
     .case-tag { padding: 5px 9px; border-radius: 999px; background: #eefbf6; color: #0f766e; font-size: 12px; font-weight: 900; }
     @media (max-width: 760px) { .helper-grid { grid-template-columns: 1fr; } .case-card summary { align-items: flex-start; } }
 
+
+    .progress-step.is-locked {
+      opacity: 0.45;
+      filter: grayscale(0.85);
+      cursor: not-allowed;
+    }
+
+    .progress-step.is-locked:hover {
+      transform: none;
+      box-shadow: none;
+    }
+
   </style>
   <link rel="stylesheet" href="assets/ai-assistant.css">
 </head>
@@ -1332,6 +1366,7 @@
       studentId: "",
       groupId: "",
       currentStep: 0,
+      maxUnlockedStep: 0,
       fields: {
         independentVariable: "N的大小",
         dependentMemory: true,
@@ -1413,11 +1448,8 @@
       return merged;
     }
     function normalizeCurrentStep() {
-      const index = Number(state.currentStep);
-      if (!Number.isInteger(index) || index < 0 || index >= steps.length) {
-        state.currentStep = 0;
-        saveState();
-      }
+      normalizeStepAccess();
+      saveState();
     }
 
     function saveState() {
@@ -1455,21 +1487,81 @@
       renderStep();
     }
 
+
+    function clampStepIndex(value) {
+      const index = Number(value);
+      if (!Number.isInteger(index)) return 0;
+      return Math.min(Math.max(index, 0), steps.length - 1);
+    }
+
+    function normalizeStepAccess() {
+      const legacyCurrent = clampStepIndex(state.currentStep);
+      if (!Number.isInteger(Number(state.maxUnlockedStep))) {
+        state.maxUnlockedStep = legacyCurrent;
+      } else {
+        state.maxUnlockedStep = clampStepIndex(state.maxUnlockedStep);
+      }
+      state.currentStep = Math.min(legacyCurrent, state.maxUnlockedStep);
+    }
+
+    function showStepMessage(message) {
+      alert(message);
+    }
+
+    function goToStep(targetStep) {
+      const target = clampStepIndex(targetStep);
+      if (target > state.maxUnlockedStep) {
+        showStepMessage("请先完成前一步内容，再进入下一步。");
+        return;
+      }
+      state.currentStep = target;
+      saveState();
+      renderApp();
+    }
+
+    function goNextStep() {
+      if (!validateStep(steps[state.currentStep].id)) {
+        showStepMessage("请先完成本步骤内容。");
+        return;
+      }
+      if (state.currentStep < steps.length - 1) {
+        state.maxUnlockedStep = Math.max(state.maxUnlockedStep || 0, state.currentStep + 1);
+        state.currentStep += 1;
+        saveState();
+        renderApp();
+      }
+    }
+
+    function hasText(value) {
+      return String(value ?? "").trim().length > 0;
+    }
+
+    function validateStep(stepId) {
+      if (!isSurveyStepComplete(stepId)) return false;
+      const fields = state.fields || {};
+      if (stepId === "question") return hasText(fields.researchQuestion) && hasText(fields.independentVariable) && (fields.dependentMemory || fields.dependentBrain);
+      if (stepId === "hypothesis") return hasText(fields.hypothesis);
+      if (stepId === "plan") return hasText(fields.stimulusMaterial) && hasText(fields.experimentDesign) && hasText(fields.stimulusInterval);
+      if (stepId === "evidence") return Array.isArray(state.testRuns) && state.testRuns.length > 0;
+      if (stepId === "analysis") return Array.isArray(state.testRuns) && state.testRuns.length > 0 && (hasText(fields.headbandObservation) || hasText(fields.teammate1Result) || hasText(fields.teammate2Result));
+      if (stepId === "conclusion") return hasText(fields.conclusion) && fields.conclusionSupported !== defaultState.fields.conclusionSupported;
+      if (stepId === "reflection") return hasText(fields.improvement) && hasText(fields.persuasiveness);
+      return true;
+    }
+
     function renderProgress() {
+      normalizeStepAccess();
       progress.innerHTML = steps.map((step, index) => {
-        const cls = index === state.currentStep ? "is-active" : index < state.currentStep ? "is-done" : "";
-        return `
-          <button class="progress-step ${cls}" type="button" data-step="${index}" aria-label="前往${step.title}">
-            <strong>${index + 1}</strong><span>${step.title}</span>
-          </button>
-        `;
+        const isActive = index === state.currentStep;
+        const isDone = index < state.maxUnlockedStep;
+        const isLocked = index > state.maxUnlockedStep;
+        const cls = isActive ? "is-active" : isDone ? "is-done" : isLocked ? "is-locked" : "";
+        const lockedAttrs = isLocked ? ' aria-disabled="true" title="请先完成前一步内容，再进入下一步。"' : '';
+        return `<button class="progress-step ${cls}" type="button" data-step="${index}"${lockedAttrs}><strong>${index + 1}</strong><span>${step.title}</span></button>`;
       }).join("");
       progress.querySelectorAll("[data-step]").forEach((button) => {
         button.addEventListener("click", () => {
-          const targetStep = Number(button.dataset.step);
-          state.currentStep = targetStep;
-          saveState();
-          renderApp();
+          goToStep(Number(button.dataset.step));
         });
       });
     }
@@ -1537,7 +1629,7 @@
     }
 
     function renderPosttestExportArea() {
-      return '<div class="actions" style="justify-content:flex-end;"><button class="btn success" type="button" id="finalExportBtn">导出完整实验记录</button></div>';
+      return '<div class="actions" style="justify-content:flex-end;"><button class="btn secondary" type="button" id="reviewReportBtn">生成记忆侦探报告</button><button class="btn success" type="button" id="finalExportBtn">导出完整实验记录</button></div>';
     }
 
     function renderSurveyForm(surveyKey, defKey) {
@@ -1761,6 +1853,10 @@
               <article class="reading-card">
                 <h4>材料四：头环</h4>
                 <p>头环是我们用来测量N-back活动中大脑前额叶活动水平的工具。头环就像一个特殊的“脑力探测器”，只要把头环戴在头上就可以可以收集信息，并且可以在电脑显示屏上生成一幅3D的脑激活图，展示大脑在执行特定任务或接受刺激时，不同脑区神经活动的空间分布状态。这张图可以直观呈现被激活脑区的位置、范围和强度，它会用颜色告诉你，在实验过程中大脑中哪些地方被激活，用红-黄色表示激活强度高，蓝-冷色表示抑制或无变化。也就是说，图中的某个脑区越红说明越活跃，在努力“思考”。假设3-back比2-back需要消耗更多的大脑资源，导致前额叶的激活水平更高，那么头环收集信息生成的结果图中，3-back的结果图中某个区域的颜色应该比2-back的结果图中相应区域的颜色更红，说明在玩更难的3-back游戏时，大脑需要花比玩2-back多得多的“力气”。</p>
+                <div class="headband-svg-card">
+                  <h4>头环是如何工作的？</h4>
+                  <img src="assets/headband-how-it-works.svg" alt="头环工作原理示意图">
+                </div>
               </article>
             </div>
           </div>
@@ -1770,6 +1866,9 @@
               <p>请围绕自变量、因变量和控制变量形成研究问题。</p>
             </div>
             <div class="panel-body">
+              ${renderInquiryCases()}
+              ${renderInquiryScaffold("question")}
+
               <div class="field">
                 <label>自变量</label>
                 <div class="choice-group">
@@ -1795,8 +1894,6 @@
                 <label>研究问题</label>
                 <textarea data-field="researchQuestion" placeholder="写下你们小组真正想探究的问题">${escapeHtml(state.fields.researchQuestion)}</textarea>
               </div>
-              ${renderInquiryScaffold("question")}
-              ${renderInquiryCases()}
             </div>
           </div>
         </div>
@@ -2152,7 +2249,7 @@
               <div class="chart">${chart}</div>
               <div class="field" style="margin-top:18px;">
                 <label>头环观察记录</label>
-                <textarea data-field="headbandObservation" placeholder="记录不同条件下的头环观察结果">${escapeHtml(state.fields.headbandObservation)}</textarea>
+                <textarea data-field="headbandObservation" placeholder="请记录不同条件下的头环观察结果，例如：不同 N-back 难度下头环颜色有什么变化？是否出现红色或黄色区域增多？哪种条件下前额叶区域激活更明显？">${escapeHtml(state.fields.headbandObservation)}</textarea>
               </div>
             </div>
           </div>
@@ -2246,26 +2343,23 @@
       const next = document.getElementById("nextStep");
       if (prev) {
         prev.addEventListener("click", () => {
-          if (state.currentStep > 0) {
-            state.currentStep -= 1;
-            saveState();
-            renderApp();
-          }
+          if (state.currentStep > 0) goToStep(state.currentStep - 1);
         });
       }
       if (next) {
-        next.addEventListener("click", () => {
-          if (state.currentStep < steps.length - 1) {
-            state.currentStep += 1;
-            saveState();
-            renderApp();
-          }
-        });
+        next.addEventListener("click", goNextStep);
       }
       if (stepId === "evidence") bindGameEvents();
       if (stepId === "question") bindPracticeEvents();
       const finalExport = document.getElementById("finalExportBtn");
       if (finalExport) finalExport.addEventListener("click", exportExcel);
+      const reviewReport = document.getElementById("reviewReportBtn");
+      if (reviewReport) reviewReport.addEventListener("click", () => generateReviewReport("nback"));
+    }
+
+    function generateReviewReport(activityType) {
+      saveState();
+      window.open(`review.html?activityType=${encodeURIComponent(activityType)}`, "_blank");
     }
 
     function bindPracticeEvents() {

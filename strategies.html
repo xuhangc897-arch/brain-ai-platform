@@ -79,6 +79,9 @@
     .material-details summary::marker { color: var(--primary); }
     .material-details-body { display: grid; gap: 10px; padding: 0 16px 16px; color: #344054; font-size: 14px; }
     .material-details-body p { margin: 0; line-height: 1.8; }
+    .headband-svg-card { margin-top: 16px; padding: 16px; border: 1px solid #dbeafe; border-radius: 10px; background: #f8fbff; }
+    .headband-svg-card h4 { margin: 0 0 12px; color: #1e3a8a; font-size: 16px; }
+    .headband-svg-card img { display: block; width: 100%; max-width: 900px; height: auto; margin: 0 auto; }
     .strategy-mode-grid { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 14px; margin-bottom: 18px; }
     .strategy-mode-card { border: 1px solid var(--line); border-radius: 8px; padding: 14px; background: #fbfdff; }
     .strategy-mode-card h4 { margin: 0 0 8px; color: #1e3a8a; }
@@ -235,6 +238,18 @@
     .case-tag { padding: 5px 9px; border-radius: 999px; background: #eefbf6; color: #0f766e; font-size: 12px; font-weight: 900; }
     @media (max-width: 760px) { .helper-grid { grid-template-columns: 1fr; } .case-card summary { align-items: flex-start; } }
 
+
+    .progress-step.is-locked {
+      opacity: 0.45;
+      filter: grayscale(0.85);
+      cursor: not-allowed;
+    }
+
+    .progress-step.is-locked:hover {
+      transform: none;
+      box-shadow: none;
+    }
+
   </style>
   <link rel="stylesheet" href="assets/ai-assistant.css">
 </head>
@@ -359,6 +374,7 @@
       studentId: "",
       groupId: "",
       currentStep: 0,
+      maxUnlockedStep: 0,
       fields: {
         question: "",
         hypothesis1: "",
@@ -442,11 +458,8 @@
       return merged;
     }
     function normalizeCurrentStep() {
-      const index = Number(state.currentStep);
-      if (!Number.isInteger(index) || index < 0 || index >= steps.length) {
-        state.currentStep = 0;
-        saveState();
-      }
+      normalizeStepAccess();
+      saveState();
     }
 
     function saveState() { state.savedAt = new Date().toISOString(); localStorage.setItem(STORAGE_KEY, JSON.stringify(state)); }
@@ -469,13 +482,85 @@
       renderProgress();
       renderStep();
     }
-    function renderProgress() {
-      progress.innerHTML = steps.map((step, index) => {
-        const cls = index === state.currentStep ? "is-active" : index < state.currentStep ? "is-done" : "";
-        return `<button class="progress-step ${cls}" type="button" data-step="${index}"><strong>${index + 1}</strong><span>${step.title}</span></button>`;
-      }).join("");
-      progress.querySelectorAll("[data-step]").forEach((button)=>button.addEventListener("click",()=>{ const targetStep = Number(button.dataset.step); state.currentStep = targetStep; saveState(); renderApp(); }));
+
+    function clampStepIndex(value) {
+      const index = Number(value);
+      if (!Number.isInteger(index)) return 0;
+      return Math.min(Math.max(index, 0), steps.length - 1);
     }
+
+    function normalizeStepAccess() {
+      const legacyCurrent = clampStepIndex(state.currentStep);
+      if (!Number.isInteger(Number(state.maxUnlockedStep))) {
+        state.maxUnlockedStep = legacyCurrent;
+      } else {
+        state.maxUnlockedStep = clampStepIndex(state.maxUnlockedStep);
+      }
+      state.currentStep = Math.min(legacyCurrent, state.maxUnlockedStep);
+    }
+
+    function showStepMessage(message) {
+      alert(message);
+    }
+
+    function goToStep(targetStep) {
+      const target = clampStepIndex(targetStep);
+      if (target > state.maxUnlockedStep) {
+        showStepMessage("请先完成前一步内容，再进入下一步。");
+        return;
+      }
+      state.currentStep = target;
+      saveState();
+      renderApp();
+    }
+
+    function goNextStep() {
+      if (!validateStep(steps[state.currentStep].id)) {
+        showStepMessage("请先完成本步骤内容。");
+        return;
+      }
+      if (state.currentStep < steps.length - 1) {
+        state.maxUnlockedStep = Math.max(state.maxUnlockedStep || 0, state.currentStep + 1);
+        state.currentStep += 1;
+        saveState();
+        renderApp();
+      }
+    }
+
+    function hasText(value) {
+      return String(value ?? "").trim().length > 0;
+    }
+
+    function validateStep(stepId) {
+      if (!isSurveyStepComplete(stepId)) return false;
+      const fields = state.fields || {};
+      if (stepId === "question") return hasText(fields.question);
+      if (stepId === "hypothesis") return fields.strategyMatchConfirmed === true && hasText(fields.hypothesis1) && hasText(fields.hypothesis2);
+      if (stepId === "plan") return hasText(fields.strategy1) && hasText(fields.strategy2) && hasText(fields.leader) && hasText(fields.recorder);
+      if (stepId === "evidence") return Array.isArray(state.records) && state.records.length > 0;
+      if (stepId === "analysis") return Array.isArray(state.records) && state.records.length > 0 && Array.isArray(state.strategyScores) && state.strategyScores.length > 0;
+      if (stepId === "conclusion") return hasText(fields.conclusion);
+      if (stepId === "reflection") return hasText(fields.designImprove) && hasText(fields.surprise) && hasText(fields.applicability);
+      return true;
+    }
+
+    function renderProgress() {
+      normalizeStepAccess();
+      progress.innerHTML = steps.map((step, index) => {
+        const isActive = index === state.currentStep;
+        const isDone = index < state.maxUnlockedStep;
+        const isLocked = index > state.maxUnlockedStep;
+        const cls = isActive ? "is-active" : isDone ? "is-done" : isLocked ? "is-locked" : "";
+        const lockedAttrs = isLocked ? ' aria-disabled="true" title="请先完成前一步内容，再进入下一步。"' : '';
+        return `<button class="progress-step ${cls}" type="button" data-step="${index}"${lockedAttrs}><strong>${index + 1}</strong><span>${step.title}</span></button>`;
+      }).join("");
+      progress.querySelectorAll("[data-step]").forEach((button) => {
+        button.addEventListener("click", () => {
+          goToStep(Number(button.dataset.step));
+        });
+      });
+    }
+
     function renderStep() {
       const step = steps[state.currentStep];
       main.innerHTML = `<section class="panel"><div class="panel-head"><h2>${state.currentStep + 1}. ${step.title}</h2><p>建议时长：${step.minutes}</p></div><div class="panel-body">${getStepHtml(step.id)}${renderNavigation()}</div></section>`;
@@ -520,7 +605,7 @@
     }
 
     function renderPosttestExportArea() {
-      return '<div class="actions" style="justify-content:flex-end;"><button class="btn success" type="button" id="finalExportBtn">导出完整实验记录</button></div>';
+      return '<div class="actions" style="justify-content:flex-end;"><button class="btn secondary" type="button" id="reviewReportBtn">生成记忆侦探报告</button><button class="btn success" type="button" id="finalExportBtn">导出完整实验记录</button></div>';
     }
 
     function renderSurveyForm(surveyKey, defKey) {
@@ -665,6 +750,10 @@
           <p>本次长时记忆探究活动中，头环将成为探索记忆奥秘的重要科学工具，它能帮助我们“看到”大脑在记忆时的活动情况。</p>
           <p>头环主要通过两种方式来监测大脑活动：一种是记录脑电波（EEG），就像给大脑的活动“录音”；另一种是检测血流变化（fNIRS），相当于观察大脑哪个区域在工作时会“充血”。在实验中，当你使用不同的记忆方法时，头环会实时记录下大脑的反应，并通过软件将这些数据转化成直观的图表和3D脑图。在证据搜集环节，头环可以帮助你获得更科学的实验数据（例如，当用分组记忆法背单词时，头环能显示大脑哪些区域被激活），这些数据会成为研究假设的有力证据。在信息处理阶段，可以将头环采集到的脑活动热力图与回忆率进行对比分析，看看哪种记忆方法能让大脑更活跃，记忆效果更好。在得出结论时，头环提供的数据会让结论更有说服力。例如，如果数据显示使用图像联想记忆法时，大脑的视觉区域特别活跃，同时回忆率也最高，那么就可得出相应的科学结论。</p>
           <p>使用头环时要注意：保持额头清洁，确保电极贴片贴紧；实验过程中保持专注；认真记录每个环节的数据变化。希望你能善用这个工具，在探究活动中获得更多发现！</p>
+          <div class="headband-svg-card">
+            <h4>头环是如何工作的？</h4>
+            <img src="assets/headband-how-it-works.svg" alt="头环工作原理示意图">
+          </div>
         </div></details>
       `;
     }
@@ -682,7 +771,7 @@
     function renderQuestionStep() {
       return `<div class="single-step-layout">
         <div class="question-prompt-strip"><p>思考：回忆最近学习的内容，为什么有些信息更容易长期记住？哪些方法可以帮助我们更好地记住学习内容？请基于以上内容提出研究问题。</p></div>
-        <div class="panel"><div class="panel-head"><h3>提出研究问题</h3></div><div class="panel-body"><textarea data-field="question" placeholder="写下你们小组真正想探究的问题">${escapeHtml(state.fields.question)}</textarea>${renderInquiryScaffold("question")}${renderInquiryCases()}</div></div>
+        <div class="panel"><div class="panel-head"><h3>提出研究问题</h3></div><div class="panel-body">${renderInquiryCases()}${renderInquiryScaffold("question")}<textarea data-field="question" placeholder="写下你们小组真正想探究的问题">${escapeHtml(state.fields.question)}</textarea></div></div>
       </div>`;
     }
     function renderHypothesisStep() {
@@ -788,13 +877,13 @@
       return ["localStorage原始数据", [["localStorage key","JSON"],[STORAGE_KEY, localStorage.getItem(STORAGE_KEY) || ""]]];
     }
     function getHeadbandSummarySheet() {
-      return ["头环数据摘要", [["项目","内容"],["上传文件名",""],["总体头环观察",state.fields.headband || ""],["记录内头环观察",state.records.map((record)=>record.headband).filter(Boolean).join("；")],["数据摘要",state.fields.headband || ""],["统计结果",""]]];
+      return ["头环数据摘要", [["项目","内容"],["上传文件名",""],["头环观察记录",state.fields.headband || ""],["记录内头环观察",state.records.map((record)=>record.headband).filter(Boolean).join("；")],["数据摘要",state.fields.headband || ""],["统计结果",""]]];
     }
     function renderAnalysisStep() {
       const summary = summarizeRecords();
       const rows = summary.map((item)=>`<tr><td>${escapeHtml(item.strategy)}</td><td>${item.count}</td><td>${item.avgCorrect}</td><td>${item.avgAccuracy}%</td><td>${item.avgRt ? item.avgRt + "ms" : "--"}</td></tr>`).join("");
       const chart = summary.length ? summary.map((item)=>`<div class="bar-row"><div>${escapeHtml(item.strategy)}</div><div class="bar-track"><div class="bar-fill" style="width:${item.avgAccuracy}%"></div></div><div>${item.avgAccuracy}%</div></div>`).join("") : `<div class="empty-state">完成实验后会自动生成策略对比图。</div>`;
-      return `<div class="analysis-layout"><div class="panel"><div class="panel-head"><h3>策略汇总</h3></div><div class="panel-body">${summary.length ? `<table><thead><tr><th>策略</th><th>次数</th><th>平均正确数</th><th>平均回忆率</th><th>平均反应时</th></tr></thead><tbody>${rows}</tbody></table>` : `<div class="empty-state">还没有实验数据。请先完成至少一个阶段。</div>`}<div class="chart">${chart}</div></div></div>${renderTeamResultTable(summary)}<div class="panel"><div class="panel-head"><h3>长时记忆策略评分表</h3><p>请回答者和提问者共同完成以下表格。</p></div><div class="panel-body">${renderStrategyScoreTable()}</div></div><div class="panel"><div class="panel-head"><h3>头环观察</h3></div><div class="panel-body"><textarea data-field="headband">${escapeHtml(state.fields.headband)}</textarea></div></div></div>`;
+      return `<div class="analysis-layout"><div class="panel"><div class="panel-head"><h3>策略汇总</h3></div><div class="panel-body">${summary.length ? `<table><thead><tr><th>策略</th><th>次数</th><th>平均正确数</th><th>平均回忆率</th><th>平均反应时</th></tr></thead><tbody>${rows}</tbody></table>` : `<div class="empty-state">还没有实验数据。请先完成至少一个阶段。</div>`}<div class="chart">${chart}</div></div></div>${renderTeamResultTable(summary)}<div class="panel"><div class="panel-head"><h3>长时记忆策略评分表</h3><p>请回答者和提问者共同完成以下表格。</p></div><div class="panel-body">${renderStrategyScoreTable()}</div></div><div class="panel"><div class="panel-head"><h3>头环观察</h3></div><div class="panel-body"><textarea data-field="headband" placeholder="请记录不同记忆策略下的头环观察结果，例如：使用不同策略时头环颜色有什么变化？哪种策略下前额叶区域更活跃？颜色变化是否和记忆效果有关？">${escapeHtml(state.fields.headband)}</textarea></div></div></div>`;
     }
     function renderScoreField(field, label) {
       return `<div class="field"><label>${label}</label><select data-field="${field}">${[1,2,3,4,5].map((n)=>`<option value="${n}" ${Number(state.fields[field])===n ? "selected" : ""}>${n} 分</option>`).join("")}</select></div>`;
@@ -880,14 +969,19 @@
       bindSurveyInputs();
       const prev = document.getElementById("prevStep");
       const next = document.getElementById("nextStep");
-      if (prev) prev.addEventListener("click",()=>{ if (state.currentStep > 0) { state.currentStep -= 1; saveState(); renderApp(); }});
-      if (next) next.addEventListener("click",()=>{ if (state.currentStep < steps.length - 1) {
-            state.currentStep += 1; saveState(); renderApp(); }});
+      if (prev) prev.addEventListener("click", () => { if (state.currentStep > 0) goToStep(state.currentStep - 1); });
+      if (next) next.addEventListener("click", goNextStep);
       if (stepId === "evidence") bindGameEvents();
       if (stepId === "hypothesis") bindStrategyMatchEvents();
       if (stepId === "analysis") bindScoreEvents();
       const finalExport = document.getElementById("finalExportBtn");
       if (finalExport) finalExport.addEventListener("click", exportExcel);
+      const reviewReport = document.getElementById("reviewReportBtn");
+      if (reviewReport) reviewReport.addEventListener("click", () => generateReviewReport("strategies"));
+    }
+    function generateReviewReport(activityType) {
+      saveState();
+      window.open(`review.html?activityType=${encodeURIComponent(activityType)}`, "_blank");
     }
     function bindScoreEvents() {
       const add = document.getElementById("addStrategyScoreBtn");

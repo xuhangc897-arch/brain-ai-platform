@@ -414,6 +414,18 @@
         flex-direction: column;
       }
     }
+
+    .progress-step.is-locked {
+      opacity: 0.45;
+      filter: grayscale(0.85);
+      cursor: not-allowed;
+    }
+
+    .progress-step.is-locked:hover {
+      transform: none;
+      box-shadow: none;
+    }
+
   </style>
   <link rel="stylesheet" href="assets/ai-assistant.css">
 </head>
@@ -469,6 +481,7 @@
       studentId: "",
       groupId: "",
       currentStep: 0,
+      maxUnlockedStep: 0,
       fields: {
         researchQuestion: "",
         hypothesis: "",
@@ -570,6 +583,7 @@
     }
 
     function renderApp() {
+      normalizeStepAccess();
       if (!state.studentId || !state.groupId) {
         main.innerHTML = `
           <section class="panel">
@@ -589,16 +603,84 @@
       renderStep();
     }
 
+
+    function clampStepIndex(value) {
+      const index = Number(value);
+      if (!Number.isInteger(index)) return 0;
+      return Math.min(Math.max(index, 0), steps.length - 1);
+    }
+
+    function normalizeStepAccess() {
+      const legacyCurrent = clampStepIndex(state.currentStep);
+      if (!Number.isInteger(Number(state.maxUnlockedStep))) {
+        state.maxUnlockedStep = legacyCurrent;
+      } else {
+        state.maxUnlockedStep = clampStepIndex(state.maxUnlockedStep);
+      }
+      state.currentStep = Math.min(legacyCurrent, state.maxUnlockedStep);
+    }
+
+    function showStepMessage(message) {
+      alert(message);
+    }
+
+    function goToStep(targetStep) {
+      const target = clampStepIndex(targetStep);
+      if (target > state.maxUnlockedStep) {
+        showStepMessage("请先完成前一步内容，再进入下一步。");
+        return;
+      }
+      state.currentStep = target;
+      saveState();
+      renderApp();
+    }
+
+    function goNextStep() {
+      if (!validateStep(steps[state.currentStep].id)) {
+        showStepMessage("请先完成本步骤内容。");
+        return;
+      }
+      if (state.currentStep < steps.length - 1) {
+        state.maxUnlockedStep = Math.max(state.maxUnlockedStep || 0, state.currentStep + 1);
+        state.currentStep += 1;
+        saveState();
+        renderApp();
+      }
+    }
+
+    function hasText(value) {
+      return String(value ?? "").trim().length > 0;
+    }
+
+    function validateStep(stepId) {
+      const fields = state.fields || {};
+      if (stepId === "plan") return ["researchQuestion", "hypothesis", "researchPlan", "conclusion", "limitation", "lifeApplication", "division"].every((key) => hasText(fields[key]));
+      if (stepId === "make") return ["layoutSketch", "aiSupport", "visualPlan"].every((key) => hasText(fields[key]));
+      if (stepId === "share") return ["presenter", "presenterStudentId", "speakingPoints", "askedQuestions", "answers"].every((key) => hasText(fields[key]));
+      if (stepId === "questions") return Array.isArray(state.questions) && state.questions.some((item) => hasText(item.group) && hasText(item.type) && hasText(item.question) && hasText(item.answer));
+      if (stepId === "score") {
+        const groups = getPosterGroups();
+        const scores = state.scores || {};
+        const allScored = groups.every((_, groupIndex) => indicators.every((indicator) => Number(scores[indicator.key + '_' + (groupIndex + 1)]) > 0));
+        return allScored && hasText(fields.bestPoster);
+      }
+      if (stepId === "reflection") return ["reflectionGain", "reflectionImprove", "teamReflection", "nextUse"].every((key) => hasText(fields[key]));
+      return true;
+    }
+
     function renderProgress() {
+      normalizeStepAccess();
       progress.innerHTML = steps.map((step, index) => {
-        const cls = index === state.currentStep ? "is-active" : index < state.currentStep ? "is-done" : "";
-        return `<button class="progress-step ${cls}" type="button" data-step="${index}"><strong>${index + 1}</strong><span>${step.title}</span></button>`;
+        const isActive = index === state.currentStep;
+        const isDone = index < state.maxUnlockedStep;
+        const isLocked = index > state.maxUnlockedStep;
+        const cls = isActive ? "is-active" : isDone ? "is-done" : isLocked ? "is-locked" : "";
+        const lockedAttrs = isLocked ? ' aria-disabled="true" title="请先完成前一步内容，再进入下一步。"' : '';
+        return `<button class="progress-step ${cls}" type="button" data-step="${index}"${lockedAttrs}><strong>${index + 1}</strong><span>${step.title}</span></button>`;
       }).join("");
       progress.querySelectorAll("[data-step]").forEach((button) => {
         button.addEventListener("click", () => {
-          state.currentStep = Number(button.dataset.step);
-          saveState();
-          renderApp();
+          goToStep(Number(button.dataset.step));
         });
       });
     }
@@ -928,6 +1010,7 @@
               ${field("reflectionImprove", "海报还可以怎样改进", "textarea")}
               ${field("teamReflection", "小组合作反思", "textarea")}
               ${field("nextUse", "今后如何应用探究成果", "textarea")}
+              <button class="btn secondary" type="button" id="reviewReportBtn">生成记忆侦探报告</button>
               <button class="btn" type="button" id="finalExportBtn">导出海报制作 Excel</button>
             </div>
           </div>
@@ -1017,21 +1100,18 @@
       const prev = document.getElementById("prevStep");
       const next = document.getElementById("nextStep");
       if (prev) prev.addEventListener("click", () => {
-        if (state.currentStep > 0) {
-          state.currentStep -= 1;
-          saveState();
-          renderApp();
-        }
+        if (state.currentStep > 0) goToStep(state.currentStep - 1);
       });
-      if (next) next.addEventListener("click", () => {
-        if (state.currentStep < steps.length - 1) {
-          state.currentStep += 1;
-          saveState();
-          renderApp();
-        }
-      });
+      if (next) next.addEventListener("click", goNextStep);
       const finalExport = document.getElementById("finalExportBtn");
       if (finalExport) finalExport.addEventListener("click", exportExcel);
+      const reviewReport = document.getElementById("reviewReportBtn");
+      if (reviewReport) reviewReport.addEventListener("click", () => generateReviewReport("poster"));
+    }
+
+    function generateReviewReport(activityType) {
+      saveState();
+      window.open(`review.html?activityType=${encodeURIComponent(activityType)}`, "_blank");
     }
 
     function getScore(indicatorKey, groupNumber) {

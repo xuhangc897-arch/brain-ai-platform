@@ -323,6 +323,28 @@
       margin-bottom: 0;
     }
 
+    .headband-svg-card {
+      margin-top: 16px;
+      padding: 16px;
+      border: 1px solid #dbeafe;
+      border-radius: 10px;
+      background: #f8fbff;
+    }
+
+    .headband-svg-card h4 {
+      margin: 0 0 12px;
+      color: #1e3a8a;
+      font-size: 16px;
+    }
+
+    .headband-svg-card img {
+      display: block;
+      width: 100%;
+      max-width: 900px;
+      height: auto;
+      margin: 0 auto;
+    }
+
     .method-card {
       border: 1px solid #dbeafe;
       border-radius: 10px;
@@ -940,6 +962,18 @@
     .case-tag { padding: 5px 9px; border-radius: 999px; background: #eefbf6; color: #0f766e; font-size: 12px; font-weight: 900; }
     @media (max-width: 760px) { .helper-grid { grid-template-columns: 1fr; } .case-card summary { align-items: flex-start; } }
 
+
+    .progress-step.is-locked {
+      opacity: 0.45;
+      filter: grayscale(0.85);
+      cursor: not-allowed;
+    }
+
+    .progress-step.is-locked:hover {
+      transform: none;
+      box-shadow: none;
+    }
+
   </style>
   <link rel="stylesheet" href="assets/ai-assistant.css">
 </head>
@@ -1053,6 +1087,7 @@
       studentId: "",
       groupId: "",
       currentStep: 0,
+      maxUnlockedStep: 0,
       fields: {
         question: "",
         hypothesis: "",
@@ -1071,8 +1106,6 @@
         itemInterval: 1,
         trialsPerParticipant: 3,
         brainFinding: "",
-        colorTrend: "暖",
-        activityTrend: "高",
         conclusionCapacity: "",
         hypothesisRelation: "一致",
         millerRelation: "一致",
@@ -1135,11 +1168,8 @@
       return merged;
     }
     function normalizeCurrentStep() {
-      const index = Number(state.currentStep);
-      if (!Number.isInteger(index) || index < 0 || index >= steps.length) {
-        state.currentStep = 0;
-        saveState();
-      }
+      normalizeStepAccess();
+      saveState();
     }
 
     function saveState() {
@@ -1177,21 +1207,83 @@
       renderStep();
     }
 
+
+    function clampStepIndex(value) {
+      const index = Number(value);
+      if (!Number.isInteger(index)) return 0;
+      return Math.min(Math.max(index, 0), steps.length - 1);
+    }
+
+    function normalizeStepAccess() {
+      const legacyCurrent = clampStepIndex(state.currentStep);
+      if (!Number.isInteger(Number(state.maxUnlockedStep))) {
+        state.maxUnlockedStep = legacyCurrent;
+      } else {
+        state.maxUnlockedStep = clampStepIndex(state.maxUnlockedStep);
+      }
+      state.currentStep = Math.min(legacyCurrent, state.maxUnlockedStep);
+    }
+
+    function showStepMessage(message) {
+      alert(message);
+    }
+
+    function goToStep(targetStep) {
+      const target = clampStepIndex(targetStep);
+      if (target > state.maxUnlockedStep) {
+        showStepMessage("请先完成前一步内容，再进入下一步。");
+        return;
+      }
+      state.currentStep = target;
+      saveState();
+      renderApp();
+    }
+
+    function goNextStep() {
+      if (!validateStep(steps[state.currentStep].id)) {
+        showStepMessage("请先完成本步骤内容。");
+        return;
+      }
+      if (state.currentStep < steps.length - 1) {
+        state.maxUnlockedStep = Math.max(state.maxUnlockedStep || 0, state.currentStep + 1);
+        state.currentStep += 1;
+        saveState();
+        renderApp();
+      }
+    }
+
+    function hasText(value) {
+      return String(value ?? "").trim().length > 0;
+    }
+
+    function validateStep(stepId) {
+      if (!isSurveyStepComplete(stepId)) return false;
+      const fields = state.fields || {};
+      if (stepId === "question") return hasText(fields.question);
+      if (stepId === "hypothesis") return hasText(fields.hypothesis);
+      if (stepId === "plan") {
+        return fields.planOrderConfirmed === true && hasText(fields.method) && hasText(fields.material) && hasText(fields.startLength) && hasText(fields.maxLength) && hasText(fields.trialsPerParticipant);
+      }
+      if (stepId === "evidence") return Array.isArray(state.records) && state.records.length > 0;
+      if (stepId === "analysis") return Array.isArray(state.records) && state.records.length > 0 && (hasText(fields.brainFinding) || hasText(fields.teammate1Result) || hasText(fields.teammate2Result));
+      if (stepId === "conclusion") return hasText(fields.conclusionCapacity) && hasText(fields.finalConclusion);
+      if (stepId === "reflection") return hasText(fields.designImprove) && hasText(fields.teamwork) && hasText(fields.inquiryReflection);
+      return true;
+    }
+
     function renderProgress() {
+      normalizeStepAccess();
       progress.innerHTML = steps.map((step, index) => {
-        const cls = index === state.currentStep ? "is-active" : index < state.currentStep ? "is-done" : "";
-        return `
-          <button class="progress-step ${cls}" type="button" data-step="${index}">
-            <strong>${index + 1}</strong><span>${step.title}</span>
-          </button>
-        `;
+        const isActive = index === state.currentStep;
+        const isDone = index < state.maxUnlockedStep;
+        const isLocked = index > state.maxUnlockedStep;
+        const cls = isActive ? "is-active" : isDone ? "is-done" : isLocked ? "is-locked" : "";
+        const lockedAttrs = isLocked ? ' aria-disabled="true" title="请先完成前一步内容，再进入下一步。"' : '';
+        return `<button class="progress-step ${cls}" type="button" data-step="${index}"${lockedAttrs}><strong>${index + 1}</strong><span>${step.title}</span></button>`;
       }).join("");
       progress.querySelectorAll("[data-step]").forEach((button) => {
         button.addEventListener("click", () => {
-          const targetStep = Number(button.dataset.step);
-          state.currentStep = targetStep;
-          saveState();
-          renderApp();
+          goToStep(Number(button.dataset.step));
         });
       });
     }
@@ -1259,7 +1351,7 @@
     }
 
     function renderPosttestExportArea() {
-      return '<div class="actions" style="justify-content:flex-end;"><button class="btn success" type="button" id="finalExportBtn">导出完整实验记录</button></div>';
+      return '<div class="actions" style="justify-content:flex-end;"><button class="btn secondary" type="button" id="reviewReportBtn">生成记忆侦探报告</button><button class="btn success" type="button" id="finalExportBtn">导出完整实验记录</button></div>';
     }
 
     function renderSurveyForm(surveyKey, defKey) {
@@ -1406,9 +1498,10 @@
           <div class="panel">
             <div class="panel-head"><h3>提出研究问题</h3></div>
             <div class="panel-body">
-              <textarea data-field="question" placeholder="写下你们小组真正想探究的问题">${escapeHtml(state.fields.question)}</textarea>
-              ${renderInquiryScaffold("question")}
               ${renderInquiryCases()}
+              ${renderInquiryScaffold("question")}
+
+              <textarea data-field="question" placeholder="写下你们小组真正想探究的问题">${escapeHtml(state.fields.question)}</textarea>
             </div>
           </div>
         </div>
@@ -1471,6 +1564,10 @@
               <article class="reading-card">
                 <h4>材料三：头环的介绍</h4>
                 <p>头环是我们用来测量参与者在进行顺背法或倒背法任务时大脑前额叶（主要负责记忆和工作的大脑区域）活动水平的工具。在开展实验时，只要把它戴在头上，它就能通过监测大脑血氧浓度的变化等来收集信息，并在电脑上生成一幅3D的脑激活图。这张图可以直观呈现被激活脑区的位置、范围和强度，它会用颜色告诉你，在实验过程中大脑中哪些地方被激活，图中用暖色调（红-黄）表示大脑区域激活强度高，即正在非常努力地工作；用冷色调（蓝）表示激活程度低或变化不大。当我们测试短时记忆容量时，参与者需要复述一串串长度逐渐增加的数字或者字母。头环会实时捕捉参与者大脑前额叶的活动变化。因此，通过观察脑激活图上前额叶区域的颜色如何随着数字串变长而变化，再结合参与者复述的准确性，我们就能科学地推断出：参与者的大脑短时记忆容量大约是多少个信息单位了！</p>
+                <div class="headband-svg-card">
+                  <h4>头环是如何工作的？</h4>
+                  <img src="assets/headband-how-it-works.svg" alt="头环工作原理示意图">
+                </div>
               </article>
               <article class="method-card">
                 <h4>测量短时记忆容量的方法</h4>
@@ -1696,8 +1793,7 @@
       return ["头环数据摘要", [
         ["项目", "内容"],
         ["上传文件名", ""],
-        ["头环颜色趋势", state.fields.colorTrend || ""],
-        ["前额叶活跃程度", state.fields.activityTrend || ""],
+        ["头环观察记录", state.fields.brainFinding || ""],
         ["数据摘要", state.fields.brainFinding || ""],
         ["统计结果", ""]
       ]];
@@ -1746,23 +1842,7 @@
             <div class="panel-head"><h3>结果图与脑活动记录</h3></div>
             <div class="panel-body">
               <div class="chart">${chart}</div>
-              <div class="form-grid" style="margin-top:18px;">
-                <div class="field">
-                  <label>头环颜色趋势</label>
-                  <select data-field="colorTrend">
-                    <option value="暖" ${selected("colorTrend", "暖")}>越来越暖</option>
-                    <option value="冷" ${selected("colorTrend", "冷")}>越来越冷</option>
-                  </select>
-                </div>
-                <div class="field">
-                  <label>前额叶活跃程度</label>
-                  <select data-field="activityTrend">
-                    <option value="高" ${selected("activityTrend", "高")}>越来越高</option>
-                    <option value="低" ${selected("activityTrend", "低")}>越来越低</option>
-                  </select>
-                </div>
-              </div>
-              <textarea data-field="brainFinding" placeholder="记录大脑活跃程度的观察发现">${escapeHtml(state.fields.brainFinding)}</textarea>
+              <textarea data-field="brainFinding" placeholder="请记录头环观察结果，例如：颜色主要是红/黄/蓝中的哪一种？颜色是否随着数字长度增加而变化？前额叶区域是否出现更明显的暖色？哪一次任务中颜色变化最明显？">${escapeHtml(state.fields.brainFinding)}</textarea>
             </div>
           </div>
           <div class="formula-card">
@@ -1876,26 +1956,23 @@
       const next = document.getElementById("nextStep");
       if (prev) {
         prev.addEventListener("click", () => {
-          if (state.currentStep > 0) {
-            state.currentStep -= 1;
-            saveState();
-            renderApp();
-          }
+          if (state.currentStep > 0) goToStep(state.currentStep - 1);
         });
       }
       if (next) {
-        next.addEventListener("click", () => {
-          if (state.currentStep < steps.length - 1) {
-            state.currentStep += 1;
-            saveState();
-            renderApp();
-          }
-        });
+        next.addEventListener("click", goNextStep);
       }
       if (stepId === "plan") bindPlanOrderEvents();
       if (stepId === "evidence") bindGameEvents();
       const finalExport = document.getElementById("finalExportBtn");
       if (finalExport) finalExport.addEventListener("click", exportExcel);
+      const reviewReport = document.getElementById("reviewReportBtn");
+      if (reviewReport) reviewReport.addEventListener("click", () => generateReviewReport("memory"));
+    }
+
+    function generateReviewReport(activityType) {
+      saveState();
+      window.open(`review.html?activityType=${encodeURIComponent(activityType)}`, "_blank");
     }
 
     function getCurrentPlanOrderFromDom() {
@@ -2245,9 +2322,7 @@
           ["参与者", state.fields.roleParticipant],
           ["记录员1", state.fields.roleRecorder1],
           ["记录员2", state.fields.roleRecorder2],
-          ["头环颜色趋势", state.fields.colorTrend],
-          ["前额叶活跃程度", state.fields.activityTrend],
-          ["脑活动发现", state.fields.brainFinding],
+          ["头环观察记录", state.fields.brainFinding],
           ["结论容量", state.fields.conclusionCapacity],
           ["与假设是否一致", state.fields.hypothesisRelation],
           ["与7±2理论是否一致", state.fields.millerRelation],

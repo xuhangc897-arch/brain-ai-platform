@@ -3,7 +3,7 @@
 <head>
   <meta charset="utf-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1" />
-  <title>脑育智能体学习平台</title>
+  <title>记忆侦探社</title>
   <style>
     :root {
       --bg: #eef4ff;
@@ -1593,6 +1593,751 @@
         justify-self: center;
       }
     }
+    /* Memory Detective Agency final theme */
+    :root {
+      --archive-bg: #04101d;
+      --archive-blue: #071b31;
+      --archive-blue-2: #0c2d4f;
+      --paper: #d8bd8f;
+      --paper-light: #ead3a8;
+      --paper-dark: #a77a45;
+      --ink: #f4ead4;
+      --muted: #c7b896;
+      --line: rgba(230, 195, 128, 0.28);
+      --primary: #102f55;
+      --primary-dark: #0b2443;
+      --mint: #72d7ff;
+      --mint-dark: #2f88b8;
+      --shadow: 0 28px 80px rgba(0, 0, 0, 0.42);
+      --soft-shadow: 0 18px 48px rgba(0, 0, 0, 0.28);
+    }
+
+    html {
+      background: var(--archive-bg);
+    }
+
+    body {
+      color: var(--ink);
+      background:
+        radial-gradient(circle at 9% 78%, rgba(216, 189, 143, 0.14), transparent 18%),
+        radial-gradient(circle at 92% 20%, rgba(114, 215, 255, 0.12), transparent 24%),
+        linear-gradient(135deg, rgba(5, 16, 29, 0.96), rgba(8, 27, 49, 0.96)),
+        repeating-linear-gradient(0deg, rgba(114, 215, 255, 0.04) 0 1px, transparent 1px 44px),
+        repeating-linear-gradient(90deg, rgba(114, 215, 255, 0.035) 0 1px, transparent 1px 44px);
+      background-blend-mode: screen, screen, normal, normal, normal;
+      animation: none;
+    }
+
+    body.modal-open {
+      overflow: hidden;
+    }
+
+    body::before {
+      content: "";
+      position: fixed;
+      inset: 0;
+      pointer-events: none;
+      z-index: 0;
+      opacity: 0.78;
+      background:
+        linear-gradient(23deg, transparent 0 33%, rgba(160, 25, 30, 0.34) 33.15% 33.45%, transparent 33.6%),
+        linear-gradient(154deg, transparent 0 58%, rgba(160, 25, 30, 0.28) 58.1% 58.42%, transparent 58.55%),
+        radial-gradient(circle at 12% 75%, rgba(216, 189, 143, 0.14) 0 56px, transparent 58px),
+        radial-gradient(circle at 86% 15%, rgba(114, 215, 255, 0.12) 0 74px, transparent 76px);
+      mask-image: linear-gradient(to bottom, rgba(0, 0, 0, 0.95), rgba(0, 0, 0, 0.52));
+      animation: none;
+    }
+
+    body::after {
+      content: "";
+      position: fixed;
+      inset: 0;
+      pointer-events: none;
+      z-index: 0;
+      background:
+        radial-gradient(circle at 18% 28%, #9f1d23 0 6px, transparent 7px),
+        radial-gradient(circle at 82% 31%, #9f1d23 0 6px, transparent 7px),
+        radial-gradient(circle at 72% 74%, #9f1d23 0 5px, transparent 6px),
+        linear-gradient(90deg, transparent 0 8%, rgba(216, 189, 143, 0.07) 8.2% 22%, transparent 22.2%),
+        linear-gradient(100deg, transparent 0 78%, rgba(216, 189, 143, 0.06) 78.2% 92%, transparent 92.2%);
+      opacity: 0.9;
+      animation: none;
+    }
+
+    .page {
+      position: relative;
+      z-index: 1;
+      width: min(1380px, calc(100% - 38px));
+      min-height: 100vh;
+      padding: 26px 0 28px;
+    }
+
+    .hero {
+      min-height: auto;
+      grid-template-columns: 1fr;
+      align-content: start;
+      gap: 18px;
+    }
+
+    .hero-panel {
+      position: relative;
+      min-height: 330px;
+      padding: 42px 36px 18px;
+      border: 0;
+      background: transparent;
+      box-shadow: none;
+      text-align: center;
+      overflow: visible;
+      backdrop-filter: none;
+      -webkit-backdrop-filter: none;
+    }
+
+    .hero-panel::before {
+      content: "";
+      position: absolute;
+      left: -18px;
+      top: 0;
+      width: 252px;
+      height: 318px;
+      transform: rotate(-7deg);
+      border: 1px solid rgba(67, 45, 24, 0.66);
+      border-radius: 8px;
+      background:
+        linear-gradient(rgba(82, 47, 28, 0.18), rgba(82, 47, 28, 0.04)),
+        repeating-linear-gradient(0deg, transparent 0 34px, rgba(55, 35, 20, 0.1) 35px 36px),
+        linear-gradient(135deg, #b89461, #d8bd8f 48%, #9c7544);
+      box-shadow: 0 26px 48px rgba(0, 0, 0, 0.35);
+      opacity: 0.82;
+    }
+
+    .hero-panel::after {
+      content: "TOP SECRET\a\a记忆研究档案\aNo. 0001";
+      white-space: pre;
+      position: absolute;
+      left: 10px;
+      top: 42px;
+      width: 190px;
+      transform: rotate(-7deg);
+      color: rgba(49, 30, 19, 0.72);
+      font-size: 18px;
+      font-weight: 900;
+      line-height: 1.8;
+      text-align: left;
+      text-shadow: none;
+    }
+
+    .data-orbit {
+      display: block !important;
+      position: absolute;
+      right: 10px;
+      top: 24px;
+      width: 236px;
+      height: 190px;
+      border: 1px solid rgba(216, 189, 143, 0.22);
+      border-radius: 5px;
+      background:
+        linear-gradient(rgba(244, 234, 212, 0.08), rgba(244, 234, 212, 0.04)),
+        repeating-linear-gradient(0deg, transparent 0 28px, rgba(20, 26, 33, 0.1) 29px 30px),
+        linear-gradient(135deg, #c9b28c, #ebe0ca);
+      box-shadow: 0 22px 44px rgba(0, 0, 0, 0.32);
+      transform: rotate(7deg);
+      opacity: 0.82;
+      animation: none;
+    }
+
+    .data-orbit::before {
+      content: "EVIDENCE";
+      left: auto;
+      right: 22px;
+      top: 18px;
+      width: auto;
+      height: auto;
+      border: 2px solid #9f1d23;
+      border-radius: 0;
+      padding: 2px 7px;
+      background: transparent;
+      color: #9f1d23;
+      font-size: 18px;
+      font-weight: 900;
+      box-shadow: none;
+      transform: rotate(-4deg);
+    }
+
+    .data-orbit::after {
+      content: "记忆容量\a工作记忆\a长时记忆干扰\a记忆策略";
+      white-space: pre;
+      left: 24px;
+      top: 50px;
+      width: auto;
+      height: auto;
+      border-radius: 0;
+      background: transparent;
+      color: #182333;
+      font-size: 16px;
+      font-weight: 800;
+      line-height: 2;
+      box-shadow: none;
+    }
+
+    .data-stream {
+      display: block !important;
+      position: absolute;
+      right: 120px;
+      bottom: 20px;
+      top: auto;
+      width: 150px;
+      height: 96px;
+      border: 9px solid rgba(230, 224, 212, 0.88);
+      border-bottom-width: 18px;
+      border-radius: 3px;
+      background:
+        radial-gradient(circle at 50% 55%, rgba(114, 215, 255, 0.28), transparent 35%),
+        linear-gradient(135deg, rgba(4, 16, 29, 0.92), rgba(8, 36, 62, 0.92));
+      box-shadow: 0 18px 36px rgba(0, 0, 0, 0.36);
+      transform: rotate(8deg);
+      filter: none;
+      opacity: 1;
+      animation: none;
+    }
+
+    .eyebrow {
+      margin: 0 auto 16px;
+      border-color: rgba(216, 189, 143, 0.42);
+      border-radius: 999px;
+      background: rgba(7, 22, 38, 0.72);
+      color: #ead3a8;
+      letter-spacing: 0.08em;
+    }
+
+    .pulse,
+    .status-dot {
+      background: #b1222a;
+      box-shadow: 0 0 0 6px rgba(177, 34, 42, 0.16), 0 0 16px rgba(177, 34, 42, 0.42);
+    }
+
+    .hero h1 {
+      position: relative;
+      z-index: 2;
+      max-width: 900px;
+      margin: 0 auto;
+      font-size: clamp(54px, 8vw, 116px);
+      line-height: 1.02;
+      font-weight: 900;
+      letter-spacing: 0.03em;
+    }
+
+    .title-main {
+      display: inline-block;
+      color: #f6ead1;
+      text-shadow:
+        0 3px 0 rgba(69, 45, 22, 0.78),
+        0 0 28px rgba(244, 234, 212, 0.24),
+        0 18px 56px rgba(0, 0, 0, 0.54);
+    }
+
+    .gradient-text {
+      display: none;
+    }
+
+    .lab-strip {
+      position: relative;
+      z-index: 2;
+      width: fit-content;
+      margin: 14px auto 0;
+      padding: 9px 58px;
+      border: 0;
+      border-radius: 2px;
+      background:
+        linear-gradient(90deg, rgba(133, 89, 49, 0.08), rgba(133, 89, 49, 0.16)),
+        linear-gradient(135deg, #d4b580, #ead3a8);
+      color: #1c1610;
+      box-shadow: 0 15px 30px rgba(0, 0, 0, 0.24);
+      font-size: clamp(18px, 2.1vw, 28px);
+      font-weight: 900;
+    }
+
+    .lab-strip::before,
+    .lab-strip::after {
+      content: "";
+      position: absolute;
+      top: -9px;
+      width: 48px;
+      height: 22px;
+      background: rgba(221, 199, 160, 0.6);
+      transform: rotate(-10deg);
+    }
+
+    .lab-strip::before { left: -20px; }
+    .lab-strip::after { right: -20px; transform: rotate(10deg); }
+
+    .hero-copy {
+      display: block !important;
+      max-width: 680px;
+      margin: 14px auto 0;
+      color: rgba(244, 234, 212, 0.72);
+      font-size: 16px;
+    }
+
+    .status-row {
+      display: flex !important;
+      justify-content: center;
+      margin-top: 18px;
+    }
+
+    .status {
+      border-color: rgba(216, 189, 143, 0.28);
+      background: rgba(5, 16, 29, 0.62);
+      color: rgba(244, 234, 212, 0.78);
+    }
+
+    .hero-metrics {
+      display: grid !important;
+      max-width: 540px;
+      margin: 22px auto 0;
+      grid-template-columns: repeat(3, 1fr);
+    }
+
+    .metric {
+      border-color: rgba(216, 189, 143, 0.22);
+      border-radius: 8px;
+      background: rgba(5, 16, 29, 0.55);
+    }
+
+    .metric b {
+      color: #ead3a8;
+    }
+
+    .metric span {
+      color: rgba(244, 234, 212, 0.64);
+    }
+
+    .identity-panel {
+      position: relative;
+      width: min(1120px, 100%);
+      margin: 0 auto;
+      padding: 26px;
+      border: 1px solid rgba(216, 189, 143, 0.38);
+      border-radius: 18px;
+      background: linear-gradient(145deg, rgba(8, 28, 50, 0.94), rgba(5, 16, 29, 0.9));
+      box-shadow: var(--shadow), inset 0 1px 0 rgba(255, 255, 255, 0.08);
+      color: var(--ink);
+      overflow: hidden;
+    }
+
+    .identity-panel::before {
+      content: "";
+      position: absolute;
+      inset: 12px;
+      border: 1px solid rgba(216, 189, 143, 0.16);
+      border-radius: 12px;
+      pointer-events: none;
+    }
+
+    .identity-panel::after {
+      content: "";
+      position: absolute;
+      right: 24px;
+      top: 20px;
+      width: 34px;
+      height: 34px;
+      border-radius: 999px;
+      background: radial-gradient(circle at 35% 30%, #d95e4d, #8d171e 64%, #4c0a0d);
+      box-shadow: 0 10px 18px rgba(0, 0, 0, 0.38);
+    }
+
+    .panel-kicker {
+      display: block;
+      margin: 0 0 4px;
+      color: #c83137;
+      font-size: 13px;
+      font-weight: 900;
+      letter-spacing: 0.12em;
+      text-transform: uppercase;
+    }
+
+    .identity-panel h2 {
+      display: block;
+      margin: 0;
+      color: #f6ead1;
+      font-size: 28px;
+      font-weight: 900;
+    }
+
+    .identity-panel > p {
+      display: block;
+      margin: 8px 0 18px;
+      color: rgba(244, 234, 212, 0.68);
+    }
+
+    .identity {
+      display: grid;
+      grid-template-columns: repeat(2, minmax(0, 1fr));
+      gap: 14px 26px;
+      margin-bottom: 24px;
+    }
+
+    label {
+      color: rgba(244, 234, 212, 0.78);
+      font-weight: 800;
+    }
+
+    input {
+      min-height: 52px;
+      border: 1px solid rgba(216, 189, 143, 0.16);
+      border-radius: 14px;
+      background: rgba(32, 56, 88, 0.64);
+      color: #fff8e8;
+      box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.05);
+    }
+
+    input::placeholder {
+      color: rgba(244, 234, 212, 0.46);
+    }
+
+    input:focus {
+      border-color: rgba(234, 211, 168, 0.76);
+      background: rgba(34, 62, 96, 0.82);
+      box-shadow: 0 0 0 4px rgba(234, 211, 168, 0.12);
+    }
+
+    .module-grid {
+      grid-template-columns: repeat(2, minmax(0, 1fr));
+      gap: 30px;
+    }
+
+    .module-card,
+    .experiment-card {
+      color: #17110a;
+      border: 1px solid rgba(94, 57, 27, 0.3);
+      border-radius: 8px;
+      background:
+        radial-gradient(circle at 84% 82%, rgba(72, 43, 24, 0.14), transparent 16%),
+        repeating-linear-gradient(0deg, rgba(93, 59, 30, 0.06) 0 1px, transparent 1px 30px),
+        linear-gradient(135deg, #e4c794, #cda873 54%, #b98e58);
+      box-shadow: 0 24px 52px rgba(0, 0, 0, 0.34);
+      overflow: visible;
+    }
+
+    .module-card {
+      min-height: 260px;
+      padding: 34px 32px 26px;
+    }
+
+    .module-card::before,
+    .experiment-card::before {
+      content: "";
+      position: absolute;
+      top: -18px;
+      left: 36px;
+      width: 130px;
+      height: 32px;
+      border-radius: 8px 8px 0 0;
+      background: linear-gradient(135deg, #e8cc98, #bd9058);
+      box-shadow: inset 0 -1px 0 rgba(88, 52, 25, 0.2);
+    }
+
+    .module-card::after {
+      content: "";
+      position: absolute;
+      right: 30px;
+      bottom: 26px;
+      width: 86px;
+      height: 86px;
+      border: 3px double rgba(64, 41, 24, 0.22);
+      border-radius: 999px;
+      background:
+        radial-gradient(circle, transparent 0 22px, rgba(64, 41, 24, 0.1) 23px 24px, transparent 25px),
+        repeating-radial-gradient(circle, rgba(64, 41, 24, 0.16) 0 1px, transparent 1px 5px);
+      opacity: 0.72;
+    }
+
+    .module-card:hover,
+    .experiment-card:hover {
+      transform: translateY(-5px) rotate(-0.4deg);
+      border-color: rgba(178, 34, 42, 0.48);
+      box-shadow: 0 30px 62px rgba(0, 0, 0, 0.42);
+    }
+
+    .module-head,
+    .experiment-head {
+      display: flex;
+      gap: 16px;
+      align-items: flex-start;
+    }
+
+    .case-stamp {
+      display: inline-flex;
+      margin-bottom: 14px;
+      padding: 2px 8px;
+      border: 2px solid #9f1d23;
+      color: #9f1d23;
+      font-size: 14px;
+      font-weight: 900;
+      letter-spacing: 0.08em;
+    }
+
+    .module-card h3,
+    .experiment-card h3 {
+      color: #15100a;
+      font-size: clamp(28px, 3vw, 42px);
+      font-weight: 900;
+      line-height: 1.08;
+    }
+
+    .module-card p,
+    .experiment-card p {
+      display: block;
+      max-width: 430px;
+      color: #302316;
+      font-size: 15px;
+      font-weight: 650;
+    }
+
+    .badges {
+      display: flex;
+      gap: 8px;
+      margin-bottom: 20px;
+    }
+
+    .badge,
+    .badge.green {
+      border: 1px solid rgba(70, 44, 25, 0.22);
+      border-radius: 999px;
+      background: rgba(255, 245, 218, 0.34);
+      color: #49311e;
+    }
+
+    .btn {
+      width: auto;
+      min-height: 46px;
+      padding: 0 24px;
+      border-radius: 999px;
+      background: linear-gradient(135deg, #0c2748, #173d69);
+      color: #fff3d7;
+      box-shadow: 0 13px 28px rgba(7, 22, 38, 0.38);
+    }
+
+    .btn.secondary {
+      background: linear-gradient(135deg, #132f4f, #275473);
+      box-shadow: 0 13px 28px rgba(7, 22, 38, 0.32);
+    }
+
+    .btn:hover {
+      transform: translateY(-2px);
+      box-shadow: 0 18px 36px rgba(7, 22, 38, 0.44);
+    }
+
+    .error {
+      color: #ffb5a9;
+      text-align: center;
+    }
+
+    .science-section {
+      display: none;
+      position: fixed;
+      inset: 0;
+      z-index: 30;
+      margin: 0;
+      padding: min(6vh, 48px) min(5vw, 58px);
+      overflow: auto;
+      border: 0;
+      border-radius: 0;
+      background: rgba(1, 8, 16, 0.76);
+      box-shadow: none;
+      backdrop-filter: blur(10px);
+      -webkit-backdrop-filter: blur(10px);
+    }
+
+    .science-section.is-visible {
+      display: block;
+      animation: fadeUp 180ms ease both;
+    }
+
+    .science-section::before {
+      content: "";
+      position: fixed;
+      inset: min(6vh, 48px) min(5vw, 58px);
+      z-index: -1;
+      border: 1px solid rgba(216, 189, 143, 0.34);
+      border-radius: 18px;
+      background:
+        linear-gradient(145deg, rgba(9, 31, 55, 0.96), rgba(5, 16, 29, 0.96)),
+        repeating-linear-gradient(0deg, rgba(114, 215, 255, 0.04) 0 1px, transparent 1px 42px);
+      box-shadow: 0 30px 90px rgba(0, 0, 0, 0.56);
+    }
+
+    .section-title {
+      display: grid;
+      grid-template-columns: 1fr auto;
+      align-items: start;
+      width: min(1160px, 100%);
+      margin: 0 auto 22px;
+      padding-top: 10px;
+      text-align: left;
+    }
+
+    .section-title h2 {
+      color: #f6ead1;
+      font-size: clamp(28px, 4vw, 46px);
+      font-weight: 900;
+    }
+
+    .section-title p {
+      display: block;
+      color: rgba(244, 234, 212, 0.68);
+    }
+
+    .section-title .btn.ghost {
+      min-width: 44px;
+      min-height: 44px;
+      padding: 0 18px;
+      border: 1px solid rgba(216, 189, 143, 0.38);
+      background: rgba(7, 22, 38, 0.84);
+      color: #f6ead1;
+      box-shadow: none;
+    }
+
+    .experiments {
+      width: min(1160px, 100%);
+      margin: 0 auto;
+      grid-template-columns: repeat(4, minmax(0, 1fr));
+      gap: 18px;
+    }
+
+    .experiment-card {
+      min-height: 280px;
+      padding: 24px 20px;
+      display: flex;
+      flex-direction: column;
+    }
+
+    .experiment-card h3 {
+      margin-top: 10px;
+      font-size: clamp(22px, 2vw, 28px);
+    }
+
+    .experiment-card .icon-bubble {
+      width: auto;
+      height: auto;
+      padding: 5px 8px;
+      border: 2px solid #9f1d23;
+      border-radius: 0;
+      background: transparent;
+      color: #9f1d23;
+      font-size: 12px;
+      box-shadow: none;
+    }
+
+    .experiment-card .btn {
+      margin-top: auto;
+    }
+
+    .brand-footer {
+      width: fit-content;
+      margin: 24px auto 0;
+      padding: 0;
+      border: 0;
+      background: transparent;
+      box-shadow: none;
+      color: rgba(244, 234, 212, 0.72);
+      text-align: center;
+    }
+
+    .brand-footer::before,
+    .brand-footer::after {
+      display: none;
+    }
+
+    .brand-credit,
+    .brand-slogan {
+      color: rgba(244, 234, 212, 0.72);
+    }
+
+    .brand-credit strong {
+      color: #ead3a8;
+      background: none;
+      -webkit-background-clip: initial;
+      background-clip: initial;
+    }
+
+    .ai-assistant-launcher,
+    .ai-assistant-widget,
+    #aiAssistant,
+    [class*="ai-assistant"] {
+      z-index: 40;
+    }
+
+    @media (max-width: 1100px) {
+      .hero-panel::before,
+      .hero-panel::after,
+      .data-orbit,
+      .data-stream {
+        opacity: 0.32;
+      }
+
+      .module-grid,
+      .experiments {
+        grid-template-columns: repeat(2, minmax(0, 1fr));
+      }
+    }
+
+    @media (max-width: 760px) {
+      .page {
+        width: min(100% - 22px, 1380px);
+        padding: 18px 0 28px;
+      }
+
+      .hero-panel {
+        min-height: auto;
+        padding: 30px 6px 16px;
+      }
+
+      .hero-panel::before,
+      .hero-panel::after,
+      .data-orbit,
+      .data-stream {
+        display: none !important;
+      }
+
+      .hero h1 {
+        font-size: clamp(42px, 15vw, 68px);
+      }
+
+      .lab-strip {
+        padding: 8px 22px;
+        font-size: 18px;
+      }
+
+      .hero-metrics,
+      .identity,
+      .module-grid,
+      .experiments {
+        grid-template-columns: 1fr;
+      }
+
+      .identity-panel {
+        padding: 22px 18px;
+        border-radius: 16px;
+      }
+
+      .module-card {
+        min-height: 220px;
+        padding: 30px 22px 24px;
+      }
+
+      .science-section {
+        padding: 18px 14px 26px;
+      }
+
+      .science-section::before {
+        inset: 12px;
+      }
+
+      .section-title {
+        grid-template-columns: 1fr auto;
+        gap: 10px;
+      }
+    }
   </style>
   <link rel="stylesheet" href="assets/ai-assistant.css">
 </head>
@@ -1602,29 +2347,29 @@
       <div class="hero-panel">
         <div class="data-orbit" aria-hidden="true"></div>
         <div class="data-stream" aria-hidden="true"></div>
-        <div class="eyebrow"><span class="pulse"></span>AI 教育实验平台</div>
-        <h1><span class="title-main">脑育智能体</span><span class="gradient-text">学习平台</span></h1>
-        <div class="lab-strip">揭秘大脑密码，塑造无限可能。</div>
-        <p class="hero-copy">面向课堂的脑科学与 AI 教育实验平台，把记忆科学探究、海报交流和学习数据整理到同一个清晰流程中。</p>
+        <div class="eyebrow"><span class="pulse"></span>TOP SECRET · 记忆研究档案</div>
+        <h1><span class="title-main">记忆侦探社</span><span class="gradient-text">案件档案</span></h1>
+        <div class="lab-strip">寻找遗忘线索，破解记忆谜题</div>
+        <p class="hero-copy">进入秘密档案馆，登记侦探身份，选择案件档案，在科学探究和海报交流中追踪记忆的证据。</p>
 
-        <div class="status-row" aria-label="平台状态">
+        <div class="status-row" aria-label="档案状态">
           <span class="status"><span class="status-dot"></span>AI 助手在线</span>
-          <span class="status"><span class="status-dot"></span>学习数据已保存</span>
-          <span class="status"><span class="status-dot"></span>实验进度自动记录</span>
-          <span class="status"><span class="status-dot"></span>离线可用</span>
+          <span class="status"><span class="status-dot"></span>线索自动保存</span>
+          <span class="status"><span class="status-dot"></span>实验记录留痕</span>
+          <span class="status"><span class="status-dot"></span>档案可导出</span>
         </div>
 
         <div class="hero-metrics">
-          <div class="metric"><b>2</b><span>学习模块</span></div>
-          <div class="metric"><b>4</b><span>科学探究实验</span></div>
-          <div class="metric"><b>1</b><span>统一身份</span></div>
+          <div class="metric"><b>02</b><span>案件入口</span></div>
+          <div class="metric"><b>04</b><span>记忆调查</span></div>
+          <div class="metric"><b>01</b><span>侦探身份</span></div>
         </div>
       </div>
 
       <aside class="identity-panel">
-        <p class="panel-kicker">Start Learning</p>
-        <h2>输入身份，选择学习路径</h2>
-        <p>学生编号和小组编号会用于保存进度与导出 Excel，不会上传到网络。</p>
+        <p class="panel-kicker">Case Registry</p>
+        <h2>案件登记表</h2>
+        <p>请登记侦探身份。学生编号和小组编号会用于保存进度与导出 Excel。</p>
 
         <div class="identity">
           <div>
@@ -1646,32 +2391,34 @@
         </div>
 
         <div class="module-grid">
-          <article class="module-card">
+          <article class="module-card case-folder science-folder">
             <div class="module-head">
               <div>
+                <span class="case-stamp">CASE 01-04</span>
                 <h3>科学探究</h3>
-                <p>进入短时记忆、N-back、长时记忆干扰和记忆策略四个实验。</p>
+                <p>进入短时记忆、N-back、长时记忆干扰和记忆策略四个调查案件。</p>
               </div>
             </div>
             <div class="badges">
-              <span class="badge">前后测</span>
-              <span class="badge">低干扰实验</span>
-              <span class="badge">Excel 导出</span>
+              <span class="badge">记忆容量</span>
+              <span class="badge">工作记忆</span>
+              <span class="badge">证据导出</span>
             </div>
             <button class="btn" type="button" data-module="science">进入科学探究</button>
           </article>
 
-          <article class="module-card">
+          <article class="module-card case-folder poster-folder">
             <div class="module-head">
               <div>
+                <span class="case-stamp">CASE 05-06</span>
                 <h3>海报制作</h3>
                 <p>记录海报方案、制作分工、提问交流和同伴评分。</p>
               </div>
             </div>
             <div class="badges">
               <span class="badge green">海报方案</span>
-              <span class="badge green">同伴评分</span>
-              <span class="badge green">Excel 导出</span>
+              <span class="badge green">合作分享</span>
+              <span class="badge green">交流成长</span>
             </div>
             <button class="btn secondary" type="button" data-module="poster">进入海报制作</button>
           </article>
@@ -1681,85 +2428,86 @@
       </aside>
     </section>
 
-    <section class="science-section" id="scienceSection">
+    <section class="science-section" id="scienceSection" role="dialog" aria-modal="true" aria-labelledby="scienceTitle">
       <div class="section-title" id="scienceTitle">
         <div>
-          <h2>科学探究实验</h2>
-          <p>选择本节课要进入的实验页面。每个实验都会继续保存进度、记录数据并支持导出。</p>
+          <p class="panel-kicker">Evidence Archive</p>
+          <h2>科学探究案件档案</h2>
+          <p>选择本节课要进入的案件。每个案件都会继续保存进度、记录数据并支持导出。</p>
         </div>
-        <button class="btn ghost" type="button" id="hideScience">收起实验列表</button>
+        <button class="btn ghost" type="button" id="hideScience" aria-label="关闭科学探究案件档案">关闭</button>
       </div>
 
       <div class="experiments" id="experiments">
         <article class="experiment-card">
           <div class="experiment-head">
-            <div class="icon-bubble">01</div>
+            <div class="icon-bubble">CASE 01</div>
             <div>
-              <h3>探究短时记忆的容量</h3>
-              <p>基于顺背法、倒背法测量数字或字母记忆广度，记录测试过程并计算平均容量。</p>
+              <h3>记忆容量调查</h3>
+              <p>对应实验一：探索短时记忆的容量。</p>
             </div>
           </div>
           <div class="badges">
             <span class="badge">短时记忆</span>
-            <span class="badge">顺背/倒背</span>
-            <span class="badge">网页游戏</span>
+            <span class="badge">容量线索</span>
+            <span class="badge">网页实验</span>
           </div>
-          <button class="btn secondary" type="button" data-target="memory.html">进入实验一</button>
+          <button class="btn secondary" type="button" data-target="memory.html">进入案件01</button>
         </article>
 
         <article class="experiment-card">
           <div class="experiment-head">
-            <div class="icon-bubble">02</div>
+            <div class="icon-bubble">CASE 02</div>
             <div>
-              <h3>探秘神奇的 N-back</h3>
-              <p>支持数字/图形刺激、限时作答、漏答记录、统计汇总与导出。</p>
+              <h3>工作记忆追踪</h3>
+              <p>对应实验二：探索神奇的 N-back。</p>
             </div>
           </div>
           <div class="badges">
             <span class="badge">工作记忆</span>
             <span class="badge">N-back</span>
-            <span class="badge">限时作答</span>
+            <span class="badge">反应追踪</span>
           </div>
-          <button class="btn" type="button" data-target="nback.html">进入实验二</button>
+          <button class="btn" type="button" data-target="nback.html">进入案件02</button>
         </article>
 
         <article class="experiment-card">
           <div class="experiment-head">
-            <div class="icon-bubble">03</div>
+            <div class="icon-bubble">CASE 03</div>
             <div>
-              <h3>干扰长时记忆的因素</h3>
-              <p>围绕倒摄干扰、材料相似性和情绪状态设计实验，完成记忆、干扰、测试和分析。</p>
+              <h3>遗忘元凶调查</h3>
+              <p>对应实验三：探索干扰长时记忆的因素。</p>
             </div>
           </div>
           <div class="badges">
             <span class="badge">长时记忆</span>
             <span class="badge">干扰因素</span>
-            <span class="badge">低干扰测试</span>
+            <span class="badge">证据比对</span>
           </div>
-          <button class="btn secondary" type="button" data-target="interference.html">进入实验三</button>
+          <button class="btn secondary" type="button" data-target="interference.html">进入案件03</button>
         </article>
 
         <article class="experiment-card">
           <div class="experiment-head">
-            <div class="icon-bubble">04</div>
+            <div class="icon-bubble">CASE 04</div>
             <div>
-              <h3>改善长时记忆的策略</h3>
-              <p>比较简单复述与主动回忆、关联、可视化等策略，完成记忆测试和策略评分。</p>
+              <h3>记忆策略破解</h3>
+              <p>对应实验四：改善长时记忆的策略有哪些？</p>
             </div>
           </div>
           <div class="badges">
-            <span class="badge">长时记忆</span>
             <span class="badge">记忆策略</span>
+            <span class="badge">主动回忆</span>
             <span class="badge">策略评分</span>
           </div>
-          <button class="btn" type="button" data-target="strategies.html">进入实验四</button>
+          <button class="btn" type="button" data-target="strategies.html">进入案件04</button>
         </article>
       </div>
     </section>
 
     <footer class="brand-footer" aria-label="品牌署名">
       <p class="brand-credit">由 <strong>ZJU BIElab</strong> 制作</p>
-      <p class="brand-slogan">揭秘大脑密码，塑造无限可能。</p>
+      <p class="brand-slogan">揭秘大脑密码，塑造无限可能</p>
     </footer>
   </main>
 
@@ -1809,7 +2557,7 @@
         if (!saveIdentity()) return;
         if (button.dataset.module === "science") {
           scienceSection.classList.add("is-visible");
-          scienceSection.scrollIntoView({ behavior: "smooth", block: "start" });
+          document.body.classList.add("modal-open");
         } else {
           window.location.href = "poster.html";
         }
@@ -1825,6 +2573,7 @@
 
     document.getElementById("hideScience").addEventListener("click", () => {
       scienceSection.classList.remove("is-visible");
+      document.body.classList.remove("modal-open");
     });
   </script>
   <script src="assets/ai-assistant.js"></script>
