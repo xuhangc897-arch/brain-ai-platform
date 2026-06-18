@@ -79,9 +79,8 @@
     .material-details summary::marker { color: var(--primary); }
     .material-details-body { display: grid; gap: 10px; padding: 0 16px 16px; color: #344054; font-size: 14px; }
     .material-details-body p { margin: 0; line-height: 1.8; }
-    .headband-svg-card { margin-top: 16px; padding: 16px; border: 1px solid #dbeafe; border-radius: 10px; background: #f8fbff; }
-    .headband-svg-card h4 { margin: 0 0 12px; color: #1e3a8a; font-size: 16px; }
-    .headband-svg-card img { display: block; width: 100%; max-width: 900px; height: auto; margin: 0 auto; }
+    .headband-image-container { margin: 24px 0; text-align: center; }
+    .headband-guide-image { width: 100%; max-width: 1100px; height: auto; border-radius: 16px; box-shadow: 0 8px 24px rgba(15, 23, 42, 0.12); display: block; margin: 0 auto; }
     .strategy-mode-grid { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 14px; margin-bottom: 18px; }
     .strategy-mode-card { border: 1px solid var(--line); border-radius: 8px; padding: 14px; background: #fbfdff; }
     .strategy-mode-card h4 { margin: 0 0 8px; color: #1e3a8a; }
@@ -750,9 +749,8 @@
           <p>本次长时记忆探究活动中，头环将成为探索记忆奥秘的重要科学工具，它能帮助我们“看到”大脑在记忆时的活动情况。</p>
           <p>头环主要通过两种方式来监测大脑活动：一种是记录脑电波（EEG），就像给大脑的活动“录音”；另一种是检测血流变化（fNIRS），相当于观察大脑哪个区域在工作时会“充血”。在实验中，当你使用不同的记忆方法时，头环会实时记录下大脑的反应，并通过软件将这些数据转化成直观的图表和3D脑图。在证据搜集环节，头环可以帮助你获得更科学的实验数据（例如，当用分组记忆法背单词时，头环能显示大脑哪些区域被激活），这些数据会成为研究假设的有力证据。在信息处理阶段，可以将头环采集到的脑活动热力图与回忆率进行对比分析，看看哪种记忆方法能让大脑更活跃，记忆效果更好。在得出结论时，头环提供的数据会让结论更有说服力。例如，如果数据显示使用图像联想记忆法时，大脑的视觉区域特别活跃，同时回忆率也最高，那么就可得出相应的科学结论。</p>
           <p>使用头环时要注意：保持额头清洁，确保电极贴片贴紧；实验过程中保持专注；认真记录每个环节的数据变化。希望你能善用这个工具，在探究活动中获得更多发现！</p>
-          <div class="headband-svg-card">
-            <h4>头环是如何工作的？</h4>
-            <img src="assets/headband-how-it-works.svg" alt="头环工作原理示意图">
+          <div class="headband-image-container">
+            <img src="assets/headband-guide.png" alt="头环工作原理示意图" class="headband-guide-image">
           </div>
         </div></details>
       `;
