@@ -2379,6 +2379,39 @@
       pointer-events: none;
     }
 
+    .data-orbit {
+      right: -34px;
+      top: 4px;
+      width: 190px;
+      height: 150px;
+      opacity: 0.66;
+      z-index: 0;
+      transform: rotate(7deg) scale(0.92);
+      transform-origin: top right;
+    }
+
+    .data-orbit::before {
+      right: 16px;
+      top: 14px;
+      padding: 1px 6px;
+      font-size: 14px;
+    }
+
+    .data-orbit::after {
+      left: 18px;
+      top: 42px;
+      font-size: 12px;
+      line-height: 1.85;
+    }
+
+    .eyebrow,
+    .hero h1,
+    .lab-strip,
+    .hero-copy {
+      position: relative;
+      z-index: 2;
+    }
+
     .eyebrow {
       margin-bottom: 8px;
       padding: 5px 10px;
@@ -2622,8 +2655,8 @@
         <div class="data-stream" aria-hidden="true"></div>
         <div class="eyebrow"><span class="pulse"></span>TOP SECRET · 记忆研究档案</div>
         <h1><span class="title-main">记忆侦探社</span></h1>
-        <div class="lab-strip">寻找遗忘线索，破解记忆谜题</div>
-        <p class="hero-copy">进入秘密档案馆，登记侦探身份，选择案件档案，在科学探究和海报交流中追踪记忆的证据。</p>
+        <div class="lab-strip">探究遗忘奥秘，破解记忆谜题</div>
+        <p class="hero-copy">进入秘密档案馆，登记侦探身份，选择案件档案，在科学探究和海报交流中追踪记忆生成和变化的规律。</p>
       </div>
 
       <aside class="identity-panel">
