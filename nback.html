@@ -1231,6 +1231,7 @@
             <span id="identityPill" class="identity-pill"></span>
           </div>
           <div class="top-actions">
+            <button class="btn secondary" id="devModeBtn" type="button">开发者模式</button>
             <button class="btn secondary" id="homeBtn" type="button">回到首页</button>
             <button class="btn secondary" id="exportBtn" type="button">导出 Excel</button>
             <button class="btn danger" id="resetBtn" type="button">重新开始</button>
@@ -1282,6 +1283,7 @@
   <script>
     const CONTEXT_KEY = "science-inquiry-context-v1";
     const STORAGE_KEY = "nback-inquiry-state-v1";
+    const DEV_MODE_KEY = "devMode";
 
     const steps = [
       
@@ -1442,7 +1444,22 @@
     }
     function normalizeCurrentStep() {
       normalizeStepAccess();
-      saveState();
+      if (!isDeveloperMode()) saveState();
+    }
+
+    function isDeveloperMode() {
+      return sessionStorage.getItem(DEV_MODE_KEY) === "true";
+    }
+
+    function enableDeveloperMode() {
+      const password = window.prompt("请输入开发者密码");
+      if (password !== "memory") {
+        alert("密码错误，无法开启开发者模式。");
+        return;
+      }
+      sessionStorage.setItem(DEV_MODE_KEY, "true");
+      alert("开发者模式已开启，可自由切换步骤。");
+      renderApp();
     }
 
     function saveState() {
@@ -1494,7 +1511,7 @@
       } else {
         state.maxUnlockedStep = clampStepIndex(state.maxUnlockedStep);
       }
-      state.currentStep = Math.min(legacyCurrent, state.maxUnlockedStep);
+      state.currentStep = isDeveloperMode() ? legacyCurrent : Math.min(legacyCurrent, state.maxUnlockedStep);
     }
 
     function showStepMessage(message) {
@@ -1503,12 +1520,12 @@
 
     function goToStep(targetStep) {
       const target = clampStepIndex(targetStep);
-      if (target > state.maxUnlockedStep) {
+      if (!isDeveloperMode() && target > state.maxUnlockedStep) {
         showStepMessage("请先完成前一步内容，再进入下一步。");
         return;
       }
       state.currentStep = target;
-      saveState();
+      if (!isDeveloperMode()) saveState();
       renderApp();
     }
 
@@ -1518,9 +1535,9 @@
         return;
       }
       if (state.currentStep < steps.length - 1) {
-        state.maxUnlockedStep = Math.max(state.maxUnlockedStep || 0, state.currentStep + 1);
+        if (!isDeveloperMode()) state.maxUnlockedStep = Math.max(state.maxUnlockedStep || 0, state.currentStep + 1);
         state.currentStep += 1;
-        saveState();
+        if (!isDeveloperMode()) saveState();
         renderApp();
       }
     }
@@ -1530,6 +1547,7 @@
     }
 
     function validateStep(stepId) {
+      if (isDeveloperMode()) return true;
       if (!isSurveyStepComplete(stepId)) return false;
       const fields = state.fields || {};
       if (stepId === "question") return hasText(fields.researchQuestion) && hasText(fields.independentVariable) && (fields.dependentMemory || fields.dependentBrain);
@@ -1547,7 +1565,7 @@
       progress.innerHTML = steps.map((step, index) => {
         const isActive = index === state.currentStep;
         const isDone = index < state.maxUnlockedStep;
-        const isLocked = index > state.maxUnlockedStep;
+        const isLocked = !isDeveloperMode() && index > state.maxUnlockedStep;
         const cls = isActive ? "is-active" : isDone ? "is-done" : isLocked ? "is-locked" : "";
         const lockedAttrs = isLocked ? ' aria-disabled="true" title="请先完成前一步内容，再进入下一步。"' : '';
         return `<button class="progress-step ${cls}" type="button" data-step="${index}"${lockedAttrs}><strong>${index + 1}</strong><span>${step.title}</span></button>`;
@@ -2944,6 +2962,7 @@
     homeBtn.addEventListener("click", () => {
       location.href = "index.html";
     });
+    document.getElementById("devModeBtn").addEventListener("click", enableDeveloperMode);
 
     exportBtn.addEventListener("click", exportExcel);
     resetBtn.addEventListener("click", () => {

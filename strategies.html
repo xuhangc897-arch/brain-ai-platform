@@ -261,6 +261,7 @@
           <span id="identityPill" class="identity-pill"></span>
         </div>
         <div class="top-actions">
+          <button class="btn secondary" id="devModeBtn" type="button">开发者模式</button>
           <button class="btn secondary" id="homeBtn" type="button">回到首页</button>
           <button class="btn secondary" id="exportBtn" type="button">导出 Excel</button>
           <button class="btn danger" id="resetBtn" type="button">重置本实验</button>
@@ -273,6 +274,7 @@
   <script>
     const CONTEXT_KEY = "science-inquiry-context-v1";
     const STORAGE_KEY = "longterm-strategies-state-v1";
+    const DEV_MODE_KEY = "devMode";
     const steps = [
       
       { id: "pretest", title: "前测", minutes: "10分钟" },{ id: "question", title: "提出问题", minutes: "10分钟" },
@@ -458,7 +460,22 @@
     }
     function normalizeCurrentStep() {
       normalizeStepAccess();
-      saveState();
+      if (!isDeveloperMode()) saveState();
+    }
+
+    function isDeveloperMode() {
+      return sessionStorage.getItem(DEV_MODE_KEY) === "true";
+    }
+
+    function enableDeveloperMode() {
+      const password = window.prompt("请输入开发者密码");
+      if (password !== "memory") {
+        alert("密码错误，无法开启开发者模式。");
+        return;
+      }
+      sessionStorage.setItem(DEV_MODE_KEY, "true");
+      alert("开发者模式已开启，可自由切换步骤。");
+      renderApp();
     }
 
     function saveState() { state.savedAt = new Date().toISOString(); localStorage.setItem(STORAGE_KEY, JSON.stringify(state)); }
@@ -495,7 +512,7 @@
       } else {
         state.maxUnlockedStep = clampStepIndex(state.maxUnlockedStep);
       }
-      state.currentStep = Math.min(legacyCurrent, state.maxUnlockedStep);
+      state.currentStep = isDeveloperMode() ? legacyCurrent : Math.min(legacyCurrent, state.maxUnlockedStep);
     }
 
     function showStepMessage(message) {
@@ -504,12 +521,12 @@
 
     function goToStep(targetStep) {
       const target = clampStepIndex(targetStep);
-      if (target > state.maxUnlockedStep) {
+      if (!isDeveloperMode() && target > state.maxUnlockedStep) {
         showStepMessage("请先完成前一步内容，再进入下一步。");
         return;
       }
       state.currentStep = target;
-      saveState();
+      if (!isDeveloperMode()) saveState();
       renderApp();
     }
 
@@ -519,9 +536,9 @@
         return;
       }
       if (state.currentStep < steps.length - 1) {
-        state.maxUnlockedStep = Math.max(state.maxUnlockedStep || 0, state.currentStep + 1);
+        if (!isDeveloperMode()) state.maxUnlockedStep = Math.max(state.maxUnlockedStep || 0, state.currentStep + 1);
         state.currentStep += 1;
-        saveState();
+        if (!isDeveloperMode()) saveState();
         renderApp();
       }
     }
@@ -531,11 +548,12 @@
     }
 
     function validateStep(stepId) {
+      if (isDeveloperMode()) return true;
       if (!isSurveyStepComplete(stepId)) return false;
       const fields = state.fields || {};
       if (stepId === "question") return hasText(fields.question);
       if (stepId === "hypothesis") return fields.strategyMatchConfirmed === true && hasText(fields.hypothesis1) && hasText(fields.hypothesis2);
-      if (stepId === "plan") return hasText(fields.strategy1) && hasText(fields.strategy2) && hasText(fields.leader) && hasText(fields.recorder);
+      if (stepId === "plan") return hasText(fields.strategy1) && hasText(fields.strategy2);
       if (stepId === "evidence") return Array.isArray(state.records) && state.records.length > 0;
       if (stepId === "analysis") return Array.isArray(state.records) && state.records.length > 0 && Array.isArray(state.strategyScores) && state.strategyScores.length > 0;
       if (stepId === "conclusion") return hasText(fields.conclusion);
@@ -548,7 +566,7 @@
       progress.innerHTML = steps.map((step, index) => {
         const isActive = index === state.currentStep;
         const isDone = index < state.maxUnlockedStep;
-        const isLocked = index > state.maxUnlockedStep;
+        const isLocked = !isDeveloperMode() && index > state.maxUnlockedStep;
         const cls = isActive ? "is-active" : isDone ? "is-done" : isLocked ? "is-locked" : "";
         const lockedAttrs = isLocked ? ' aria-disabled="true" title="请先完成前一步内容，再进入下一步。"' : '';
         return `<button class="progress-step ${cls}" type="button" data-step="${index}"${lockedAttrs}><strong>${index + 1}</strong><span>${step.title}</span></button>`;
@@ -775,7 +793,7 @@
     function renderHypothesisStep() {
       return `<div class="single-step-layout">
         <div class="panel"><div class="panel-head"><h3>材料—策略匹配</h3><p>请完成四则材料与六个策略的匹配。</p></div><div class="panel-body">${renderStrategyMatchTask()}</div></div>
-        ${state.fields.strategyMatchConfirmed ? `<div class="panel"><div class="panel-head"><h3>研究假设</h3></div><div class="panel-body"><p class="hint">在提出问题之后，我们需要根据研究问题提出假设。请阅读材料一至四，提出你的假设（两种改善长时记忆的策略）。</p><div class="form-grid"><div class="field"><label>研究假设：策略1</label>${renderStrategySelect("strategy1")}</div><div class="field"><label>研究假设：策略2</label>${renderStrategySelect("strategy2")}</div></div><div class="field"><label>策略 1 假设</label><textarea data-field="hypothesis1" placeholder="写下策略1对应的研究假设">${escapeHtml(state.fields.hypothesis1)}</textarea></div><div class="field"><label>策略 2 假设</label><textarea data-field="hypothesis2" placeholder="写下策略2对应的研究假设">${escapeHtml(state.fields.hypothesis2)}</textarea></div>${renderInquiryScaffold("hypothesis")}</div></div>` : ""}
+        ${state.fields.strategyMatchConfirmed ? `<div class="panel"><div class="panel-head"><h3>研究假设</h3></div><div class="panel-body"><p class="hint">在提出问题之后，我们需要根据研究问题提出假设。请阅读材料一至四，提出你的假设（两种改善长时记忆的策略）。</p><div class="form-grid"><div class="field"><label>研究假设：策略1</label>${renderStrategySelect("strategy1")}</div><div class="field"><label>研究假设：策略2</label>${renderStrategySelect("strategy2")}</div></div><div class="field"><label>策略 1 假设</label><textarea data-field="hypothesis1">${escapeHtml(state.fields.hypothesis1)}</textarea></div><div class="field"><label>策略 2 假设</label><textarea data-field="hypothesis2">${escapeHtml(state.fields.hypothesis2)}</textarea></div>${renderInquiryScaffold("hypothesis")}</div></div>` : ""}
       </div>`;
     }
 
@@ -1224,6 +1242,7 @@
       URL.revokeObjectURL(url);
     }
     document.getElementById("homeBtn").addEventListener("click",()=>{ location.href = "index.html"; });
+    document.getElementById("devModeBtn").addEventListener("click", enableDeveloperMode);
     document.getElementById("exportBtn").addEventListener("click", exportExcel);
     document.getElementById("resetBtn").addEventListener("click",()=>{ if (!confirm("确定要清空本实验在当前浏览器中保存的数据吗？")) return; localStorage.removeItem(STORAGE_KEY); state = loadState(); session = null; clearTimers(); renderApp(); });
     renderApp();
