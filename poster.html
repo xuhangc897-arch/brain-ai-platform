@@ -191,6 +191,36 @@
       gap: 16px;
     }
 
+    .poster-step-stack {
+      display: grid;
+      gap: 16px;
+    }
+
+    .poster-plan-fields {
+      display: grid;
+      grid-template-columns: 1fr;
+      gap: 14px;
+    }
+
+    .poster-plan-fields .field {
+      margin-bottom: 0;
+    }
+
+    .poster-example-image-wrap {
+      margin: 24px auto;
+      text-align: center;
+    }
+
+    .poster-example-image {
+      display: block;
+      width: 100%;
+      max-width: 900px;
+      height: auto;
+      margin: 0 auto;
+      border-radius: 16px;
+      box-shadow: 0 8px 24px rgba(15, 23, 42, 0.12);
+    }
+
     .single-step-layout {
       display: grid;
       gap: 16px;
@@ -673,7 +703,7 @@
       if (isDeveloperMode()) return true;
       const fields = state.fields || {};
       if (stepId === "plan") return ["researchQuestion", "hypothesis", "researchPlan", "conclusion", "limitation", "lifeApplication", "division"].every((key) => hasText(fields[key]));
-      if (stepId === "make") return ["layoutSketch", "aiSupport", "visualPlan"].every((key) => hasText(fields[key]));
+      if (stepId === "make") return true;
       if (stepId === "share") return ["presenter", "presenterStudentId", "speakingPoints", "askedQuestions", "answers"].every((key) => hasText(fields[key]));
       if (stepId === "questions") return Array.isArray(state.questions) && state.questions.some((item) => hasText(item.group) && hasText(item.type) && hasText(item.question) && hasText(item.answer));
       if (stepId === "score") {
@@ -747,34 +777,30 @@
           <h3>分享交流大会</h3>
           <p>小科学家们，请用海报展示你们的探究成果吧！<br>这节课我们将：① 合作创作科学海报，分享研究问题、证据和发现；② 化身小评委与提问官，交流观点、互相学习！</p>
         </div>
-        <div class="step-layout" style="margin-top:16px;">
+        <div class="poster-step-stack" style="margin-top:16px;">
           <div class="panel">
             <div class="panel-head"><h3>一、制定初步方案</h3><p>在 A4 纸上画出海报内容的大体布局。</p></div>
             <div class="panel-body">
               <div class="task-card">
                 <h4>海报内容：</h4>
-              <ol class="checklist">
-                <li>研究问题</li>
-                <li>研究假设</li>
-                <li>研究计划：简单描述实验步骤</li>
-                <li>实验数据：直观展示实验数据
-                  <div class="tip-box">提示：1）可以采用表格、柱状图、折线图等形式呈现<br>2）证据要真实，图表要清晰标注（如标题、单位）</div>
-                </li>
-                <li>研究结论：简单概括所得出的结论
-                  <div class="tip-box">提示：结论应基于证据，并说明是否支持假设</div>
-                </li>
-                <li>反思不足：反思实验中的缺点
-                  <div class="tip-box">提示：可以反思的方向：<br>实验设计（“步骤是否合理？”）<br>实验数据（“数据是否直观展示？”）<br>结论分析（“实验过程中有哪些因素会影响结论的科学性？”）<br>团队合作（“团队分工是否明确？”）</div>
-                </li>
-                <li>启示：联系生活实际，解释本研究如何应用于生活</li>
-                <li>小组分工：在海报上写出每个成员的贡献，包括姓名和任务</li>
-              </ol>
+                <ol class="checklist">
+                  <li>研究问题</li>
+                  <li>研究假设</li>
+                  <li>研究计划：简单描述实验步骤</li>
+                  <li>实验数据：直观展示实验数据
+                    <div class="tip-box">提示：可以采用表格、柱状图、折线图等形式；证据要真实，图表要清晰标注标题和单位。</div>
+                  </li>
+                  <li>研究结论：根据证据概括结论，并说明是否支持假设</li>
+                  <li>反思不足：从实验设计、数据呈现、结论分析和团队合作等方面反思</li>
+                  <li>启示：联系生活实际，解释本研究如何应用于生活</li>
+                  <li>小组分工：写出每个成员的姓名和任务</li>
+                </ol>
               </div>
             </div>
           </div>
           <div class="panel">
             <div class="panel-head"><h3>初步方案</h3></div>
-            <div class="panel-body form-grid">
+            <div class="panel-body poster-plan-fields">
               ${field("researchQuestion", "研究问题", "textarea")}
               ${field("hypothesis", "研究假设", "textarea")}
               ${field("researchPlan", "研究计划", "textarea")}
@@ -799,81 +825,24 @@
 
     function renderMakeStep() {
       return `
-        <div class="step-layout">
+        <div class="poster-step-stack">
           <div class="panel">
+            <div class="panel-head"><h3>二、制作海报</h3><p>根据第一步的初步方案完成正式海报。</p></div>
             <div class="panel-body">
               <div class="task-card"><p>根据初步方案正式制作海报：使用彩笔进行海报制作，保持整洁美观，可以添加图画或图标使海报更加生动。</p></div>
-              <div class="task-card"><p>可以借助 AI 工具辅助海报设计，如生成图表建议、优化文字表述等。</p></div>
+              <div class="task-card"><p>你可以与右下角的 AI 助手对话，获取海报布局、图表选择、文字表达和美化设计等方面的灵感。</p></div>
               <div class="tip-box">提示：海报初步方案要简单清晰，确保所有内容都能放进去。</div>
             </div>
           </div>
           <div class="panel">
-            <div class="panel-head"><h3>制作记录</h3></div>
-            <div class="panel-body form-grid">
-              ${field("layoutSketch", "版式草图说明", "textarea")}
-              <div class="field">
-                <label>主要图表类型</label>
-                <select data-field="chartPlan">
-                  <option ${selected("chartPlan", "表格")}>表格</option>
-                  <option ${selected("chartPlan", "柱状图")}>柱状图</option>
-                  <option ${selected("chartPlan", "折线图")}>折线图</option>
-                  <option ${selected("chartPlan", "多图组合")}>多图组合</option>
-                </select>
+            <div class="panel-head"><h3>参考海报</h3><p>以下为参考海报，同学们可以根据自己的探究内容进行调整。</p></div>
+            <div class="panel-body">
+              <div class="poster-example-image-wrap">
+                <img src="assets/poster-example.png" alt="海报示例" class="poster-example-image">
               </div>
-              ${field("aiSupport", "AI 辅助建议记录", "textarea")}
-              ${field("visualPlan", "图画、图标或素材计划", "textarea")}
             </div>
           </div>
         </div>
-        <div class="panel">
-          <div class="panel-head"><h3>参考海报</h3><p>以下为参考海报布局，同学们可以根据自己的探究内容进行调整。</p></div>
-          <div class="panel-body">
-            <div class="poster-reference">
-              ${renderReferencePosterSvg()}
-            </div>
-          </div>
-        </div>
-      `;
-    }
-
-    function renderReferencePosterSvg() {
-      return `
-        <svg class="poster-reference-svg" viewBox="0 0 920 620" role="img" aria-labelledby="referencePosterTitle referencePosterDesc">
-          <title id="referencePosterTitle">参考海报布局</title>
-          <desc id="referencePosterDesc">浅蓝背景的科学探究海报模板，包含标题、时间、小组成员、研究问题、假设、研究计划、实验数据、研究结论、反思、启示和小组分工。</desc>
-          <rect width="920" height="620" rx="18" fill="#dff0ff"/>
-          <rect x="28" y="24" width="864" height="84" rx="12" fill="#ffffff" stroke="#7eb6e8" stroke-width="2"/>
-          <text x="54" y="60" fill="#174a7c" font-size="22" font-weight="800">探究活动名称：</text>
-          <text x="54" y="90" fill="#174a7c" font-size="17" font-weight="700">时间：</text>
-          <text x="315" y="90" fill="#174a7c" font-size="17" font-weight="700">小组成员：</text>
-
-          <rect x="28" y="128" width="416" height="108" rx="12" fill="#ffffff" stroke="#7eb6e8" stroke-width="2"/>
-          <rect x="476" y="128" width="416" height="108" rx="12" fill="#ffffff" stroke="#7eb6e8" stroke-width="2"/>
-          <text x="52" y="164" fill="#174a7c" font-size="24" font-weight="900">研究问题</text>
-          <line x1="52" y1="180" x2="420" y2="180" stroke="#b7d8f4" stroke-width="2"/>
-          <text x="500" y="164" fill="#174a7c" font-size="24" font-weight="900">假设</text>
-          <line x1="500" y1="180" x2="868" y2="180" stroke="#b7d8f4" stroke-width="2"/>
-
-          <rect x="28" y="260" width="270" height="150" rx="12" fill="#ffffff" stroke="#7eb6e8" stroke-width="2"/>
-          <rect x="325" y="260" width="270" height="150" rx="12" fill="#ffffff" stroke="#7eb6e8" stroke-width="2"/>
-          <rect x="622" y="260" width="270" height="150" rx="12" fill="#ffffff" stroke="#7eb6e8" stroke-width="2"/>
-          <text x="52" y="296" fill="#174a7c" font-size="23" font-weight="900">研究计划</text>
-          <text x="349" y="296" fill="#174a7c" font-size="23" font-weight="900">研究结论</text>
-          <text x="646" y="296" fill="#174a7c" font-size="23" font-weight="900">启示</text>
-          <line x1="52" y1="312" x2="274" y2="312" stroke="#b7d8f4" stroke-width="2"/>
-          <line x1="349" y1="312" x2="571" y2="312" stroke="#b7d8f4" stroke-width="2"/>
-          <line x1="646" y1="312" x2="868" y2="312" stroke="#b7d8f4" stroke-width="2"/>
-
-          <rect x="28" y="436" width="270" height="150" rx="12" fill="#ffffff" stroke="#7eb6e8" stroke-width="2"/>
-          <rect x="325" y="436" width="270" height="150" rx="12" fill="#ffffff" stroke="#7eb6e8" stroke-width="2"/>
-          <rect x="622" y="436" width="270" height="150" rx="12" fill="#ffffff" stroke="#7eb6e8" stroke-width="2"/>
-          <text x="52" y="472" fill="#174a7c" font-size="23" font-weight="900">实验数据</text>
-          <text x="349" y="472" fill="#174a7c" font-size="23" font-weight="900">反思</text>
-          <text x="646" y="472" fill="#174a7c" font-size="23" font-weight="900">小组分工</text>
-          <line x1="52" y1="488" x2="274" y2="488" stroke="#b7d8f4" stroke-width="2"/>
-          <line x1="349" y1="488" x2="571" y2="488" stroke="#b7d8f4" stroke-width="2"/>
-          <line x1="646" y1="488" x2="868" y2="488" stroke="#b7d8f4" stroke-width="2"/>
-        </svg>
       `;
     }
 
