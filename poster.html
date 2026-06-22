@@ -258,6 +258,63 @@
       color: transparent;
     }
 
+    .reflection-page-stack {
+      display: grid;
+      width: min(100%, 1100px);
+      margin: 0 auto;
+      gap: 18px;
+    }
+
+    .reflection-score-list {
+      display: grid;
+      gap: 12px;
+    }
+
+    .reflection-score-list .reading-card {
+      width: 100%;
+      margin: 0;
+    }
+
+    .reflection-score-list .reading-card + .reading-card {
+      margin-top: 0;
+    }
+
+    .reflection-fields-stack {
+      display: grid;
+      gap: 0;
+    }
+
+    .reflection-fields-stack .field {
+      padding: 18px 0;
+      border-bottom: 1px solid var(--line);
+    }
+
+    .reflection-fields-stack .field:first-child {
+      padding-top: 0;
+    }
+
+    .reflection-fields-stack .field:last-child {
+      padding-bottom: 0;
+      border-bottom: 0;
+    }
+
+    .reflection-fields-stack textarea {
+      width: 100%;
+      min-height: 140px;
+      overflow-wrap: anywhere;
+      white-space: pre-wrap;
+    }
+
+    .reflection-actions {
+      display: grid;
+      grid-template-columns: repeat(2, minmax(0, 1fr));
+      gap: 12px;
+    }
+
+    .reflection-actions .btn {
+      width: 100%;
+    }
+
     .single-step-layout {
       display: grid;
       gap: 16px;
@@ -545,6 +602,10 @@
     @media (max-width: 680px) {
       .share-presenter-grid,
       .qa-record-grid {
+        grid-template-columns: 1fr;
+      }
+
+      .reflection-actions {
         grid-template-columns: 1fr;
       }
     }
@@ -1140,24 +1201,26 @@
       const topGroup = getTopGroup();
       const reflectionPrompt = "请回顾本次海报制作与交流过程，可以从海报内容组织、证据呈现方式、视觉设计、交流展示、小组协作以及本次探究活动的收获等方面进行总结与反思。";
       return `
-        <div class="step-layout">
+        <div class="reflection-page-stack">
           <div class="panel">
             <div class="panel-head"><h3>评分结果</h3><p>根据当前评分自动汇总。</p></div>
-            <div class="panel-body">
+            <div class="panel-body reflection-score-list">
               <div class="reading-card"><h4>当前总分最高</h4><p>${topGroup || "待完成评分"}</p></div>
               <div class="reading-card"><h4>最优海报点赞</h4><p>${state.fields.bestPoster || "尚未选择"}</p></div>
             </div>
           </div>
           <div class="panel">
             <div class="panel-head"><h3>总结反思</h3></div>
-            <div class="panel-body form-grid reflection-prompt">
+            <div class="panel-body reflection-fields-stack reflection-prompt">
               ${field("reflectionGain", "本次交流最大的收获", "textarea", reflectionPrompt)}
               ${field("reflectionImprove", "海报还可以怎样改进", "textarea", reflectionPrompt)}
               ${field("teamReflection", "小组合作反思", "textarea", reflectionPrompt)}
               ${field("nextUse", "今后如何应用探究成果", "textarea", reflectionPrompt)}
-              <button class="btn secondary" type="button" id="reviewReportBtn">生成记忆侦探报告</button>
-              <button class="btn" type="button" id="finalExportBtn">导出海报制作 Excel</button>
             </div>
+          </div>
+          <div class="reflection-actions">
+            <button class="btn secondary" type="button" id="reviewReportBtn">生成记忆侦探报告</button>
+            <button class="btn" type="button" id="finalExportBtn">导出海报制作 Excel</button>
           </div>
         </div>
       `;
