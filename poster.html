@@ -206,6 +206,34 @@
       margin-bottom: 0;
     }
 
+    .poster-plan-item {
+      padding: 16px 0;
+      border-bottom: 1px solid var(--line);
+    }
+
+    .poster-plan-item:first-child {
+      padding-top: 0;
+    }
+
+    .poster-plan-item:last-child {
+      padding-bottom: 0;
+      border-bottom: 0;
+    }
+
+    .poster-plan-item label {
+      margin-bottom: 4px;
+      color: var(--ink);
+      font-size: 16px;
+      font-weight: 900;
+    }
+
+    .poster-plan-item p {
+      margin: 0 0 10px;
+      color: var(--muted);
+      font-size: 13px;
+      line-height: 1.65;
+    }
+
     .poster-example-image-wrap {
       margin: 24px auto;
       text-align: center;
@@ -779,33 +807,26 @@
         </div>
         <div class="poster-step-stack" style="margin-top:16px;">
           <div class="panel">
-            <div class="panel-head"><h3>一、制定初步方案</h3><p>在 A4 纸上画出海报内容的大体布局。</p></div>
-            <div class="panel-body">
-              <div class="task-card">
-                <h4>海报内容：</h4>
-                <ol class="checklist">
-                  <li>研究问题</li>
-                  <li>研究假设</li>
-                  <li>研究计划：简单描述实验步骤</li>
-                  <li>实验数据：直观展示实验数据
-                    <div class="tip-box">提示：可以采用表格、柱状图、折线图等形式；证据要真实，图表要清晰标注标题和单位。</div>
-                  </li>
-                  <li>研究结论：根据证据概括结论，并说明是否支持假设</li>
-                  <li>反思不足：从实验设计、数据呈现、结论分析和团队合作等方面反思</li>
-                  <li>启示：联系生活实际，解释本研究如何应用于生活</li>
-                  <li>小组分工：写出每个成员的姓名和任务</li>
-                </ol>
-              </div>
-            </div>
-          </div>
-          <div class="panel">
-            <div class="panel-head"><h3>初步方案</h3></div>
+            <div class="panel-head"><h3>一、制定初步方案</h3><p>依次阅读每一项说明，并直接在对应位置完成初步方案。</p></div>
             <div class="panel-body poster-plan-fields">
-              ${field("researchQuestion", "研究问题", "textarea")}
-              ${field("hypothesis", "研究假设", "textarea")}
-              ${field("researchPlan", "研究计划", "textarea")}
-              <div class="field">
+              <div class="poster-plan-item">
+                <label>研究问题</label>
+                <p>写清楚你们小组想探究的问题。</p>
+                <textarea data-field="researchQuestion">${escapeHtml(state.fields.researchQuestion)}</textarea>
+              </div>
+              <div class="poster-plan-item">
+                <label>研究假设</label>
+                <p>写出你们对研究结果的预测。</p>
+                <textarea data-field="hypothesis">${escapeHtml(state.fields.hypothesis)}</textarea>
+              </div>
+              <div class="poster-plan-item">
+                <label>研究计划</label>
+                <p>简单描述实验步骤。</p>
+                <textarea data-field="researchPlan">${escapeHtml(state.fields.researchPlan)}</textarea>
+              </div>
+              <div class="poster-plan-item">
                 <label>实验数据呈现方式</label>
+                <p>可以采用表格、柱状图、折线图等形式，图表要标清标题和单位。</p>
                 <select data-field="dataDisplay">
                   <option ${selected("dataDisplay", "表格")}>表格</option>
                   <option ${selected("dataDisplay", "柱状图")}>柱状图</option>
@@ -813,10 +834,26 @@
                   <option ${selected("dataDisplay", "图文结合")}>图文结合</option>
                 </select>
               </div>
-              ${field("conclusion", "研究结论", "textarea")}
-              ${field("limitation", "反思不足", "textarea")}
-              ${field("lifeApplication", "生活启示", "textarea")}
-              ${field("division", "小组分工", "textarea")}
+              <div class="poster-plan-item">
+                <label>研究结论</label>
+                <p>根据证据概括结论，并说明是否支持假设。</p>
+                <textarea data-field="conclusion">${escapeHtml(state.fields.conclusion)}</textarea>
+              </div>
+              <div class="poster-plan-item">
+                <label>反思不足</label>
+                <p>可以从实验设计、数据呈现、结论分析和团队合作等方面反思。</p>
+                <textarea data-field="limitation">${escapeHtml(state.fields.limitation)}</textarea>
+              </div>
+              <div class="poster-plan-item">
+                <label>启示</label>
+                <p>联系生活实际，说明本研究可以如何应用于生活。</p>
+                <textarea data-field="lifeApplication">${escapeHtml(state.fields.lifeApplication)}</textarea>
+              </div>
+              <div class="poster-plan-item">
+                <label>小组分工</label>
+                <p>写出每个成员的姓名和任务。</p>
+                <textarea data-field="division">${escapeHtml(state.fields.division)}</textarea>
+              </div>
             </div>
           </div>
         </div>
