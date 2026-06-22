@@ -184,13 +184,20 @@
   function buildPosterReview(base) {
     const fields = base.fields;
     const validQuestions = (base.state.questions || []).filter((item) => hasText(item.question) || hasText(item.answer));
+    const qaRecords = Array.isArray(base.state.qaRecords) && base.state.qaRecords.length
+      ? base.state.qaRecords
+      : [{ question: fields.askedQuestions || "", answer: fields.answers || "" }];
+    const qaText = qaRecords.map((item, index) => [
+      `问题${index + 1}：${safe(item.question)}`,
+      `回答${index + 1}：${safe(item.answer)}`
+    ].join("\n")).join("\n");
     return Object.assign(base, {
       steps: [
         ["初步方案", fields.researchPlan],
         ["研究问题", fields.researchQuestion],
         ["研究假设", fields.hypothesis],
         ["制作记录", joinText([fields.layoutSketch, fields.visualPlan])],
-        ["分享交流", joinText([fields.speakingPoints, fields.askedQuestions, fields.answers])],
+        ["分享交流", joinText([fields.speakingPoints, qaText])],
         ["总结反思", joinText([fields.reflectionGain, fields.reflectionImprove, fields.teamReflection, fields.nextUse])]
       ],
       resultTitle: "作品回顾",
@@ -203,7 +210,7 @@
         ["研究结论", fields.conclusion],
         ["海报制作记录", fields.layoutSketch],
         ["AI 辅助建议记录", fields.aiSupport],
-        ["分享交流记录", joinText([fields.presenter, fields.speakingPoints, fields.answers])],
+        ["分享交流记录", joinText([fields.presenter, fields.presenterStudentId, fields.speakingPoints, qaText])],
         ["提问交流记录", validQuestions.map((item) => `${safe(item.group)}：${safe(item.question)} / ${safe(item.answer)}`).join("\n")]
       ],
       conclusion: joinText([fields.reflectionGain, fields.reflectionImprove, fields.teamReflection, fields.nextUse])
