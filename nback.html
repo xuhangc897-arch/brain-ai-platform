@@ -420,6 +420,15 @@
       min-height: 140px;
     }
 
+    .reflection-layout textarea::placeholder {
+      color: #98a2b3;
+      opacity: 1;
+    }
+
+    .reflection-layout textarea:focus::placeholder {
+      color: transparent;
+    }
+
     .panel {
       background: var(--panel);
       border: 1px solid var(--line);
@@ -2306,11 +2315,11 @@
             <div class="panel-body">
               <div class="field">
                 <label>实验设计有什么可以改进？</label>
-                <textarea data-field="improvement" placeholder="可以从刺激材料、实验次数、参数设置、变量控制和操作流程等方面思考。">${escapeHtml(state.fields.improvement)}</textarea>
+                <textarea data-field="improvement" placeholder="请结合不同任务条件下的表现进行思考，可以关注任务难度变化、注意力分配、工作记忆负荷变化，以及实验过程中遇到的困难和改进方法。">${escapeHtml(state.fields.improvement)}</textarea>
               </div>
               <div class="field">
                 <label>如何提高结果的说服力？</label>
-                <textarea data-field="persuasiveness" placeholder="可以从数据是否充分、结果是否稳定、是否有对比、是否能支持假设等方面思考。">${escapeHtml(state.fields.persuasiveness)}</textarea>
+                <textarea data-field="persuasiveness" placeholder="请结合不同任务条件下的表现进行思考，可以关注任务难度变化、注意力分配、工作记忆负荷变化，以及实验过程中遇到的困难和改进方法。">${escapeHtml(state.fields.persuasiveness)}</textarea>
               </div>
             </div>
           </div>

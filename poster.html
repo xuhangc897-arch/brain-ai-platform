@@ -249,10 +249,79 @@
       box-shadow: 0 8px 24px rgba(15, 23, 42, 0.12);
     }
 
+    .reflection-prompt textarea::placeholder {
+      color: #98a2b3;
+      opacity: 1;
+    }
+
+    .reflection-prompt textarea:focus::placeholder {
+      color: transparent;
+    }
+
     .single-step-layout {
       display: grid;
       gap: 16px;
       width: 100%;
+    }
+
+    .share-record-form {
+      display: grid;
+      gap: 18px;
+    }
+
+    .share-presenter-grid,
+    .qa-record-grid {
+      display: grid;
+      grid-template-columns: repeat(2, minmax(0, 1fr));
+      gap: 14px;
+    }
+
+    .share-speaking-points textarea {
+      min-height: 130px;
+    }
+
+    .qa-records-section {
+      display: grid;
+      gap: 12px;
+    }
+
+    .qa-records-head h4 {
+      margin: 0 0 4px;
+      font-size: 17px;
+    }
+
+    .qa-records-head p {
+      margin: 0;
+      color: var(--muted);
+      font-size: 13px;
+    }
+
+    .qa-record-card {
+      position: relative;
+      padding: 16px;
+      border: 1px solid var(--line);
+      border-radius: 14px;
+      background: #f8fbff;
+    }
+
+    .qa-record-card .delete-qa-btn {
+      position: absolute;
+      top: 10px;
+      right: 10px;
+      min-height: 30px;
+      padding: 4px 10px;
+      font-size: 12px;
+    }
+
+    .qa-record-number {
+      margin: 0 0 12px;
+      color: var(--primary-dark);
+      font-size: 13px;
+      font-weight: 900;
+    }
+
+    .qa-record-grid textarea {
+      min-height: 110px;
     }
 
     .form-grid {
@@ -473,6 +542,13 @@
       }
     }
 
+    @media (max-width: 680px) {
+      .share-presenter-grid,
+      .qa-record-grid {
+        grid-template-columns: 1fr;
+      }
+    }
+
     .progress-step.is-locked {
       opacity: 0.45;
       filter: grayscale(0.85);
@@ -566,6 +642,9 @@
         teamReflection: "",
         nextUse: ""
       },
+      qaRecords: [
+        { question: "", answer: "" }
+      ],
       questions: [
         { group: "", type: "研究问题", question: "", answer: "" },
         { group: "", type: "实验数据", question: "", answer: "" },
@@ -602,6 +681,16 @@
       const merged = structuredClone(base);
       Object.assign(merged, incoming);
       merged.fields = Object.assign({}, base.fields, incoming.fields || {});
+      if (Array.isArray(incoming.qaRecords) && incoming.qaRecords.length) {
+        merged.qaRecords = incoming.qaRecords.map((item) => ({
+          question: String(item?.question ?? ""),
+          answer: String(item?.answer ?? "")
+        }));
+      } else {
+        const legacyQuestion = String(incoming.fields?.askedQuestions ?? "");
+        const legacyAnswer = String(incoming.fields?.answers ?? "");
+        merged.qaRecords = [{ question: legacyQuestion, answer: legacyAnswer }];
+      }
       merged.questions = Array.isArray(incoming.questions) && incoming.questions.length ? incoming.questions : base.questions;
       merged.scores = Object.assign({}, base.scores, incoming.scores || {});
       merged.posterGroups = Array.isArray(incoming.posterGroups) && incoming.posterGroups.length ? incoming.posterGroups : base.posterGroups.slice();
@@ -732,7 +821,12 @@
       const fields = state.fields || {};
       if (stepId === "plan") return ["researchQuestion", "hypothesis", "researchPlan", "conclusion", "limitation", "lifeApplication", "division"].every((key) => hasText(fields[key]));
       if (stepId === "make") return true;
-      if (stepId === "share") return ["presenter", "presenterStudentId", "speakingPoints", "askedQuestions", "answers"].every((key) => hasText(fields[key]));
+      if (stepId === "share") {
+        return ["presenter", "presenterStudentId", "speakingPoints"].every((key) => hasText(fields[key]))
+          && Array.isArray(state.qaRecords)
+          && state.qaRecords.length > 0
+          && state.qaRecords.every((item) => hasText(item.question) && hasText(item.answer));
+      }
       if (stepId === "questions") return Array.isArray(state.questions) && state.questions.some((item) => hasText(item.group) && hasText(item.type) && hasText(item.question) && hasText(item.answer));
       if (stepId === "score") {
         const groups = getPosterGroups();
@@ -893,12 +987,38 @@
           </div>
           <div class="panel">
             <div class="panel-head"><h3>分享交流记录</h3></div>
-            <div class="panel-body form-grid">
-              ${field("presenter", "小小讲解员", "input")}
-              <div class="field"><label>小小讲解员学生编号</label><input data-field="presenterStudentId" value="${escapeHtml(state.fields.presenterStudentId)}" placeholder="请输入学生编号"></div>
-              ${field("speakingPoints", "讲解要点", "textarea")}
-              ${field("askedQuestions", "被问到的问题", "textarea")}
-              ${field("answers", "回答摘要", "textarea")}
+            <div class="panel-body share-record-form">
+              <div class="share-presenter-grid">
+                ${field("presenter", "小小讲解员", "input")}
+                <div class="field"><label>小小讲解员学生编号</label><input data-field="presenterStudentId" value="${escapeHtml(state.fields.presenterStudentId)}" placeholder="请输入学生编号"></div>
+              </div>
+              <div class="field share-speaking-points">
+                <label>讲解要点</label>
+                <textarea data-field="speakingPoints">${escapeHtml(state.fields.speakingPoints)}</textarea>
+              </div>
+              <section class="qa-records-section">
+                <div class="qa-records-head">
+                  <h4>问题与回答记录</h4>
+                  <p>记录交流过程中收到的问题以及对应回答。</p>
+                </div>
+                ${(state.qaRecords || []).map((item, index) => `
+                  <article class="qa-record-card">
+                    <p class="qa-record-number">第 ${index + 1} 组</p>
+                    <button class="btn danger delete-qa-btn" type="button" data-delete-qa="${index}" ${state.qaRecords.length === 1 ? "disabled" : ""} aria-label="删除第 ${index + 1} 组问题与回答">删除</button>
+                    <div class="qa-record-grid">
+                      <div class="field">
+                        <label>被问到的问题</label>
+                        <textarea data-qa-index="${index}" data-qa-field="question">${escapeHtml(item.question)}</textarea>
+                      </div>
+                      <div class="field">
+                        <label>回答摘要</label>
+                        <textarea data-qa-index="${index}" data-qa-field="answer">${escapeHtml(item.answer)}</textarea>
+                      </div>
+                    </div>
+                  </article>
+                `).join("")}
+                <button class="btn secondary" type="button" id="addQaRecordBtn">+ 添加一组问题与回答</button>
+              </section>
             </div>
           </div>
         </div>
@@ -1018,6 +1138,7 @@
 
     function renderReflectionStep() {
       const topGroup = getTopGroup();
+      const reflectionPrompt = "请回顾本次海报制作与交流过程，可以从海报内容组织、证据呈现方式、视觉设计、交流展示、小组协作以及本次探究活动的收获等方面进行总结与反思。";
       return `
         <div class="step-layout">
           <div class="panel">
@@ -1029,11 +1150,11 @@
           </div>
           <div class="panel">
             <div class="panel-head"><h3>总结反思</h3></div>
-            <div class="panel-body form-grid">
-              ${field("reflectionGain", "本次交流最大的收获", "textarea")}
-              ${field("reflectionImprove", "海报还可以怎样改进", "textarea")}
-              ${field("teamReflection", "小组合作反思", "textarea")}
-              ${field("nextUse", "今后如何应用探究成果", "textarea")}
+            <div class="panel-body form-grid reflection-prompt">
+              ${field("reflectionGain", "本次交流最大的收获", "textarea", reflectionPrompt)}
+              ${field("reflectionImprove", "海报还可以怎样改进", "textarea", reflectionPrompt)}
+              ${field("teamReflection", "小组合作反思", "textarea", reflectionPrompt)}
+              ${field("nextUse", "今后如何应用探究成果", "textarea", reflectionPrompt)}
               <button class="btn secondary" type="button" id="reviewReportBtn">生成记忆侦探报告</button>
               <button class="btn" type="button" id="finalExportBtn">导出海报制作 Excel</button>
             </div>
@@ -1042,11 +1163,12 @@
       `;
     }
 
-    function field(key, label, type) {
+    function field(key, label, type, placeholder = "") {
+      const placeholderAttr = placeholder ? ` placeholder="${escapeHtml(placeholder)}"` : "";
       if (type === "input") {
-        return `<div class="field"><label>${label}</label><input data-field="${key}" value="${escapeHtml(state.fields[key])}"></div>`;
+        return `<div class="field"><label>${label}</label><input data-field="${key}" value="${escapeHtml(state.fields[key])}"${placeholderAttr}></div>`;
       }
-      return `<div class="field"><label>${label}</label><textarea data-field="${key}">${escapeHtml(state.fields[key])}</textarea></div>`;
+      return `<div class="field"><label>${label}</label><textarea data-field="${key}"${placeholderAttr}>${escapeHtml(state.fields[key])}</textarea></div>`;
     }
 
     function groupOptions(value) {
@@ -1063,6 +1185,14 @@
         element.addEventListener("input", () => updateField(element));
         element.addEventListener("change", () => updateField(element));
       });
+      main.querySelectorAll("[data-qa-index]").forEach((element) => {
+        element.addEventListener("input", () => updateQaRecord(element));
+      });
+      main.querySelectorAll("[data-delete-qa]").forEach((button) => {
+        button.addEventListener("click", () => deleteQaRecord(Number(button.dataset.deleteQa)));
+      });
+      const addQaRecordButton = document.getElementById("addQaRecordBtn");
+      if (addQaRecordButton) addQaRecordButton.addEventListener("click", addQaRecord);
       main.querySelectorAll("[data-question-index]").forEach((element) => {
         element.addEventListener("input", () => updateQuestion(element));
         element.addEventListener("change", () => updateQuestion(element));
@@ -1111,6 +1241,27 @@
     function updateField(element) {
       state.fields[element.dataset.field] = element.value;
       saveState();
+    }
+
+    function updateQaRecord(element) {
+      const index = Number(element.dataset.qaIndex);
+      const field = element.dataset.qaField;
+      if (!Number.isInteger(index) || !state.qaRecords[index] || !["question", "answer"].includes(field)) return;
+      state.qaRecords[index][field] = element.value;
+      saveState();
+    }
+
+    function addQaRecord() {
+      state.qaRecords.push({ question: "", answer: "" });
+      saveState();
+      renderApp();
+    }
+
+    function deleteQaRecord(index) {
+      if (!Number.isInteger(index) || state.qaRecords.length <= 1 || !state.qaRecords[index]) return;
+      state.qaRecords.splice(index, 1);
+      saveState();
+      renderApp();
     }
 
     function updateQuestion(element) {
@@ -1202,8 +1353,10 @@
           ["小小讲解员", state.fields.presenter],
           ["小小讲解员学生编号", state.fields.presenterStudentId],
           ["讲解要点", state.fields.speakingPoints],
-          ["被问到的问题", state.fields.askedQuestions],
-          ["回答摘要", state.fields.answers]
+          ...state.qaRecords.flatMap((item, index) => [
+            [`问题${index + 1}`, item.question],
+            [`回答${index + 1}`, item.answer]
+          ])
         ]],
         ["提问记录", [
           ["序号", "提问对象", "问题类型", "具体问题", "对方回答摘要"],

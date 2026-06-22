@@ -58,6 +58,8 @@
     .team-result-card table input { min-height: 38px; padding: 8px 10px; }
     .team-result-card th, .team-result-card td { padding: 8px 9px; }
     .reflection-layout textarea { min-height: 140px; }
+    .reflection-layout textarea::placeholder { color: #98a2b3; opacity: 1; }
+    .reflection-layout textarea:focus::placeholder { color: transparent; }
     .reading-list { display: grid; gap: 14px; }
     .reading-card { border: 1px solid #e5edf7; border-radius: 8px; padding: 16px; background: #fbfdff; }
     .reading-card h4 { margin: 0 0 8px; color: #1e3a8a; font-size: 16px; }
@@ -967,7 +969,7 @@
       return `<div class="step-layout"><div class="panel"><div class="panel-head"><h3>得出结论</h3></div><div class="panel-body"><textarea data-field="conclusion" placeholder="通过实验，我们发现改善长时记忆可以通过哪些策略？">${escapeHtml(state.fields.conclusion)}</textarea></div></div><div class="panel"><div class="panel-head"><h3>结论提示</h3></div><div class="panel-body"><div class="reading-card"><h4>提示</h4><p>结论应结合两个阶段的回忆率、策略评分和头环观察，说明哪种策略更有效。</p></div></div></div></div>`;
     }
     function renderReflectionStep() {
-      return `<div class="reflection-layout"><div class="panel"><div class="panel-head"><h3>反思交流</h3></div><div class="panel-body"><div class="field"><label>实验设计有什么可以改进？</label><textarea data-field="designImprove" placeholder="可以从实验对象、实验次数、变量控制、材料选择和操作流程等方面思考。">${escapeHtml(state.fields.designImprove)}</textarea></div><div class="field"><label>结果是否出乎意料？为什么？</label><textarea data-field="surprise" placeholder="可以从数据稳定性、个体差异、材料难度、策略执行和其他影响因素等方面思考。">${escapeHtml(state.fields.surprise)}</textarea></div><div class="field"><label>以上策略适用于所有学习内容吗？</label><textarea data-field="applicability" placeholder="可以从学习内容类型、任务难度、学习者差异、策略特点和使用条件等方面思考。">${escapeHtml(state.fields.applicability)}</textarea></div></div></div></div>`;
+      return `<div class="reflection-layout"><div class="panel"><div class="panel-head"><h3>反思交流</h3></div><div class="panel-body"><div class="field"><label>实验设计有什么可以改进？</label><textarea data-field="designImprove" placeholder="请结合实验结果进行思考，可以关注不同记忆策略的效果差异、策略适用的情境、实验设计是否合理，以及如何进一步提高记忆效果。">${escapeHtml(state.fields.designImprove)}</textarea></div><div class="field"><label>结果是否出乎意料？为什么？</label><textarea data-field="surprise" placeholder="请结合实验结果进行思考，可以关注不同记忆策略的效果差异、策略适用的情境、实验设计是否合理，以及如何进一步提高记忆效果。">${escapeHtml(state.fields.surprise)}</textarea></div><div class="field"><label>以上策略适用于所有学习内容吗？</label><textarea data-field="applicability" placeholder="请结合实验结果进行思考，可以关注不同记忆策略的效果差异、策略适用的情境、实验设计是否合理，以及如何进一步提高记忆效果。">${escapeHtml(state.fields.applicability)}</textarea></div></div></div></div>`;
     }
     function bindInputs() {
       main.querySelectorAll("[data-field]").forEach((element)=>{ const field = element.dataset.field; element.addEventListener("change",()=>updateField(element, field)); element.addEventListener("input",()=>updateField(element, field)); });

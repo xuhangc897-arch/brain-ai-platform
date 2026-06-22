@@ -67,6 +67,8 @@
     .team-result-card table input { min-height: 38px; padding: 8px 10px; }
     .team-result-card th, .team-result-card td { padding: 8px 9px; }
     .reflection-layout textarea { min-height: 140px; }
+    .reflection-layout textarea::placeholder { color: #98a2b3; opacity: 1; }
+    .reflection-layout textarea:focus::placeholder { color: transparent; }
     .reading-list { display: grid; gap: 14px; }
     .reading-card { border: 1px solid #e5edf7; border-radius: 8px; padding: 16px; background: #fbfdff; }
     .reading-card h4 { margin: 0 0 8px; color: #1e3a8a; font-size: 16px; }
@@ -979,7 +981,7 @@
       return `<div class="step-layout"><div class="panel"><div class="panel-head"><h3>得出结论</h3></div><div class="panel-body"><div class="form-grid"><div class="field"><label>结论是否支持假设</label><select data-field="support"><option value="是" ${selected("support","是")}>是</option><option value="否" ${selected("support","否")}>否</option><option value="不确定" ${selected("support","不确定")}>不确定</option></select></div><div class="field"><label>结论是否可信</label><select data-field="credibility"><option value="是" ${selected("credibility","是")}>是</option><option value="否" ${selected("credibility","否")}>否</option><option value="不确定" ${selected("credibility","不确定")}>不确定</option></select></div></div><textarea data-field="conclusion" placeholder="通过实验，我们得到以下结论">${escapeHtml(state.fields.conclusion)}</textarea></div></div><div class="panel"><div class="panel-head"><h3>原因说明</h3></div><div class="panel-body"><div class="reading-card"><h4>提示</h4><p>结论需要回到数据：哪一轮/哪一条件正确率更低，是否说明该因素造成了更强干扰。</p></div></div></div></div>`;
     }
     function renderReflectionStep() {
-      return `<div class="reflection-layout"><div class="panel"><div class="panel-head"><h3>反思评价</h3></div><div class="panel-body"><div class="field"><label>本组实验设计有什么优点？</label><textarea data-field="strengths" placeholder="可以从变量设置、材料选择、对照安排、操作流程和记录方式等方面思考。">${escapeHtml(state.fields.strengths)}</textarea></div><div class="field"><label>还有哪些可以改进？</label><textarea data-field="improvements" placeholder="可以从实验对象、实验次数、变量控制、材料难度和操作流程等方面思考。">${escapeHtml(state.fields.improvements)}</textarea></div><div class="field"><label>本实验结论对学习有什么启发？</label><textarea data-field="learningInsight" placeholder="可以从干扰因素、学习环境、学习安排、方法选择和个体差异等方面思考。">${escapeHtml(state.fields.learningInsight)}</textarea></div></div></div></div>`;
+      return `<div class="reflection-layout"><div class="panel"><div class="panel-head"><h3>反思评价</h3></div><div class="panel-body"><div class="field"><label>本组实验设计有什么优点？</label><textarea data-field="strengths" placeholder="请结合实验结果进行思考，可以关注不同干扰因素的影响是否明显、变量控制是否充分、数据是否能够支持研究问题，以及还有哪些因素可能影响记忆表现。">${escapeHtml(state.fields.strengths)}</textarea></div><div class="field"><label>还有哪些可以改进？</label><textarea data-field="improvements" placeholder="请结合实验结果进行思考，可以关注不同干扰因素的影响是否明显、变量控制是否充分、数据是否能够支持研究问题，以及还有哪些因素可能影响记忆表现。">${escapeHtml(state.fields.improvements)}</textarea></div><div class="field"><label>本实验结论对学习有什么启发？</label><textarea data-field="learningInsight" placeholder="请结合实验结果进行思考，可以关注不同干扰因素的影响是否明显、变量控制是否充分、数据是否能够支持研究问题，以及还有哪些因素可能影响记忆表现。">${escapeHtml(state.fields.learningInsight)}</textarea></div></div></div></div>`;
     }
     function bindInputs() {
       main.querySelectorAll("[data-field]").forEach((element)=>{
