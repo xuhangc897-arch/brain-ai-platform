@@ -53,6 +53,14 @@
       min-height: 68px;
     }
 
+    .top-actions {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 10px;
+      align-items: center;
+      justify-content: flex-end;
+    }
+
     .brand {
       display: flex;
       flex-direction: column;
@@ -294,6 +302,7 @@
       .topbar-inner,
       .main { width: min(100% - 24px, 1120px); }
       .topbar-inner { align-items: flex-start; flex-direction: column; padding: 12px 0; }
+      .top-actions { width: 100%; align-items: stretch; flex-direction: column; }
       .identity-grid,
       .survey-scale,
       .summary { grid-template-columns: 1fr; }
@@ -309,7 +318,10 @@
         <span>Detective Qualification</span>
         <strong>记忆侦探资格审查</strong>
       </div>
-      <button class="btn secondary" type="button" id="homeBtn">返回首页</button>
+      <div class="top-actions">
+        <button class="btn secondary" type="button" id="exportBtn">导出 Excel</button>
+        <button class="btn secondary" type="button" id="homeBtn">返回首页</button>
+      </div>
     </div>
   </header>
 
@@ -461,6 +473,7 @@
       });
       document.getElementById("completeBtn").addEventListener("click", completePretest);
       document.getElementById("resetBtn").addEventListener("click", resetPretest);
+      document.getElementById("exportBtn").addEventListener("click", exportExcel);
     }
 
     function renderSurvey() {
@@ -544,6 +557,78 @@
       saveState();
       renderSurvey();
       renderSummary();
+    }
+
+    function exportExcel() {
+      saveState();
+      const saved = readJson(PRETEST_KEY) || readJson(QUALIFICATION_KEY) || {};
+      const answers = saved.answers || saved.preMeta || state.answers || {};
+      const completed = Boolean(saved.completed || saved.complete);
+      const completedAt = saved.completedAt || state.completedAt || "";
+      const summary = summarizeAnswers(answers);
+
+      if (!completed || !summary.complete) {
+        alert("请先完成资格审查，再导出结果。");
+        return;
+      }
+
+      const submittedAt = completedAt ? new Date(completedAt).toLocaleString() : "";
+      const identityRows = [
+        ["学生姓名", saved.studentName || state.studentName || ""],
+        ["学生年龄", saved.studentAge || state.studentAge || ""],
+        ["学生编号", saved.studentId || state.studentId || ""],
+        ["小组编号", saved.groupId || state.groupId || ""],
+        ["提交时间", submittedAt]
+      ];
+      const answerRows = surveyDef.items.map((item, index) => {
+        const score = Number(answers["q" + (index + 1)] || 0);
+        return [String(index + 1), item, surveyDef.labels[score] || "", score || ""];
+      });
+      const sheets = [
+        ["基本信息", [["项目", "内容"], ...identityRows]],
+        ["资格审查结果", [
+          ["题号", "题目", "作答结果", "每题得分"],
+          ...answerRows,
+          ["合计", "总分", "", summary.total],
+          ["合计", "均分", "", summary.average],
+          ["合计", "提交时间", "", submittedAt]
+        ]]
+      ];
+
+      const html = '<html><head><meta charset="utf-8"></head><body>' +
+        sheets.map(([title, rows]) =>
+          '<h2>' + escapeHtml(title) + '</h2><table border="1">' +
+          rows.map((row) => '<tr>' + row.map((cell) => '<td>' + escapeHtml(cell) + '</td>').join("") + '</tr>').join("") +
+          '</table><br>'
+        ).join("") +
+      '</body></html>';
+      const blob = new Blob(["\ufeff", html], { type: "application/vnd.ms-excel;charset=utf-8" });
+      const url = URL.createObjectURL(blob);
+      const link = document.createElement("a");
+      const studentId = sanitizeFilename(saved.studentId || state.studentId || "未编号");
+      link.href = url;
+      link.download = "记忆侦探资格审查结果_" + studentId + ".xlsx";
+      document.body.appendChild(link);
+      link.click();
+      document.body.removeChild(link);
+      URL.revokeObjectURL(url);
+    }
+
+    function summarizeAnswers(answers) {
+      const values = surveyDef.items
+        .map((_, index) => Number(answers["q" + (index + 1)] || 0))
+        .filter(Boolean);
+      const total = values.reduce((sum, value) => sum + value, 0);
+      return {
+        answered: values.length,
+        total,
+        average: values.length ? Number((total / values.length).toFixed(2)) : 0,
+        complete: values.length === surveyDef.items.length
+      };
+    }
+
+    function sanitizeFilename(value) {
+      return String(value || "未编号").replace(/[\\/:*?"<>|]/g, "_").trim() || "未编号";
     }
 
     function escapeHtml(value) {
