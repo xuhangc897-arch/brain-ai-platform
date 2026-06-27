@@ -1138,6 +1138,7 @@
         question: "",
         hypothesis: "",
         method: "顺背法",
+        materialType: "number",
         material: "数字",
         independentVariable: "信息个数",
         dependentVariable: "能正确记忆的最长长度",
@@ -1209,6 +1210,7 @@
       const merged = structuredClone(base);
       Object.assign(merged, incoming);
       merged.fields = Object.assign({}, base.fields, incoming.fields || {});
+      normalizeMaterialType(merged.fields);
       merged.records = Array.isArray(incoming.records) ? incoming.records : [];
       merged.surveys = mergeSurveys(incoming.surveys);
       merged.knowledgeQuiz = mergeKnowledgeQuiz(incoming.knowledgeQuiz);
@@ -1408,12 +1410,12 @@
 
     function renderSurveyPage(kind) {
       return '<div class="survey-shell">' +
+        renderKnowledgeQuiz() +
         '<div class="survey-intro"><h3>📝 学习收获调查</h3><p>请根据刚刚完成的科学探究活动，选择最符合你真实情况的选项。</p></div>' +
         renderSurveyForm("postMeta", "meta") +
         renderSurveyForm("cognitiveLoad", "load") +
         renderSurveyForm("inquiryParticipation", "inquiry") +
         renderSurveySummaryCards() +
-        renderKnowledgeQuiz() +
         renderPosttestExportArea() +
       '</div>';
     }
@@ -1750,11 +1752,14 @@
                   </select>
                 </div>
                 <div class="field">
-                  <label for="material">实验材料</label>
-                  <select id="material" data-field="material">
-                    <option value="数字" ${selected("material", "数字")}>数字</option>
-                    <option value="字母" ${selected("material", "字母")}>字母</option>
+                  <label for="materialType">实验材料类别</label>
+                  <select id="materialType" data-field="materialType">
+                    <option value="number" ${selected("materialType", "number")}>数字</option>
+                    <option value="letter" ${selected("materialType", "letter")}>英文大写字母</option>
+                    <option value="chinese" ${selected("materialType", "chinese")}>汉字</option>
+                    <option value="shape" ${selected("materialType", "shape")}>图形</option>
                   </select>
+                  <small>请选择本次实验使用的记忆材料。</small>
                 </div>
                 <div class="field">
                   <label>起始长度</label>
@@ -1804,18 +1809,29 @@
                 <label for="runNumber">第几次测量</label>
                 <select id="runNumber">${Array.from({ length: Number(state.fields.trialsPerParticipant) || 3 }, (_, index) => `<option value="${index + 1}">第 ${index + 1} 次</option>`).join("")}</select>
               </div>
+              <div class="field">
+                <label for="runMaterialType">实验材料类别</label>
+                <select id="runMaterialType" data-field="materialType">
+                  <option value="number" ${selected("materialType", "number")}>数字</option>
+                  <option value="letter" ${selected("materialType", "letter")}>英文大写字母</option>
+                  <option value="chinese" ${selected("materialType", "chinese")}>汉字</option>
+                  <option value="shape" ${selected("materialType", "shape")}>图形</option>
+                </select>
+                <small>请选择本次实验使用的记忆材料。</small>
+              </div>
               <button class="btn" type="button" id="startRunBtn">开始测量</button>
             </div>
             <div class="memory-game">
               <div class="stage">
                 <div class="stage-meta">
                   <span id="gameStatus">请选择参与者并开始测量</span>
-                  <span id="gameHint">${escapeHtml(state.fields.method)} / ${escapeHtml(state.fields.material)}</span>
+                  <span id="gameHint">${escapeHtml(state.fields.method)} / ${escapeHtml(getMaterialTypeLabel(state.fields.materialType))}</span>
                 </div>
                 <div id="memoryStimulus" class="memory-stimulus">记</div>
                 <div id="answerBox" class="answer-box">
                   <label for="answerInput">请输入复述结果</label>
-                  <input id="answerInput" type="text" autocomplete="off" placeholder="数字或字母可不加空格" />
+                  <input id="answerInput" type="text" autocomplete="off" placeholder="可不加空格，图形请用 A/B/C/D/E 作答" />
+                  <p id="shapeAnswerHint" style="display:${state.fields.materialType === "shape" ? "block" : "none"};margin:8px 0 0;color:var(--muted);font-size:13px;">图形作答请使用代号：三角形=A，正方形=B，圆形=C，星形=D，菱形=E。</p>
                   <button class="btn" type="button" id="submitAnswerBtn" style="width:100%;margin-top:12px;">提交答案</button>
                 </div>
               </div>
@@ -1838,7 +1854,7 @@
               <div class="focus-prep-card">
                 <h3>准备开始短时记忆测量</h3>
                 <p>页面将切换到低干扰实验界面，并尝试进入浏览器全屏。若浏览器拒绝全屏，实验仍会正常开始。</p>
-                <p>请专注记住屏幕中央依次出现的数字或字母，呈现结束后按要求顺背或倒背输入结果。</p>
+                <p>请专注记住屏幕中央依次出现的材料，呈现结束后按要求顺背或倒背输入结果。图形作答请使用代号：三角形=A，正方形=B，圆形=C，星形=D，菱形=E。</p>
                 <button class="btn" type="button" id="confirmStartRunBtn">进入测量</button>
                 <button class="btn secondary" type="button" id="cancelStartRunBtn">取消</button>
               </div>
@@ -2066,6 +2082,37 @@
       return state.fields[field] === value ? "selected" : "";
     }
 
+    function getMaterialTypeLabel(type) {
+      return {
+        number: "数字",
+        letter: "英文大写字母",
+        chinese: "汉字",
+        shape: "图形",
+        数字: "数字",
+        字母: "英文大写字母",
+        英文大写字母: "英文大写字母",
+        汉字: "汉字",
+        图形: "图形"
+      }[type] || "数字";
+    }
+
+    function normalizeMaterialType(fields) {
+      const legacy = fields.material;
+      const type = fields.materialType || (
+        legacy === "英文大写字母" || legacy === "字母" ? "letter" :
+        legacy === "汉字" ? "chinese" :
+        legacy === "图形" ? "shape" :
+        "number"
+      );
+      fields.materialType = ["number", "letter", "chinese", "shape"].includes(type) ? type : "number";
+      fields.material = getMaterialTypeLabel(fields.materialType);
+    }
+
+    function syncMaterialFields(type) {
+      state.fields.materialType = ["number", "letter", "chinese", "shape"].includes(type) ? type : "number";
+      state.fields.material = getMaterialTypeLabel(state.fields.materialType);
+    }
+
     function bindInputs() {
       main.querySelectorAll("[data-field]").forEach((element) => {
         const field = element.dataset.field;
@@ -2083,6 +2130,10 @@
         state.fields[field] = Number(element.value);
       } else {
         state.fields[field] = element.value;
+      }
+      if (field === "materialType" || field === "material") {
+        if (field === "materialType") syncMaterialFields(state.fields.materialType);
+        else normalizeMaterialType(state.fields);
       }
       if (["participantId", "teammate1Result", "teammate2Result"].includes(field)) {
         state.fields.groupAverageShortTermMemory = getShortTermGroupAverage(getPersonalShortTermMemory());
@@ -2212,13 +2263,16 @@
       const startLength = clampNumber(state.fields.startLength, 2, 8, 3);
       const maxLength = clampNumber(state.fields.maxLength, startLength, 12, 12);
       const subject = document.getElementById("subject").value.trim() || state.fields.participantId || state.studentId;
+      const materialType = document.getElementById("runMaterialType")?.value || state.fields.materialType || "number";
       state.fields.participantId = subject;
+      syncMaterialFields(materialType);
       saveState();
       game = {
         id: crypto.randomUUID ? crypto.randomUUID() : String(Date.now()),
         subject,
         runNumber: Number(document.getElementById("runNumber").value),
         method: state.fields.method,
+        materialType: state.fields.materialType,
         material: state.fields.material,
         itemInterval: clampNumber(state.fields.itemInterval, 0.5, 3, 1),
         startLength,
@@ -2241,7 +2295,7 @@
       document.getElementById("answerBox").classList.remove("is-visible");
       const stimulus = document.getElementById("memoryStimulus");
       stimulus.style.display = "grid";
-      game.sequence = generateMemorySequence(game.currentLength, game.material);
+      game.sequence = generateMemorySequence(game.currentLength, game.materialType);
       game.presenting = true;
       updateGameUi();
       let index = 0;
@@ -2261,7 +2315,7 @@
         }
         showTimer = window.setTimeout(() => {
           if (!game) return;
-          stimulus.textContent = game.sequence[index];
+          renderMemoryStimulus(stimulus, game.sequence[index], game.materialType);
           stimulus.style.display = "grid";
           index += 1;
           showTimer = window.setTimeout(showItem, game.itemInterval * 1000);
@@ -2270,17 +2324,48 @@
       showItem();
     }
 
-    function generateMemorySequence(length, material) {
-      const pool = material === "数字"
-        ? ["0", "1", "2", "3", "4", "5", "6", "7", "8", "9"]
-        : "ABCDEFGHIJKLMNOPQRSTUVWXYZ".split("");
+    function generateMemorySequence(length, materialType) {
+      const poolMap = {
+        number: ["0", "1", "2", "3", "4", "5", "6", "7", "8", "9"],
+        letter: "ABCDEFGHIJKLMNOPQRSTUVWXYZ".split(""),
+        chinese: ["山", "水", "木", "火", "土", "日", "月", "人", "口", "手", "目", "田", "石", "云", "雨", "风", "花", "鸟", "鱼", "马"],
+        shape: ["A", "B", "C", "D", "E"]
+      };
+      const pool = poolMap[materialType] || poolMap.number;
       return Array.from({ length }, () => pool[Math.floor(Math.random() * pool.length)]);
+    }
+
+    function renderMemoryStimulus(element, value, materialType) {
+      if (materialType !== "shape") {
+        element.textContent = value;
+        return;
+      }
+      element.innerHTML = getShapeSvg(value);
+    }
+
+    function getShapeSvg(code) {
+      const shapes = {
+        A: '<polygon points="50,12 88,84 12,84"></polygon>',
+        B: '<rect x="18" y="18" width="64" height="64" rx="8"></rect>',
+        C: '<circle cx="50" cy="50" r="34"></circle>',
+        D: '<polygon points="50,10 61,38 91,38 67,56 76,86 50,68 24,86 33,56 9,38 39,38"></polygon>',
+        E: '<polygon points="50,10 90,50 50,90 10,50"></polygon>'
+      };
+      const labels = { A: "三角形", B: "正方形", C: "圆形", D: "星形", E: "菱形" };
+      return '<svg viewBox="0 0 100 100" width="112" height="112" role="img" aria-label="' + labels[code] + '">' +
+        '<g fill="#4f7cff" stroke="#17315f" stroke-width="4">' + shapes[code] + '</g>' +
+        '<text x="50" y="58" text-anchor="middle" font-size="28" font-weight="800" fill="#ffffff">' + code + '</text>' +
+      '</svg>';
+    }
+
+    function normalizeMemoryAnswer(raw) {
+      return Array.from(String(raw || "").replace(/\s+/g, "").toUpperCase());
     }
 
     function submitAnswer() {
       if (!game || game.presenting) return;
-      const raw = document.getElementById("answerInput").value.trim().toUpperCase();
-      const answer = raw.replace(/\s+/g, "").split("");
+      const raw = document.getElementById("answerInput").value;
+      const answer = normalizeMemoryAnswer(raw);
       const expected = game.method === "倒背法" ? game.sequence.slice().reverse() : game.sequence.slice();
       const isCorrect = answer.join("") === expected.join("");
       const record = {
@@ -2292,6 +2377,7 @@
         subject: game.subject,
         runNumber: game.runNumber,
         method: game.method,
+        materialType: game.materialType,
         material: game.material,
         itemInterval: game.itemInterval,
         length: game.currentLength,
@@ -2371,14 +2457,18 @@
       const status = document.getElementById("gameStatus");
       const stimulus = document.getElementById("memoryStimulus");
       const answerBox = document.getElementById("answerBox");
+      const gameHint = document.getElementById("gameHint");
+      const shapeAnswerHint = document.getElementById("shapeAnswerHint");
       const lengthStat = document.getElementById("lengthStat");
       const capacityStat = document.getElementById("capacityStat");
       const correctStreakStat = document.getElementById("correctStreakStat");
       const wrongStreakStat = document.getElementById("wrongStreakStat");
       const log = document.getElementById("gameLogBody");
       if (!status) return;
+      if (shapeAnswerHint) shapeAnswerHint.style.display = game && game.materialType === "shape" ? "block" : "none";
       if (!game) {
         status.textContent = "请选择参与者并开始测量";
+        if (gameHint) gameHint.textContent = `${state.fields.method} / ${getMaterialTypeLabel(state.fields.materialType)}`;
         stimulus.textContent = "记";
         stimulus.style.display = "grid";
         answerBox.classList.remove("is-visible");
@@ -2390,6 +2480,7 @@
         return;
       }
       status.textContent = game.presenting ? `请记住 ${game.currentLength} 个${game.material}` : `${game.method}：请输入复述结果`;
+      if (gameHint) gameHint.textContent = `${game.method} / ${game.material}`;
       lengthStat.textContent = String(game.currentLength);
       capacityStat.textContent = game.lastCapacity || "--";
       correctStreakStat.textContent = String(game.correctStreak);
@@ -2454,6 +2545,7 @@
           ["研究问题", state.fields.question],
           ["研究假设", state.fields.hypothesis],
           ["测量方法", state.fields.method],
+          ["实验材料类别", getMaterialTypeLabel(state.fields.materialType)],
           ["实验材料", state.fields.material],
           ["起始长度", state.fields.startLength],
           ["最大长度", state.fields.maxLength],
@@ -2473,7 +2565,7 @@
           ["探究环节反思", state.fields.inquiryReflection]
         ]],
         ["记忆任务明细", [
-          ["学生姓名", "学生年龄", "学生编号", "小组编号", "参与者", "测量次数", "方法", "材料", "呈现间隔s", "长度", "原始序列", "正确答案", "学生回答", "是否正确", "本次最终容量", "记录时间"],
+          ["学生姓名", "学生年龄", "学生编号", "小组编号", "参与者", "测量次数", "方法", "实验材料类别", "材料", "呈现间隔s", "长度", "原始序列", "正确答案", "学生回答", "是否正确", "本次最终容量", "记录时间"],
           ...state.records.map((record) => [
             record.studentName || "",
             record.studentAge || "",
@@ -2482,6 +2574,7 @@
             record.subject,
             record.runNumber,
             record.method,
+            getMaterialTypeLabel(record.materialType || record.material),
             record.material,
             record.itemInterval,
             record.length,

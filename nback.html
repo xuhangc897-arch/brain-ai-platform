@@ -1421,7 +1421,8 @@
         controlOther: "",
         researchQuestion: "",
         hypothesis: "",
-        stimulusMaterial: "数字",
+        materialType: "image",
+        stimulusMaterial: "图片",
         experimentDesign: "N的大小",
         stimulusInterval: 2,
         roleA: "",
@@ -1486,6 +1487,7 @@
       const merged = structuredClone(base);
       Object.assign(merged, incoming);
       merged.fields = Object.assign({}, base.fields, incoming.fields || {});
+      normalizeMaterialType(merged.fields);
       if (!merged.fields.headbandObservation) {
         merged.fields.headbandObservation = [incoming.fields?.brainA, incoming.fields?.brainB].filter(Boolean).join("；");
       }
@@ -1686,12 +1688,12 @@
 
     function renderSurveyPage(kind) {
       return '<div class="survey-shell">' +
+        renderKnowledgeQuiz() +
         '<div class="survey-intro"><h3>📝 学习收获调查</h3><p>请根据刚刚完成的科学探究活动，选择最符合你真实情况的选项。</p></div>' +
         renderSurveyForm("postMeta", "meta") +
         renderSurveyForm("cognitiveLoad", "load") +
         renderSurveyForm("inquiryParticipation", "inquiry") +
         renderSurveySummaryCards() +
-        renderKnowledgeQuiz() +
         renderPosttestExportArea() +
       '</div>';
     }
@@ -2164,11 +2166,14 @@
               </div>
               <div class="form-grid">
                 <div class="field">
-                  <label for="stimulusMaterial">实验材料</label>
-                  <select id="stimulusMaterial" data-field="stimulusMaterial">
-                    <option value="数字" ${selected("stimulusMaterial", "数字")}>数字</option>
-                    <option value="图形" ${selected("stimulusMaterial", "图形")}>图片/图形</option>
+                  <label for="materialType">实验材料类别</label>
+                  <select id="materialType" data-field="materialType">
+                    <option value="image" ${selected("materialType", "image")}>图片</option>
+                    <option value="number" ${selected("materialType", "number")}>数字</option>
+                    <option value="letter" ${selected("materialType", "letter")}>英文大写字母</option>
+                    <option value="chinese" ${selected("materialType", "chinese")}>汉字</option>
                   </select>
+                  <small>请选择本次实验使用的记忆材料。</small>
                 </div>
                 <div class="field">
                   <label for="experimentDesign">实验设计</label>
@@ -2213,11 +2218,14 @@
                 <select id="gameCondition"></select>
               </div>
               <div class="field">
-                <label for="gameStimulus">刺激材料</label>
+                <label for="gameStimulus">实验材料类别</label>
                 <select id="gameStimulus">
-                  <option value="number" ${state.fields.stimulusMaterial === "数字" ? "selected" : ""}>数字</option>
-                  <option value="shape" ${state.fields.stimulusMaterial === "图形" ? "selected" : ""}>图片/图形</option>
+                  <option value="image" ${state.fields.materialType === "image" ? "selected" : ""}>图片</option>
+                  <option value="number" ${state.fields.materialType === "number" ? "selected" : ""}>数字</option>
+                  <option value="letter" ${state.fields.materialType === "letter" ? "selected" : ""}>英文大写字母</option>
+                  <option value="chinese" ${state.fields.materialType === "chinese" ? "selected" : ""}>汉字</option>
                 </select>
+                <small>请选择本次实验使用的记忆材料。</small>
               </div>
               <div class="field">
                 <label for="stimulusInterval">每个刺激作答时间（秒）</label>
@@ -2456,6 +2464,38 @@
       return state.fields[field] === value ? "selected" : "";
     }
 
+    function getMaterialTypeLabel(type) {
+      return {
+        image: "图片",
+        number: "数字",
+        letter: "英文大写字母",
+        chinese: "汉字",
+        图形: "图片",
+        图片: "图片",
+        数字: "数字",
+        字母: "英文大写字母",
+        英文大写字母: "英文大写字母",
+        汉字: "汉字"
+      }[type] || "图片";
+    }
+
+    function normalizeMaterialType(fields) {
+      const legacy = fields.stimulusMaterial;
+      const type = fields.materialType || (
+        legacy === "数字" ? "number" :
+        legacy === "英文大写字母" || legacy === "字母" ? "letter" :
+        legacy === "汉字" ? "chinese" :
+        "image"
+      );
+      fields.materialType = ["image", "number", "letter", "chinese"].includes(type) ? type : "image";
+      fields.stimulusMaterial = getMaterialTypeLabel(fields.materialType);
+    }
+
+    function syncMaterialFields(type) {
+      state.fields.materialType = ["image", "number", "letter", "chinese"].includes(type) ? type : "image";
+      state.fields.stimulusMaterial = getMaterialTypeLabel(state.fields.materialType);
+    }
+
     function bindInputs() {
       main.querySelectorAll("[data-field]").forEach((element) => {
         const field = element.dataset.field;
@@ -2473,6 +2513,10 @@
         if (element.checked) state.fields[field] = element.value;
       } else {
         state.fields[field] = element.value;
+      }
+      if (field === "materialType" || field === "stimulusMaterial") {
+        if (field === "materialType") syncMaterialFields(state.fields.materialType);
+        else normalizeMaterialType(state.fields);
       }
       saveState();
     }
@@ -2699,17 +2743,19 @@
       const [nValue, totalValue] = document.getElementById("gameCondition").value.split("-").map(Number);
       const subject = document.getElementById("gameSubject").value.trim() || state.fields.participantId || state.studentId;
       const mode = document.getElementById("gameMode").value;
-      const stimulusType = document.getElementById("gameStimulus").value;
+      const materialType = document.getElementById("gameStimulus").value;
       const intervalSeconds = clampInterval(document.getElementById("stimulusInterval").value);
       state.fields.stimulusInterval = intervalSeconds;
       state.fields.participantId = subject;
+      syncMaterialFields(materialType);
       saveState();
-      const sequence = generateSequence(nValue, totalValue, stimulusType);
+      const sequence = generateSequence(nValue, totalValue, state.fields.materialType);
       currentGame = {
         id: crypto.randomUUID ? crypto.randomUUID() : String(Date.now()),
         subject,
         mode,
-        stimulusType,
+        materialType: state.fields.materialType,
+        stimulusType: state.fields.materialType,
         n: nValue,
         totalTrials: totalValue,
         conditionLabel: `N=${nValue}，关卡数=${totalValue}`,
@@ -2723,8 +2769,14 @@
       showCurrentTrial();
     }
 
-    function generateSequence(n, total, stimulusType) {
-      const pool = stimulusType === "number" ? ["1", "2", "3", "4", "5", "6", "7", "8", "9"] : ["●", "▲", "■", "◆", "★", "✚", "⬟", "⬤"];
+    function generateSequence(n, total, materialType) {
+      const poolMap = {
+        image: ["●", "▲", "■", "◆", "★", "✚", "⬟", "⬤"],
+        number: ["1", "2", "3", "4", "5", "6", "7", "8", "9"],
+        letter: "ABCDEFGHIJKLMNOPQRSTUVWXYZ".split(""),
+        chinese: ["山", "水", "木", "火", "土", "日", "月", "人", "口", "手", "目", "田", "石", "云", "雨", "风", "花", "鸟", "鱼", "马"]
+      };
+      const pool = poolMap[materialType] || poolMap.image;
       const sequence = [];
       for (let i = 0; i < total; i += 1) {
         if (i < n) {
@@ -2753,7 +2805,7 @@
       const stimulus = document.getElementById("stimulus");
       const value = currentGame.sequence[currentGame.currentIndex];
       stimulus.textContent = value;
-      stimulus.classList.toggle("shape", currentGame.stimulusType === "shape");
+      stimulus.classList.toggle("shape", currentGame.materialType === "image");
       trialStartedAt = performance.now();
       updateGameUi();
       startTrialTimers();
@@ -2827,7 +2879,8 @@
         n: currentGame.n,
         totalTrials: currentGame.totalTrials,
         intervalSeconds: currentGame.intervalSeconds,
-        stimulusType: currentGame.stimulusType === "number" ? "数字" : "图形",
+        materialType: currentGame.materialType,
+        stimulusType: getMaterialTypeLabel(currentGame.materialType),
         trialNumber: index + 1,
         stimulus: currentGame.sequence[index],
         expected,
@@ -2990,6 +3043,7 @@
           ["其他控制变量", state.fields.controlOther],
           ["研究问题", state.fields.researchQuestion],
           ["研究假设", state.fields.hypothesis],
+          ["实验材料类别", getMaterialTypeLabel(state.fields.materialType || state.fields.stimulusMaterial)],
           ["实验材料", state.fields.stimulusMaterial],
           ["实验设计", state.fields.experimentDesign],
           ["A 被测试者", state.fields.roleA],
@@ -3003,7 +3057,7 @@
           ["提高说服力", state.fields.persuasiveness]
         ]],
         ["N-back明细记录", [
-          ["学生姓名", "学生年龄", "学生编号", "小组编号", "被测试者", "实验设计", "条件", "N", "关卡数", "每题规定作答时间s", "刺激类型", "关卡", "刺激", "正确答案", "学生答案", "记录类型", "是否漏答", "是否正确", "反应时ms", "记录时间"],
+          ["学生姓名", "学生年龄", "学生编号", "小组编号", "被测试者", "实验设计", "条件", "N", "关卡数", "每题规定作答时间s", "实验材料类别", "刺激类型", "关卡", "刺激", "正确答案", "学生答案", "记录类型", "是否漏答", "是否正确", "反应时ms", "记录时间"],
           ...state.testRuns.map((record) => {
             const recordType = getRecordType(record);
             return [
@@ -3017,6 +3071,7 @@
               record.n,
               record.totalTrials,
               record.intervalSeconds || "",
+              getMaterialTypeLabel(record.materialType || record.stimulusType),
               record.stimulusType,
               record.trialNumber,
               record.stimulus,

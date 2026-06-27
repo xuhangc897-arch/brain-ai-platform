@@ -661,12 +661,12 @@
 
     function renderSurveyPage(kind) {
       return '<div class="survey-shell">' +
+        renderKnowledgeQuiz() +
         '<div class="survey-intro"><h3>📝 学习收获调查</h3><p>请根据刚刚完成的科学探究活动，选择最符合你真实情况的选项。</p></div>' +
         renderSurveyForm("postMeta", "meta") +
         renderSurveyForm("cognitiveLoad", "load") +
         renderSurveyForm("inquiryParticipation", "inquiry") +
         renderSurveySummaryCards() +
-        renderKnowledgeQuiz() +
         renderPosttestExportArea() +
       '</div>';
     }
