@@ -942,6 +942,18 @@
     .survey-summary div { padding: 14px; border: 1px solid var(--line); border-radius: 8px; background: #fff; }
     .survey-summary strong { display: block; font-size: 22px; color: var(--primary); }
     .survey-summary span { color: var(--muted); font-size: 13px; }
+    .quiz-section { display: grid; gap: 14px; }
+    .quiz-card { padding: 16px; border: 1px solid var(--line); border-radius: 10px; background: #fff; box-shadow: 0 10px 24px rgba(23, 32, 51, 0.05); }
+    .quiz-card h4 { margin: 0 0 10px; color: #172033; font-size: 16px; }
+    .quiz-card p { margin: 0 0 12px; color: #344054; font-weight: 800; line-height: 1.6; }
+    .quiz-options { display: grid; gap: 9px; }
+    .quiz-option { display: flex; align-items: flex-start; gap: 9px; padding: 10px 12px; border: 1px solid var(--line); border-radius: 8px; background: #f8fbff; color: #344054; font-weight: 700; cursor: pointer; }
+    .quiz-option input { width: auto; margin-top: 4px; }
+    .quiz-option.is-selected { border-color: rgba(37, 99, 235, 0.45); background: #eef6ff; color: var(--primary); }
+    .quiz-result { display: grid; gap: 7px; padding: 15px; border: 1px solid #bfdbfe; border-radius: 10px; background: linear-gradient(135deg, #ffffff, #eff6ff); color: #1e3a8a; font-weight: 900; }
+    .quiz-result strong { font-size: 24px; }
+    .quiz-message { color: #0f766e; font-weight: 900; }
+    .quiz-message.is-warning { color: #b45309; }
     @media (max-width: 760px) { .survey-scale { grid-template-columns: repeat(auto-fit, minmax(72px, 1fr)); } .survey-option-card { min-height: 60px; padding: 9px 6px; } .survey-score { font-size: 18px; } .survey-label { font-size: 12px; } .survey-summary { grid-template-columns: 1fr 1fr; } }
 
 
@@ -1018,11 +1030,11 @@
     ];
     const SURVEY_DEFS = {
       meta: {
-        title: "记忆相关知识元认知情况调查问卷",
+        title: "学习收获调查",
         scale: [1, 2, 3, 4, 5],
-        anchors: "1=完全否，2=较少，3=一般，4=较多，5=完全是",
-        labels: { 1: "完全否", 2: "较少", 3: "一般", 4: "较多", 5: "完全是" },
-        note: "请选择最符合你真实想法的一项。得分越高，表示你越认同题目内容。",
+        anchors: "1=非常不同意，2=不同意，3=一般，4=同意，5=非常同意",
+        labels: { 1: "非常不同意", 2: "不同意", 3: "一般", 4: "同意", 5: "非常同意" },
+        note: "请根据刚刚完成的科学探究活动，选择最符合你真实情况的选项。",
         items: [
           "我能够理解本次科学探究中获得的有关短时记忆容量的知识。",
           "这些有关短时记忆容量的知识对我很有用，我会继续运用。",
@@ -1062,16 +1074,44 @@
         ]
       }
     };
+    const KNOWLEDGE_QUIZ = {
+      items: [
+        { question: "本次实验主要探究的是（ ）", options: { A: "长时记忆容量", B: "工作记忆能力", C: "短时记忆容量", D: "情绪对记忆的影响" }, answer: "C" },
+        { question: "实验中主要使用什么材料测量短时记忆容量？", options: { A: "图片", B: "数字序列", C: "文字故事", D: "音乐" }, answer: "B" },
+        { question: "随着数字长度不断增加，大多数人的正确率通常会（ ）", options: { A: "提高", B: "保持不变", C: "降低", D: "先升高再降低" }, answer: "C" },
+        { question: "下列哪项最可能影响短时记忆实验结果？", options: { A: "是否专心", B: "数字呈现速度", C: "数字长度", D: "以上都有可能" }, answer: "D" },
+        { question: "为了保证实验公平，下列哪项最好保持一致？", options: { A: "测试方式", B: "数字呈现时间", C: "实验环境", D: "以上都要" }, answer: "D" },
+        { question: "本次实验结论主要依据什么得出？", options: { A: "老师讲解", B: "同学猜测", C: "实验数据", D: "网络资料" }, answer: "C" },
+        { question: "如果连续两次实验结果差别很大，下列哪项最值得先检查？", options: { A: "是否认真完成实验", B: "是否记录准确", C: "是否受到干扰", D: "以上都有可能" }, answer: "D" },
+        { question: "为了让实验结果更加可靠，可以怎样做？", options: { A: "增加测试次数", B: "增加参与人数", C: "比较多次结果", D: "以上都可以" }, answer: "D" },
+        { question: "如果要记住一串较长的电话号码，下面哪种方法更符合今天实验得到的启示？", options: { A: "一次全部记住", B: "分成几段分别记忆", C: "只看一遍", D: "闭眼等待" }, answer: "B" },
+        { question: "如果老师一次说了很多内容，你应该怎样做更容易记住？", options: { A: "全部硬记", B: "边听边整理重点", C: "什么也不记", D: "等别人告诉自己" }, answer: "B" }
+      ]
+    };
 
     function createDefaultSurveys() {
       return { postMeta: {}, cognitiveLoad: {}, inquiryParticipation: {} };
     }
-
     function mergeSurveys(incoming = {}) {
       const merged = createDefaultSurveys();
       Object.keys(merged).forEach((key) => {
         merged[key] = Object.assign({}, merged[key], incoming[key] || {});
       });
+      return merged;
+    }
+
+    function createDefaultKnowledgeQuiz() {
+      return { answers: {}, submitted: false, correctCount: 0, score: 0, submittedAt: '', wrongQuestions: [] };
+    }
+
+    function mergeKnowledgeQuiz(incoming = {}) {
+      const merged = createDefaultKnowledgeQuiz();
+      merged.answers = Object.assign({}, incoming.answers || {});
+      merged.submitted = Boolean(incoming.submitted);
+      merged.correctCount = Number(incoming.correctCount || 0);
+      merged.score = Number(incoming.score || 0);
+      merged.submittedAt = incoming.submittedAt || '';
+      merged.wrongQuestions = Array.isArray(incoming.wrongQuestions) ? incoming.wrongQuestions : [];
       return merged;
     }
 
@@ -1131,6 +1171,7 @@
       },
       records: [],
       surveys: createDefaultSurveys(),
+      knowledgeQuiz: createDefaultKnowledgeQuiz(),
       savedAt: ""
     };
 
@@ -1170,6 +1211,7 @@
       merged.fields = Object.assign({}, base.fields, incoming.fields || {});
       merged.records = Array.isArray(incoming.records) ? incoming.records : [];
       merged.surveys = mergeSurveys(incoming.surveys);
+      merged.knowledgeQuiz = mergeKnowledgeQuiz(incoming.knowledgeQuiz);
       if (!incoming.surveys) merged.currentStep = 0;
       if (incoming.flowVersion !== FLOW_VERSION) {
         merged.currentStep = migrateLegacyStepIndex(merged.currentStep);
@@ -1366,11 +1408,12 @@
 
     function renderSurveyPage(kind) {
       return '<div class="survey-shell">' +
-        '<div class="survey-intro"><h3>侦探小结</h3><p>亲爱的同学们：你们好！本次侦探小结用于了解活动后你对记忆相关知识的认识变化、活动中的认知负荷和科学探究参与情况。问卷结果仅用于本次学习活动改进与数据分析，不会影响成绩或其他学习活动，也不会泄露个人信息。请根据真实体验作答，感谢你的支持与配合。</p></div>' +
+        '<div class="survey-intro"><h3>📝 学习收获调查</h3><p>请根据刚刚完成的科学探究活动，选择最符合你真实情况的选项。</p></div>' +
         renderSurveyForm("postMeta", "meta") +
         renderSurveyForm("cognitiveLoad", "load") +
         renderSurveyForm("inquiryParticipation", "inquiry") +
         renderSurveySummaryCards() +
+        renderKnowledgeQuiz() +
         renderPosttestExportArea() +
       '</div>';
     }
@@ -1406,10 +1449,91 @@
       const load = summarizeSurvey("cognitiveLoad", "load");
       const inquiry = summarizeSurvey("inquiryParticipation", "inquiry");
       return '<div class="survey-summary">' +
-        '<div><strong>' + (post.total || '待完成') + '</strong><span>侦探小结元认知总分</span></div>' +
+        '<div><strong>' + (post.total || '待完成') + '</strong><span>学习收获调查总分</span></div>' +
         '<div><strong>' + (load.average || '待完成') + '</strong><span>认知负荷均分</span></div>' +
         '<div><strong>' + (inquiry.average || '待完成') + '</strong><span>探究参与均分</span></div>' +
       '</div>';
+    }
+    function renderKnowledgeQuiz() {
+      const quiz = mergeKnowledgeQuiz(state.knowledgeQuiz);
+      const result = quiz.submitted
+        ? '<div class="quiz-result"><div>✔ 答对：<strong>' + quiz.correctCount + ' / ' + KNOWLEDGE_QUIZ.items.length + '</strong></div><div>案件知识验证成绩：<strong>' + quiz.score + ' / 100</strong></div>' + renderKnowledgeQuizMessage(quiz.score) + '</div>'
+        : '<div class="quiz-result"><div>案件知识验证成绩：<strong>待提交</strong></div></div>';
+      return '<section class="quiz-section">' +
+        '<div class="survey-intro"><h3>🕵️ 案件知识验证</h3><p>请根据本次案件调查中获得的证据，完成下面的知识验证。</p></div>' +
+        KNOWLEDGE_QUIZ.items.map((item, index) => {
+          const itemKey = 'q' + (index + 1);
+          const selected = quiz.answers[itemKey] || '';
+          return '<article class="quiz-card"><h4>第' + (index + 1) + '题</h4><p>' + escapeHtml(item.question) + '</p>' +
+            '<div class="quiz-options">' + Object.keys(item.options).map((key) => {
+              const checked = selected === key;
+              return '<label class="quiz-option ' + (checked ? 'is-selected' : '') + '"><input type="radio" name="knowledge-' + itemKey + '" data-quiz-question="' + itemKey + '" value="' + key + '" ' + (checked ? 'checked' : '') + '><span>' + key + '　' + escapeHtml(item.options[key]) + '</span></label>';
+            }).join('') + '</div></article>';
+        }).join('') +
+        result +
+        '<div class="actions" style="justify-content:flex-end;"><button class="btn" type="button" id="submitKnowledgeQuizBtn">提交知识验证</button></div>' +
+      '</section>';
+    }
+
+    function renderKnowledgeQuizMessage(score) {
+      if (score === 100) return '<div class="quiz-message">🎉 恭喜你成功破解本案件！</div>';
+      if (score < 60) return '<div class="quiz-message is-warning">💡 建议再次回顾本次探究过程，寻找更多证据。</div>';
+      return '<div class="quiz-message">继续保持，用证据完善你的判断。</div>';
+    }
+
+    function bindKnowledgeQuizInputs() {
+      main.querySelectorAll('[data-quiz-question]').forEach((input) => {
+        input.addEventListener('change', () => {
+          state.knowledgeQuiz = mergeKnowledgeQuiz(state.knowledgeQuiz);
+          state.knowledgeQuiz.answers[input.dataset.quizQuestion] = input.value;
+          state.knowledgeQuiz.submitted = false;
+          state.knowledgeQuiz.correctCount = 0;
+          state.knowledgeQuiz.score = 0;
+          state.knowledgeQuiz.wrongQuestions = [];
+          saveState();
+          renderApp();
+        });
+      });
+      const submit = document.getElementById('submitKnowledgeQuizBtn');
+      if (submit) submit.addEventListener('click', submitKnowledgeQuiz);
+    }
+
+    function submitKnowledgeQuiz() {
+      state.knowledgeQuiz = mergeKnowledgeQuiz(state.knowledgeQuiz);
+      const unanswered = KNOWLEDGE_QUIZ.items.some((_, index) => !state.knowledgeQuiz.answers['q' + (index + 1)]);
+      if (unanswered) {
+        alert('请先完成全部案件知识验证题目。');
+        return;
+      }
+      let correctCount = 0;
+      const wrongQuestions = [];
+      KNOWLEDGE_QUIZ.items.forEach((item, index) => {
+        const itemKey = 'q' + (index + 1);
+        if (state.knowledgeQuiz.answers[itemKey] === item.answer) correctCount += 1;
+        else wrongQuestions.push(index + 1);
+      });
+      state.knowledgeQuiz.correctCount = correctCount;
+      state.knowledgeQuiz.score = correctCount * 10;
+      state.knowledgeQuiz.submitted = true;
+      state.knowledgeQuiz.submittedAt = new Date().toISOString();
+      state.knowledgeQuiz.wrongQuestions = wrongQuestions;
+      saveState();
+      renderApp();
+    }
+
+    function getKnowledgeQuizSheet() {
+      const quiz = mergeKnowledgeQuiz(state.knowledgeQuiz);
+      return ["案件知识验证", [
+        ["题号", "题目", "学生答案", "正确答案", "是否正确"],
+        ...KNOWLEDGE_QUIZ.items.map((item, index) => {
+          const itemKey = 'q' + (index + 1);
+          const answer = quiz.answers[itemKey] || "";
+          return [String(index + 1), item.question, answer ? answer + " " + (item.options[answer] || "") : "", item.answer + " " + item.options[item.answer], answer ? (answer === item.answer ? "正确" : "错误") : "未作答"];
+        }),
+        ["汇总", "答对数量", quiz.correctCount + " / " + KNOWLEDGE_QUIZ.items.length, "", ""],
+        ["汇总", "知识验证得分", quiz.score, "总成绩", quiz.score + " / 100"],
+        ["汇总", "提交时间", quiz.submittedAt ? new Date(quiz.submittedAt).toLocaleString() : "", "", ""]
+      ]];
     }
 
     function bindSurveyInputs() {
@@ -1454,15 +1578,16 @@
       const load = summarizeSurvey("cognitiveLoad", "load");
       const inquiry = summarizeSurvey("inquiryParticipation", "inquiry");
       return [
-        makeSheet("侦探小结-元认知", "postMeta", "meta"),
+        makeSheet("学习收获调查", "postMeta", "meta"),
         makeSheet("侦探小结-认知负荷", "cognitiveLoad", "load"),
         makeSheet("侦探小结-探究参与", "inquiryParticipation", "inquiry"),
         ["问卷汇总", [
           ["问卷", "已答题数", "总分", "均分", "完成情况"],
-          ["侦探小结元认知", post.answered, post.total, post.average, post.complete ? "已完成" : "未完成"],
+          ["学习收获调查", post.answered, post.total, post.average, post.complete ? "已完成" : "未完成"],
           ["侦探小结认知负荷", load.answered, load.total, load.average, load.complete ? "已完成" : "未完成"],
           ["侦探小结科学探究参与", inquiry.answered, inquiry.total, inquiry.average, inquiry.complete ? "已完成" : "未完成"]
-        ]]
+        ]],
+        getKnowledgeQuizSheet()
       ];
     }
 
@@ -1967,6 +2092,7 @@
 
     function bindStepEvents(stepId) {
       bindSurveyInputs();
+      bindKnowledgeQuizInputs();
       const prev = document.getElementById("prevStep");
       const next = document.getElementById("nextStep");
       if (prev) {
@@ -2420,6 +2546,10 @@
   <script src="assets/ai-assistant.js"></script>
 </body>
 </html>
+
+
+
+
 
 
 
