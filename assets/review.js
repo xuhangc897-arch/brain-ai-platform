@@ -254,6 +254,7 @@
           <h2 class="section-label">${esc(resultLabel)}</h2>
           ${resultHtml}
         </section>
+        ${renderKnowledgeQuizReport(data)}
         <section>
           <h2 class="section-label">${data.meta.type === "poster" ? "我的活动收获" : "我的科学结论"}</h2>
           <div class="conclusion-card"><span class="stamp">${data.meta.type === "poster" ? "创作完成" : "探究完成"}</span><p>${esc(safe(data.conclusion))}</p></div>
@@ -327,6 +328,34 @@
           </div>
         </div>
       </div>
+    `;
+  }
+
+  function renderKnowledgeQuizReport(data) {
+    if (data.meta.type === "poster") return "";
+    const quiz = data.state?.knowledgeQuiz || {};
+    const correctCount = number(quiz.correctCount);
+    const score = number(quiz.score);
+    const wrongQuestions = Array.isArray(quiz.wrongQuestions) && quiz.wrongQuestions.length
+      ? quiz.wrongQuestions.join("、")
+      : (quiz.submitted ? "无" : "暂未提交");
+    return `
+      <section>
+        <h2 class="section-label">案件知识验证</h2>
+        <div class="result-grid">
+          <div class="result-card">
+            <h3>总得分</h3>
+            <div class="result-highlight">${quiz.submitted ? `${score} / 100` : "暂未提交"}</div>
+          </div>
+          <div class="result-card">
+            <h3>答对数量</h3>
+            <div class="evidence-list">
+              <div class="evidence-card"><span>答对</span><strong>${quiz.submitted ? `${correctCount} / 10` : "暂未提交"}</strong></div>
+              <div class="evidence-card"><span>错题</span><strong>${esc(wrongQuestions)}</strong></div>
+            </div>
+          </div>
+        </div>
+      </section>
     `;
   }
 
