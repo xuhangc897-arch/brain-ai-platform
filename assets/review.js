@@ -69,6 +69,7 @@
   }
 
   function buildMemoryContent(state, fields) {
+    const materialLabel = getMemoryMaterialTypeLabel(fields.materialType || fields.material);
     const summary = summarizeBy(state.records || [], "subject", (records) => {
       const capacities = records.map((record) => number(record.finalCapacity)).filter((value) => value > 0);
       const average = capacities.length ? round(avg(capacities), 1) : 0;
@@ -79,7 +80,7 @@
       steps: [
         ["提出问题", fields.question],
         ["作出假设", fields.hypothesis],
-        ["制定计划", `方法：${safe(fields.method)}；材料：${safe(fields.material)}；长度范围：${safe(fields.startLength)}-${safe(fields.maxLength)}`],
+        ["制定计划", `方法：${safe(fields.method)}；材料类别：${safe(materialLabel)}；长度范围：${safe(fields.startLength)}-${safe(fields.maxLength)}`],
         ["搜集证据", `已记录 ${count(state.records)} 条记忆任务数据。`],
         ["处理信息", fields.brainFinding],
         ["得出结论", fields.finalConclusion]
@@ -90,7 +91,8 @@
       evidence: [
         ["研究问题", fields.question],
         ["研究假设", fields.hypothesis],
-        ["实验计划", `采用${safe(fields.method)}，材料为${safe(fields.material)}，每位参与者测量${safe(fields.trialsPerParticipant)}次。`],
+        ["实验材料类别", materialLabel],
+        ["实验计划", `采用${safe(fields.method)}，材料类别为${safe(materialLabel)}，每位参与者测量${safe(fields.trialsPerParticipant)}次。`],
         ["头环观察记录", fields.brainFinding]
       ],
       conclusion: joinText([fields.finalConclusion, fields.designImprove, fields.teamwork, fields.inquiryReflection])
@@ -98,6 +100,7 @@
   }
 
   function buildNbackContent(state, fields) {
+    const materialLabel = getNbackMaterialTypeLabel(fields.materialType || fields.stimulusMaterial);
     const summary = summarizeBy(state.testRuns || [], "condition", (records) => {
       const accuracy = records.map((record) => number(record.accuracy)).filter((value) => value >= 0);
       const average = accuracy.length ? Math.round(avg(accuracy)) : 0;
@@ -107,7 +110,7 @@
       steps: [
         ["提出问题", fields.researchQuestion],
         ["作出假设", fields.hypothesis],
-        ["制定计划", `自变量：${safe(fields.independentVariable)}；材料：${safe(fields.stimulusMaterial)}；设计：${safe(fields.experimentDesign)}`],
+        ["制定计划", `自变量：${safe(fields.independentVariable)}；材料类别：${safe(materialLabel)}；设计：${safe(fields.experimentDesign)}`],
         ["搜集证据", `已记录 ${count(state.testRuns)} 条 N-back 测试数据。`],
         ["处理信息", fields.headbandObservation],
         ["得出结论", fields.conclusion]
@@ -118,7 +121,8 @@
       evidence: [
         ["研究问题", fields.researchQuestion],
         ["研究假设", fields.hypothesis],
-        ["N-back 条件设计", `刺激材料：${safe(fields.stimulusMaterial)}；刺激间隔：${safe(fields.stimulusInterval)} 秒。`],
+        ["实验材料类别", materialLabel],
+        ["N-back 条件设计", `刺激材料类别：${safe(materialLabel)}；刺激间隔：${safe(fields.stimulusInterval)} 秒。`],
         ["头环观察记录", fields.headbandObservation]
       ],
       conclusion: joinText([fields.conclusion, fields.improvement, fields.persuasiveness])
@@ -409,6 +413,35 @@
 
   function brainSvg() {
     return '<svg viewBox="0 0 180 140" aria-hidden="true"><path d="M54 92c-18-4-28-17-26-34 2-16 15-25 28-24 7-15 30-17 41-6 13-10 35-2 38 14 18 4 25 21 18 36-6 13-19 18-33 15-11 14-33 15-45 2-7 2-14 1-21-3Z" fill="none" stroke="#35a9ff" stroke-width="6" stroke-linejoin="round"/><path d="M62 39c-6 12 5 19 19 17m16-29c-8 17 4 25 18 23m-65 24c16-7 28-4 36 10m10-29c16 1 25 11 25 27m-42-20c-2 18 8 29 24 34" fill="none" stroke="#7fe3ff" stroke-width="4" stroke-linecap="round"/><circle cx="135" cy="43" r="6" fill="#f4c45d"/><circle cx="39" cy="74" r="5" fill="#f4c45d"/></svg>';
+  }
+
+  function getMemoryMaterialTypeLabel(type) {
+    return {
+      number: "数字",
+      letter: "英文大写字母",
+      chinese: "汉字",
+      shape: "图形",
+      数字: "数字",
+      字母: "英文大写字母",
+      英文大写字母: "英文大写字母",
+      汉字: "汉字",
+      图形: "图形"
+    }[type] || "数字";
+  }
+
+  function getNbackMaterialTypeLabel(type) {
+    return {
+      image: "图片",
+      number: "数字",
+      letter: "英文大写字母",
+      chinese: "汉字",
+      图片: "图片",
+      图形: "图片",
+      数字: "数字",
+      字母: "英文大写字母",
+      英文大写字母: "英文大写字母",
+      汉字: "汉字"
+    }[type] || "图片";
   }
 
   function safe(value) {
