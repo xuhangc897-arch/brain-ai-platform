@@ -1,4 +1,4 @@
-<!doctype html>
+﻿<!doctype html>
 <html lang="zh-CN">
 <head>
   <meta charset="utf-8" />
@@ -32,7 +32,7 @@
     .brand-title h1 { margin: 0; font-size: 20px; line-height: 1.2; }
     .identity-pill { color: var(--muted); font-size: 13px; }
     .top-actions { display: flex; gap: 10px; align-items: center; }
-    .progress { display: grid; grid-template-columns: repeat(7, minmax(88px, 1fr)); gap: 8px; overflow-x: auto; padding-bottom: 2px; }
+    .progress { display: grid; grid-template-columns: repeat(8, minmax(88px, 1fr)); gap: 8px; overflow-x: auto; padding-bottom: 2px; }
     .progress-step { min-height: 44px; padding: 8px 10px; border: 1px solid var(--line); background: #f9fbff; color: var(--muted); border-radius: 8px; text-align: left; display: flex; align-items: center; gap: 8px; }
     .progress-step strong { display: inline-grid; place-items: center; width: 22px; height: 22px; border-radius: 50%; background: #edf2f7; color: #475467; font-size: 12px; }
     .progress-step span { font-size: 13px; white-space: nowrap; }
@@ -189,7 +189,7 @@
     .focus-prep-card { width: min(560px, 100%); border: 1px solid rgba(255,255,255,.16); border-radius: 8px; padding: 28px; background: #111827; box-shadow: 0 24px 80px rgba(0,0,0,.36); }
     .focus-prep-card h3 { margin: 0 0 10px; font-size: 26px; }
     .focus-prep-card p { margin: 0 0 12px; color: #cbd5e1; }
-    @media (max-width: 980px) { .step-layout, .analysis-layout, .strategy-game { grid-template-columns: 1fr; } .progress { grid-template-columns: repeat(7, 132px); } .summary-grid { grid-template-columns: repeat(2, 1fr); } }
+    @media (max-width: 980px) { .step-layout, .analysis-layout, .strategy-game { grid-template-columns: 1fr; } .progress { grid-template-columns: repeat(8, 132px); } .summary-grid { grid-template-columns: repeat(2, 1fr); } }
     @media (max-width: 640px) { .topbar-inner, .main { padding-left: 14px; padding-right: 14px; } .brand-row, .actions { align-items: stretch; flex-direction: column; } .top-actions, .form-grid, .summary-grid { grid-template-columns: 1fr; flex-direction: column; } .memory-items, .bar-row { grid-template-columns: 1fr; } }
 
     .survey-shell { display: grid; gap: 18px; }
@@ -277,16 +277,16 @@
     const CONTEXT_KEY = "science-inquiry-context-v1";
     const STORAGE_KEY = "longterm-strategies-state-v1";
     const DEV_MODE_KEY = "devMode";
+    const FLOW_VERSION = "science-eight-step-v2";
     const steps = [
-      
-      { id: "pretest", title: "前测", minutes: "10分钟" },{ id: "question", title: "提出问题", minutes: "10分钟" },
+      { id: "question", title: "提出问题", minutes: "10分钟" },
       { id: "hypothesis", title: "作出假设", minutes: "10分钟" },
       { id: "plan", title: "制定计划", minutes: "20分钟" },
       { id: "evidence", title: "搜集证据", minutes: "45分钟" },
       { id: "analysis", title: "处理信息", minutes: "15分钟" },
       { id: "conclusion", title: "得出结论", minutes: "5分钟" },
       { id: "reflection", title: "反思交流", minutes: "15分钟" },
-      { id: "posttest", title: "后测", minutes: "15分钟" }
+      { id: "posttest", title: "侦探小结", minutes: "15分钟" }
     ];
     const materialBank = {
       word: {
@@ -321,11 +321,12 @@
         labels: { 1: "完全否", 2: "较少", 3: "一般", 4: "较多", 5: "完全是" },
         note: "请选择最符合你真实想法的一项。得分越高，表示你越认同题目内容。",
         items: [
-          "我能够理解老师所讲的有关记忆的知识。",
-          "这些有关记忆的知识对我很有用，我会继续使用。",
-          "在学习这些知识时，我会与现实生活进行联系。",
-          "我会根据今天学到的知识反思之前的学习过程中做的不足的地方并加以改进。",
-          "在学习这些知识时，我会联想到之前学过或了解过的知识。"
+          "我能够理解本次科学探究中获得的有关改善长时记忆策略的知识。",
+          "这些有关改善长时记忆策略的知识对我很有用，我会继续运用。",
+          "在学习这些有关改善长时记忆策略的知识时，我会与现实生活进行联系。",
+          "我会根据今天科学探究中获得的知识，反思自己以前采用的记忆方法，并尝试加以改进。",
+          "在学习这些有关改善长时记忆策略的知识时，我会联想到之前学过或了解过的知识。",
+          "我能够根据不同的学习任务，选择合适的记忆策略来帮助自己学习。"
         ]
       },
       load: {
@@ -360,7 +361,7 @@
     };
 
     function createDefaultSurveys() {
-      return { preMeta: {}, postMeta: {}, cognitiveLoad: {}, inquiryParticipation: {} };
+      return { postMeta: {}, cognitiveLoad: {}, inquiryParticipation: {} };
     }
 
     function mergeSurveys(incoming = {}) {
@@ -376,6 +377,7 @@
       studentAge: "",
       studentId: "",
       groupId: "",
+      flowVersion: FLOW_VERSION,
       currentStep: 0,
       maxUnlockedStep: 0,
       fields: {
@@ -458,8 +460,19 @@
       merged.strategyScores = Array.isArray(incoming.strategyScores) ? incoming.strategyScores : [];
       merged.surveys = mergeSurveys(incoming.surveys);
       if (!incoming.surveys) merged.currentStep = 0;
+      if (incoming.flowVersion !== FLOW_VERSION) {
+        merged.currentStep = migrateLegacyStepIndex(merged.currentStep);
+        merged.maxUnlockedStep = migrateLegacyStepIndex(merged.maxUnlockedStep);
+      }
+      merged.flowVersion = FLOW_VERSION;
       return merged;
     }
+    function migrateLegacyStepIndex(value) {
+      const index = Number(value);
+      if (!Number.isInteger(index) || index <= 0) return 0;
+      return Math.max(0, index - 1);
+    }
+
     function normalizeCurrentStep() {
       normalizeStepAccess();
       if (!isDeveloperMode()) saveState();
@@ -582,7 +595,7 @@
 
     function renderStep() {
       const step = steps[state.currentStep];
-      main.innerHTML = `<section class="panel"><div class="panel-head"><h2>${state.currentStep + 1}. ${step.title}</h2><p>建议时长：${step.minutes}</p></div><div class="panel-body">${getStepHtml(step.id)}${renderNavigation()}</div></section>`;
+      main.innerHTML = `<section class="panel"><div class="panel-head"><h2>${step.id === "posttest" ? step.title : `${state.currentStep + 1}. ${step.title}`}</h2><p>建议时长：${step.minutes}</p></div><div class="panel-body">${getStepHtml(step.id)}${renderNavigation()}</div></section>`;
       bindInputs();
       bindStepEvents(step.id);
     }
@@ -592,7 +605,6 @@
     }
     function getStepHtml(stepId) {
       return {
-        pretest: renderPretestStep,
         question: renderQuestionStep,
         hypothesis: renderHypothesisStep,
         plan: renderPlanStep,
@@ -603,18 +615,11 @@
       ,
         posttest: renderPosttestStep}[stepId]();
     }
-    function renderPretestStep() { return renderSurveyPage("pretest"); }
     function renderPosttestStep() { return renderSurveyPage("posttest"); }
 
     function renderSurveyPage(kind) {
-      if (kind === "pretest") {
-        return '<div class="survey-shell">' +
-          '<div class="survey-intro"><h3>前测：记忆相关知识元认知情况调查问卷</h3><p>亲爱的同学们：你们好！本次调查是为了了解你目前与记忆相关知识的元认知情况，问卷结果仅用于本次学习活动的数据分析，不会影响你的成绩或其他学习活动，也不会泄露你的个人信息。请根据真实想法选择最符合的一项，所有答案会自动保存，并在导出 Excel 时一并导出。</p></div>' +
-          renderSurveyForm("preMeta", "meta") +
-        '</div>';
-      }
       return '<div class="survey-shell">' +
-        '<div class="survey-intro"><h3>后测：活动结束后的学习反馈</h3><p>亲爱的同学们：你们好！本次后测用于了解活动后你对记忆相关知识的认识变化、活动中的认知负荷和科学探究参与情况。问卷结果仅用于本次学习活动改进与数据分析，不会影响成绩或其他学习活动，也不会泄露个人信息。请根据真实体验作答，感谢你的支持与配合。</p></div>' +
+        '<div class="survey-intro"><h3>侦探小结</h3><p>亲爱的同学们：你们好！本次侦探小结用于了解活动后你对记忆相关知识的认识变化、活动中的认知负荷和科学探究参与情况。问卷结果仅用于本次学习活动改进与数据分析，不会影响成绩或其他学习活动，也不会泄露个人信息。请根据真实体验作答，感谢你的支持与配合。</p></div>' +
         renderSurveyForm("postMeta", "meta") +
         renderSurveyForm("cognitiveLoad", "load") +
         renderSurveyForm("inquiryParticipation", "inquiry") +
@@ -650,15 +655,11 @@
     }
 
     function renderSurveySummaryCards() {
-      const pre = summarizeSurvey("preMeta", "meta");
       const post = summarizeSurvey("postMeta", "meta");
       const load = summarizeSurvey("cognitiveLoad", "load");
       const inquiry = summarizeSurvey("inquiryParticipation", "inquiry");
-      const delta = post.answered && pre.answered ? Number((post.total - pre.total).toFixed(1)) : "待完成";
       return '<div class="survey-summary">' +
-        '<div><strong>' + (pre.total || '待完成') + '</strong><span>前测元认知总分</span></div>' +
-        '<div><strong>' + (post.total || '待完成') + '</strong><span>后测元认知总分</span></div>' +
-        '<div><strong>' + delta + '</strong><span>元认知变化</span></div>' +
+        '<div><strong>' + (post.total || '待完成') + '</strong><span>侦探小结元认知总分</span></div>' +
         '<div><strong>' + (load.average || '待完成') + '</strong><span>认知负荷均分</span></div>' +
         '<div><strong>' + (inquiry.average || '待完成') + '</strong><span>探究参与均分</span></div>' +
       '</div>';
@@ -686,7 +687,6 @@
     }
 
     function isSurveyStepComplete(stepId) {
-      if (stepId === "pretest") return summarizeSurvey("preMeta", "meta").complete;
       if (stepId === "posttest") return summarizeSurvey("postMeta", "meta").complete && summarizeSurvey("cognitiveLoad", "load").complete && summarizeSurvey("inquiryParticipation", "inquiry").complete;
       return true;
     }
@@ -703,22 +703,18 @@
           ["合计", "均分", summary.average]
         ]];
       };
-      const pre = summarizeSurvey("preMeta", "meta");
       const post = summarizeSurvey("postMeta", "meta");
       const load = summarizeSurvey("cognitiveLoad", "load");
       const inquiry = summarizeSurvey("inquiryParticipation", "inquiry");
       return [
-        makeSheet("前测-元认知", "preMeta", "meta"),
-        makeSheet("后测-元认知", "postMeta", "meta"),
-        makeSheet("后测-认知负荷", "cognitiveLoad", "load"),
-        makeSheet("后测-探究参与", "inquiryParticipation", "inquiry"),
+        makeSheet("侦探小结-元认知", "postMeta", "meta"),
+        makeSheet("侦探小结-认知负荷", "cognitiveLoad", "load"),
+        makeSheet("侦探小结-探究参与", "inquiryParticipation", "inquiry"),
         ["问卷汇总", [
           ["问卷", "已答题数", "总分", "均分", "完成情况"],
-          ["前测元认知", pre.answered, pre.total, pre.average, pre.complete ? "已完成" : "未完成"],
-          ["后测元认知", post.answered, post.total, post.average, post.complete ? "已完成" : "未完成"],
-          ["元认知前后测变化", "", Number((post.total - pre.total).toFixed(1)), "", pre.complete && post.complete ? "可比较" : "待补全"],
-          ["后测认知负荷", load.answered, load.total, load.average, load.complete ? "已完成" : "未完成"],
-          ["后测科学探究参与", inquiry.answered, inquiry.total, inquiry.average, inquiry.complete ? "已完成" : "未完成"]
+          ["侦探小结元认知", post.answered, post.total, post.average, post.complete ? "已完成" : "未完成"],
+          ["侦探小结认知负荷", load.answered, load.total, load.average, load.complete ? "已完成" : "未完成"],
+          ["侦探小结科学探究参与", inquiry.answered, inquiry.total, inquiry.average, inquiry.complete ? "已完成" : "未完成"]
         ]]
       ];
     }
@@ -1252,3 +1248,7 @@
   <script src="assets/ai-assistant.js"></script>
 </body>
 </html>
+
+
+
+

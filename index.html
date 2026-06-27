@@ -2890,6 +2890,59 @@
       align-self: flex-start;
     }
 
+    .qualification-pass {
+      position: relative;
+      display: grid;
+      grid-column: 1 / -1;
+      grid-template-columns: minmax(0, 1fr) auto;
+      gap: 16px;
+      align-items: center;
+      margin-top: 16px;
+      padding: 15px 16px;
+      overflow: hidden;
+      border: 1px solid rgba(129, 206, 255, 0.45);
+      border-radius: 8px;
+      background:
+        linear-gradient(135deg, rgba(244, 250, 255, 0.96), rgba(212, 235, 255, 0.92)),
+        repeating-linear-gradient(90deg, rgba(22, 91, 148, 0.07) 0 1px, transparent 1px 10px);
+      color: #132235;
+      box-shadow: 0 12px 28px rgba(0, 8, 24, 0.24);
+    }
+
+    .qualification-pass::before {
+      content: "ID";
+      display: grid;
+      place-items: center;
+      width: 48px;
+      height: 48px;
+      border: 2px solid rgba(23, 76, 129, 0.32);
+      border-radius: 50%;
+      background: rgba(255, 255, 255, 0.58);
+      color: #174c81;
+      font-weight: 900;
+      letter-spacing: 0.08em;
+    }
+
+    .qualification-pass h3 {
+      margin: 0 0 5px;
+      color: #0f1f33;
+      font-size: 20px;
+      line-height: 1.15;
+    }
+
+    .qualification-pass p {
+      margin: 0;
+      color: #42566f;
+      font-size: 12px;
+      line-height: 1.45;
+      font-weight: 700;
+    }
+
+    .qualification-pass .btn {
+      min-height: 36px;
+      white-space: nowrap;
+    }
+
     .module-entry {
       width: 100%;
       min-height: 48px;
@@ -3150,6 +3203,14 @@
         </div>
 
         <div class="module-grid">
+          <article class="qualification-pass">
+            <div>
+              <h3>记忆侦探资格审查</h3>
+              <p>先完成基础挑战，获得进入案件调查的资格</p>
+            </div>
+            <button class="btn" type="button" data-target="pretest.html">开始资格审查</button>
+          </article>
+
           <article class="module-card case-folder science-folder">
             <div class="module-head">
               <div>

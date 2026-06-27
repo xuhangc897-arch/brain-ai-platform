@@ -1,0 +1,559 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>记忆侦探资格审查</title>
+  <style>
+    :root {
+      --bg: #eef5fb;
+      --panel: #ffffff;
+      --ink: #172033;
+      --muted: #5a6b7f;
+      --line: #d9e5f1;
+      --primary: #2563eb;
+      --primary-dark: #1745a3;
+      --primary-soft: #e8f0ff;
+      --success: #11845b;
+      --warning: #9a5b00;
+    }
+
+    * { box-sizing: border-box; }
+
+    body {
+      margin: 0;
+      min-height: 100vh;
+      background:
+        linear-gradient(180deg, rgba(238, 245, 251, 0.94), rgba(223, 234, 246, 0.96)),
+        radial-gradient(circle at top left, rgba(37, 99, 235, 0.12), transparent 34rem);
+      color: var(--ink);
+      font-family: "Microsoft YaHei", "PingFang SC", Arial, sans-serif;
+    }
+
+    .topbar {
+      position: sticky;
+      top: 0;
+      z-index: 10;
+      border-bottom: 1px solid var(--line);
+      background: rgba(255, 255, 255, 0.9);
+      backdrop-filter: blur(14px);
+    }
+
+    .topbar-inner,
+    .main {
+      width: min(1120px, calc(100% - 32px));
+      margin: 0 auto;
+    }
+
+    .topbar-inner {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 14px;
+      min-height: 68px;
+    }
+
+    .brand {
+      display: flex;
+      flex-direction: column;
+      gap: 3px;
+    }
+
+    .brand span {
+      color: var(--primary);
+      font-size: 12px;
+      font-weight: 900;
+      letter-spacing: 0.12em;
+      text-transform: uppercase;
+    }
+
+    .brand strong {
+      font-size: 22px;
+      line-height: 1.15;
+    }
+
+    .main {
+      display: grid;
+      gap: 18px;
+      padding: 24px 0 36px;
+    }
+
+    .panel {
+      border: 1px solid var(--line);
+      border-radius: 8px;
+      background: var(--panel);
+      box-shadow: 0 16px 36px rgba(30, 47, 75, 0.09);
+    }
+
+    .panel-head {
+      padding: 20px 22px 14px;
+      border-bottom: 1px solid var(--line);
+    }
+
+    .panel-head h1,
+    .panel-head h2 {
+      margin: 0;
+      line-height: 1.2;
+    }
+
+    .panel-head p {
+      margin: 8px 0 0;
+      color: var(--muted);
+      line-height: 1.65;
+    }
+
+    .panel-body { padding: 20px 22px 22px; }
+
+    .identity-grid {
+      display: grid;
+      grid-template-columns: repeat(4, minmax(0, 1fr));
+      gap: 14px;
+    }
+
+    label {
+      display: grid;
+      gap: 6px;
+      color: #344054;
+      font-size: 13px;
+      font-weight: 800;
+    }
+
+    input[type="text"],
+    input[type="number"] {
+      width: 100%;
+      min-height: 42px;
+      padding: 9px 11px;
+      border: 1px solid var(--line);
+      border-radius: 8px;
+      outline: none;
+      color: var(--ink);
+      font: inherit;
+    }
+
+    input:focus {
+      border-color: #8ab4ff;
+      box-shadow: 0 0 0 3px rgba(37, 99, 235, 0.12);
+    }
+
+    .survey-intro {
+      display: grid;
+      gap: 8px;
+      margin-bottom: 16px;
+      padding: 16px;
+      border: 1px solid #cfe0ff;
+      border-radius: 8px;
+      background: var(--primary-soft);
+    }
+
+    .survey-intro h2 {
+      margin: 0;
+      font-size: 20px;
+    }
+
+    .survey-intro p {
+      margin: 0;
+      color: var(--muted);
+      line-height: 1.7;
+    }
+
+    .survey-card {
+      display: grid;
+      gap: 16px;
+    }
+
+    .survey-item {
+      padding: 16px 0;
+      border-top: 1px solid var(--line);
+    }
+
+    .survey-item:first-child { border-top: 0; }
+
+    .survey-item p {
+      margin: 0 0 12px;
+      font-weight: 900;
+      line-height: 1.55;
+    }
+
+    .survey-scale {
+      display: grid;
+      grid-template-columns: repeat(5, minmax(0, 1fr));
+      gap: 10px;
+    }
+
+    .survey-option input {
+      position: absolute;
+      opacity: 0;
+      pointer-events: none;
+    }
+
+    .survey-option-card {
+      display: grid;
+      place-items: center;
+      min-height: 66px;
+      padding: 10px 8px;
+      border: 1px solid var(--line);
+      border-radius: 8px;
+      background: #fff;
+      color: var(--muted);
+      cursor: pointer;
+      transition: border-color .16s ease, box-shadow .16s ease, transform .16s ease, background .16s ease;
+    }
+
+    .survey-option-card:hover {
+      transform: translateY(-1px);
+      border-color: #9dbdff;
+    }
+
+    .survey-option.is-selected .survey-option-card {
+      border-color: var(--primary);
+      background: #eff5ff;
+      color: var(--primary-dark);
+      box-shadow: 0 10px 20px rgba(37, 99, 235, 0.13);
+    }
+
+    .survey-score {
+      font-size: 20px;
+      font-weight: 900;
+      line-height: 1;
+    }
+
+    .survey-label {
+      margin-top: 6px;
+      font-size: 12px;
+      font-weight: 800;
+    }
+
+    .summary {
+      display: grid;
+      grid-template-columns: repeat(3, minmax(0, 1fr));
+      gap: 12px;
+      margin-top: 18px;
+    }
+
+    .summary > div {
+      min-height: 82px;
+      padding: 14px;
+      border: 1px solid var(--line);
+      border-radius: 8px;
+      background: #f8fbff;
+    }
+
+    .summary strong {
+      display: block;
+      font-size: 24px;
+      color: var(--primary-dark);
+    }
+
+    .summary span {
+      display: block;
+      margin-top: 4px;
+      color: var(--muted);
+      font-size: 13px;
+      font-weight: 800;
+    }
+
+    .actions {
+      display: flex;
+      flex-wrap: wrap;
+      justify-content: flex-end;
+      gap: 10px;
+      margin-top: 18px;
+    }
+
+    .btn {
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      min-height: 42px;
+      padding: 10px 16px;
+      border: 0;
+      border-radius: 8px;
+      background: var(--primary);
+      color: #fff;
+      font-weight: 900;
+      font: inherit;
+      cursor: pointer;
+    }
+
+    .btn.secondary {
+      border: 1px solid var(--line);
+      background: #fff;
+      color: var(--ink);
+    }
+
+    .status {
+      min-height: 24px;
+      margin: 0;
+      color: var(--warning);
+      font-weight: 900;
+    }
+
+    .status.is-complete { color: var(--success); }
+
+    @media (max-width: 760px) {
+      .topbar-inner,
+      .main { width: min(100% - 24px, 1120px); }
+      .topbar-inner { align-items: flex-start; flex-direction: column; padding: 12px 0; }
+      .identity-grid,
+      .survey-scale,
+      .summary { grid-template-columns: 1fr; }
+      .actions { align-items: stretch; flex-direction: column; }
+      .btn { width: 100%; }
+    }
+  </style>
+</head>
+<body>
+  <header class="topbar">
+    <div class="topbar-inner">
+      <div class="brand">
+        <span>Detective Qualification</span>
+        <strong>记忆侦探资格审查</strong>
+      </div>
+      <button class="btn secondary" type="button" id="homeBtn">返回首页</button>
+    </div>
+  </header>
+
+  <main class="main">
+    <section class="panel">
+      <div class="panel-head">
+        <h1>记忆侦探资格审查</h1>
+        <p>先完成基础挑战，获得进入案件调查的资格。答题会自动保存在当前浏览器中。</p>
+      </div>
+      <div class="panel-body">
+        <div class="identity-grid">
+          <label>学生姓名
+            <input id="studentName" type="text" autocomplete="off">
+          </label>
+          <label>学生年龄
+            <input id="studentAge" type="number" min="1" max="99" autocomplete="off">
+          </label>
+          <label>学生编号
+            <input id="studentId" type="text" autocomplete="off">
+          </label>
+          <label>小组编号
+            <input id="groupId" type="text" autocomplete="off">
+          </label>
+        </div>
+      </div>
+    </section>
+
+    <section class="panel">
+      <div class="panel-body">
+        <div class="survey-intro">
+          <h2>记忆相关知识元认知情况调查问卷</h2>
+          <p>亲爱的同学们：你们好！本次调查是为了了解你目前与记忆相关知识的元认知情况，问卷结果仅用于本次学习活动的数据分析，不会影响你的成绩或其他学习活动，也不会泄露你的个人信息。请根据真实想法选择最符合的一项。</p>
+        </div>
+        <div id="surveyRoot"></div>
+        <div class="summary" id="summary"></div>
+        <div class="actions">
+          <p class="status" id="status"></p>
+          <button class="btn secondary" type="button" id="resetBtn">重新作答</button>
+          <button class="btn" type="button" id="completeBtn">完成资格审查</button>
+        </div>
+      </div>
+    </section>
+  </main>
+
+  <script>
+    const CONTEXT_KEY = "science-inquiry-context-v1";
+    const PRETEST_KEY = "pretestData";
+    const QUALIFICATION_KEY = "detectiveQualificationData";
+
+    const surveyDef = {
+      title: "记忆相关知识元认知情况调查问卷",
+      scale: [1, 2, 3, 4, 5],
+      anchors: "1=完全否，2=较少，3=一般，4=较多，5=完全是",
+      labels: { 1: "完全否", 2: "较少", 3: "一般", 4: "较多", 5: "完全是" },
+      note: "请选择最符合你真实想法的一项。得分越高，表示你越认同题目内容。",
+      items: [
+        "我能够理解老师所讲的有关记忆的知识。",
+        "这些有关记忆的知识对我很有用，我会继续使用。",
+        "在学习这些知识时，我会与现实生活进行联系。",
+        "我会根据今天学到的知识反思之前的学习过程中做的不足的地方并加以改进。",
+        "在学习这些知识时，我会联想到之前学过或了解过的知识。"
+      ]
+    };
+
+    const inputs = {
+      studentName: document.getElementById("studentName"),
+      studentAge: document.getElementById("studentAge"),
+      studentId: document.getElementById("studentId"),
+      groupId: document.getElementById("groupId")
+    };
+    const surveyRoot = document.getElementById("surveyRoot");
+    const summaryRoot = document.getElementById("summary");
+    const status = document.getElementById("status");
+
+    let state = loadState();
+    renderApp();
+
+    function loadState() {
+      const context = readJson(CONTEXT_KEY) || {};
+      const saved = readJson(PRETEST_KEY) || readJson(QUALIFICATION_KEY) || {};
+      return {
+        studentName: saved.studentName || context.studentName || "",
+        studentAge: saved.studentAge || context.studentAge || "",
+        studentId: saved.studentId || context.studentId || "",
+        groupId: saved.groupId || context.groupId || "",
+        answers: Object.assign({}, saved.answers || saved.preMeta || {}),
+        completed: Boolean(saved.completed),
+        completedAt: saved.completedAt || ""
+      };
+    }
+
+    function readJson(key) {
+      try {
+        return JSON.parse(localStorage.getItem(key) || "null");
+      } catch (event) {
+        localStorage.removeItem(key);
+        return null;
+      }
+    }
+
+    function saveIdentity() {
+      Object.keys(inputs).forEach((key) => {
+        state[key] = inputs[key].value.trim();
+      });
+      localStorage.setItem(CONTEXT_KEY, JSON.stringify({
+        studentName: state.studentName,
+        studentAge: state.studentAge,
+        studentId: state.studentId,
+        groupId: state.groupId,
+        savedAt: new Date().toISOString()
+      }));
+    }
+
+    function saveState() {
+      saveIdentity();
+      const summary = summarize();
+      const payload = {
+        studentName: state.studentName,
+        studentAge: state.studentAge,
+        studentId: state.studentId,
+        groupId: state.groupId,
+        answers: state.answers,
+        preMeta: state.answers,
+        answered: summary.answered,
+        total: summary.total,
+        average: summary.average,
+        complete: summary.complete,
+        completed: state.completed,
+        completedAt: state.completedAt,
+        savedAt: new Date().toISOString()
+      };
+      localStorage.setItem(PRETEST_KEY, JSON.stringify(payload));
+      localStorage.setItem(QUALIFICATION_KEY, JSON.stringify(payload));
+    }
+
+    function renderApp() {
+      Object.keys(inputs).forEach((key) => {
+        inputs[key].value = state[key] || "";
+        inputs[key].addEventListener("input", () => {
+          saveState();
+          renderSummary();
+        });
+      });
+      renderSurvey();
+      renderSummary();
+      document.getElementById("homeBtn").addEventListener("click", () => {
+        saveState();
+        location.href = "index.html";
+      });
+      document.getElementById("completeBtn").addEventListener("click", completePretest);
+      document.getElementById("resetBtn").addEventListener("click", resetPretest);
+    }
+
+    function renderSurvey() {
+      surveyRoot.innerHTML = '<section class="survey-card">' +
+        '<div><strong>' + surveyDef.title + '</strong><p>' + surveyDef.note + '</p><p>' + surveyDef.anchors + '</p></div>' +
+        surveyDef.items.map((item, index) => {
+          const itemKey = "q" + (index + 1);
+          return '<div class="survey-item"><p>' + (index + 1) + ". " + escapeHtml(item) + '</p>' +
+            '<div class="survey-scale" role="radiogroup" aria-label="' + escapeHtml(item) + '">' +
+              surveyDef.scale.map((score) => {
+                const checked = Number(state.answers[itemKey]) === score;
+                return '<label class="survey-option ' + (checked ? "is-selected" : "") + '">' +
+                  '<input type="radio" name="' + itemKey + '" data-question="' + itemKey + '" value="' + score + '" ' + (checked ? "checked" : "") + '>' +
+                  '<span class="survey-option-card"><span class="survey-score">' + score + '</span><span class="survey-label">' + surveyDef.labels[score] + '</span></span>' +
+                '</label>';
+              }).join("") +
+            '</div></div>';
+        }).join("") +
+      '</section>';
+
+      surveyRoot.querySelectorAll("[data-question]").forEach((input) => {
+        input.addEventListener("change", () => {
+          state.answers[input.dataset.question] = Number(input.value);
+          state.completed = false;
+          state.completedAt = "";
+          saveState();
+          renderSurvey();
+          renderSummary();
+        });
+      });
+    }
+
+    function summarize() {
+      const values = surveyDef.items
+        .map((_, index) => Number(state.answers["q" + (index + 1)] || 0))
+        .filter(Boolean);
+      const total = values.reduce((sum, value) => sum + value, 0);
+      return {
+        answered: values.length,
+        total,
+        average: values.length ? Number((total / values.length).toFixed(2)) : 0,
+        complete: values.length === surveyDef.items.length
+      };
+    }
+
+    function renderSummary() {
+      const summary = summarize();
+      summaryRoot.innerHTML = [
+        ["已答题数", summary.answered + "/" + surveyDef.items.length],
+        ["总分", summary.total || "待完成"],
+        ["均分", summary.average || "待完成"]
+      ].map((item) => '<div><strong>' + item[1] + '</strong><span>' + item[0] + '</span></div>').join("");
+      status.classList.toggle("is-complete", state.completed);
+      status.textContent = state.completed ? "资格审查完成，可以开始案件探究。" : "";
+    }
+
+    function completePretest() {
+      saveIdentity();
+      const summary = summarize();
+      if (!state.studentId || !state.groupId) {
+        status.classList.remove("is-complete");
+        status.textContent = "请先填写学生编号和小组编号。";
+        return;
+      }
+      if (!summary.complete) {
+        status.classList.remove("is-complete");
+        status.textContent = "请完成全部题目后再提交。";
+        return;
+      }
+      state.completed = true;
+      state.completedAt = new Date().toISOString();
+      saveState();
+      renderSummary();
+    }
+
+    function resetPretest() {
+      if (!confirm("确定要清空本页资格审查答题记录吗？")) return;
+      state.answers = {};
+      state.completed = false;
+      state.completedAt = "";
+      saveState();
+      renderSurvey();
+      renderSummary();
+    }
+
+    function escapeHtml(value) {
+      return String(value ?? "")
+        .replaceAll("&", "&amp;")
+        .replaceAll("<", "&lt;")
+        .replaceAll(">", "&gt;")
+        .replaceAll('"', "&quot;")
+        .replaceAll("'", "&#039;");
+    }
+  </script>
+</body>
+</html>
