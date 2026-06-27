@@ -292,6 +292,23 @@
       margin-bottom: 18px;
     }
 
+    .material-inline-field {
+      display: flex;
+      align-items: center;
+      gap: 10px;
+      min-width: 300px;
+    }
+
+    .material-inline-field label {
+      margin-bottom: 0;
+      white-space: nowrap;
+    }
+
+    .material-inline-field select {
+      width: 200px;
+      flex: 0 0 200px;
+    }
+
     label {
       display: block;
       margin-bottom: 7px;
@@ -2173,7 +2190,6 @@
                     <option value="letter" ${selected("materialType", "letter")}>英文大写字母</option>
                     <option value="chinese" ${selected("materialType", "chinese")}>汉字</option>
                   </select>
-                  <small>请选择本次实验使用的记忆材料。</small>
                 </div>
                 <div class="field">
                   <label for="experimentDesign">实验设计</label>
@@ -2217,7 +2233,7 @@
                 <label for="gameCondition">实验条件</label>
                 <select id="gameCondition"></select>
               </div>
-              <div class="field">
+              <div class="field material-inline-field">
                 <label for="gameStimulus">实验材料类别</label>
                 <select id="gameStimulus">
                   <option value="image" ${state.fields.materialType === "image" ? "selected" : ""}>图片</option>
@@ -2225,7 +2241,6 @@
                   <option value="letter" ${state.fields.materialType === "letter" ? "selected" : ""}>英文大写字母</option>
                   <option value="chinese" ${state.fields.materialType === "chinese" ? "selected" : ""}>汉字</option>
                 </select>
-                <small>请选择本次实验使用的记忆材料。</small>
               </div>
               <div class="field">
                 <label for="stimulusInterval">每个刺激作答时间（秒）</label>

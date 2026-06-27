@@ -454,6 +454,33 @@
       margin-bottom: 18px;
     }
 
+    .material-inline-field {
+      display: flex;
+      align-items: center;
+      gap: 10px;
+      min-width: 300px;
+    }
+
+    .material-inline-field label {
+      margin-bottom: 0;
+      white-space: nowrap;
+    }
+
+    .material-inline-field select {
+      width: 200px;
+      flex: 0 0 200px;
+    }
+
+    .shape-code-guide {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 8px 14px;
+      margin: 10px 0 0;
+      color: var(--muted);
+      font-size: 13px;
+      font-weight: 700;
+    }
+
     label {
       display: block;
       margin-bottom: 7px;
@@ -1759,7 +1786,6 @@
                     <option value="chinese" ${selected("materialType", "chinese")}>汉字</option>
                     <option value="shape" ${selected("materialType", "shape")}>图形</option>
                   </select>
-                  <small>请选择本次实验使用的记忆材料。</small>
                 </div>
                 <div class="field">
                   <label>起始长度</label>
@@ -1809,7 +1835,7 @@
                 <label for="runNumber">第几次测量</label>
                 <select id="runNumber">${Array.from({ length: Number(state.fields.trialsPerParticipant) || 3 }, (_, index) => `<option value="${index + 1}">第 ${index + 1} 次</option>`).join("")}</select>
               </div>
-              <div class="field">
+              <div class="field material-inline-field">
                 <label for="runMaterialType">实验材料类别</label>
                 <select id="runMaterialType" data-field="materialType">
                   <option value="number" ${selected("materialType", "number")}>数字</option>
@@ -1817,7 +1843,6 @@
                   <option value="chinese" ${selected("materialType", "chinese")}>汉字</option>
                   <option value="shape" ${selected("materialType", "shape")}>图形</option>
                 </select>
-                <small>请选择本次实验使用的记忆材料。</small>
               </div>
               <button class="btn" type="button" id="startRunBtn">开始测量</button>
             </div>
@@ -1831,7 +1856,14 @@
                 <div id="answerBox" class="answer-box">
                   <label for="answerInput">请输入复述结果</label>
                   <input id="answerInput" type="text" autocomplete="off" placeholder="可不加空格，图形请用 A/B/C/D/E 作答" />
-                  <p id="shapeAnswerHint" style="display:${state.fields.materialType === "shape" ? "block" : "none"};margin:8px 0 0;color:var(--muted);font-size:13px;">图形作答请使用代号：三角形=A，正方形=B，圆形=C，星形=D，菱形=E。</p>
+                  <div id="shapeAnswerHint" class="shape-code-guide" style="display:${state.fields.materialType === "shape" ? "flex" : "none"};">
+                    <span>图形代号说明：</span>
+                    <span>△ = A</span>
+                    <span>□ = B</span>
+                    <span>○ = C</span>
+                    <span>★ = D</span>
+                    <span>◇ = E</span>
+                  </div>
                   <button class="btn" type="button" id="submitAnswerBtn" style="width:100%;margin-top:12px;">提交答案</button>
                 </div>
               </div>
@@ -1854,7 +1886,7 @@
               <div class="focus-prep-card">
                 <h3>准备开始短时记忆测量</h3>
                 <p>页面将切换到低干扰实验界面，并尝试进入浏览器全屏。若浏览器拒绝全屏，实验仍会正常开始。</p>
-                <p>请专注记住屏幕中央依次出现的材料，呈现结束后按要求顺背或倒背输入结果。图形作答请使用代号：三角形=A，正方形=B，圆形=C，星形=D，菱形=E。</p>
+                <p>请专注记住屏幕中央依次出现的材料，呈现结束后按要求顺背或倒背输入结果。图形代号说明：△ = A，□ = B，○ = C，★ = D，◇ = E。</p>
                 <button class="btn" type="button" id="confirmStartRunBtn">进入测量</button>
                 <button class="btn secondary" type="button" id="cancelStartRunBtn">取消</button>
               </div>
@@ -2354,7 +2386,6 @@
       const labels = { A: "三角形", B: "正方形", C: "圆形", D: "星形", E: "菱形" };
       return '<svg viewBox="0 0 100 100" width="112" height="112" role="img" aria-label="' + labels[code] + '">' +
         '<g fill="#4f7cff" stroke="#17315f" stroke-width="4">' + shapes[code] + '</g>' +
-        '<text x="50" y="58" text-anchor="middle" font-size="28" font-weight="800" fill="#ffffff">' + code + '</text>' +
       '</svg>';
     }
 
@@ -2465,7 +2496,7 @@
       const wrongStreakStat = document.getElementById("wrongStreakStat");
       const log = document.getElementById("gameLogBody");
       if (!status) return;
-      if (shapeAnswerHint) shapeAnswerHint.style.display = game && game.materialType === "shape" ? "block" : "none";
+      if (shapeAnswerHint) shapeAnswerHint.style.display = game && game.materialType === "shape" ? "flex" : "none";
       if (!game) {
         status.textContent = "请选择参与者并开始测量";
         if (gameHint) gameHint.textContent = `${state.fields.method} / ${getMaterialTypeLabel(state.fields.materialType)}`;
