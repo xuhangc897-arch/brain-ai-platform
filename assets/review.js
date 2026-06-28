@@ -70,6 +70,8 @@
 
   function buildMemoryContent(state, fields) {
     const materialLabel = getMemoryMaterialTypeLabel(fields.materialType || fields.material);
+    const personalResult = getMemoryPersonalResult(state);
+    const groupAverage = fields.groupAverageShortTermMemory || "";
     const summary = summarizeBy(state.records || [], "subject", (records) => {
       const capacities = records.map((record) => number(record.finalCapacity)).filter((value) => value > 0);
       const average = capacities.length ? round(avg(capacities), 1) : 0;
@@ -80,7 +82,7 @@
       steps: [
         ["提出问题", fields.question],
         ["作出假设", fields.hypothesis],
-        ["制定计划", `方法：${safe(fields.method)}；材料类别：${safe(materialLabel)}；长度范围：${safe(fields.startLength)}-${safe(fields.maxLength)}`],
+        ["制定计划", `方法：${safe(fields.method)}；材料类别：${safe(materialLabel)}；起始长度：${safe(fields.startLength)}`],
         ["搜集证据", `已记录 ${count(state.records)} 条记忆任务数据。`],
         ["处理信息", fields.brainFinding],
         ["得出结论", fields.finalConclusion]
@@ -93,6 +95,8 @@
         ["研究假设", fields.hypothesis],
         ["实验材料类别", materialLabel],
         ["实验计划", `采用${safe(fields.method)}，材料类别为${safe(materialLabel)}，每位参与者测量${safe(fields.trialsPerParticipant)}次。`],
+        ["三人成绩", `本人：${safe(personalResult)}；组员1：${safe(fields.teammate1Result)}；组员2：${safe(fields.teammate2Result)}`],
+        ["小组平均长度", groupAverage],
         ["头环观察记录", fields.brainFinding]
       ],
       conclusion: joinText([fields.finalConclusion, fields.designImprove, fields.teamwork, fields.inquiryReflection])
@@ -442,6 +446,17 @@
       英文大写字母: "英文大写字母",
       汉字: "汉字"
     }[type] || "图片";
+  }
+
+  function getMemoryPersonalResult(state) {
+    const records = Array.isArray(state.records) ? state.records : [];
+    const byRun = new Map();
+    records.forEach((record) => {
+      const key = `${record.subject}|${record.runNumber}`;
+      byRun.set(key, number(record.finalCapacity ?? record.capacityAfterTrial));
+    });
+    const values = Array.from(byRun.values()).filter((value) => value > 0);
+    return values.length ? round(avg(values), 1) : "";
   }
 
   function safe(value) {
