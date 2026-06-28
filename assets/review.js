@@ -105,6 +105,7 @@
 
   function buildNbackContent(state, fields) {
     const materialLabel = getNbackMaterialTypeLabel(fields.materialType || fields.stimulusMaterial);
+    const teammateSummary = formatNbackTeammateResults(fields);
     const summary = summarizeBy(state.testRuns || [], "condition", (records) => {
       const accuracy = records.map((record) => number(record.accuracy)).filter((value) => value >= 0);
       const average = accuracy.length ? Math.round(avg(accuracy)) : 0;
@@ -127,6 +128,7 @@
         ["研究假设", fields.hypothesis],
         ["实验材料类别", materialLabel],
         ["N-back 条件设计", `刺激材料类别：${safe(materialLabel)}；刺激间隔：${safe(fields.stimulusInterval)} 秒。`],
+        ["其他组员实验结果", teammateSummary],
         ["头环观察记录", fields.headbandObservation]
       ],
       conclusion: joinText([fields.conclusion, fields.improvement, fields.persuasiveness])
@@ -457,6 +459,22 @@
     });
     const values = Array.from(byRun.values()).filter((value) => value > 0);
     return values.length ? round(avg(values), 1) : "";
+  }
+
+  function formatNbackTeammateResults(fields) {
+    const formatMember = (index) => {
+      const id = fields[`teammate${index}Id`];
+      const material = getNbackMaterialTypeLabel(fields[`teammate${index}MaterialType`]);
+      const accuracy = fields[`teammate${index}AverageAccuracy`];
+      const missRate = fields[`teammate${index}AverageMissRate`];
+      const legacy = fields[`teammate${index}Result`];
+      if (hasText(id) || hasText(accuracy) || hasText(missRate)) {
+        return `组员${index}：编号${safe(id)}，材料${safe(material)}，平均正确率${safe(accuracy)}%，平均漏答率${safe(missRate)}%`;
+      }
+      if (hasText(legacy)) return `组员${index}：${safe(legacy)}`;
+      return "";
+    };
+    return joinText([formatMember(1), formatMember(2)]);
   }
 
   function safe(value) {
