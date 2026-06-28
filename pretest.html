@@ -376,7 +376,7 @@
       scale: [1, 2, 3, 4, 5],
       anchors: "1=完全否，2=较少，3=一般，4=较多，5=完全是",
       labels: { 1: "完全否", 2: "较少", 3: "一般", 4: "较多", 5: "完全是" },
-      note: "请选择最符合你真实想法的一项。得分越高，表示你越认同题目内容。",
+      note: "请选择最符合你真实想法的一项。",
       items: [
         "我能够理解老师所讲的有关记忆的知识。",
         "这些有关记忆的知识对我很有用，我会继续使用。",
@@ -522,30 +522,25 @@
     function renderSummary() {
       const summary = summarize();
       summaryRoot.innerHTML = [
-        ["已答题数", summary.answered + "/" + surveyDef.items.length],
-        ["总分", summary.total || "待完成"],
-        ["均分", summary.average || "待完成"]
+        ["已完成题目", summary.answered + "/" + surveyDef.items.length]
       ].map((item) => '<div><strong>' + item[1] + '</strong><span>' + item[0] + '</span></div>').join("");
       status.classList.toggle("is-complete", state.completed);
-      status.textContent = state.completed ? "资格审查完成，可以开始案件探究。" : "";
+      status.textContent = state.completed ? "资格审查已完成，结果文件已自动导出，请妥善保存。" : "";
     }
 
     function completePretest() {
       saveIdentity();
       const summary = summarize();
-      if (!state.studentId || !state.groupId) {
-        status.classList.remove("is-complete");
-        status.textContent = "请先填写学生编号和小组编号。";
-        return;
-      }
       if (!summary.complete) {
+        alert("请完成所有题目后再提交资格审查。");
         status.classList.remove("is-complete");
-        status.textContent = "请完成全部题目后再提交。";
+        status.textContent = "请完成所有题目后再提交资格审查。";
         return;
       }
       state.completed = true;
       state.completedAt = new Date().toISOString();
       saveState();
+      exportExcel();
       renderSummary();
     }
 
