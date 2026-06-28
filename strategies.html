@@ -702,9 +702,9 @@
       const load = summarizeSurvey("cognitiveLoad", "load");
       const inquiry = summarizeSurvey("inquiryParticipation", "inquiry");
       return '<div class="survey-summary">' +
-        '<div><strong>' + (post.total || '待完成') + '</strong><span>学习收获调查总分</span></div>' +
-        '<div><strong>' + (load.average || '待完成') + '</strong><span>认知负荷均分</span></div>' +
-        '<div><strong>' + (inquiry.average || '待完成') + '</strong><span>探究参与均分</span></div>' +
+        '<div><strong>' + post.answered + ' / ' + SURVEY_DEFS.meta.items.length + '</strong><span>学习收获调查完成进度</span></div>' +
+        '<div><strong>' + load.answered + ' / ' + SURVEY_DEFS.load.items.length + '</strong><span>认知负荷完成进度</span></div>' +
+        '<div><strong>' + inquiry.answered + ' / ' + SURVEY_DEFS.inquiry.items.length + '</strong><span>探究参与完成进度</span></div>' +
       '</div>';
     }
     function renderKnowledgeQuiz() {
@@ -1022,7 +1022,7 @@
       const summary = summarizeRecords();
       const rows = summary.map((item)=>`<tr><td>${escapeHtml(item.strategy)}</td><td>${item.count}</td><td>${item.avgCorrect}</td><td>${item.avgAccuracy}%</td><td>${item.avgRt ? item.avgRt + "ms" : "--"}</td></tr>`).join("");
       const chart = summary.length ? summary.map((item)=>`<div class="bar-row"><div>${escapeHtml(item.strategy)}</div><div class="bar-track"><div class="bar-fill" style="width:${item.avgAccuracy}%"></div></div><div>${item.avgAccuracy}%</div></div>`).join("") : `<div class="empty-state">完成实验后会自动生成策略对比图。</div>`;
-      return `<div class="analysis-layout"><div class="panel"><div class="panel-head"><h3>策略汇总</h3></div><div class="panel-body">${summary.length ? `<table><thead><tr><th>策略</th><th>次数</th><th>平均正确数</th><th>平均回忆率</th><th>平均反应时</th></tr></thead><tbody>${rows}</tbody></table>` : `<div class="empty-state">还没有实验数据。请先完成至少一个阶段。</div>`}<div class="chart">${chart}</div></div></div>${renderTeamResultTable(summary)}<div class="panel"><div class="panel-head"><h3>长时记忆策略评分表</h3><p>请回答者和提问者共同完成以下表格。</p></div><div class="panel-body">${renderStrategyScoreTable()}</div></div><div class="panel"><div class="panel-head"><h3>头环观察</h3></div><div class="panel-body"><textarea data-field="headband" placeholder="请记录不同记忆策略下的头环观察结果，例如：使用不同策略时头环颜色有什么变化？哪种策略下前额叶区域更活跃？颜色变化是否和记忆效果有关？">${escapeHtml(state.fields.headband)}</textarea></div></div></div>`;
+      return `<div class="analysis-layout"><div class="panel"><div class="panel-head"><h3>策略汇总</h3></div><div class="panel-body">${summary.length ? `<table><thead><tr><th>策略</th><th>次数</th><th>平均正确数</th><th>平均回忆率</th><th>平均反应时</th></tr></thead><tbody>${rows}</tbody></table>` : `<div class="empty-state">还没有实验数据。请先完成至少一个阶段。</div>`}<div class="chart">${chart}</div></div></div>${renderTeamResultTable(summary)}<div class="panel"><div class="panel-head"><h3>长时记忆策略评分表</h3><p>请回答者和提问者共同完成以下表格。</p></div><div class="panel-body">${renderStrategyScoreTable()}</div></div><div class="panel"><div class="panel-head"><h3>头环观察</h3></div><div class="panel-body"><textarea data-field="headband" placeholder="请询问在你进行实验时观察头环的同学，并记录头环观察结果：使用不同记忆策略时头环颜色有什么变化？哪种策略下前额叶区域更活跃？颜色变化是否和记忆效果有关？">${escapeHtml(state.fields.headband)}</textarea></div></div></div>`;
     }
     function renderScoreField(field, label) {
       return `<div class="field"><label>${label}</label><select data-field="${field}">${[1,2,3,4,5].map((n)=>`<option value="${n}" ${Number(state.fields[field])===n ? "selected" : ""}>${n} 分</option>`).join("")}</select></div>`;

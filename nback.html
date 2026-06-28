@@ -1746,9 +1746,9 @@
       const load = summarizeSurvey("cognitiveLoad", "load");
       const inquiry = summarizeSurvey("inquiryParticipation", "inquiry");
       return '<div class="survey-summary">' +
-        '<div><strong>' + (post.total || '待完成') + '</strong><span>学习收获调查总分</span></div>' +
-        '<div><strong>' + (load.average || '待完成') + '</strong><span>认知负荷均分</span></div>' +
-        '<div><strong>' + (inquiry.average || '待完成') + '</strong><span>探究参与均分</span></div>' +
+        '<div><strong>' + post.answered + ' / ' + SURVEY_DEFS.meta.items.length + '</strong><span>学习收获调查完成进度</span></div>' +
+        '<div><strong>' + load.answered + ' / ' + SURVEY_DEFS.load.items.length + '</strong><span>认知负荷完成进度</span></div>' +
+        '<div><strong>' + inquiry.answered + ' / ' + SURVEY_DEFS.inquiry.items.length + '</strong><span>探究参与完成进度</span></div>' +
       '</div>';
     }
     function renderKnowledgeQuiz() {
@@ -2412,7 +2412,7 @@
               <div class="chart">${chart}</div>
               <div class="field" style="margin-top:18px;">
                 <label>头环观察记录</label>
-                <textarea data-field="headbandObservation" placeholder="请记录不同条件下的头环观察结果，例如：不同 N-back 难度下头环颜色有什么变化？是否出现红色或黄色区域增多？哪种条件下前额叶区域激活更明显？">${escapeHtml(state.fields.headbandObservation)}</textarea>
+                <textarea data-field="headbandObservation" placeholder="请询问在你进行实验时观察头环的同学，并记录头环观察结果：不同 N-back 难度下头环颜色有什么变化？是否出现红色或黄色区域增多？哪种条件下前额叶区域激活更明显？">${escapeHtml(state.fields.headbandObservation)}</textarea>
               </div>
             </div>
           </div>
