@@ -136,6 +136,7 @@
   }
 
   function buildInterferenceContent(state, fields) {
+    const teammateSummary = formatInterferenceTeammateResults(fields);
     const summary = summarizeBy(state.records || [], "condition", (records) => {
       const accuracy = records.map((record) => number(record.accuracy)).filter((value) => value >= 0);
       const average = accuracy.length ? Math.round(avg(accuracy)) : 0;
@@ -157,6 +158,7 @@
         ["研究问题", fields.question || fields.questionFactor],
         ["研究假设", fields.hypothesis],
         ["干扰因素选择", fields.factor],
+        ["其他组员实验结果", teammateSummary],
         ["头环观察记录", fields.headband]
       ],
       conclusion: joinText([fields.conclusion, fields.strengths, fields.improvements, fields.learningInsight])
@@ -472,6 +474,27 @@
         return `组员${index}：编号${safe(id)}，材料${safe(material)}，平均正确率${safe(accuracy)}%，平均漏答率${safe(missRate)}%`;
       }
       if (hasText(legacy)) return `组员${index}：${safe(legacy)}`;
+      return "";
+    };
+    return joinText([formatMember(1), formatMember(2)]);
+  }
+
+  function formatInterferenceTeammateResults(fields) {
+    const labels = { retroactive: "倒摄干扰", similarity: "相似性干扰", emotion: "情绪状态干扰" };
+    const source = Array.isArray(fields.otherMemberResults) ? fields.otherMemberResults : [];
+    const formatMember = (index) => {
+      const item = source[index - 1] || {};
+      const legacyId = fields[`teammate${index}Id`];
+      const legacyResult = fields[`teammate${index}Result`];
+      const memberId = item.memberId || legacyId;
+      const factor = labels[item.interferenceFactor] || item.interferenceFactor || "";
+      const material = item.materialType || "";
+      const score = item.averageScore;
+      const accuracy = item.averageAccuracy;
+      if (hasText(memberId) || hasText(factor) || hasText(material) || hasText(score) || hasText(accuracy)) {
+        return `组员${index}：编号${safe(memberId)}，干扰因素${safe(factor)}，实验材料${safe(material)}，平均得分${safe(score)}，平均正确率${safe(accuracy)}%`;
+      }
+      if (hasText(legacyResult)) return `组员${index}：${safe(legacyResult)}`;
       return "";
     };
     return joinText([formatMember(1), formatMember(2)]);

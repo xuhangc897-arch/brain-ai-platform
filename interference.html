@@ -66,6 +66,22 @@
     .analysis-layout .empty-state { min-height: 120px; display: grid; place-items: center; padding: 18px; }
     .team-result-card table input { min-height: 38px; padding: 8px 10px; }
     .team-result-card th, .team-result-card td { padding: 8px 9px; }
+    .team-result-card input.member-id-input { width: 120px; min-width: 100px; max-width: 140px; }
+    .team-result-card .percent-field { display: flex; align-items: center; gap: 6px; }
+    .team-result-card .percent-field input { min-width: 80px; }
+    .flow-designer { display: grid; gap: 18px; }
+    .flow-rounds { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 14px; }
+    .flow-round { border: 1px solid #dbeafe; border-radius: 8px; background: #f8fbff; padding: 14px; }
+    .flow-round h4, .flow-card-pool h4 { margin: 0 0 10px; color: #1e3a8a; font-size: 15px; }
+    .flow-dropzone, .flow-pool { display: flex; flex-wrap: wrap; align-items: center; gap: 8px; min-height: 58px; padding: 10px; border: 1px dashed #93c5fd; border-radius: 8px; background: #fff; }
+    .flow-dropzone.is-over { border-color: var(--primary); background: var(--primary-soft); }
+    .flow-empty { color: var(--muted); font-size: 13px; }
+    .flow-card { display: inline-flex; align-items: center; gap: 7px; min-height: 36px; padding: 7px 10px; border: 1px solid #bfdbfe; border-radius: 8px; background: #eff6ff; color: #1e3a8a; font-weight: 800; cursor: grab; user-select: none; }
+    .flow-card:active { cursor: grabbing; }
+    .flow-card button { min-height: 26px; padding: 0 7px; border-radius: 6px; background: #fff; color: var(--primary-dark); border: 1px solid #bfdbfe; font-size: 12px; }
+    .flow-actions { display: flex; flex-wrap: wrap; gap: 8px; margin-top: 8px; }
+    .flow-feedback { margin: 0; color: var(--red); font-weight: 800; }
+    .phase-details.is-hidden { display: none; }
     .reflection-layout textarea { min-height: 140px; }
     .reflection-layout textarea::placeholder { color: #98a2b3; opacity: 1; }
     .reflection-layout textarea:focus::placeholder { color: transparent; }
@@ -180,6 +196,7 @@
 
     @media (max-width: 980px) {
       .step-layout, .analysis-layout, .experiment-game { grid-template-columns: 1fr; }
+      .flow-rounds { grid-template-columns: 1fr; }
       .progress { grid-template-columns: repeat(8, 132px); }
       .summary-grid { grid-template-columns: repeat(2, 1fr); }
     }
@@ -187,6 +204,10 @@
       .topbar-inner, .main { padding-left: 14px; padding-right: 14px; }
       .brand-row, .actions { align-items: stretch; flex-direction: column; }
       .top-actions, .form-grid, .summary-grid { grid-template-columns: 1fr; flex-direction: column; }
+      .team-result-card table, .team-result-card thead, .team-result-card tbody, .team-result-card tr, .team-result-card th, .team-result-card td { display: block; width: 100%; }
+      .team-result-card thead { display: none; }
+      .team-result-card td { border-bottom: 0; }
+      .team-result-card tr { border-bottom: 1px solid #edf2f7; padding: 8px 0; }
       .bar-row { grid-template-columns: 1fr; gap: 6px; }
     }
 
@@ -313,7 +334,7 @@
     const scenarios = {
       neutral: "保持安静，做几次平稳呼吸，准备进入记忆任务。",
       emotional: "想象你正在参加一场重要展示，大家都在看着你，你需要尽力完成任务。",
-      rest: "请安静休息，尽量不要复述刚才的词语。",
+      rest: "请你安静地闭眼休息，既不刻意地想什么，也不刻意地不想什么。",
       interference: "请阅读并记住下面这些新词，它们会作为干扰材料出现。"
     };
     const SURVEY_DEFS = {
@@ -484,9 +505,9 @@
         interferenceStagePlan: "",
         hypothesis: "",
         participant: "",
-        memorySeconds: 60,
-        restSeconds: 60,
-        interferenceSeconds: 120,
+        memorySeconds: "",
+        restSeconds: "",
+        interferenceSeconds: "",
         itemCount: 8,
         difficulty: "medium",
         emotionCondition: "中性",
@@ -503,7 +524,14 @@
         teammate1Id: "",
         teammate1Result: "",
         teammate2Id: "",
-        teammate2Result: ""
+        teammate2Result: "",
+        interferenceFactor: "",
+        flowRound1: [],
+        flowRound2: [],
+        otherMemberResults: [
+          { memberId: "", interferenceFactor: "", materialType: "", averageScore: "", averageAccuracy: "" },
+          { memberId: "", interferenceFactor: "", materialType: "", averageScore: "", averageAccuracy: "" }
+        ]
       },
       records: [],
       surveys: createDefaultSurveys(),
@@ -539,6 +567,10 @@
       const merged = structuredClone(base);
       Object.assign(merged, incoming);
       merged.fields = Object.assign({}, base.fields, incoming.fields || {});
+      merged.fields.otherMemberResults = normalizeOtherMemberResults(merged.fields);
+      merged.fields.flowRound1 = normalizeFlowList(merged.fields.flowRound1);
+      merged.fields.flowRound2 = normalizeFlowList(merged.fields.flowRound2);
+      if (!isEmotionFactor(merged.fields.factor)) merged.fields.emotionCondition = "";
       if (merged.fields.materialFactors === "前摄干扰、倒摄干扰、材料相似性、情绪状态") merged.fields.materialFactors = "";
       if (!merged.fields.questionFactor && merged.fields.question) {
         merged.fields.questionFactor = String(merged.fields.question).replace(/会对长时记忆造成干扰吗？?$/, "");
@@ -558,6 +590,34 @@
       }
       merged.flowVersion = FLOW_VERSION;
       return merged;
+    }
+    function normalizeFlowList(value) {
+      return Array.isArray(value) ? value.filter(Boolean).map(String) : [];
+    }
+    function createEmptyOtherMemberResult() {
+      return { memberId: "", interferenceFactor: "", materialType: "", averageScore: "", averageAccuracy: "" };
+    }
+    function normalizeOtherMemberResults(fields) {
+      const source = Array.isArray(fields.otherMemberResults) ? fields.otherMemberResults : [];
+      const normalized = [0, 1].map((_, index) => {
+        const item = Object.assign(createEmptyOtherMemberResult(), source[index] || {});
+        const legacyIndex = index + 1;
+        if (!item.memberId && fields[`teammate${legacyIndex}Id`]) item.memberId = fields[`teammate${legacyIndex}Id`];
+        if (!item.averageScore && fields[`teammate${legacyIndex}Result`]) item.averageScore = fields[`teammate${legacyIndex}Result`];
+        return item;
+      });
+      return normalized;
+    }
+    function isEmotionFactor(value) {
+      return value === "情绪" || value === "情绪状态干扰" || value === "emotion";
+    }
+    function factorToInterferenceValue(value) {
+      if (value === "材料相似性" || value === "相似性干扰" || value === "similarity") return "similarity";
+      if (isEmotionFactor(value)) return "emotion";
+      return "retroactive";
+    }
+    function interferenceValueToLabel(value) {
+      return { retroactive: "倒摄干扰", similarity: "相似性干扰", emotion: "情绪状态干扰" }[value] || "";
     }
     function migrateLegacyStepIndex(value) {
       const index = Number(value);
@@ -636,6 +696,10 @@
     }
 
     function goNextStep() {
+      if (!isDeveloperMode() && steps[state.currentStep].id === "plan" && !isFlowCorrect()) {
+        showStepMessage("实验流程还不正确，请根据你选择的干扰因素重新调整顺序。");
+        return;
+      }
       if (!validateStep(steps[state.currentStep].id)) {
         showStepMessage("请先完成本步骤内容。");
         return;
@@ -651,6 +715,13 @@
     function hasText(value) {
       return String(value ?? "").trim().length > 0;
     }
+    function hasValidNumber(value, min, max) {
+      const number = Number(value);
+      return value !== "" && Number.isFinite(number) && number >= min && number <= max;
+    }
+    function hasStructuredMemberResult() {
+      return normalizeOtherMemberResults(state.fields || {}).some((item)=>hasText(item.memberId) || hasText(item.interferenceFactor) || hasText(item.materialType) || hasText(item.averageScore) || hasText(item.averageAccuracy));
+    }
 
     function validateStep(stepId) {
       if (isDeveloperMode()) return true;
@@ -658,9 +729,9 @@
       const fields = state.fields || {};
       if (stepId === "question") return hasText(fields.materialFactors) && hasText(fields.questionFactor);
       if (stepId === "hypothesis") return hasText(fields.hypothesis);
-      if (stepId === "plan") return hasText(fields.independentVariablePlan) && hasText(fields.dependentVariablePlan) && hasText(fields.controlVariablePlan) && hasText(fields.interferenceStagePlan);
+      if (stepId === "plan") return hasText(fields.independentVariablePlan) && hasText(fields.dependentVariablePlan) && hasText(fields.controlVariablePlan) && isFlowCorrect() && hasText(fields.interferenceStagePlan) && hasValidNumber(fields.memorySeconds, 10, 180) && hasValidNumber(fields.restSeconds, 5, 240) && hasValidNumber(fields.interferenceSeconds, 5, 240);
       if (stepId === "evidence") return Array.isArray(state.records) && state.records.length > 0;
-      if (stepId === "analysis") return Array.isArray(state.records) && state.records.length > 0 && (hasText(fields.headband) || hasText(fields.teammate1Result) || hasText(fields.teammate2Result));
+      if (stepId === "analysis") return Array.isArray(state.records) && state.records.length > 0 && (hasText(fields.headband) || hasStructuredMemberResult() || hasText(fields.teammate1Result) || hasText(fields.teammate2Result));
       if (stepId === "conclusion") return hasText(fields.conclusion);
       if (stepId === "reflection") return hasText(fields.strengths) && hasText(fields.improvements) && hasText(fields.learningInsight);
       return true;
@@ -919,11 +990,12 @@
     }
 
     function renderQuestionStep() {
-      return `<div class="step-layout">
+      return `<div class="single-step-layout">
         <div class="question-intro-strip">
           <p>你有没有这样的经历：在回忆一篇课文时，开头和结尾的内容记得很清楚，但中间部分却总是模糊不清？其实，这可能是因为你的长时记忆受到了一些干扰。</p>
-          <p>干扰可以解释一部分遗忘的原因与发生方式，一些记忆会让人难以回忆其他的记忆。今天，我们将通过实验一起来探究——到底有哪些因素会干扰我们的长时记忆？</p>
-          <p>请先和小组成员讨论，你们能想到哪些生活中的长时记忆干扰因素？并写在下面：</p>          <div class="field"><label>生活中想到的干扰因素</label><textarea data-field="lifeFactors">${escapeHtml(state.fields.lifeFactors)}</textarea></div>
+          <p>今天，我们将通过实验一起来探究，到底有哪些因素会干扰我们的长时记忆？</p>
+          <p>请先和小组成员讨论，你们能想到哪些生活中的长时记忆干扰因素？将你们想到的写在下面：</p>
+          <div class="field"><label>生活中想到的干扰因素</label><textarea data-field="lifeFactors">${escapeHtml(state.fields.lifeFactors)}</textarea></div>
         </div>
         <div class="panel"><div class="panel-head"><h3>阅读材料</h3><p>下面是三则关于长时记忆干扰的材料，请阅读以下材料，想一想还有什么因素会干扰长时记忆。</p></div><div class="panel-body reading-list">
           <article class="reading-card">
@@ -954,8 +1026,54 @@
     function renderHypothesisStep() {
       return `<div class="single-step-layout"><div class="panel"><div class="panel-head"><h3>研究假设</h3></div><div class="panel-body"><textarea data-field="hypothesis" placeholder="写下你们小组对结果的预测">${escapeHtml(state.fields.hypothesis)}</textarea></div></div><div class="panel"><div class="panel-head"><h3>研究假设小助手</h3></div><div class="panel-body">${renderInquiryScaffold("hypothesis")}${renderInquiryCases()}</div></div></div>`;
     }
+    const FLOW_STEP_CARDS = ["记忆", "休息", "测试", "倒摄干扰", "不相似干扰", "相似干扰", "中性情绪干扰", "极性情绪（愉悦/悲伤）干扰"];
+    const FLOW_ANSWERS = {
+      retroactive: { round1: ["记忆", "休息", "测试"], round2: ["记忆", "倒摄干扰", "测试"] },
+      similarity: { round1: ["记忆", "不相似干扰", "测试"], round2: ["记忆", "相似干扰", "测试"] },
+      emotion: { round1: ["记忆", "中性情绪干扰", "测试"], round2: ["记忆", "极性情绪（愉悦/悲伤）干扰", "测试"] }
+    };
+    function listsEqual(left, right) {
+      return Array.isArray(left) && Array.isArray(right) && left.length === right.length && left.every((item, index) => item === right[index]);
+    }
+    function isFlowCorrect() {
+      const factor = state.fields.interferenceFactor;
+      const answer = FLOW_ANSWERS[factor];
+      if (!answer) return false;
+      return listsEqual(state.fields.flowRound1, answer.round1) && listsEqual(state.fields.flowRound2, answer.round2);
+    }
+    function renderFlowZone(roundKey, title) {
+      const items = normalizeFlowList(state.fields[roundKey]);
+      const cards = items.length ? items.map((item, index)=>`<span class="flow-card" draggable="true" data-flow-card="${escapeHtml(item)}" data-source="${roundKey}" data-index="${index}">${escapeHtml(item)}<button type="button" data-flow-remove="${roundKey}" data-index="${index}" aria-label="移回卡片池">×</button></span>`).join("") : `<span class="flow-empty">空白排序条</span>`;
+      return `<div class="flow-round"><h4>${title}</h4><div class="flow-dropzone" data-flow-zone="${roundKey}">${cards}</div><div class="flow-actions"><button class="btn secondary" type="button" data-flow-clear="${roundKey}">清空${title}</button></div></div>`;
+    }
+    function renderFlowPool() {
+      const cards = FLOW_STEP_CARDS.map((item)=>`<span class="flow-card" draggable="true" data-flow-card="${escapeHtml(item)}" data-source="pool">${escapeHtml(item)}<button type="button" data-flow-add="flowRound1" data-card="${escapeHtml(item)}">一轮</button><button type="button" data-flow-add="flowRound2" data-card="${escapeHtml(item)}">二轮</button></span>`).join("");
+      return `<div class="flow-card-pool"><h4>步骤卡片池</h4><div class="flow-pool" data-flow-zone="pool">${cards}</div></div>`;
+    }
+    function renderExperimentFlowCard() {
+      const factor = state.fields.interferenceFactor;
+      const flowReady = isFlowCorrect() || isDeveloperMode();
+      const feedback = !flowReady && (state.fields.flowRound1.length || state.fields.flowRound2.length) ? `<p class="flow-feedback">实验流程还不正确，请根据你选择的干扰因素重新调整顺序。</p>` : "";
+      return `<div class="panel"><div class="panel-head"><h3>实验流程</h3><p>选择干扰因素后，将步骤卡片拖入两轮实验并排序。</p></div><div class="panel-body flow-designer">
+        <div class="field"><label>请选择本次实验的干扰因素</label><select id="interferenceFactorSelect"><option value="">请选择干扰因素</option><option value="retroactive" ${factor === "retroactive" ? "selected" : ""}>倒摄干扰</option><option value="similarity" ${factor === "similarity" ? "selected" : ""}>相似性干扰</option><option value="emotion" ${factor === "emotion" ? "selected" : ""}>情绪状态干扰</option></select></div>
+        <div class="flow-rounds">${renderFlowZone("flowRound1", "第一轮")}${renderFlowZone("flowRound2", "第二轮")}</div>
+        ${renderFlowPool()}
+        ${feedback}
+        <details class="material-details phase-details ${flowReady ? "" : "is-hidden"}" open><summary>四个阶段具体要做的事情</summary><div class="material-details-body">
+          <p>记忆阶段</p>
+          <p>呈现记忆材料，参与者不能发出声音或动笔记录，只能观察并尽可能多地记住内容。</p>
+          <p>休息阶段</p>
+          <p>参与者安静地闭眼休息，既不刻意地想什么，也不刻意地不想什么。</p>
+          <p>干扰阶段（请根据你们选择的干扰因素，补全参与者需要做的事）：</p>
+          <div class="field"><textarea data-field="interferenceStagePlan" placeholder="请写出干扰阶段参与者需要做的事">${escapeHtml(state.fields.interferenceStagePlan)}</textarea></div>
+          <p>测试阶段</p>
+          <p>在没有任何提示的情况下，参与者回忆并尽可能多地在屏幕上写出记忆材料的内容。</p>
+        </div></details>
+      </div></div>`;
+    }
     function renderPlanStep() {
       const factorOptions = Object.keys(MATERIAL_SETS).map((factor) => `<option value="${factor}" ${selected("factor", factor)}>${factor}</option>`).join("");
+      const showEmotionCondition = isEmotionFactor(state.fields.factor);
       return `<div class="single-step-layout">
         <div class="panel"><div class="panel-head"><h3>变量设计</h3><p>请根据小组选择的探究因素，填写变量。</p></div><div class="panel-body">
           <div class="variable-table-wrap">
@@ -968,6 +1086,7 @@
             </table>
           </div>
         </div></div>
+        ${renderExperimentFlowCard()}
         <div class="panel"><div class="panel-head"><h3>实验材料</h3></div><div class="panel-body reading-list">
           <details class="material-details" open><summary>实验材料一：倒摄干扰的实验设计（参考）</summary><div class="material-details-body">
             <p>我们可以通过以下方式探究新学习内容是否会干扰旧知识的记忆。参与者需要进行两轮“记忆阶段—休息/干扰阶段—测试阶段”的完整操作。</p>
@@ -1020,33 +1139,14 @@
             </div>
             <p>在阅读了实验材料后，你是否掌握了实验的流程呢？请完成实验步骤的设计吧。</p>
           </div></details>
-          <details class="material-details" open><summary>实验流程</summary><div class="material-details-body">
-            <p>探究倒摄干扰时：</p>
-            <p>第一轮：记忆—休息—测试</p>
-            <p>第二轮：记忆—休息—倒摄干扰—测试</p>
-            <p>探究相似性干扰时：</p>
-            <p>第一轮：记忆—休息—不相似干扰—测试</p>
-            <p>第二轮：记忆—休息—相似性干扰—测试</p>
-            <p>探究情绪状态干扰时：</p>
-            <p>第一轮：中性情绪干扰—记忆—休息—测试</p>
-            <p>第二轮：愉悦/悲伤干扰—记忆—休息—测试</p>
-            <p>记忆阶段</p>
-            <p>呈现记忆材料，参与者不能发出声音或动笔记录，只能观察并尽可能多地记住内容。</p>
-            <p>休息阶段</p>
-            <p>参与者安静地闭眼休息，既不刻意地想什么，也不刻意地不想什么。</p>
-            <p>干扰阶段（请根据你们选择的干扰因素，补全参与者需要做的事）：</p>
-            <div class="field"><textarea data-field="interferenceStagePlan" placeholder="_____________">${escapeHtml(state.fields.interferenceStagePlan)}</textarea></div>
-            <p>测试阶段</p>
-            <p>在没有任何提示的情况下，参与者回忆并尽可能多地在纸上写出记忆材料的内容。记录员需要在实验记录表中记录反应时间与复述正确率。</p>
-          </div></details>
         </div></div>
         <div class="panel"><div class="panel-head"><h3>实验计划</h3><p>选择材料包后，搜集证据阶段会按 PPT 固定材料和两轮流程运行。</p></div><div class="panel-body"><div class="form-grid">
           <div class="field"><label>实验类型</label><select data-field="factor">${factorOptions}</select></div>
           <div class="field"><label>参与者编号</label><input type="text" data-field="participant" value="${escapeHtml(state.fields.participant)}" placeholder="请输入参与者编号"></div>
           <div class="field"><label>材料难度</label><select data-field="difficulty"><option value="easy" ${selected("difficulty","easy")}>初级</option><option value="medium" ${selected("difficulty","medium")}>中级</option><option value="hard" ${selected("difficulty","hard")}>高级</option></select></div>
-          <div class="field"><label>情绪视频条件</label><select data-field="emotionCondition"><option value="中性" ${selected("emotionCondition","中性")}>中性</option><option value="悲伤" ${selected("emotionCondition","悲伤")}>悲伤</option><option value="愉悦" ${selected("emotionCondition","愉悦")}>愉悦</option></select></div>
+          ${showEmotionCondition ? `<div class="field"><label>情绪视频条件</label><select data-field="emotionCondition"><option value="">请选择情绪视频条件</option><option value="中性" ${selected("emotionCondition","中性")}>中性</option><option value="悲伤" ${selected("emotionCondition","悲伤")}>悲伤</option><option value="愉悦" ${selected("emotionCondition","愉悦")}>愉悦</option></select></div>` : ""}
           <div class="field"><label>记忆时间（秒）</label><input type="number" min="10" max="180" data-field="memorySeconds" value="${escapeHtml(state.fields.memorySeconds)}"></div>
-          <div class="field"><label>休息/视频时间（秒）</label><input type="number" min="5" max="240" data-field="restSeconds" value="${escapeHtml(state.fields.restSeconds)}"></div>
+          <div class="field"><label>休息时间（秒）</label><input type="number" min="5" max="240" data-field="restSeconds" value="${escapeHtml(state.fields.restSeconds)}"></div>
           <div class="field"><label>干扰时间（秒）</label><input type="number" min="5" max="240" data-field="interferenceSeconds" value="${escapeHtml(state.fields.interferenceSeconds)}"></div>
           <div class="field"><label>测试轮次</label><input type="number" min="1" max="2" value="2" disabled></div>
         </div></div></div>
@@ -1056,14 +1156,15 @@
       const pack = getSelectedMaterialPack();
       const set = getSelectedDifficultySet();
       const rounds = set.rounds || [];
+      const showEmotionCondition = isEmotionFactor(state.fields.factor);
       return `<div class="panel"><div class="panel-head"><h3>长时记忆干扰材料化实验</h3><p>当前使用固定材料包，不再随机生成核心记忆材料。</p><div class="material-source"><span class="material-chip">${escapeHtml(pack.source)}</span><span class="material-chip">${escapeHtml(set.materialType)}</span><span class="material-chip">${escapeHtml(pack.difficultyLabels[state.fields.difficulty] || state.fields.difficulty)}</span></div></div><div class="panel-body">
         <div class="toolbar interference-toolbar">
           <div class="field"><label>本次轮次</label><select id="roundSelect">${rounds.map((round)=>`<option value="${round.round}">第 ${round.round} 轮：${round.condition}</option>`).join("")}</select></div>
           <div class="field"><label>参与者编号</label><input id="participantInput" type="text" value="${escapeHtml(state.fields.participant)}" placeholder="请输入参与者编号"></div>
-          <div class="field"><label>情绪条件</label><select id="emotionConditionSelect"><option value="中性" ${selected("emotionCondition","中性")}>中性</option><option value="悲伤" ${selected("emotionCondition","悲伤")}>悲伤</option><option value="愉悦" ${selected("emotionCondition","愉悦")}>愉悦</option></select></div>
+          ${showEmotionCondition ? `<div class="field"><label>情绪条件</label><select id="emotionConditionSelect"><option value="中性" ${selected("emotionCondition","中性")}>中性</option><option value="悲伤" ${selected("emotionCondition","悲伤")}>悲伤</option><option value="愉悦" ${selected("emotionCondition","愉悦")}>愉悦</option></select></div>` : ""}
           <button class="btn" type="button" id="startRunBtn">开始本轮</button>
         </div>
-        <div class="experiment-game"><div class="stage"><div class="stage-meta"><span id="phaseStatus">请选择轮次并开始</span><span id="conditionStatus">${escapeHtml(state.fields.factor)}</span></div><div id="taskCard" class="task-card"><h3>长时记忆干扰实验</h3><p>准备开始固定材料流程</p></div><div id="answerBox" class="answer-box"><label for="recallInput">尽可能完整写出刚才记忆过的目标材料</label><textarea id="recallInput" placeholder="可用空格、逗号或换行分隔；古诗可直接完整输入"></textarea><div class="score-rule" id="scoreRuleBox">${escapeHtml(set.scoreRule)}</div><div class="score-row"><div class="field"><label>本轮得分</label><input id="scoreInput" type="number" min="0" max="${set.fullScore}" step="0.5" placeholder="0-${set.fullScore}"></div><div class="field"><label>满分</label><input id="fullScoreInput" type="number" value="${set.fullScore}" disabled></div></div><div class="field" style="margin-top:12px;"><label>情绪强度自评（1-5，仅情绪实验填写）</label><input id="emotionRatingInput" type="number" min="1" max="5" value="${escapeHtml(state.fields.emotionRating)}"></div><button class="btn" type="button" id="submitRecallBtn" style="width:100%;margin-top:12px;">提交本轮结果</button></div><div class="timer"><div id="timerFill" class="timer-fill"></div></div></div>
+        <div class="experiment-game"><div class="stage"><div class="stage-meta"><span id="phaseStatus">请选择轮次并开始</span><span id="conditionStatus">${escapeHtml(state.fields.factor)}</span></div><div id="taskCard" class="task-card"><h3>长时记忆干扰实验</h3><p>准备开始固定材料流程</p></div><div id="answerBox" class="answer-box"><label for="recallInput">尽可能完整写出刚才记忆过的目标材料</label><textarea id="recallInput" placeholder="可用空格、逗号或换行分隔；古诗可直接完整输入"></textarea><button class="btn" type="button" id="submitRecallBtn" style="width:100%;margin-top:12px;">提交本轮结果</button></div><div class="timer"><div id="timerFill" class="timer-fill"></div></div></div>
           <aside class="game-side"><div class="stat-grid"><div class="mini-stat"><span>阶段</span><b id="phaseStat">--</b></div><div class="mini-stat"><span>剩余时间</span><b id="timeStat">--</b></div><div class="mini-stat"><span>得分</span><b id="correctStat">0</b></div><div class="mini-stat"><span>正确率</span><b id="accuracyStat">0%</b></div></div><div class="game-log"><table><thead><tr><th>轮次</th><th>条件</th><th>得分</th><th>正确率</th></tr></thead><tbody id="gameLogBody"><tr><td colspan="4">暂无记录</td></tr></tbody></table></div></aside></div>
         <div id="focusPrep" class="focus-prep" role="dialog" aria-modal="true"><div class="focus-prep-card"><h3>准备开始材料化实验</h3><p>页面将切换到低干扰模式，并尝试进入全屏。实验会按固定材料流程推进。</p><p>测试阶段请根据评分标准输入回忆内容和得分。</p><button class="btn" type="button" id="confirmStartRunBtn">进入实验</button><button class="btn secondary" type="button" id="cancelStartRunBtn">取消</button></div></div>
       </div></div>`;
@@ -1075,12 +1176,29 @@
       const avgAccuracy = Math.round(items.reduce((sum, item) => sum + Number(item.avgAccuracy || 0), 0) / items.length);
       return `平均得分 ${avgScore}，平均正确率 ${avgAccuracy}%`;
     }
+    function renderOptionList(options, selectedValue) {
+      return options.map((item)=>`<option value="${escapeHtml(item.value)}" ${String(selectedValue || "") === String(item.value) ? "selected" : ""}>${escapeHtml(item.label)}</option>`).join("");
+    }
+    function getInterferenceFactorOptions() {
+      return [
+        { value: "", label: "请选择" },
+        { value: "retroactive", label: "倒摄干扰" },
+        { value: "similarity", label: "相似性干扰" },
+        { value: "emotion", label: "情绪状态干扰" }
+      ];
+    }
+    function getMaterialTypeOptions() {
+      return ["", "无意义音节", "语段/人物活动配对", "单词及中文", "数字串", "古诗"].map((value)=>({ value, label: value || "请选择" }));
+    }
     function renderTeamResultTable(summary) {
       const personalResult = getPersonalInterferenceResult(summary);
-      return `<div class="panel team-result-card"><div class="panel-head"><h3>其他组员实验结果记录</h3><p>仅用于留痕和对比，不参与统计计算。</p></div><div class="panel-body"><table><thead><tr><th>成员</th><th>组员编号</th><th>实验结果</th></tr></thead><tbody><tr><td>本人</td><td><input type="text" data-field="participantId" value="${escapeHtml(state.fields.participantId || state.studentId)}" placeholder="本人编号"></td><td><input type="text" value="${escapeHtml(personalResult)}" placeholder="自动带入本人结果" disabled></td></tr><tr><td>组员</td><td><input type="text" data-field="teammate1Id" value="${escapeHtml(state.fields.teammate1Id)}" placeholder="请输入编号"></td><td><input type="text" data-field="teammate1Result" value="${escapeHtml(state.fields.teammate1Result)}" placeholder="请输入该组员实验结果"></td></tr><tr><td>组员</td><td><input type="text" data-field="teammate2Id" value="${escapeHtml(state.fields.teammate2Id)}" placeholder="请输入编号"></td><td><input type="text" data-field="teammate2Result" value="${escapeHtml(state.fields.teammate2Result)}" placeholder="请输入该组员实验结果"></td></tr></tbody></table></div></div>`;
+      const members = normalizeOtherMemberResults(state.fields);
+      const memberRows = members.map((item, index)=>`<tr><td>组员${index + 1}</td><td><input class="member-id-input" type="text" data-member-index="${index}" data-member-field="memberId" value="${escapeHtml(item.memberId)}" placeholder="编号"></td><td><select data-member-index="${index}" data-member-field="interferenceFactor">${renderOptionList(getInterferenceFactorOptions(), item.interferenceFactor)}</select></td><td><select data-member-index="${index}" data-member-field="materialType">${renderOptionList(getMaterialTypeOptions(), item.materialType)}</select></td><td><input type="number" min="0" step="0.1" data-member-index="${index}" data-member-field="averageScore" value="${escapeHtml(item.averageScore)}" placeholder="数字"></td><td><div class="percent-field"><input type="number" min="0" max="100" step="0.1" data-member-index="${index}" data-member-field="averageAccuracy" value="${escapeHtml(item.averageAccuracy)}" placeholder="数字"><span>%</span></div></td></tr>`).join("");
+      return `<div class="panel team-result-card"><div class="panel-head"><h3>其他组员实验结果记录</h3><p>仅用于留痕和对比，不参与统计计算。</p></div><div class="panel-body"><table><thead><tr><th>成员</th><th>组员编号</th><th>干扰因素</th><th>实验材料</th><th>平均得分</th><th>平均正确率</th></tr></thead><tbody><tr><td>本人</td><td><input class="member-id-input" type="text" data-field="participantId" value="${escapeHtml(state.fields.participantId || state.studentId)}" placeholder="本人编号"></td><td colspan="4"><input type="text" value="${escapeHtml(personalResult)}" placeholder="自动带入本人结果" disabled></td></tr>${memberRows}</tbody></table></div></div>`;
     }
     function getTeamResultSheet(summary) {
-      return ["小组记录", [["本人编号","本人结果","组员1编号","组员1结果","组员2编号","组员2结果"], [state.fields.participantId || state.studentId, getPersonalInterferenceResult(summary), state.fields.teammate1Id, state.fields.teammate1Result, state.fields.teammate2Id, state.fields.teammate2Result]]];
+      const members = normalizeOtherMemberResults(state.fields);
+      return ["小组记录", [["成员","编号","干扰因素","实验材料","平均得分","平均正确率"], ["本人", state.fields.participantId || state.studentId, "", "", getPersonalInterferenceResult(summary), ""], ...members.map((item, index)=>[`组员${index + 1}`, item.memberId, interferenceValueToLabel(item.interferenceFactor), item.materialType, item.averageScore, item.averageAccuracy])]];
     }
     function getSystemInfoSheet(recordCount) {
       return ["系统信息", [["项目","内容"],["实验版本","science-inquiry-static-v1"],["localStorage key",STORAGE_KEY],["保存时间",state.savedAt || ""],["导出时间",new Date().toLocaleString()],["当前步骤",`${state.currentStep + 1}/${steps.length}`],["过程性实验记录数",recordCount],["AI聊天记录","不包含，AI 对话请在 AI 助手窗口单独导出"]]];
@@ -1109,13 +1227,32 @@
         element.addEventListener("change",()=>updateField(element, field));
         element.addEventListener("input",()=>updateField(element, field));
       });
+      bindOtherMemberInputs();
+    }
+    function bindOtherMemberInputs() {
+      main.querySelectorAll("[data-member-field]").forEach((element)=>{
+        const update = () => {
+          const index = Number(element.dataset.memberIndex);
+          const field = element.dataset.memberField;
+          state.fields.otherMemberResults = normalizeOtherMemberResults(state.fields);
+          if (!state.fields.otherMemberResults[index]) state.fields.otherMemberResults[index] = createEmptyOtherMemberResult();
+          state.fields.otherMemberResults[index][field] = element.type === "number" ? (element.value === "" ? "" : Number(element.value)) : element.value;
+          saveState();
+        };
+        element.addEventListener("change", update);
+        element.addEventListener("input", update);
+      });
     }
     function updateField(element, field) {
-      state.fields[field] = element.type === "number" ? Number(element.value) : element.value;
+      state.fields[field] = element.type === "number" ? (element.value === "" ? "" : Number(element.value)) : element.value;
       if (field === "questionFactor") {
         state.fields.question = state.fields.questionFactor ? `${state.fields.questionFactor}会对长时记忆造成干扰吗？` : "";
       }
+      if (field === "factor" && !isEmotionFactor(state.fields.factor)) {
+        state.fields.emotionCondition = "";
+      }
       saveState();
+      if (field === "factor") renderApp();
     }
     function bindStepEvents(stepId) {
       bindSurveyInputs();
@@ -1124,11 +1261,80 @@
       const next = document.getElementById("nextStep");
       if (prev) prev.addEventListener("click", () => { if (state.currentStep > 0) goToStep(state.currentStep - 1); });
       if (next) next.addEventListener("click", goNextStep);
+      if (stepId === "plan") bindFlowDesigner();
       if (stepId === "evidence") bindGameEvents();
       const finalExport = document.getElementById("finalExportBtn");
       if (finalExport) finalExport.addEventListener("click", exportExcel);
       const reviewReport = document.getElementById("reviewReportBtn");
       if (reviewReport) reviewReport.addEventListener("click", () => generateReviewReport("interference"));
+    }
+    function bindFlowDesigner() {
+      const factorSelect = document.getElementById("interferenceFactorSelect");
+      if (factorSelect) {
+        factorSelect.addEventListener("change", () => {
+          state.fields.interferenceFactor = factorSelect.value;
+          state.fields.flowRound1 = [];
+          state.fields.flowRound2 = [];
+          saveState();
+          renderApp();
+        });
+      }
+      main.querySelectorAll("[data-flow-add]").forEach((button)=>{
+        button.addEventListener("click", () => moveFlowCard(button.dataset.card, "pool", button.dataset.flowAdd));
+      });
+      main.querySelectorAll("[data-flow-remove]").forEach((button)=>{
+        button.addEventListener("click", () => removeFlowCard(button.dataset.flowRemove, Number(button.dataset.index)));
+      });
+      main.querySelectorAll("[data-flow-clear]").forEach((button)=>{
+        button.addEventListener("click", () => {
+          state.fields[button.dataset.flowClear] = [];
+          saveState();
+          renderApp();
+        });
+      });
+      main.querySelectorAll("[data-flow-card]").forEach((card)=>{
+        card.addEventListener("dragstart", (event) => {
+          event.dataTransfer.setData("text/plain", JSON.stringify({ card: card.dataset.flowCard, source: card.dataset.source, index: card.dataset.index || "" }));
+        });
+      });
+      main.querySelectorAll("[data-flow-zone]").forEach((zone)=>{
+        zone.addEventListener("dragover", (event) => {
+          event.preventDefault();
+          zone.classList.add("is-over");
+        });
+        zone.addEventListener("dragleave", () => zone.classList.remove("is-over"));
+        zone.addEventListener("drop", (event) => {
+          event.preventDefault();
+          zone.classList.remove("is-over");
+          let payload = null;
+          try { payload = JSON.parse(event.dataTransfer.getData("text/plain")); } catch (error) {}
+          if (!payload) return;
+          moveFlowCard(payload.card, payload.source, zone.dataset.flowZone, payload.index);
+        });
+      });
+    }
+    function moveFlowCard(card, source, target, sourceIndex) {
+      if (!card || target === "pool") {
+        if (source && source !== "pool") removeFlowCard(source, Number(sourceIndex));
+        return;
+      }
+      if (!["flowRound1", "flowRound2"].includes(target)) return;
+      if (source && source !== "pool") removeFlowCard(source, Number(sourceIndex), false);
+      state.fields.flowRound1 = normalizeFlowList(state.fields.flowRound1);
+      state.fields.flowRound2 = normalizeFlowList(state.fields.flowRound2);
+      state.fields[target].push(card);
+      saveState();
+      renderApp();
+    }
+    function removeFlowCard(roundKey, index, rerender = true) {
+      if (!["flowRound1", "flowRound2"].includes(roundKey)) return;
+      const items = normalizeFlowList(state.fields[roundKey]);
+      if (Number.isInteger(index) && index >= 0) items.splice(index, 1);
+      state.fields[roundKey] = items;
+      if (rerender) {
+        saveState();
+        renderApp();
+      }
     }
     function generateReviewReport(activityType) {
       saveState();
@@ -1155,8 +1361,8 @@
       const pack = getSelectedMaterialPack();
       const set = getSelectedDifficultySet();
       const roundMaterial = getRoundMaterial(round);
-      const videoCondition = state.fields.factor === "情绪" ? (state.fields.emotionCondition || "中性") : "";
-      session = { id: crypto.randomUUID ? crypto.randomUUID() : String(Date.now()), participant, round, factor: state.fields.factor, materialSource: pack.source, materialType: set.materialType, difficulty: state.fields.difficulty, difficultyLabel: pack.difficultyLabels[state.fields.difficulty] || state.fields.difficulty, condition: state.fields.factor === "情绪" ? `${videoCondition}情绪` : roundMaterial.condition, videoCondition, videoSrc: videoCondition ? getVideoSrc(videoCondition) : "", memoryItems: roundMaterial.memory, interferenceItems: roundMaterial.interference || [], instruction: roundMaterial.instruction, interferenceInstruction: roundMaterial.interferenceInstruction, scoreRule: set.scoreRule, fullScore: set.fullScore, phase: state.fields.factor === "情绪" ? "video" : "memory", startedAt: new Date().toISOString(), recallStartedAt: 0 };
+      const videoCondition = isEmotionFactor(state.fields.factor) ? (state.fields.emotionCondition || "中性") : "";
+      session = { id: crypto.randomUUID ? crypto.randomUUID() : String(Date.now()), participant, round, factor: state.fields.factor, materialSource: pack.source, materialType: set.materialType, difficulty: state.fields.difficulty, difficultyLabel: pack.difficultyLabels[state.fields.difficulty] || state.fields.difficulty, condition: isEmotionFactor(state.fields.factor) ? `${videoCondition}情绪` : roundMaterial.condition, videoCondition, videoSrc: videoCondition ? getVideoSrc(videoCondition) : "", memoryItems: roundMaterial.memory, interferenceItems: roundMaterial.interference || [], instruction: roundMaterial.instruction, interferenceInstruction: roundMaterial.interferenceInstruction, scoreRule: set.scoreRule, fullScore: set.fullScore, phase: isEmotionFactor(state.fields.factor) ? "video" : "memory", startedAt: new Date().toISOString(), recallStartedAt: 0 };
       enterFocusMode();
       runPhase(session.phase);
     }
@@ -1197,7 +1403,7 @@
       } else if (phase === "interference") {
         if (!session.interferenceItems.length) {
           seconds = clamp(Number(state.fields.restSeconds), 5, 240, 180);
-          taskCard.innerHTML = `<h3>休息阶段</h3><p>${escapeHtml(session.interferenceInstruction || scenarios.rest)}</p>`;
+          taskCard.innerHTML = `<h3>休息阶段</h3><p>${escapeHtml(scenarios.rest)}</p>`;
         } else {
           seconds = clamp(Number(state.fields.interferenceSeconds), 5, 240, 120);
           taskCard.innerHTML = `<h3>干扰阶段</h3><p>${escapeHtml(session.interferenceInstruction)}</p>${renderMaterialItems(session.interferenceItems)}`;
@@ -1281,12 +1487,6 @@
       session.recallStartedAt = performance.now();
       document.getElementById("taskCard").style.display = "none";
       document.getElementById("answerBox").classList.add("is-visible");
-      const scoreInput = document.getElementById("scoreInput");
-      const fullScoreInput = document.getElementById("fullScoreInput");
-      const ruleBox = document.getElementById("scoreRuleBox");
-      if (scoreInput) { scoreInput.value = ""; scoreInput.max = session.fullScore; }
-      if (fullScoreInput) fullScoreInput.value = session.fullScore;
-      if (ruleBox) ruleBox.textContent = session.scoreRule;
       const input = document.getElementById("recallInput");
       input.value = "";
       input.focus();
@@ -1316,15 +1516,12 @@
       if (!session || session.phase !== "recall") return;
       const recall = document.getElementById("recallInput").value.trim();
       const headband = "";
-      const scoreInput = document.getElementById("scoreInput");
-      const emotionRatingInput = document.getElementById("emotionRatingInput");
       const fullScore = Number(session.fullScore) || 1;
-      let score = Number(scoreInput && scoreInput.value ? scoreInput.value : 0);
-      score = Math.max(0, Math.min(fullScore, score));
+      const autoScore = calculateRecallScore(recall, session.memoryItems, fullScore);
+      const score = autoScore.score;
       const accuracy = Math.round((score / fullScore) * 100);
-      if (emotionRatingInput) state.fields.emotionRating = emotionRatingInput.value;
       const reactionTime = Math.round(performance.now() - session.recallStartedAt);
-      const record = { runId: session.id, studentName: state.studentName, studentAge: state.studentAge, studentId: state.studentId, groupId: state.groupId, participant: session.participant, round: session.round, factor: session.factor, materialSource: session.materialSource, materialType: session.materialType, difficulty: session.difficulty, difficultyLabel: session.difficultyLabel, condition: session.condition, videoCondition: session.videoCondition, videoSrc: session.videoSrc, memorySeconds: state.fields.memorySeconds, restSeconds: state.fields.restSeconds, interferenceSeconds: state.fields.interferenceSeconds, itemCount: session.memoryItems.length, memoryItems: session.memoryItems.join("；"), interferenceItems: session.interferenceItems.join("；"), scoreRule: session.scoreRule, fullScore, score, recall, correctItems: "人工评分", correctCount: score, accuracy, reactionTime, emotionRating: state.fields.emotionRating, headband, createdAt: new Date().toLocaleString() };
+      const record = { runId: session.id, studentName: state.studentName, studentAge: state.studentAge, studentId: state.studentId, groupId: state.groupId, participant: session.participant, round: session.round, factor: session.factor, materialSource: session.materialSource, materialType: session.materialType, difficulty: session.difficulty, difficultyLabel: session.difficultyLabel, condition: session.condition, videoCondition: session.videoCondition, videoSrc: session.videoSrc, memorySeconds: state.fields.memorySeconds, restSeconds: state.fields.restSeconds, interferenceSeconds: state.fields.interferenceSeconds, itemCount: session.memoryItems.length, memoryItems: session.memoryItems.join("；"), interferenceItems: session.interferenceItems.join("；"), scoreRule: session.scoreRule, fullScore, score, recall, correctItems: autoScore.matches.join("；") || "自动匹配未命中", correctCount: score, accuracy, reactionTime, emotionRating: state.fields.emotionRating, headband, createdAt: new Date().toLocaleString() };
       state.records.push(record);
       saveState();
       const finished = session;
@@ -1333,6 +1530,18 @@
       exitFocusMode();
       updateGameUi();
       alert(`${finished.condition} 已保存，得分 ${score}/${fullScore}，正确率 ${accuracy}%。`);
+    }
+    function calculateRecallScore(recall, memoryItems, fullScore) {
+      const text = String(recall || "").toLowerCase().replace(/\s+/g, "");
+      const items = Array.isArray(memoryItems) ? memoryItems : [];
+      const matches = items.filter((item)=>{
+        const raw = String(item || "").toLowerCase();
+        const compact = raw.replace(/\s+/g, "");
+        const probes = [compact, raw.split(/\s+/)[0], raw.split(/[\/／\s-]/)[0]].filter((probe)=>probe && probe.length >= 1);
+        return probes.some((probe)=>text.includes(probe.replace(/\s+/g, "")));
+      });
+      const score = items.length ? Number(((matches.length / items.length) * fullScore).toFixed(1)) : 0;
+      return { score: Math.max(0, Math.min(fullScore, score)), matches };
     }
     function tokenize(text) {
       return text.toLowerCase().split(/[\s,，、;；\n\r]+/).map((item)=>item.trim()).filter(Boolean);
@@ -1385,8 +1594,8 @@
       const summary = summarizeRecords();
       const sheets = [
         ["基本信息", [["项目","内容"],["实验","探究干扰长时记忆的因素"],["学生姓名",state.studentName || ""],["学生年龄",state.studentAge || ""],["学生编号",state.studentId],["小组编号",state.groupId],["实验时间",state.savedAt || ""],["导出时间",new Date().toLocaleString()]]],
-        ["实验过程", [["字段","内容"],["生活中的长时记忆干扰因素",state.fields.lifeFactors],["材料中列出的干扰因素",state.fields.materialFactors],["探究因素",state.fields.factor],["研究问题",state.fields.question],["自变量",state.fields.independentVariablePlan],["因变量",state.fields.dependentVariablePlan],["无关变量",state.fields.controlVariablePlan],["干扰阶段补全文字",state.fields.interferenceStagePlan],["研究假设",state.fields.hypothesis],["参与者",state.fields.participant],["难度",state.fields.difficulty],["情绪条件",state.fields.emotionCondition],["记忆时间s",state.fields.memorySeconds],["休息/视频时间s",state.fields.restSeconds],["干扰时间s",state.fields.interferenceSeconds],["头环观察",state.fields.headband],["结论",state.fields.conclusion],["假设支持",state.fields.support],["可信度",state.fields.credibility],["优点",state.fields.strengths],["改进",state.fields.improvements],["学习启发",state.fields.learningInsight]]],
-        ["实验明细", [["学生姓名","学生年龄","学生编号","小组编号","参与者","轮次","实验类型","材料来源","材料类型","难度","条件","视频条件","记忆时间s","休息/视频时间s","干扰时间s","记忆材料","干扰材料","评分规则","满分","得分","正确率","回忆内容","头环观察","情绪强度","反应时ms","记录时间"], ...state.records.map((record)=>[record.studentName || "",record.studentAge || "",record.studentId,record.groupId,record.participant,record.round,record.factor,record.materialSource,record.materialType,record.difficultyLabel || record.difficulty,record.condition,record.videoCondition,record.memorySeconds,record.restSeconds,record.interferenceSeconds,record.memoryItems,record.interferenceItems,record.scoreRule,record.fullScore,record.score ?? record.correctCount,`${record.accuracy}%`,record.recall,record.headband,record.emotionRating,record.reactionTime,record.createdAt])]],
+        ["实验过程", [["字段","内容"],["生活中的长时记忆干扰因素",state.fields.lifeFactors],["材料中列出的干扰因素",state.fields.materialFactors],["探究因素",state.fields.factor],["实验流程干扰因素",interferenceValueToLabel(state.fields.interferenceFactor)],["第一轮实验流程",normalizeFlowList(state.fields.flowRound1).join(" → ")],["第二轮实验流程",normalizeFlowList(state.fields.flowRound2).join(" → ")],["研究问题",state.fields.question],["自变量",state.fields.independentVariablePlan],["因变量",state.fields.dependentVariablePlan],["无关变量",state.fields.controlVariablePlan],["干扰阶段补全文字",state.fields.interferenceStagePlan],["研究假设",state.fields.hypothesis],["参与者",state.fields.participant],["难度",state.fields.difficulty],["情绪条件",state.fields.emotionCondition],["记忆时间s",state.fields.memorySeconds],["休息时间s",state.fields.restSeconds],["干扰时间s",state.fields.interferenceSeconds],["头环观察",state.fields.headband],["结论",state.fields.conclusion],["假设支持",state.fields.support],["可信度",state.fields.credibility],["优点",state.fields.strengths],["改进",state.fields.improvements],["学习启发",state.fields.learningInsight]]],
+        ["实验明细", [["学生姓名","学生年龄","学生编号","小组编号","参与者","轮次","实验类型","材料来源","材料类型","难度","条件","视频条件","记忆时间s","休息时间s","干扰时间s","记忆材料","干扰材料","评分规则","满分","得分","正确率","回忆内容","头环观察","情绪强度","反应时ms","记录时间"], ...state.records.map((record)=>[record.studentName || "",record.studentAge || "",record.studentId,record.groupId,record.participant,record.round,record.factor,record.materialSource,record.materialType,record.difficultyLabel || record.difficulty,record.condition,record.videoCondition,record.memorySeconds,record.restSeconds,record.interferenceSeconds,record.memoryItems,record.interferenceItems,record.scoreRule,record.fullScore,record.score ?? record.correctCount,`${record.accuracy}%`,record.recall,record.headband,record.emotionRating,record.reactionTime,record.createdAt])]],
         ["条件汇总", [["条件","次数","平均得分","平均正确率","平均反应时ms"], ...summary.map((item)=>[item.condition,item.count,item.avgCorrect,`${item.avgAccuracy}%`,item.avgRt])]],
         getTeamResultSheet(summary),
         getHeadbandSummarySheet(),
