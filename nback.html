@@ -309,6 +309,57 @@
       flex: 0 0 200px;
     }
 
+    .nback-toolbar .material-inline-field {
+      align-self: flex-end;
+      min-height: 42px;
+    }
+
+    .member-result-list {
+      display: grid;
+      gap: 12px;
+    }
+
+    .member-result-row {
+      display: flex;
+      flex-wrap: wrap;
+      align-items: flex-end;
+      gap: 10px;
+      padding: 12px;
+      border: 1px solid var(--line);
+      border-radius: 8px;
+      background: #f8fbff;
+    }
+
+    .member-result-row .field {
+      margin-bottom: 0;
+    }
+
+    .member-id-field {
+      width: 130px;
+      flex: 0 0 130px;
+    }
+
+    .member-material-field {
+      width: 180px;
+      flex: 0 0 180px;
+    }
+
+    .member-number-field {
+      width: 150px;
+      flex: 0 0 150px;
+    }
+
+    .percent-input {
+      display: flex;
+      align-items: center;
+      gap: 6px;
+    }
+
+    .percent-input span {
+      color: var(--muted);
+      font-weight: 800;
+    }
+
     label {
       display: block;
       margin-bottom: 7px;
@@ -1453,8 +1504,14 @@
         persuasiveness: "",
         participantId: "",
         teammate1Id: "",
+        teammate1MaterialType: "image",
+        teammate1AverageAccuracy: "",
+        teammate1AverageMissRate: "",
         teammate1Result: "",
         teammate2Id: "",
+        teammate2MaterialType: "image",
+        teammate2AverageAccuracy: "",
+        teammate2AverageMissRate: "",
         teammate2Result: ""
       },
       testRuns: [],
@@ -1916,7 +1973,7 @@
 
     function renderQuestionStep() {
       return `
-        <div class="step-layout">
+        <div class="single-step-layout">
           <div class="panel">
             <div class="panel-head">
               <h3>阅读材料</h3>
@@ -2021,13 +2078,20 @@
           </div>
           <div class="panel">
             <div class="panel-head">
-              <h3>提出研究问题</h3>
-              <p>请围绕自变量、因变量和控制变量形成研究问题。</p>
+              <h3>科学探究案例</h3>
+              <p>先参考案例和思考点，再形成自己的研究问题。</p>
             </div>
             <div class="panel-body">
               ${renderInquiryCases()}
               ${renderInquiryScaffold("question")}
-
+            </div>
+          </div>
+          <div class="panel">
+            <div class="panel-head">
+              <h3>提出研究问题</h3>
+              <p>请围绕自变量、因变量和控制变量形成研究问题。</p>
+            </div>
+            <div class="panel-body">
               <div class="field">
                 <label>自变量</label>
                 <div class="choice-group">
@@ -2129,9 +2193,10 @@
             <div class="panel-body">
               <div class="reading-card">
                 <h4>实验设计思考</h4>
-                <p>在提出问题和假设之后，我们就要制定研究计划。首先请你思考，针对不同的自变量，我们应该如何设计实验呢？</p>
-                <p>请以下图示意图为基础，请在纸上画出①自变量为N的大小②自变量为关卡数量时的实验示意图</p>
-                <p>在上图中，我们采用的实验材料是【数字】，你也可以使用【图片】作为N-back的材料。请在讨论后与你的组员一起确定你们小组的实验材料吧！</p>
+                <p>在提出问题和假设之后，我们就要制定研究计划。</p>
+                <p>首先请你思考，针对不同的自变量，我们应该如何设计实验呢？</p>
+                <p>请以下图示意图为基础，请在纸上分别画出自变量为N的大小和自变量为关卡数量时的实验示意图。</p>
+                <p>提醒：在图中，我们采用的实验材料是【数字】，你也可以使用【图形】【汉字】【字母】作为N-back的材料。请在讨论后与你的组员一起确定你们小组的实验材料吧！</p>
                 <div class="nback-example" aria-label="N-back活动举例">
                   <svg class="nback-example-svg" viewBox="0 0 720 320" role="img" aria-labelledby="planNbackExampleTitle planNbackExampleDesc">
                     <title id="planNbackExampleTitle">N-back活动举例：2-back数字实验</title>
@@ -2302,38 +2367,54 @@
 
     function renderTeamResultTable(summary) {
       const personalResult = getPersonalNbackResult(summary);
+      const memberMaterialOptions = (field) => [
+        ["image", "图片"],
+        ["number", "数字"],
+        ["letter", "英文大写字母"],
+        ["chinese", "汉字"]
+      ].map(([value, label]) => `<option value="${value}" ${state.fields[field] === value ? "selected" : ""}>${label}</option>`).join("");
+      const renderMemberRow = (index) => {
+        const prefix = "teammate" + index;
+        return `
+          <div class="member-result-row">
+            <div class="field member-id-field">
+              <label>组员编号</label>
+              <input type="text" data-field="${prefix}Id" value="${escapeHtml(state.fields[prefix + "Id"])}" placeholder="编号">
+            </div>
+            <div class="field member-material-field">
+              <label>材料类别</label>
+              <select data-field="${prefix}MaterialType">${memberMaterialOptions(prefix + "MaterialType")}</select>
+            </div>
+            <div class="field member-number-field">
+              <label>平均正确率</label>
+              <div class="percent-input"><input type="number" data-field="${prefix}AverageAccuracy" value="${escapeHtml(state.fields[prefix + "AverageAccuracy"])}" placeholder="数字"><span>%</span></div>
+            </div>
+            <div class="field member-number-field">
+              <label>平均漏答率</label>
+              <div class="percent-input"><input type="number" data-field="${prefix}AverageMissRate" value="${escapeHtml(state.fields[prefix + "AverageMissRate"])}" placeholder="数字"><span>%</span></div>
+            </div>
+          </div>
+        `;
+      };
       return `
         <div class="panel team-result-card">
           <div class="panel-head"><h3>其他组员实验结果记录</h3><p>仅用于留痕和对比，不参与统计计算。</p></div>
           <div class="panel-body">
-            <table>
-              <thead><tr><th>成员</th><th>组员编号</th><th>实验结果</th></tr></thead>
-              <tbody>
-                <tr>
-                  <td>本人</td>
-                  <td><input type="text" data-field="participantId" value="${escapeHtml(state.fields.participantId || state.studentId)}" placeholder="本人编号"></td>
-                  <td><input type="text" value="${escapeHtml(personalResult)}" placeholder="自动带入本人结果" disabled></td>
-                </tr>
-                <tr>
-                  <td>组员</td>
-                  <td><input type="text" data-field="teammate1Id" value="${escapeHtml(state.fields.teammate1Id)}" placeholder="请输入编号"></td>
-                  <td><input type="text" data-field="teammate1Result" value="${escapeHtml(state.fields.teammate1Result)}" placeholder="请输入该组员实验结果"></td>
-                </tr>
-                <tr>
-                  <td>组员</td>
-                  <td><input type="text" data-field="teammate2Id" value="${escapeHtml(state.fields.teammate2Id)}" placeholder="请输入编号"></td>
-                  <td><input type="text" data-field="teammate2Result" value="${escapeHtml(state.fields.teammate2Result)}" placeholder="请输入该组员实验结果"></td>
-                </tr>
-              </tbody>
-            </table>
+            <div class="reading-card"><strong>本人结果：</strong>${escapeHtml(personalResult || "完成实验后自动生成")}</div>
+            <div class="member-result-list">
+              ${renderMemberRow(1)}
+              ${renderMemberRow(2)}
+            </div>
           </div>
         </div>`;
     }
 
     function getTeamResultSheet(summary) {
       return ["小组记录", [
-        ["本人编号", "本人结果", "组员1编号", "组员1结果", "组员2编号", "组员2结果"],
-        [state.fields.participantId || state.studentId, getPersonalNbackResult(summary), state.fields.teammate1Id, state.fields.teammate1Result, state.fields.teammate2Id, state.fields.teammate2Result]
+        ["成员", "编号", "材料类别", "平均正确率", "平均漏答率", "结果摘要", "旧版结果文本"],
+        ["本人", state.fields.participantId || state.studentId, getMaterialTypeLabel(state.fields.materialType || state.fields.stimulusMaterial), "", "", getPersonalNbackResult(summary), ""],
+        ["组员1", state.fields.teammate1Id, getMaterialTypeLabel(state.fields.teammate1MaterialType), state.fields.teammate1AverageAccuracy, state.fields.teammate1AverageMissRate, "", state.fields.teammate1Result || ""],
+        ["组员2", state.fields.teammate2Id, getMaterialTypeLabel(state.fields.teammate2MaterialType), state.fields.teammate2AverageAccuracy, state.fields.teammate2AverageMissRate, "", state.fields.teammate2Result || ""]
       ]];
     }
 
@@ -2405,7 +2486,6 @@
               ` : `<div class="empty-state">还没有实验数据。请先到“搜集证据”步骤完成至少一轮实验。</div>`}
             </div>
           </div>
-          ${renderTeamResultTable(summary)}
           <div class="panel">
             <div class="panel-head"><h3>正确率柱状图</h3></div>
             <div class="panel-body">
@@ -2416,6 +2496,7 @@
               </div>
             </div>
           </div>
+          ${renderTeamResultTable(summary)}
         </div>
       `;
     }
