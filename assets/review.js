@@ -78,28 +78,32 @@
       return { value: average, label: average ? `${average} 个` : "暂未填写" };
     });
     const overall = fields.conclusionCapacity || averageFromSummary(summary);
+    const questionThought = thinkingSummary(fields.question_individual || fields.question, fields.question_group);
+    const hypothesisThought = thinkingSummary(fields.hypothesis_individual || fields.hypothesis, fields.hypothesis_group);
+    const conclusionThought = thinkingSummary(fields.conclusion_individual || fields.finalConclusion, fields.conclusion_group || fields.finalConclusion_group);
+    const reflectionThought = thinkingSummary(fields.reflection_individual || joinText([fields.designImprove, fields.teamwork, fields.inquiryReflection]), fields.reflection_group || joinText([fields.designImprove_group, fields.teamwork_group, fields.inquiryReflection_group]));
     return {
       steps: [
-        ["提出问题", fields.question],
-        ["作出假设", fields.hypothesis],
+        ["提出问题", questionThought],
+        ["作出假设", hypothesisThought],
         ["制定计划", `方法：${safe(fields.method)}；材料类别：${safe(materialLabel)}；起始长度：${safe(fields.startLength)}`],
         ["搜集证据", `已记录 ${count(state.records)} 条记忆任务数据。`],
         ["处理信息", fields.brainFinding],
-        ["得出结论", fields.finalConclusion]
+        ["得出结论", conclusionThought]
       ],
       resultTitle: "短时记忆容量结果",
       chartRows: summary.length ? summary.map((item) => ({ label: item.name, value: item.value, text: item.label })) : [],
       resultHighlight: overall ? `我的短时记忆容量：约 ${overall} 个信息单位` : "",
       evidence: [
-        ["研究问题", fields.question],
-        ["研究假设", fields.hypothesis],
+        ["研究问题", questionThought],
+        ["研究假设", hypothesisThought],
         ["实验材料类别", materialLabel],
         ["实验计划", `采用${safe(fields.method)}，材料类别为${safe(materialLabel)}，每位参与者测量${safe(fields.trialsPerParticipant)}次。`],
         ["三人成绩", `本人：${safe(personalResult)}；组员1：${safe(fields.teammate1Result)}；组员2：${safe(fields.teammate2Result)}`],
         ["小组平均长度", groupAverage],
         ["头环观察记录", fields.brainFinding]
       ],
-      conclusion: joinText([fields.finalConclusion, fields.designImprove, fields.teamwork, fields.inquiryReflection])
+      conclusion: joinText([conclusionThought, reflectionThought])
     };
   }
 
@@ -111,55 +115,65 @@
       const average = accuracy.length ? Math.round(avg(accuracy)) : 0;
       return { value: average, label: average ? `${average}%` : "暂未填写" };
     });
+    const questionThought = thinkingSummary(fields.question_individual || fields.researchQuestion, fields.question_group || fields.researchQuestion_group);
+    const hypothesisThought = thinkingSummary(fields.hypothesis_individual || fields.hypothesis, fields.hypothesis_group);
+    const conclusionThought = thinkingSummary(fields.conclusion_individual || fields.conclusion, joinText([fields.conclusion_group, fields.conclusionSupported_group]));
+    const reflectionThought = thinkingSummary(fields.reflection_individual || joinText([fields.improvement, fields.persuasiveness]), fields.reflection_group || joinText([fields.improvement_group, fields.persuasiveness_group]));
     return {
       steps: [
-        ["提出问题", fields.researchQuestion],
-        ["作出假设", fields.hypothesis],
+        ["提出问题", questionThought],
+        ["作出假设", hypothesisThought],
         ["制定计划", `自变量：${safe(fields.independentVariable)}；材料类别：${safe(materialLabel)}；设计：${safe(fields.experimentDesign)}`],
         ["搜集证据", `已记录 ${count(state.testRuns)} 条 N-back 测试数据。`],
         ["处理信息", fields.headbandObservation],
-        ["得出结论", fields.conclusion]
+        ["得出结论", conclusionThought]
       ],
       resultTitle: "N-back 正确率结果",
       chartRows: summary.length ? summary.map((item) => ({ label: item.name, value: item.value, text: item.label })) : [],
       resultHighlight: `假设判断：${safe(fields.conclusionSupported)}`,
       evidence: [
-        ["研究问题", fields.researchQuestion],
-        ["研究假设", fields.hypothesis],
+        ["研究问题", questionThought],
+        ["研究假设", hypothesisThought],
         ["实验材料类别", materialLabel],
         ["N-back 条件设计", `刺激材料类别：${safe(materialLabel)}；刺激间隔：${safe(fields.stimulusInterval)} 秒。`],
         ["其他组员实验结果", teammateSummary],
         ["头环观察记录", fields.headbandObservation]
       ],
-      conclusion: joinText([fields.conclusion, fields.improvement, fields.persuasiveness])
+      conclusion: joinText([conclusionThought, reflectionThought])
     };
   }
 
   function buildInterferenceContent(state, fields) {
+    const teammateSummary = formatInterferenceTeammateResults(fields);
     const summary = summarizeBy(state.records || [], "condition", (records) => {
       const accuracy = records.map((record) => number(record.accuracy)).filter((value) => value >= 0);
       const average = accuracy.length ? Math.round(avg(accuracy)) : 0;
       return { value: average, label: average ? `${average}%` : "暂未填写" };
     });
+    const questionThought = thinkingSummary(fields.question_individual || joinText([fields.lifeFactors, fields.materialFactors]), fields.question_group || joinText([fields.lifeFactors_group, fields.materialFactors_group, fields.question || fields.questionFactor]));
+    const hypothesisThought = thinkingSummary(fields.hypothesis_individual || fields.hypothesis, fields.hypothesis_group);
+    const conclusionThought = thinkingSummary(fields.conclusion_individual || fields.conclusion, joinText([fields.conclusion_group, fields.support_group, fields.credibility_group]));
+    const reflectionThought = thinkingSummary(fields.reflection_individual || joinText([fields.strengths, fields.improvements, fields.learningInsight]), fields.reflection_group || joinText([fields.strengths_group, fields.improvements_group, fields.learningInsight_group]));
     return {
       steps: [
-        ["提出问题", fields.question || fields.questionFactor],
-        ["作出假设", fields.hypothesis],
+        ["提出问题", questionThought],
+        ["作出假设", hypothesisThought],
         ["制定计划", `探究因素：${safe(fields.factor)}；难度：${safe(fields.difficulty)}；记忆时间：${safe(fields.memorySeconds)} 秒。`],
         ["搜集证据", `已记录 ${count(state.records)} 条长时记忆干扰数据。`],
         ["处理信息", fields.headband],
-        ["得出结论", fields.conclusion]
+        ["得出结论", conclusionThought]
       ],
       resultTitle: "不同干扰条件下的记忆结果",
       chartRows: summary.length ? summary.map((item) => ({ label: item.name, value: item.value, text: item.label })) : [],
       resultHighlight: `最可能影响长时记忆的因素：${safe(fields.factor)}`,
       evidence: [
-        ["研究问题", fields.question || fields.questionFactor],
-        ["研究假设", fields.hypothesis],
+        ["研究问题", questionThought],
+        ["研究假设", hypothesisThought],
         ["干扰因素选择", fields.factor],
+        ["其他组员实验结果", teammateSummary],
         ["头环观察记录", fields.headband]
       ],
-      conclusion: joinText([fields.conclusion, fields.strengths, fields.improvements, fields.learningInsight])
+      conclusion: joinText([conclusionThought, reflectionThought])
     };
   }
 
@@ -169,25 +183,29 @@
       const average = accuracy.length ? Math.round(avg(accuracy)) : 0;
       return { value: average, label: average ? `${average}%` : "暂未填写" };
     });
+    const questionThought = thinkingSummary(fields.question_individual || fields.question, fields.question_group);
+    const hypothesisThought = thinkingSummary(fields.hypothesis_individual || joinText([fields.hypothesis1, fields.hypothesis2]), fields.hypothesis_group || joinText([fields.hypothesis1_group, fields.hypothesis2_group]));
+    const conclusionThought = thinkingSummary(fields.conclusion_individual || fields.conclusion, fields.conclusion_group);
+    const reflectionThought = thinkingSummary(fields.reflection_individual || joinText([fields.designImprove, fields.surprise, fields.applicability]), fields.reflection_group || joinText([fields.designImprove_group, fields.surprise_group, fields.applicability_group]));
     return {
       steps: [
-        ["提出问题", fields.question],
-        ["作出假设", joinText([fields.hypothesis1, fields.hypothesis2])],
+        ["提出问题", questionThought],
+        ["作出假设", hypothesisThought],
         ["制定计划", `策略：${safe(fields.strategy1)}、${safe(fields.strategy2)}；材料：${safe(fields.materialType)}。`],
         ["搜集证据", `已记录 ${count(state.records)} 条记忆策略数据。`],
         ["处理信息", fields.headband],
-        ["得出结论", fields.conclusion]
+        ["得出结论", conclusionThought]
       ],
       resultTitle: "不同策略下的记忆表现",
       chartRows: summary.length ? summary.map((item) => ({ label: item.name, value: item.value, text: item.label })) : [],
       resultHighlight: `重点比较策略：${safe(fields.strategy1)}、${safe(fields.strategy2)}`,
       evidence: [
-        ["研究问题", fields.question],
-        ["研究假设", joinText([fields.hypothesis1, fields.hypothesis2])],
+        ["研究问题", questionThought],
+        ["研究假设", hypothesisThought],
         ["所选记忆策略", `${safe(fields.strategy1)}；${safe(fields.strategy2)}`],
         ["头环观察记录", fields.headband]
       ],
-      conclusion: joinText([fields.conclusion, fields.designImprove, fields.surprise, fields.applicability])
+      conclusion: joinText([conclusionThought, reflectionThought])
     };
   }
 
@@ -475,6 +493,34 @@
       return "";
     };
     return joinText([formatMember(1), formatMember(2)]);
+  }
+
+  function formatInterferenceTeammateResults(fields) {
+    const labels = { retroactive: "倒摄干扰", similarity: "相似性干扰", emotion: "情绪状态干扰" };
+    const source = Array.isArray(fields.otherMemberResults) ? fields.otherMemberResults : [];
+    const formatMember = (index) => {
+      const item = source[index - 1] || {};
+      const legacyId = fields[`teammate${index}Id`];
+      const legacyResult = fields[`teammate${index}Result`];
+      const memberId = item.memberId || legacyId;
+      const factor = labels[item.interferenceFactor] || item.interferenceFactor || "";
+      const material = item.materialType || "";
+      const score = item.averageScore;
+      const accuracy = item.averageAccuracy;
+      if (hasText(memberId) || hasText(factor) || hasText(material) || hasText(score) || hasText(accuracy)) {
+        return `组员${index}：编号${safe(memberId)}，干扰因素${safe(factor)}，实验材料${safe(material)}，平均得分${safe(score)}，平均正确率${safe(accuracy)}%`;
+      }
+      if (hasText(legacyResult)) return `组员${index}：${safe(legacyResult)}`;
+      return "";
+    };
+    return joinText([formatMember(1), formatMember(2)]);
+  }
+
+  function thinkingSummary(individual, group) {
+    return joinText([
+      `学生个人回答：${safe(individual)}`,
+      `小组讨论结果：${safe(group)}`
+    ]);
   }
 
   function safe(value) {
