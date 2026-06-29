@@ -1,0 +1,269 @@
+.voice-assistant {
+  position: fixed;
+  right: max(18px, env(safe-area-inset-right));
+  top: min(42vh, 360px);
+  z-index: 9998;
+  font-family: "PingFang SC", "HarmonyOS Sans SC", "Microsoft YaHei UI", "MiSans", system-ui, -apple-system, BlinkMacSystemFont, sans-serif;
+  color: #edf6ff;
+}
+
+.voice-assistant.is-dragged {
+  right: auto;
+  bottom: auto;
+}
+
+.voice-assistant.is-dragging {
+  user-select: none;
+}
+
+.voice-assistant * {
+  box-sizing: border-box;
+}
+
+.voice-toggle {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  min-width: 118px;
+  min-height: 48px;
+  padding: 0 15px;
+  border: 1px solid rgba(126, 190, 255, 0.34);
+  border-radius: 999px;
+  background:
+    radial-gradient(circle at 18% 18%, rgba(125, 211, 252, 0.3), transparent 42%),
+    linear-gradient(145deg, rgba(12, 31, 62, 0.96), rgba(7, 17, 31, 0.96));
+  color: #e8f7ff;
+  box-shadow: 0 18px 46px rgba(2, 9, 22, 0.32), 0 0 24px rgba(20, 184, 166, 0.15);
+  cursor: pointer;
+  font: inherit;
+  font-size: 14px;
+  font-weight: 800;
+  line-height: 1;
+  white-space: nowrap;
+  touch-action: none;
+  transition: transform 180ms ease, box-shadow 180ms ease, border-color 180ms ease;
+}
+
+.voice-toggle[data-drag-handle] {
+  cursor: grab;
+}
+
+.voice-assistant.is-dragging .voice-toggle[data-drag-handle],
+.voice-assistant.is-dragging .voice-head[data-drag-handle] {
+  cursor: grabbing;
+}
+
+.voice-toggle:hover {
+  transform: translateY(-2px);
+  border-color: rgba(126, 210, 255, 0.56);
+  box-shadow: 0 22px 54px rgba(2, 9, 22, 0.4), 0 0 30px rgba(20, 184, 166, 0.22);
+}
+
+.voice-panel {
+  position: absolute;
+  right: 0;
+  top: 58px;
+  display: none;
+  width: min(390px, calc(100vw - 28px));
+  overflow: hidden;
+  border: 1px solid rgba(126, 190, 255, 0.22);
+  border-radius: 22px;
+  background:
+    radial-gradient(circle at 86% 0%, rgba(20, 184, 166, 0.17), transparent 34%),
+    radial-gradient(circle at 0% 92%, rgba(59, 130, 246, 0.13), transparent 30%),
+    linear-gradient(150deg, rgba(10, 27, 54, 0.98), rgba(6, 15, 30, 0.98));
+  box-shadow: 0 28px 80px rgba(2, 9, 22, 0.48), inset 0 1px 0 rgba(255, 255, 255, 0.06);
+  backdrop-filter: blur(22px);
+  -webkit-backdrop-filter: blur(22px);
+}
+
+.voice-assistant.is-dragged .voice-panel {
+  right: auto;
+  top: 0;
+  left: 0;
+}
+
+.voice-assistant.is-open .voice-panel {
+  display: block;
+  animation: voicePanelIn 180ms ease both;
+}
+
+.voice-assistant.is-open .voice-toggle {
+  display: none;
+}
+
+.voice-head {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  padding: 16px 16px 12px;
+  border-bottom: 1px solid rgba(126, 190, 255, 0.14);
+}
+
+.voice-head[data-drag-handle] {
+  cursor: grab;
+  touch-action: none;
+}
+
+.voice-title {
+  margin: 0;
+  font-size: 16px;
+  font-weight: 800;
+  letter-spacing: 0;
+}
+
+.voice-close {
+  display: grid;
+  place-items: center;
+  width: 32px;
+  height: 32px;
+  flex: 0 0 auto;
+  border: 1px solid rgba(126, 190, 255, 0.18);
+  border-radius: 999px;
+  background: rgba(255, 255, 255, 0.06);
+  color: rgba(237, 246, 255, 0.78);
+  cursor: pointer;
+  font: inherit;
+  font-size: 20px;
+  line-height: 1;
+}
+
+.voice-close:hover {
+  color: #fff;
+  background: rgba(255, 255, 255, 0.1);
+}
+
+.voice-body {
+  display: grid;
+  gap: 12px;
+  padding: 14px;
+}
+
+.voice-note {
+  margin: 0;
+  color: rgba(226, 241, 255, 0.78);
+  font-size: 13px;
+  line-height: 1.75;
+}
+
+.voice-output {
+  width: 100%;
+  min-height: 150px;
+  resize: vertical;
+  padding: 12px 13px;
+  border: 1px solid rgba(255, 255, 255, 0.18);
+  border-radius: 16px;
+  outline: none;
+  background: rgba(255, 255, 255, 0.96);
+  color: #0f172a;
+  font: inherit;
+  font-size: 14px;
+  line-height: 1.6;
+  box-shadow: inset 0 1px 2px rgba(15, 23, 42, 0.08), 0 1px 0 rgba(255, 255, 255, 0.12);
+}
+
+.voice-output:focus {
+  border-color: rgba(59, 130, 246, 0.46);
+  box-shadow: inset 0 1px 2px rgba(15, 23, 42, 0.06), 0 0 0 4px rgba(59, 130, 246, 0.12);
+}
+
+.voice-actions {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 8px;
+}
+
+.voice-action {
+  min-height: 40px;
+  padding: 0 12px;
+  border: 1px solid rgba(126, 190, 255, 0.18);
+  border-radius: 999px;
+  background: rgba(255, 255, 255, 0.075);
+  color: rgba(237, 246, 255, 0.86);
+  cursor: pointer;
+  font: inherit;
+  font-size: 13px;
+  font-weight: 750;
+  line-height: 1;
+  white-space: nowrap;
+  transition: background 160ms ease, border-color 160ms ease, color 160ms ease, transform 160ms ease;
+}
+
+.voice-action:hover {
+  transform: translateY(-1px);
+  border-color: rgba(126, 210, 255, 0.34);
+  background: rgba(255, 255, 255, 0.11);
+  color: #fff;
+}
+
+.voice-action.primary {
+  border-color: rgba(45, 212, 191, 0.32);
+  background: linear-gradient(135deg, rgba(20, 184, 166, 0.95), rgba(59, 130, 246, 0.92));
+  color: #06111f;
+}
+
+.voice-status {
+  min-height: 24px;
+  margin: 0;
+  color: rgba(226, 241, 255, 0.7);
+  font-size: 12px;
+  line-height: 1.6;
+}
+
+.voice-status.is-success {
+  color: #a7f3d0;
+}
+
+.voice-status.is-warning {
+  color: #fde68a;
+}
+
+@keyframes voicePanelIn {
+  from { opacity: 0; transform: translateY(-6px) scale(0.98); }
+  to { opacity: 1; transform: translateY(0) scale(1); }
+}
+
+@media (max-width: 520px) {
+  .voice-assistant {
+    right: 12px;
+    top: 92px;
+  }
+
+  .voice-toggle {
+    min-width: 104px;
+    min-height: 44px;
+    padding: 0 12px;
+    font-size: 13px;
+  }
+
+  .voice-panel {
+    width: min(360px, calc(100vw - 24px));
+    max-height: calc(100vh - 112px);
+    overflow-y: auto;
+  }
+
+  .voice-head {
+    padding: 14px 12px 10px;
+  }
+
+  .voice-body {
+    padding: 12px;
+  }
+
+  .voice-output {
+    min-height: 130px;
+  }
+}
+
+@media (max-width: 360px) {
+  .voice-actions {
+    grid-template-columns: 1fr;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .voice-assistant.is-open .voice-panel {
+    animation: none !important;
+  }
+}
