@@ -1,10 +1,10 @@
 .voice-assistant {
   position: fixed;
   right: max(18px, env(safe-area-inset-right));
-  top: min(42vh, 360px);
+  top: min(32vh, 300px);
   z-index: 9998;
-  font-family: "PingFang SC", "HarmonyOS Sans SC", "Microsoft YaHei UI", "MiSans", system-ui, -apple-system, BlinkMacSystemFont, sans-serif;
   color: #edf6ff;
+  font-family: "PingFang SC", "HarmonyOS Sans SC", "Microsoft YaHei UI", "MiSans", system-ui, -apple-system, BlinkMacSystemFont, sans-serif;
 }
 
 .voice-assistant.is-dragged {
@@ -25,16 +25,14 @@
   align-items: center;
   justify-content: center;
   min-width: 118px;
-  min-height: 48px;
+  min-height: 46px;
   padding: 0 15px;
   border: 1px solid rgba(126, 190, 255, 0.34);
   border-radius: 999px;
-  background:
-    radial-gradient(circle at 18% 18%, rgba(125, 211, 252, 0.3), transparent 42%),
-    linear-gradient(145deg, rgba(12, 31, 62, 0.96), rgba(7, 17, 31, 0.96));
+  background: linear-gradient(145deg, rgba(12, 31, 62, 0.96), rgba(7, 17, 31, 0.96));
   color: #e8f7ff;
   box-shadow: 0 18px 46px rgba(2, 9, 22, 0.32), 0 0 24px rgba(20, 184, 166, 0.15);
-  cursor: pointer;
+  cursor: grab;
   font: inherit;
   font-size: 14px;
   font-weight: 800;
@@ -44,12 +42,8 @@
   transition: transform 180ms ease, box-shadow 180ms ease, border-color 180ms ease;
 }
 
-.voice-toggle[data-drag-handle] {
-  cursor: grab;
-}
-
-.voice-assistant.is-dragging .voice-toggle[data-drag-handle],
-.voice-assistant.is-dragging .voice-head[data-drag-handle] {
+.voice-assistant.is-dragging .voice-toggle,
+.voice-assistant.is-dragging .voice-head {
   cursor: grabbing;
 }
 
@@ -65,13 +59,11 @@
   top: 58px;
   display: none;
   width: min(390px, calc(100vw - 28px));
+  max-height: calc(100vh - 40px);
   overflow: hidden;
   border: 1px solid rgba(126, 190, 255, 0.22);
-  border-radius: 22px;
-  background:
-    radial-gradient(circle at 86% 0%, rgba(20, 184, 166, 0.17), transparent 34%),
-    radial-gradient(circle at 0% 92%, rgba(59, 130, 246, 0.13), transparent 30%),
-    linear-gradient(150deg, rgba(10, 27, 54, 0.98), rgba(6, 15, 30, 0.98));
+  border-radius: 18px;
+  background: linear-gradient(150deg, rgba(10, 27, 54, 0.98), rgba(6, 15, 30, 0.98));
   box-shadow: 0 28px 80px rgba(2, 9, 22, 0.48), inset 0 1px 0 rgba(255, 255, 255, 0.06);
   backdrop-filter: blur(22px);
   -webkit-backdrop-filter: blur(22px);
@@ -99,9 +91,6 @@
   gap: 12px;
   padding: 16px 16px 12px;
   border-bottom: 1px solid rgba(126, 190, 255, 0.14);
-}
-
-.voice-head[data-drag-handle] {
   cursor: grab;
   touch-action: none;
 }
@@ -137,14 +126,9 @@
 .voice-body {
   display: grid;
   gap: 12px;
+  max-height: calc(100vh - 110px);
+  overflow-y: auto;
   padding: 14px;
-}
-
-.voice-note {
-  margin: 0;
-  color: rgba(226, 241, 255, 0.78);
-  font-size: 13px;
-  line-height: 1.75;
 }
 
 .voice-recording-status {
@@ -155,7 +139,7 @@
   min-height: 42px;
   padding: 10px 12px;
   border: 1px solid rgba(126, 190, 255, 0.16);
-  border-radius: 14px;
+  border-radius: 12px;
   background: rgba(255, 255, 255, 0.075);
   color: rgba(237, 246, 255, 0.86);
 }
@@ -193,7 +177,7 @@
   resize: vertical;
   padding: 12px 13px;
   border: 1px solid rgba(255, 255, 255, 0.18);
-  border-radius: 16px;
+  border-radius: 12px;
   outline: none;
   background: rgba(255, 255, 255, 0.96);
   color: #0f172a;
@@ -206,6 +190,14 @@
 .voice-output:focus {
   border-color: rgba(59, 130, 246, 0.46);
   box-shadow: inset 0 1px 2px rgba(15, 23, 42, 0.06), 0 0 0 4px rgba(59, 130, 246, 0.12);
+}
+
+.voice-partial {
+  min-height: 22px;
+  margin: 0;
+  color: rgba(226, 241, 255, 0.75);
+  font-size: 12px;
+  line-height: 1.6;
 }
 
 .voice-actions {
@@ -250,7 +242,7 @@
 }
 
 .voice-status {
-  min-height: 24px;
+  min-height: 22px;
   margin: 0;
   color: rgba(226, 241, 255, 0.7);
   font-size: 12px;
@@ -273,7 +265,7 @@
 @media (max-width: 520px) {
   .voice-assistant {
     right: 12px;
-    top: 92px;
+    top: 88px;
   }
 
   .voice-toggle {
@@ -285,8 +277,7 @@
 
   .voice-panel {
     width: min(360px, calc(100vw - 24px));
-    max-height: calc(100vh - 112px);
-    overflow-y: auto;
+    max-height: calc(100vh - 104px);
   }
 
   .voice-head {
@@ -294,6 +285,7 @@
   }
 
   .voice-body {
+    max-height: calc(100vh - 160px);
     padding: 12px;
   }
 
