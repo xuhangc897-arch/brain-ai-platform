@@ -158,6 +158,9 @@
         });
         nextSocket.addEventListener("message", handleMessage);
         nextSocket.addEventListener("error", (event) => {
+          if (closedByClient) {
+            return;
+          }
           if (!settled) {
             settled = true;
             window.clearTimeout(readyTimer);
@@ -169,13 +172,22 @@
         nextSocket.addEventListener("close", () => {
           clearEndTimer();
           socket = null;
+          if (closedByClient) {
+            if (!settled) {
+              settled = true;
+              window.clearTimeout(readyTimer);
+            }
+            emitState("idle");
+            return;
+          }
           if (!settled) {
             settled = true;
             window.clearTimeout(readyTimer);
             reject(new Error("WebSocket 已关闭。"));
             return;
           }
-          emitState(closedByClient ? "idle" : "closed");
+          emitState("closed");
+          emitError("WebSocket 连接失败。");
         });
       });
     }
