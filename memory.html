@@ -988,6 +988,14 @@
     .quiz-result strong { font-size: 24px; }
     .quiz-message { color: #0f766e; font-weight: 900; }
     .quiz-message.is-warning { color: #b45309; }
+    .quiz-history { display: grid; gap: 12px; }
+    .quiz-history h4 { margin: 0; color: #172033; font-size: 18px; }
+    .quiz-history-summary { grid-template-columns: repeat(4, minmax(140px, 1fr)); }
+    .quiz-history-summary strong { font-size: 15px; line-height: 1.5; overflow-wrap: anywhere; }
+    .quiz-history-table { overflow-x: auto; border: 1px solid var(--line); border-radius: 10px; background: #fff; }
+    .quiz-history-table table { width: 100%; border-collapse: collapse; min-width: 680px; }
+    .quiz-history-table th, .quiz-history-table td { padding: 10px 12px; border-bottom: 1px solid var(--line); text-align: left; }
+    .quiz-history-table th { color: var(--muted); font-size: 13px; background: #f8fafc; }
     @media (max-width: 760px) { .survey-scale { grid-template-columns: repeat(auto-fit, minmax(72px, 1fr)); } .survey-option-card { min-height: 60px; padding: 9px 6px; } .survey-score { font-size: 18px; } .survey-label { font-size: 12px; } .survey-summary { grid-template-columns: 1fr 1fr; } }
 
 
@@ -1024,6 +1032,7 @@
 
   </style>
   <link rel="stylesheet" href="assets/ai-assistant.css">
+  <link rel="stylesheet" href="assets/voice-assistant.css">
 </head>
 <body>
   <header class="topbar">
@@ -1135,18 +1144,58 @@
     }
 
     function createDefaultKnowledgeQuiz() {
-      return { answers: {}, submitted: false, correctCount: 0, score: 0, submittedAt: '', wrongQuestions: [] };
+      return { answers: {}, submitted: false, correctCount: 0, score: 0, submittedAt: '', wrongQuestions: [], history: [] };
+    }
+
+    function normalizeKnowledgeQuizRecord(record = {}, index = 0) {
+      const totalCount = Number(record.totalCount || KNOWLEDGE_QUIZ.items.length);
+      const correctCount = Number(record.correctCount || 0);
+      const score = Number(record.score || (totalCount ? Math.round((correctCount / totalCount) * 100) : 0));
+      return {
+        attemptNumber: Number(record.attemptNumber || index + 1),
+        submittedAt: record.submittedAt || '',
+        score,
+        correctCount,
+        totalCount,
+        accuracy: Number(record.accuracy || (totalCount ? Math.round((correctCount / totalCount) * 100) : 0)),
+        answers: Object.assign({}, record.answers || {}),
+        wrongQuestions: Array.isArray(record.wrongQuestions) ? record.wrongQuestions : []
+      };
     }
 
     function mergeKnowledgeQuiz(incoming = {}) {
       const merged = createDefaultKnowledgeQuiz();
       merged.answers = Object.assign({}, incoming.answers || {});
-      merged.submitted = Boolean(incoming.submitted);
-      merged.correctCount = Number(incoming.correctCount || 0);
-      merged.score = Number(incoming.score || 0);
-      merged.submittedAt = incoming.submittedAt || '';
-      merged.wrongQuestions = Array.isArray(incoming.wrongQuestions) ? incoming.wrongQuestions : [];
+      const history = Array.isArray(incoming.history)
+        ? incoming.history.map((record, index) => normalizeKnowledgeQuizRecord(record, index))
+        : [];
+      if (!history.length && (incoming.submitted || incoming.submittedAt)) {
+        history.push(normalizeKnowledgeQuizRecord({
+          attemptNumber: 1,
+          submittedAt: incoming.submittedAt || '',
+          score: incoming.score,
+          correctCount: incoming.correctCount,
+          totalCount: KNOWLEDGE_QUIZ.items.length,
+          answers: incoming.answers || {},
+          wrongQuestions: incoming.wrongQuestions
+        }, 0));
+      }
+      merged.history = history;
+      const last = history[history.length - 1];
+      merged.submitted = Boolean(last);
+      merged.correctCount = last ? last.correctCount : Number(incoming.correctCount || 0);
+      merged.score = last ? last.score : Number(incoming.score || 0);
+      merged.submittedAt = last ? last.submittedAt : incoming.submittedAt || '';
+      merged.wrongQuestions = last ? last.wrongQuestions : Array.isArray(incoming.wrongQuestions) ? incoming.wrongQuestions : [];
       return merged;
+    }
+
+    function getKnowledgeQuizSummary(quiz) {
+      const history = Array.isArray(quiz.history) ? quiz.history : [];
+      const first = history[0] || null;
+      const last = history[history.length - 1] || null;
+      const highest = history.reduce((best, record) => (!best || record.score > best.score ? record : best), null);
+      return { history, first, highest, last, submitCount: history.length };
     }
 
     const PLAN_ORDER_STEPS = [
@@ -1540,6 +1589,7 @@
     }
     function renderKnowledgeQuiz() {
       const quiz = mergeKnowledgeQuiz(state.knowledgeQuiz);
+      const summary = getKnowledgeQuizSummary(quiz);
       const result = quiz.submitted
         ? '<div class="quiz-result"><div>✔ 答对：<strong>' + quiz.correctCount + ' / ' + KNOWLEDGE_QUIZ.items.length + '</strong></div><div>案件知识验证成绩：<strong>' + quiz.score + ' / 100</strong></div>' + renderKnowledgeQuizMessage(quiz.score) + '</div>'
         : '<div class="quiz-result"><div>案件知识验证成绩：<strong>待提交</strong></div></div>';
@@ -1556,7 +1606,30 @@
         }).join('') +
         result +
         '<div class="actions" style="justify-content:flex-end;"><button class="btn" type="button" id="submitKnowledgeQuizBtn">提交知识验证</button></div>' +
+        renderKnowledgeQuizHistory(summary) +
       '</section>';
+    }
+
+    function formatQuizRecord(record) {
+      if (!record) return '暂无';
+      const time = record.submittedAt ? new Date(record.submittedAt).toLocaleString() : '';
+      return record.score + ' / 100（' + record.correctCount + ' / ' + record.totalCount + '，' + record.accuracy + '%）' + (time ? ' · ' + time : '');
+    }
+
+    function renderKnowledgeQuizHistory(summary) {
+      if (!summary.history.length) {
+        return '<section class="quiz-history"><h4>提交记录</h4><div class="quiz-result"><div>暂无提交记录</div></div></section>';
+      }
+      return '<section class="quiz-history"><h4>提交记录</h4>' +
+        '<div class="survey-summary quiz-history-summary">' +
+          '<div><strong>' + formatQuizRecord(summary.first) + '</strong><span>首次提交成绩</span></div>' +
+          '<div><strong>' + formatQuizRecord(summary.highest) + '</strong><span>最高成绩</span></div>' +
+          '<div><strong>' + formatQuizRecord(summary.last) + '</strong><span>最后一次成绩</span></div>' +
+          '<div><strong>' + summary.submitCount + '</strong><span>提交次数</span></div>' +
+        '</div>' +
+        '<div class="quiz-history-table"><table><thead><tr><th>次数</th><th>提交时间</th><th>得分</th><th>正确题数</th><th>总题数</th><th>正确率</th></tr></thead><tbody>' +
+          summary.history.map((record) => '<tr><td>' + record.attemptNumber + '</td><td>' + escapeHtml(record.submittedAt ? new Date(record.submittedAt).toLocaleString() : '') + '</td><td>' + record.score + ' / 100</td><td>' + record.correctCount + '</td><td>' + record.totalCount + '</td><td>' + record.accuracy + '%</td></tr>').join('') +
+        '</tbody></table></div></section>';
     }
 
     function renderKnowledgeQuizMessage(score) {
@@ -1570,10 +1643,6 @@
         input.addEventListener('change', () => {
           state.knowledgeQuiz = mergeKnowledgeQuiz(state.knowledgeQuiz);
           state.knowledgeQuiz.answers[input.dataset.quizQuestion] = input.value;
-          state.knowledgeQuiz.submitted = false;
-          state.knowledgeQuiz.correctCount = 0;
-          state.knowledgeQuiz.score = 0;
-          state.knowledgeQuiz.wrongQuestions = [];
           saveState();
           renderApp();
         });
@@ -1596,17 +1665,33 @@
         if (state.knowledgeQuiz.answers[itemKey] === item.answer) correctCount += 1;
         else wrongQuestions.push(index + 1);
       });
-      state.knowledgeQuiz.correctCount = correctCount;
-      state.knowledgeQuiz.score = correctCount * 10;
+      const totalCount = KNOWLEDGE_QUIZ.items.length;
+      const score = totalCount ? Math.round((correctCount / totalCount) * 100) : 0;
+      const submittedAt = new Date().toISOString();
+      const record = normalizeKnowledgeQuizRecord({
+        attemptNumber: state.knowledgeQuiz.history.length + 1,
+        submittedAt,
+        score,
+        correctCount,
+        totalCount,
+        accuracy: score,
+        answers: state.knowledgeQuiz.answers,
+        wrongQuestions
+      }, state.knowledgeQuiz.history.length);
+      state.knowledgeQuiz.history.push(record);
+      state.knowledgeQuiz.correctCount = record.correctCount;
+      state.knowledgeQuiz.score = record.score;
       state.knowledgeQuiz.submitted = true;
-      state.knowledgeQuiz.submittedAt = new Date().toISOString();
-      state.knowledgeQuiz.wrongQuestions = wrongQuestions;
+      state.knowledgeQuiz.submittedAt = record.submittedAt;
+      state.knowledgeQuiz.wrongQuestions = record.wrongQuestions;
       saveState();
       renderApp();
     }
 
     function getKnowledgeQuizSheet() {
       const quiz = mergeKnowledgeQuiz(state.knowledgeQuiz);
+      const summary = getKnowledgeQuizSummary(quiz);
+      const historyJson = JSON.stringify(summary.history);
       return ["案件知识验证", [
         ["题号", "题目", "学生答案", "正确答案", "是否正确"],
         ...KNOWLEDGE_QUIZ.items.map((item, index) => {
@@ -1616,7 +1701,17 @@
         }),
         ["汇总", "答对数量", quiz.correctCount + " / " + KNOWLEDGE_QUIZ.items.length, "", ""],
         ["汇总", "知识验证得分", quiz.score, "总成绩", quiz.score + " / 100"],
-        ["汇总", "提交时间", quiz.submittedAt ? new Date(quiz.submittedAt).toLocaleString() : "", "", ""]
+        ["汇总", "提交时间", quiz.submittedAt ? new Date(quiz.submittedAt).toLocaleString() : "", "", ""],
+        ["导出字段", "案件知识验证_首次得分", summary.first ? summary.first.score : "", "", ""],
+        ["导出字段", "案件知识验证_首次正确题数", summary.first ? summary.first.correctCount : "", "", ""],
+        ["导出字段", "案件知识验证_首次总题数", summary.first ? summary.first.totalCount : "", "", ""],
+        ["导出字段", "案件知识验证_首次正确率", summary.first ? summary.first.accuracy + "%" : "", "", ""],
+        ["导出字段", "案件知识验证_最高得分", summary.highest ? summary.highest.score : "", "", ""],
+        ["导出字段", "案件知识验证_最后一次得分", summary.last ? summary.last.score : "", "", ""],
+        ["导出字段", "案件知识验证_提交次数", summary.submitCount, "", ""],
+        ["导出字段", "案件知识验证_全部提交记录", historyJson, "", ""],
+        ["全部提交记录", "提交次数", "提交时间", "得分", "正确题数", "总题数", "正确率"],
+        ...summary.history.map((record) => ["全部提交记录", record.attemptNumber, record.submittedAt ? new Date(record.submittedAt).toLocaleString() : "", record.score, record.correctCount, record.totalCount, record.accuracy + "%"])
       ]];
     }
 
@@ -2714,11 +2809,14 @@
     renderApp();
   </script>
   <script src="assets/ai-assistant.js"></script>
+  <script>
+    window.BRAIN_ASR_SIGN_ENDPOINT = "https://1441391469-7ppckhczkq.ap-shanghai.tencentscf.com";
+  </script>
+  <script src="assets/voice-recorder.js"></script>
+  <script src="assets/asr-client.js"></script>
+  <script src="assets/voice-assistant.js"></script>
 </body>
 </html>
-
-
-
 
 
 

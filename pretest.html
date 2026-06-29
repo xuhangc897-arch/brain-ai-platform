@@ -310,6 +310,8 @@
       .btn { width: 100%; }
     }
   </style>
+  <link rel="stylesheet" href="assets/ai-assistant.css">
+  <link rel="stylesheet" href="assets/voice-assistant.css">
 </head>
 <body>
   <header class="topbar">
@@ -635,5 +637,12 @@
         .replaceAll("'", "&#039;");
     }
   </script>
+  <script src="assets/ai-assistant.js"></script>
+  <script>
+    window.BRAIN_ASR_SIGN_ENDPOINT = "https://1441391469-7ppckhczkq.ap-shanghai.tencentscf.com";
+  </script>
+  <script src="assets/voice-recorder.js"></script>
+  <script src="assets/asr-client.js"></script>
+  <script src="assets/voice-assistant.js"></script>
 </body>
 </html>

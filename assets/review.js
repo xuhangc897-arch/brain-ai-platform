@@ -361,30 +361,98 @@
 
   function renderKnowledgeQuizReport(data) {
     if (data.meta.type === "poster") return "";
-    const quiz = data.state?.knowledgeQuiz || {};
-    const correctCount = number(quiz.correctCount);
-    const score = number(quiz.score);
-    const wrongQuestions = Array.isArray(quiz.wrongQuestions) && quiz.wrongQuestions.length
-      ? quiz.wrongQuestions.join("、")
-      : (quiz.submitted ? "无" : "暂未提交");
+    const quiz = normalizeKnowledgeQuiz(data.state?.knowledgeQuiz || {});
+    const summary = getKnowledgeQuizSummary(quiz);
+    const noRecord = "暂未提交";
+    const rows = summary.history.map((record) => `
+      <div class="evidence-card">
+        <span>第 ${record.attemptNumber} 次 · ${esc(formatQuizTime(record.submittedAt))}</span>
+        <strong>${record.score} / 100（${record.correctCount} / ${record.totalCount}，${record.accuracy}%）</strong>
+      </div>
+    `).join("");
     return `
       <section>
         <h2 class="section-label">案件知识验证</h2>
         <div class="result-grid">
           <div class="result-card">
-            <h3>总得分</h3>
-            <div class="result-highlight">${quiz.submitted ? `${score} / 100` : "暂未提交"}</div>
+            <h3>提交成绩摘要</h3>
+            <div class="evidence-list">
+              <div class="evidence-card"><span>首次提交成绩</span><strong>${summary.first ? formatQuizRecord(summary.first) : noRecord}</strong></div>
+              <div class="evidence-card"><span>最高成绩</span><strong>${summary.highest ? formatQuizRecord(summary.highest) : noRecord}</strong></div>
+              <div class="evidence-card"><span>最后一次成绩</span><strong>${summary.last ? formatQuizRecord(summary.last) : noRecord}</strong></div>
+              <div class="evidence-card"><span>提交次数</span><strong>${summary.submitCount}</strong></div>
+            </div>
           </div>
           <div class="result-card">
-            <h3>答对数量</h3>
+            <h3>全部提交记录</h3>
             <div class="evidence-list">
-              <div class="evidence-card"><span>答对</span><strong>${quiz.submitted ? `${correctCount} / 10` : "暂未提交"}</strong></div>
-              <div class="evidence-card"><span>错题</span><strong>${esc(wrongQuestions)}</strong></div>
+              ${rows || `<div class="evidence-card"><span>记录</span><strong>${noRecord}</strong></div>`}
             </div>
           </div>
         </div>
       </section>
     `;
+  }
+
+  function normalizeKnowledgeQuiz(quiz) {
+    const history = Array.isArray(quiz.history)
+      ? quiz.history.map((record, index) => normalizeKnowledgeQuizRecord(record, index))
+      : [];
+    if (!history.length && (quiz.submitted || quiz.submittedAt)) {
+      history.push(normalizeKnowledgeQuizRecord({
+        attemptNumber: 1,
+        submittedAt: quiz.submittedAt || "",
+        score: quiz.score,
+        correctCount: quiz.correctCount,
+        totalCount: 10,
+        accuracy: quiz.score,
+        answers: quiz.answers || {},
+        wrongQuestions: quiz.wrongQuestions
+      }, 0));
+    }
+    const last = history[history.length - 1];
+    return Object.assign({}, quiz, {
+      history,
+      submitted: Boolean(last),
+      score: last ? last.score : number(quiz.score),
+      correctCount: last ? last.correctCount : number(quiz.correctCount),
+      submittedAt: last ? last.submittedAt : quiz.submittedAt || "",
+      wrongQuestions: last ? last.wrongQuestions : Array.isArray(quiz.wrongQuestions) ? quiz.wrongQuestions : []
+    });
+  }
+
+  function normalizeKnowledgeQuizRecord(record, index) {
+    const totalCount = number(record.totalCount || 10);
+    const correctCount = number(record.correctCount);
+    const score = number(record.score || (totalCount ? Math.round((correctCount / totalCount) * 100) : 0));
+    return {
+      attemptNumber: number(record.attemptNumber || index + 1),
+      submittedAt: record.submittedAt || "",
+      score,
+      correctCount,
+      totalCount,
+      accuracy: number(record.accuracy || (totalCount ? Math.round((correctCount / totalCount) * 100) : 0)),
+      answers: Object.assign({}, record.answers || {}),
+      wrongQuestions: Array.isArray(record.wrongQuestions) ? record.wrongQuestions : []
+    };
+  }
+
+  function getKnowledgeQuizSummary(quiz) {
+    const history = Array.isArray(quiz.history) ? quiz.history : [];
+    const first = history[0] || null;
+    const last = history[history.length - 1] || null;
+    const highest = history.reduce((best, record) => (!best || record.score > best.score ? record : best), null);
+    return { history, first, highest, last, submitCount: history.length };
+  }
+
+  function formatQuizRecord(record) {
+    return `${record.score} / 100（${record.correctCount} / ${record.totalCount}，${record.accuracy}%）`;
+  }
+
+  function formatQuizTime(value) {
+    if (!value) return "";
+    const date = new Date(value);
+    return Number.isNaN(date.getTime()) ? value : date.toLocaleString();
   }
 
   function renderBarChart(rows) {

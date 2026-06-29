@@ -5,6 +5,8 @@
   const CONTEXT_KEY = "science-inquiry-context-v1";
   const LOG_KEY = "aiChatLogs";
   const MAX_QUESTION_LENGTH = 500;
+  const DRAG_MARGIN = 12;
+  const DRAG_THRESHOLD = 5;
 
   const root = document.createElement("div");
   root.className = "ai-assistant";
@@ -49,6 +51,133 @@
   const send = root.querySelector(".ai-send");
   const exportButton = root.querySelector("[data-ai-export]");
   const clearButton = root.querySelector("[data-ai-clear]");
+  const panel = root.querySelector(".ai-panel");
+  const head = root.querySelector(".ai-head");
+
+  function installDraggable(options) {
+    const { dragRoot, visibleWhenClosed, visibleWhenOpen, handles } = options;
+    let pointerId = null;
+    let startX = 0;
+    let startY = 0;
+    let startLeft = 0;
+    let startTop = 0;
+    let didDrag = false;
+    let suppressClick = false;
+
+    function isInteractiveTarget(target) {
+      return Boolean(target.closest("button, input, textarea, select, a, [data-no-drag]"));
+    }
+
+    function getVisibleElement() {
+      return dragRoot.classList.contains("is-open") ? visibleWhenOpen : visibleWhenClosed;
+    }
+
+    function getVisibleRect() {
+      const visible = getVisibleElement();
+      return visible.getBoundingClientRect();
+    }
+
+    function clampPosition(left, top) {
+      const visible = getVisibleElement();
+      const width = visible.offsetWidth || visible.getBoundingClientRect().width || 1;
+      const height = visible.offsetHeight || visible.getBoundingClientRect().height || 1;
+      const maxLeft = Math.max(DRAG_MARGIN, window.innerWidth - width - DRAG_MARGIN);
+      const maxTop = Math.max(DRAG_MARGIN, window.innerHeight - height - DRAG_MARGIN);
+      return {
+        left: Math.min(Math.max(left, DRAG_MARGIN), maxLeft),
+        top: Math.min(Math.max(top, DRAG_MARGIN), maxTop)
+      };
+    }
+
+    function applyPosition(left, top) {
+      const next = clampPosition(left, top);
+      dragRoot.classList.add("is-dragged");
+      dragRoot.style.left = `${next.left}px`;
+      dragRoot.style.top = `${next.top}px`;
+      dragRoot.style.right = "auto";
+      dragRoot.style.bottom = "auto";
+    }
+
+    function syncCurrentPosition() {
+      const rect = getVisibleRect();
+      applyPosition(rect.left, rect.top);
+    }
+
+    function onPointerMove(event) {
+      if (event.pointerId !== pointerId) return;
+      const deltaX = event.clientX - startX;
+      const deltaY = event.clientY - startY;
+      if (!didDrag && Math.hypot(deltaX, deltaY) < DRAG_THRESHOLD) return;
+      didDrag = true;
+      event.preventDefault();
+      applyPosition(startLeft + deltaX, startTop + deltaY);
+    }
+
+    function onPointerUp(event) {
+      if (event.pointerId !== pointerId) return;
+      pointerId = null;
+      dragRoot.classList.remove("is-dragging");
+      try {
+        event.currentTarget.releasePointerCapture(event.pointerId);
+      } catch (error) {
+        // Pointer capture may already be released by the browser.
+      }
+      if (didDrag) {
+        suppressClick = true;
+        window.setTimeout(() => {
+          suppressClick = false;
+        }, 0);
+      }
+    }
+
+    handles.forEach((handle) => {
+      handle.setAttribute("data-drag-handle", "");
+      handle.addEventListener("pointerdown", (event) => {
+        if (event.button !== undefined && event.button !== 0) return;
+        if (handle !== visibleWhenClosed && isInteractiveTarget(event.target)) return;
+        const rect = getVisibleRect();
+        pointerId = event.pointerId;
+        startX = event.clientX;
+        startY = event.clientY;
+        startLeft = rect.left;
+        startTop = rect.top;
+        didDrag = false;
+        dragRoot.classList.add("is-dragging");
+        handle.setPointerCapture(event.pointerId);
+      });
+      handle.addEventListener("pointermove", onPointerMove);
+      handle.addEventListener("pointerup", onPointerUp);
+      handle.addEventListener("pointercancel", onPointerUp);
+      handle.addEventListener("click", (event) => {
+        if (!suppressClick) return;
+        event.preventDefault();
+        event.stopImmediatePropagation();
+      }, true);
+    });
+
+    window.addEventListener("resize", () => {
+      if (!dragRoot.classList.contains("is-dragged")) return;
+      const rect = getVisibleRect();
+      applyPosition(rect.left, rect.top);
+    });
+
+    return {
+      clamp() {
+        if (!dragRoot.classList.contains("is-dragged")) return;
+        window.requestAnimationFrame(() => {
+          const rect = getVisibleRect();
+          applyPosition(rect.left, rect.top);
+        });
+      }
+    };
+  }
+
+  const dragControls = installDraggable({
+    dragRoot: root,
+    visibleWhenClosed: toggle,
+    visibleWhenOpen: panel,
+    handles: [toggle, head]
+  });
 
   function getEndpoint() {
     return window.BRAIN_AI_ENDPOINT || AI_API_ENDPOINT;
@@ -145,6 +274,7 @@
 
   function setOpen(open) {
     root.classList.toggle("is-open", open);
+    dragControls.clamp();
     if (open) {
       renderHistory();
       setTimeout(() => input.focus(), 80);

@@ -1,5 +1,12 @@
 {
   "name": "brain-ai-platform",
   "version": "1.0.0",
-  "private": true
+  "main": "app.js",
+  "private": true,
+  "scripts": {
+    "start": "node app.js"
+  },
+  "engines": {
+    "node": "20.19"
+  }
 }
