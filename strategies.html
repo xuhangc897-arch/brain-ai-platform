@@ -49,7 +49,7 @@
     .step-layout { display: grid; grid-template-columns: 1fr 1fr; gap: 22px; align-items: start; }
     .single-step-layout, .reflection-layout { display: grid; gap: 22px; width: 100%; max-width: 1100px; margin: 0 auto; }
     .reflection-layout { max-width: 1000px; }
-    .analysis-layout { display: grid; grid-template-columns: 1fr 1fr; gap: 22px; align-items: start; }
+    .analysis-layout { display: grid; grid-template-columns: 1fr; gap: 22px; align-items: start; }
     .analysis-layout .panel, .single-step-layout .panel, .reflection-layout .panel { border-radius: 10px; }
     .panel-head h2, .panel-head h3 { font-size: 20px; }
     .single-step-layout .panel-body, .reflection-layout .panel-body { padding: 24px; }
@@ -91,6 +91,10 @@
     .flow-card { border: 1px solid #dbeafe; border-radius: 8px; padding: 14px; background: #fbfdff; }
     .flow-card h4 { margin: 0 0 8px; color: #1e3a8a; }
     .flow-card p { margin: 0 0 7px; color: #344054; font-size: 14px; }
+    .phase-card-grid { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 12px; }
+    .phase-card { border: 1px solid var(--line); border-radius: 8px; padding: 12px; background: #fff; }
+    .phase-card h5 { margin: 0 0 8px; color: #1e3a8a; font-size: 15px; }
+    .phase-card p:last-child { margin-bottom: 0; }
     .score-layout { display: grid; grid-template-columns: 1.1fr .9fr; gap: 18px; align-items: start; }
     .score-table-wrap { overflow-x: auto; border: 1px solid var(--line); border-radius: 8px; background: #fff; }
     .score-table { min-width: 620px; }
@@ -101,7 +105,7 @@
     .score-record-card { border: 1px solid var(--line); border-radius: 8px; padding: 12px; background: #fbfdff; }
     .score-record-card h4 { margin: 0 0 8px; color: #1e3a8a; }
     .score-record-card p { margin: 0 0 8px; color: #344054; font-size: 13px; }
-    @media (max-width: 760px) { .strategy-mode-grid, .score-layout, .strategy-match-layout { grid-template-columns: 1fr; } }
+    @media (max-width: 760px) { .strategy-mode-grid, .phase-card-grid, .score-layout, .strategy-match-layout { grid-template-columns: 1fr; } }
     .field { margin-bottom: 18px; }
     label { display: block; margin-bottom: 7px; color: #344054; font-size: 14px; font-weight: 700; }
     input, textarea, select { width: 100%; border: 1px solid var(--line); background: #fff; color: var(--ink); border-radius: 8px; padding: 11px 12px; outline: none; }
@@ -899,7 +903,7 @@
 
     function renderEvidenceFlow() {
       return `<div class="flow-grid">
-        <div class="flow-card"><h4>1. 实验操作</h4><p>说明：阶段1、2实验材料在难度和数量上保持一致，但内容不能重复。</p><p><strong>阶段1：不使用策略</strong></p><p>记忆阶段：请只使用简单复述的策略进行记忆</p><p>休息阶段：完成“找不同”小游戏</p><p>测试阶段：回忆并写下记忆的单词/古诗/公式，尽可能完整</p><p><strong>阶段2：使用策略</strong></p><p>记忆阶段：采用记忆策略</p><p>休息阶段：完成“找不同”小游戏</p><p>测试阶段：回忆并写下记忆的单词/古诗/公式，尽可能完整</p></div>
+        <div class="flow-card"><h4>1. 实验操作</h4><div class="phase-card-grid"><div class="phase-card"><h5>阶段1：不使用策略</h5><p>记忆阶段：请只使用【简单复述】的策略进行记忆</p><p>休息阶段：完成“找不同”小游戏</p><p>测试阶段：回忆并在屏幕上写下记忆的单词/古诗/公式，尽可能完整</p></div><div class="phase-card"><h5>阶段2：使用自选的两种不同策略</h5><p>记忆阶段：采用自选的两种记忆策略</p><p>休息阶段：完成“找不同”小游戏</p><p>测试阶段：回忆并在屏幕上写下记忆的单词/古诗/公式，尽可能完整</p></div></div></div>
         <div class="flow-card"><h4>2. 记录数据</h4><p>将实验所得的数据记录在数据记录表中。</p></div>
         <div class="flow-card"><h4>3. 处理分析数据</h4><p>对数据进行处理分析。</p></div>
         <div class="flow-card"><h4>4. 得出结论</h4><p>根据实验处理分析的数据检验假设回答研究问题。</p></div>
@@ -1022,7 +1026,7 @@
       const summary = summarizeRecords();
       const rows = summary.map((item)=>`<tr><td>${escapeHtml(item.strategy)}</td><td>${item.count}</td><td>${item.avgCorrect}</td><td>${item.avgAccuracy}%</td><td>${item.avgRt ? item.avgRt + "ms" : "--"}</td></tr>`).join("");
       const chart = summary.length ? summary.map((item)=>`<div class="bar-row"><div>${escapeHtml(item.strategy)}</div><div class="bar-track"><div class="bar-fill" style="width:${item.avgAccuracy}%"></div></div><div>${item.avgAccuracy}%</div></div>`).join("") : `<div class="empty-state">完成实验后会自动生成策略对比图。</div>`;
-      return `<div class="analysis-layout"><div class="panel"><div class="panel-head"><h3>策略汇总</h3></div><div class="panel-body">${summary.length ? `<table><thead><tr><th>策略</th><th>次数</th><th>平均正确数</th><th>平均回忆率</th><th>平均反应时</th></tr></thead><tbody>${rows}</tbody></table>` : `<div class="empty-state">还没有实验数据。请先完成至少一个阶段。</div>`}<div class="chart">${chart}</div></div></div>${renderTeamResultTable(summary)}<div class="panel"><div class="panel-head"><h3>长时记忆策略评分表</h3><p>请回答者和提问者共同完成以下表格。</p></div><div class="panel-body">${renderStrategyScoreTable()}</div></div><div class="panel"><div class="panel-head"><h3>头环观察</h3></div><div class="panel-body"><textarea data-field="headband" placeholder="请询问在你进行实验时观察头环的同学，并记录头环观察结果：使用不同记忆策略时头环颜色有什么变化？哪种策略下前额叶区域更活跃？颜色变化是否和记忆效果有关？">${escapeHtml(state.fields.headband)}</textarea></div></div></div>`;
+      return `<div class="analysis-layout"><div class="panel"><div class="panel-head"><h3>策略汇总</h3></div><div class="panel-body">${summary.length ? `<table><thead><tr><th>策略</th><th>次数</th><th>平均正确数</th><th>平均回忆率</th><th>平均反应时</th></tr></thead><tbody>${rows}</tbody></table>` : `<div class="empty-state">还没有实验数据。请先完成至少一个阶段。</div>`}<div class="chart">${chart}</div></div></div><div class="panel"><div class="panel-head"><h3>头环观察</h3></div><div class="panel-body"><textarea data-field="headband" placeholder="请询问在你进行实验时观察头环的同学，并记录头环观察结果：使用不同记忆策略时头环颜色有什么变化？哪种策略下前额叶区域更活跃？颜色变化是否和记忆效果有关？">${escapeHtml(state.fields.headband)}</textarea></div></div><div class="panel"><div class="panel-head"><h3>长时记忆策略评分表</h3><p>请回答者和提问者共同完成以下表格。</p></div><div class="panel-body">${renderStrategyScoreTable()}</div></div>${renderTeamResultTable(summary)}</div>`;
     }
     function renderScoreField(field, label) {
       return `<div class="field"><label>${label}</label><select data-field="${field}">${[1,2,3,4,5].map((n)=>`<option value="${n}" ${Number(state.fields[field])===n ? "selected" : ""}>${n} 分</option>`).join("")}</select></div>`;
