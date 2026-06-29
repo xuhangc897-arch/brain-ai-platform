@@ -314,6 +314,28 @@
       min-height: 42px;
     }
 
+    .toolbar.nback-toolbar {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
+      gap: 16px;
+      align-items: end;
+    }
+
+    .toolbar.nback-toolbar .field {
+      min-width: 0;
+      margin-bottom: 0;
+    }
+
+    .toolbar.nback-toolbar label {
+      white-space: normal;
+    }
+
+    .toolbar.nback-toolbar .btn {
+      align-self: end;
+      width: 100%;
+      min-height: 42px;
+    }
+
     .member-result-list {
       display: grid;
       gap: 12px;
@@ -2334,7 +2356,7 @@
                 <label for="gameCondition">实验条件</label>
                 <select id="gameCondition"></select>
               </div>
-              <div class="field material-inline-field">
+              <div class="field">
                 <label for="gameStimulus">实验材料类别</label>
                 <select id="gameStimulus">
                   <option value="image" ${state.fields.materialType === "image" ? "selected" : ""}>图片</option>

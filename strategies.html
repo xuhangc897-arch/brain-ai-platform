@@ -55,8 +55,15 @@
     .single-step-layout .panel-body, .reflection-layout .panel-body { padding: 24px; }
     input:not([type="checkbox"]):not([type="radio"]), textarea, select { min-height: 42px; }
     .analysis-layout .empty-state { min-height: 120px; display: grid; place-items: center; padding: 18px; }
+    .team-result-card .panel-body { overflow-x: auto; }
     .team-result-card table input { min-height: 38px; padding: 8px 10px; }
     .team-result-card th, .team-result-card td { padding: 8px 9px; }
+    .team-result-card .member-id-col { width: 140px; }
+    .team-result-card .member-id-input { width: 130px; max-width: 100%; }
+    .team-result-card .result-number-input { width: 120px; max-width: 100%; }
+    .team-result-card .percent-input { display: inline-flex; align-items: center; gap: 6px; }
+    .team-result-card .percent-input input { width: 120px; }
+    .team-result-card .unit-mark { color: var(--muted); font-weight: 800; }
     .reflection-layout textarea { min-height: 140px; }
     .reflection-layout textarea::placeholder { color: #98a2b3; opacity: 1; }
     .reflection-layout textarea:focus::placeholder { color: transparent; }
@@ -480,8 +487,12 @@
         participantId: "",
         teammate1Id: "",
         teammate1Result: "",
+        teammate1AvgCorrect: "",
+        teammate1AvgAccuracy: "",
         teammate2Id: "",
-        teammate2Result: ""
+        teammate2Result: "",
+        teammate2AvgCorrect: "",
+        teammate2AvgAccuracy: ""
       },
       records: [],
       strategyScores: [],
@@ -516,6 +527,7 @@
       const merged = structuredClone(base);
       Object.assign(merged, incoming);
       merged.fields = Object.assign({}, base.fields, incoming.fields || {});
+      migrateTeamResultFields(merged.fields);
       if (merged.fields.strategy1 === "简单复述") merged.fields.strategy1 = "主动回忆";
       merged.fields.stage1Strategy = "简单复述";
       merged.fields.strategyMatchSelections = Object.assign({}, base.fields.strategyMatchSelections, incoming.fields?.strategyMatchSelections || {});
@@ -533,6 +545,21 @@
       }
       merged.flowVersion = FLOW_VERSION;
       return merged;
+    }
+    function migrateTeamResultFields(fields) {
+      [1, 2].forEach((index) => {
+        const result = fields[`teammate${index}Result`];
+        const correctField = `teammate${index}AvgCorrect`;
+        const accuracyField = `teammate${index}AvgAccuracy`;
+        if ((fields[correctField] === "" || fields[correctField] == null) && typeof result === "string") {
+          const correct = result.match(/平均正确数\s*([0-9]+(?:\.[0-9]+)?)/);
+          if (correct) fields[correctField] = correct[1];
+        }
+        if ((fields[accuracyField] === "" || fields[accuracyField] == null) && typeof result === "string") {
+          const accuracy = result.match(/平均回忆率\s*([0-9]+(?:\.[0-9]+)?)/);
+          if (accuracy) fields[accuracyField] = accuracy[1];
+        }
+      });
     }
     function migrateLegacyStepIndex(value) {
       const index = Number(value);
@@ -1049,18 +1076,30 @@
       </div></div>`;
     }
     function getPersonalStrategyResult(summary) {
+      const result = getPersonalStrategyMetrics(summary);
+      return result ? `平均正确数 ${result.avgCorrect}，平均回忆率 ${result.avgAccuracy}%` : "";
+    }
+    function getPersonalStrategyMetrics(summary) {
       const items = summary || summarizeRecords();
-      if (!items.length) return "";
-      const avgCorrect = Number((items.reduce((sum, item) => sum + Number(item.avgCorrect || 0), 0) / items.length).toFixed(1));
-      const avgAccuracy = Math.round(items.reduce((sum, item) => sum + Number(item.avgAccuracy || 0), 0) / items.length);
-      return `平均正确数 ${avgCorrect}，平均回忆率 ${avgAccuracy}%`;
+      if (!items.length) return null;
+      return {
+        avgCorrect: Number((items.reduce((sum, item) => sum + Number(item.avgCorrect || 0), 0) / items.length).toFixed(1)),
+        avgAccuracy: Math.round(items.reduce((sum, item) => sum + Number(item.avgAccuracy || 0), 0) / items.length)
+      };
+    }
+    function renderResultNumberInput(field, placeholder = "数字") {
+      return `<input class="result-number-input" type="number" min="0" step="0.1" data-field="${field}" value="${escapeHtml(state.fields[field])}" placeholder="${placeholder}">`;
+    }
+    function renderAccuracyInput(field, disabled = false, value = state.fields[field]) {
+      return `<div class="percent-input"><input class="result-number-input" type="number" min="0" max="100" step="0.1" ${field ? `data-field="${field}"` : ""} value="${escapeHtml(value ?? "")}" placeholder="数字" ${disabled ? "disabled" : ""}><span class="unit-mark">%</span></div>`;
     }
     function renderTeamResultTable(summary) {
-      const personalResult = getPersonalStrategyResult(summary);
-      return `<div class="panel team-result-card"><div class="panel-head"><h3>其他组员实验结果记录</h3><p>仅用于留痕和对比，不参与统计计算。</p></div><div class="panel-body"><table><thead><tr><th>成员</th><th>组员编号</th><th>实验结果</th></tr></thead><tbody><tr><td>本人</td><td><input type="text" data-field="participantId" value="${escapeHtml(state.fields.participantId || state.studentId)}" placeholder="本人编号"></td><td><input type="text" value="${escapeHtml(personalResult)}" placeholder="自动带入本人结果" disabled></td></tr><tr><td>组员</td><td><input type="text" data-field="teammate1Id" value="${escapeHtml(state.fields.teammate1Id)}" placeholder="请输入编号"></td><td><input type="text" data-field="teammate1Result" value="${escapeHtml(state.fields.teammate1Result)}" placeholder="请输入该组员实验结果"></td></tr><tr><td>组员</td><td><input type="text" data-field="teammate2Id" value="${escapeHtml(state.fields.teammate2Id)}" placeholder="请输入编号"></td><td><input type="text" data-field="teammate2Result" value="${escapeHtml(state.fields.teammate2Result)}" placeholder="请输入该组员实验结果"></td></tr></tbody></table></div></div>`;
+      const personal = getPersonalStrategyMetrics(summary) || { avgCorrect: "", avgAccuracy: "" };
+      return `<div class="panel team-result-card"><div class="panel-head"><h3>其他组员实验结果记录</h3><p>仅用于留痕和对比，不参与统计计算。</p></div><div class="panel-body"><table><thead><tr><th>成员</th><th class="member-id-col">组员编号</th><th>平均正确数</th><th>平均回忆率</th></tr></thead><tbody><tr><td>本人</td><td><input class="member-id-input" type="text" data-field="participantId" value="${escapeHtml(state.fields.participantId || state.studentId)}" placeholder="本人编号"></td><td><input class="result-number-input" type="number" value="${escapeHtml(personal.avgCorrect)}" placeholder="自动带入" disabled></td><td>${renderAccuracyInput("", true, personal.avgAccuracy)}</td></tr><tr><td>组员</td><td><input class="member-id-input" type="text" data-field="teammate1Id" value="${escapeHtml(state.fields.teammate1Id)}" placeholder="请输入编号"></td><td>${renderResultNumberInput("teammate1AvgCorrect")}</td><td>${renderAccuracyInput("teammate1AvgAccuracy")}</td></tr><tr><td>组员</td><td><input class="member-id-input" type="text" data-field="teammate2Id" value="${escapeHtml(state.fields.teammate2Id)}" placeholder="请输入编号"></td><td>${renderResultNumberInput("teammate2AvgCorrect")}</td><td>${renderAccuracyInput("teammate2AvgAccuracy")}</td></tr></tbody></table></div></div>`;
     }
     function getTeamResultSheet(summary) {
-      return ["小组记录", [["本人编号","本人结果","组员1编号","组员1结果","组员2编号","组员2结果"], [state.fields.participantId || state.studentId, getPersonalStrategyResult(summary), state.fields.teammate1Id, state.fields.teammate1Result, state.fields.teammate2Id, state.fields.teammate2Result]]];
+      const personal = getPersonalStrategyMetrics(summary) || { avgCorrect: "", avgAccuracy: "" };
+      return ["小组记录", [["成员","编号","平均正确数","平均回忆率"], ["本人", state.fields.participantId || state.studentId, personal.avgCorrect, personal.avgAccuracy], ["组员1", state.fields.teammate1Id, state.fields.teammate1AvgCorrect, state.fields.teammate1AvgAccuracy], ["组员2", state.fields.teammate2Id, state.fields.teammate2AvgCorrect, state.fields.teammate2AvgAccuracy]]];
     }
     function getSystemInfoSheet(recordCount) {
       return ["系统信息", [["项目","内容"],["实验版本","science-inquiry-static-v1"],["localStorage key",STORAGE_KEY],["保存时间",state.savedAt || ""],["导出时间",new Date().toLocaleString()],["当前步骤",`${state.currentStep + 1}/${steps.length}`],["过程性实验记录数",recordCount],["AI聊天记录","不包含，AI 对话请在 AI 助手窗口单独导出"]]];
