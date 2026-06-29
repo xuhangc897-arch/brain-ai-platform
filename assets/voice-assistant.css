@@ -147,6 +147,46 @@
   line-height: 1.75;
 }
 
+.voice-recording-status {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 10px;
+  min-height: 42px;
+  padding: 10px 12px;
+  border: 1px solid rgba(126, 190, 255, 0.16);
+  border-radius: 14px;
+  background: rgba(255, 255, 255, 0.075);
+  color: rgba(237, 246, 255, 0.86);
+}
+
+.voice-assistant.is-recording .voice-recording-status {
+  border-color: rgba(248, 113, 113, 0.42);
+  background: rgba(248, 113, 113, 0.12);
+  color: #fecaca;
+  box-shadow: 0 0 22px rgba(248, 113, 113, 0.14);
+}
+
+.voice-recording-label {
+  min-width: 0;
+  font-size: 13px;
+  font-weight: 850;
+  line-height: 1.35;
+}
+
+.voice-recording-time {
+  flex: 0 0 auto;
+  min-width: 54px;
+  padding: 4px 8px;
+  border-radius: 999px;
+  background: rgba(255, 255, 255, 0.09);
+  color: rgba(237, 246, 255, 0.9);
+  font-variant-numeric: tabular-nums;
+  font-size: 12px;
+  font-weight: 850;
+  text-align: center;
+}
+
 .voice-output {
   width: 100%;
   min-height: 150px;
@@ -203,6 +243,12 @@
   color: #06111f;
 }
 
+.voice-action:disabled {
+  cursor: not-allowed;
+  opacity: 0.52;
+  transform: none;
+}
+
 .voice-status {
   min-height: 24px;
   margin: 0;
@@ -253,6 +299,11 @@
 
   .voice-output {
     min-height: 130px;
+  }
+
+  .voice-recording-status {
+    align-items: flex-start;
+    flex-direction: column;
   }
 }
 

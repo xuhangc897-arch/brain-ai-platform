@@ -1,9 +1,12 @@
 (function () {
   "use strict";
 
-  const START_NOTICE = "语音识别功能将在下一步接入。";
   const EMPTY_COPY_NOTICE = "暂无可复制内容";
   const COPIED_NOTICE = "已复制，可粘贴到任意填写框中";
+  const IDLE_LABEL = "○ 未开始录音";
+  const RECORDING_LABEL = "🎙 正在录音...";
+  const UNSUPPORTED_MESSAGE = "当前浏览器不支持语音录音，请使用最新版 Edge 或 Chrome。";
+  const PERMISSION_MESSAGE = "未获得麦克风权限，请在浏览器设置中允许访问麦克风后重试。";
   const DRAG_MARGIN = 12;
   const DRAG_THRESHOLD = 5;
 
@@ -154,10 +157,14 @@
         </header>
         <div class="voice-body">
           <p class="voice-note">点击开始录音后，说出的内容会转换为文字。你可以复制文字，再粘贴到任意填写框中。</p>
+          <div class="voice-recording-status" aria-live="polite">
+            <span class="voice-recording-label" data-voice-recording-label>${IDLE_LABEL}</span>
+            <span class="voice-recording-time" data-voice-recording-time>00:00</span>
+          </div>
           <textarea class="voice-output" aria-label="语音转文字结果" placeholder="语音转文字结果会显示在这里，也可以先手动输入内容测试复制功能。"></textarea>
           <div class="voice-actions" aria-label="语音助手操作">
             <button class="voice-action primary" type="button" data-voice-start>开始录音</button>
-            <button class="voice-action" type="button" data-voice-stop>停止录音</button>
+            <button class="voice-action" type="button" data-voice-stop disabled>停止录音</button>
             <button class="voice-action" type="button" data-voice-copy>复制文字</button>
             <button class="voice-action" type="button" data-voice-clear>清空内容</button>
           </div>
@@ -174,6 +181,8 @@
     const stop = root.querySelector("[data-voice-stop]");
     const copy = root.querySelector("[data-voice-copy]");
     const clear = root.querySelector("[data-voice-clear]");
+    const recordingLabel = root.querySelector("[data-voice-recording-label]");
+    const recordingTime = root.querySelector("[data-voice-recording-time]");
     const panel = root.querySelector(".voice-panel");
     const head = root.querySelector(".voice-head");
     const dragControls = installDraggable({
@@ -182,6 +191,34 @@
       visibleWhenOpen: panel,
       handles: [toggle, head]
     });
+    const recorder = window.VoiceRecorder && window.VoiceRecorder.create ? window.VoiceRecorder.create({
+      onStateChange(nextState) {
+        const isRecording = nextState === "recording";
+        const isRequesting = nextState === "requesting";
+        root.classList.toggle("is-recording", isRecording);
+        recordingLabel.textContent = isRecording ? RECORDING_LABEL : IDLE_LABEL;
+        start.disabled = isRecording || isRequesting;
+        stop.disabled = !isRecording && !isRequesting;
+        if (isRequesting) {
+          setStatus(status, "正在请求麦克风权限...", "warning");
+        } else if (isRecording) {
+          setStatus(status, "", "");
+        }
+      },
+      onTimeChange(time) {
+        recordingTime.textContent = time.label;
+      },
+      onError(message) {
+        setStatus(status, message, "warning");
+        alert(message);
+      }
+    }) : null;
+
+    if (!recorder) {
+      start.disabled = true;
+      stop.disabled = true;
+      setStatus(status, UNSUPPORTED_MESSAGE, "warning");
+    }
 
     toggle.addEventListener("click", () => {
       root.classList.add("is-open");
@@ -193,12 +230,18 @@
       root.classList.remove("is-open");
     });
 
-    start.addEventListener("click", () => {
-      setStatus(status, START_NOTICE, "warning");
+    start.addEventListener("click", async () => {
+      if (!recorder) {
+        setStatus(status, UNSUPPORTED_MESSAGE, "warning");
+        alert(UNSUPPORTED_MESSAGE);
+        return;
+      }
+      await recorder.start();
     });
 
     stop.addEventListener("click", () => {
-      setStatus(status, START_NOTICE, "warning");
+      if (!recorder) return;
+      recorder.stop();
     });
 
     copy.addEventListener("click", async () => {
