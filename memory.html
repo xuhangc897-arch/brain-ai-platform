@@ -304,6 +304,13 @@
       color: transparent;
     }
 
+    .thinking-layer { display: grid; gap: 14px; }
+    .thinking-box { border-radius: 8px; padding: 14px; }
+    .thinking-personal { border: 1px solid #dbeafe; background: #fff; }
+    .thinking-group { border: 1px dashed #bfdbfe; background: #f8fbff; }
+    .thinking-label { display: block; margin-bottom: 10px; color: #1e3a8a; font-size: 14px; font-weight: 900; }
+    .thinking-group textarea { background: #fff; min-height: 110px; }
+
     .reading-list {
       display: grid;
       gap: 14px;
@@ -1164,6 +1171,21 @@
       fields: {
         question: "",
         hypothesis: "",
+        question_individual: "",
+        question_group: "",
+        hypothesis_individual: "",
+        hypothesis_group: "",
+        conclusion_individual: "",
+        conclusion_group: "",
+        reflection_individual: "",
+        reflection_group: "",
+        conclusionCapacity_group: "",
+        hypothesisRelation_group: "一致",
+        millerRelation_group: "一致",
+        finalConclusion_group: "",
+        designImprove_group: "",
+        teamwork_group: "",
+        inquiryReflection_group: "",
         method: "顺背法",
         materialType: "number",
         material: "数字",
@@ -1276,6 +1298,7 @@
     }
 
     function saveState() {
+      syncThinkingFields();
       state.savedAt = new Date().toISOString();
       localStorage.setItem(STORAGE_KEY, JSON.stringify(state));
     }
@@ -1287,6 +1310,38 @@
         .replaceAll(">", "&gt;")
         .replaceAll('"', "&quot;")
         .replaceAll("'", "&#039;");
+    }
+
+    function hasThoughtText(value) { return value !== null && value !== undefined && String(value).trim() !== ""; }
+    function joinThoughts(items) { return items.filter(hasThoughtText).join("\n"); }
+    function thoughtLine(label, value) { return hasThoughtText(value) ? `${label}：${value}` : ""; }
+    function renderPairedField(label, personalHtml, groupHtml) {
+      return `<div class="field paired-field"><label>${label}</label><div class="thinking-layer"><div class="thinking-box thinking-personal"><span class="thinking-label">个人思考（我）</span>${personalHtml}</div><div class="thinking-box thinking-group"><span class="thinking-label">小组共识（我们）</span>${groupHtml}</div></div></div>`;
+    }
+    function renderGroupTextarea(field, placeholder = "请写下你与小组成员讨论后达成的一致结果") {
+      return `<textarea data-field="${field}" placeholder="${escapeHtml(placeholder)}">${escapeHtml(state.fields[field])}</textarea>`;
+    }
+    function renderGroupInput(field, placeholder = "") {
+      return `<input type="number" min="0" max="12" step="0.1" data-field="${field}" value="${escapeHtml(state.fields[field])}" placeholder="${escapeHtml(placeholder)}" />`;
+    }
+    function renderGroupSelect(field, options, value = state.fields[field]) {
+      return `<select data-field="${field}">${options.map((item)=>`<option value="${escapeHtml(item)}" ${value === item ? "selected" : ""}>${escapeHtml(item)}</option>`).join("")}</select>`;
+    }
+    function syncThinkingFields() {
+      const fields = state.fields;
+      fields.question_individual = fields.question || "";
+      fields.question_group = fields.question_group || "";
+      fields.hypothesis_individual = fields.hypothesis || "";
+      fields.hypothesis_group = fields.hypothesis_group || "";
+      fields.conclusion_individual = joinThoughts([thoughtLine("短时记忆容量约为", fields.conclusionCapacity), thoughtLine("与假设是否一致", fields.hypothesisRelation), thoughtLine("与7±2理论是否一致", fields.millerRelation), thoughtLine("最终结论", fields.finalConclusion)]);
+      fields.conclusion_group = fields.finalConclusion_group || fields.conclusion_group || "";
+      fields.reflection_individual = joinThoughts([thoughtLine("实验设计改进", fields.designImprove), thoughtLine("团队合作反思", fields.teamwork), thoughtLine("探究环节反思", fields.inquiryReflection)]);
+      fields.reflection_group = joinThoughts([thoughtLine("实验设计改进", fields.designImprove_group), thoughtLine("团队合作反思", fields.teamwork_group), thoughtLine("探究环节反思", fields.inquiryReflection_group)]) || fields.reflection_group || "";
+    }
+    function getThinkingRows() {
+      syncThinkingFields();
+      const fields = state.fields;
+      return [["提出问题/研究问题-个人思考", fields.question], ["提出问题/研究问题-小组共识", fields.question_group], ["作出假设/研究假设-个人思考", fields.hypothesis], ["作出假设/研究假设-小组共识", fields.hypothesis_group], ["得出结论/最终结论-个人思考", fields.finalConclusion], ["得出结论/最终结论-小组共识", fields.finalConclusion_group], ["反思交流/实验设计改进-个人思考", fields.designImprove], ["反思交流/实验设计改进-小组共识", fields.designImprove_group], ["反思交流/团队合作反思-个人思考", fields.teamwork], ["反思交流/团队合作反思-小组共识", fields.teamwork_group], ["反思交流/探究环节反思-个人思考", fields.inquiryReflection], ["反思交流/探究环节反思-小组共识", fields.inquiryReflection_group]];
     }
 
     function renderApp() {
@@ -1668,10 +1723,7 @@
           <div class="panel">
             <div class="panel-head"><h3>提出研究问题</h3></div>
             <div class="panel-body">
-              ${renderInquiryCases()}
-              ${renderInquiryScaffold("question")}
-
-              <textarea data-field="question" placeholder="写下你们小组真正想探究的问题">${escapeHtml(state.fields.question)}</textarea>
+              ${renderInquiryCases()}${renderInquiryScaffold("question")}${renderPairedField("研究问题", `<textarea data-field="question" placeholder="写下你自己真正想探究的问题">${escapeHtml(state.fields.question)}</textarea>`, renderGroupTextarea("question_group"))}
             </div>
           </div>
         </div>
@@ -1691,7 +1743,7 @@
           <div class="panel">
             <div class="panel-head"><h3>研究假设</h3></div>
             <div class="panel-body">
-              <textarea data-field="hypothesis" placeholder="请填写你们小组的研究假设">${escapeHtml(state.fields.hypothesis)}</textarea>
+              ${renderPairedField("研究假设", `<textarea data-field="hypothesis" placeholder="请填写你自己的研究假设">${escapeHtml(state.fields.hypothesis)}</textarea>`, renderGroupTextarea("hypothesis_group"))}
             </div>
           </div>
         </div>
@@ -2065,36 +2117,22 @@
 
     function renderConclusionStep() {
       return `
-        <div class="step-layout">
+        <div class="single-step-layout">
           <div class="panel">
             <div class="panel-head"><h3>得出结论</h3></div>
             <div class="panel-body">
               <div class="form-grid">
-                <div class="field">
-                  <label>短时记忆容量约为</label>
-                  <input type="number" min="0" max="12" step="0.1" data-field="conclusionCapacity" value="${escapeHtml(state.fields.conclusionCapacity)}" placeholder="例如：7" />
-                </div>
-                <div class="field">
-                  <label>与假设是否一致</label>
-                  <select data-field="hypothesisRelation">
+                <div class="field"><label>短时记忆容量约为</label><input type="number" min="0" max="12" step="0.1" data-field="conclusionCapacity" value="${escapeHtml(state.fields.conclusionCapacity)}" placeholder="例如：7" /></div>
+                <div class="field"><label>与假设是否一致</label><select data-field="hypothesisRelation">
                     <option value="一致" ${selected("hypothesisRelation", "一致")}>一致</option>
                     <option value="不一致" ${selected("hypothesisRelation", "不一致")}>不一致</option>
-                  </select>
-                </div>
-                <div class="field">
-                  <label>与 7±2 理论是否一致</label>
-                  <select data-field="millerRelation">
+                  </select></div>
+                <div class="field"><label>与 7±2 理论是否一致</label><select data-field="millerRelation">
                     <option value="一致" ${selected("millerRelation", "一致")}>一致</option>
                     <option value="不一致" ${selected("millerRelation", "不一致")}>不一致</option>
-                  </select>
-                </div>
+                  </select></div>
               </div>
-            </div>
-          </div>
-          <div class="panel">
-            <div class="panel-head"><h3>最终结论</h3></div>
-            <div class="panel-body">
-              <textarea data-field="finalConclusion" placeholder="结合实验数据、假设和米勒理论写出最终结论">${escapeHtml(state.fields.finalConclusion)}</textarea>
+              ${renderPairedField("最终结论", `<textarea data-field="finalConclusion" placeholder="结合实验数据、假设和米勒理论写出自己的最终结论">${escapeHtml(state.fields.finalConclusion)}</textarea>`, renderGroupTextarea("finalConclusion_group"))}
             </div>
           </div>
         </div>
@@ -2107,18 +2145,9 @@
           <div class="panel">
             <div class="panel-head"><h3>反思交流</h3></div>
             <div class="panel-body">
-              <div class="field">
-                <label>我们的实验设计有哪些地方可以进一步完善？</label>
-                <textarea data-field="designImprove" placeholder="可以从数字材料的长度设置、呈现方式、记录过程、测试次数、是否容易受到注意力影响等方面思考。">${escapeHtml(state.fields.designImprove)}</textarea>
-              </div>
-              <div class="field">
-                <label>在小组合作过程中，每个成员是否都积极参与并承担了相应的任务？我们的团队合作是否高效？是否存在需要改进的地方？</label>
-                <textarea data-field="teamwork" placeholder="可以从分工是否清楚、记录是否及时、讨论是否充分、遇到分歧时如何解决等方面思考。">${escapeHtml(state.fields.teamwork)}</textarea>
-              </div>
-              <div class="field">
-                <label>通过本次探究活动，我们对科学探究的各个环节（提出问题、作出假设、制定计划、搜集证据、处理信息、得出结论、表达交流、反思评价）有了更深入的理解和实践经验。我们认为自己在哪些环节表现较好？哪些环节还需要进一步提高？</label>
-                <textarea data-field="inquiryReflection" placeholder="可以从提出问题、作出假设、制定计划、搜集证据、处理数据、得出结论和表达交流等环节回顾自己的表现。">${escapeHtml(state.fields.inquiryReflection)}</textarea>
-              </div>
+              ${renderPairedField("实验设计有哪些地方可以进一步完善？", `<textarea data-field="designImprove" placeholder="可以从数字材料的长度设置、呈现方式、记录过程、测试次数、是否容易受到注意力影响等方面思考。">${escapeHtml(state.fields.designImprove)}</textarea>`, renderGroupTextarea("designImprove_group"))}
+              ${renderPairedField("合作过程是否高效？有哪些需要改进？", `<textarea data-field="teamwork" placeholder="可以从分工是否清楚、记录是否及时、讨论是否充分、遇到分歧时如何解决等方面思考。">${escapeHtml(state.fields.teamwork)}</textarea>`, renderGroupTextarea("teamwork_group"))}
+              ${renderPairedField("科学探究各环节中哪些表现较好？哪些还需要提高？", `<textarea data-field="inquiryReflection" placeholder="可以从提出问题、作出假设、制定计划、搜集证据、处理数据、得出结论和表达交流等环节回顾自己的表现。">${escapeHtml(state.fields.inquiryReflection)}</textarea>`, renderGroupTextarea("inquiryReflection_group"))}
             </div>
           </div>
         </div>
@@ -2590,6 +2619,7 @@
         ]],
         ["实验过程", [
           ["字段", "内容"],
+          ...getThinkingRows(),
           ["研究问题", state.fields.question],
           ["研究假设", state.fields.hypothesis],
           ["测量方法", state.fields.method],

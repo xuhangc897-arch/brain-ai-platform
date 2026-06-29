@@ -497,6 +497,13 @@
       color: transparent;
     }
 
+    .thinking-layer { display: grid; gap: 14px; }
+    .thinking-box { border-radius: 8px; padding: 14px; }
+    .thinking-personal { border: 1px solid #dbeafe; background: #fff; }
+    .thinking-group { border: 1px dashed #bfdbfe; background: #f8fbff; }
+    .thinking-label { display: block; margin-bottom: 10px; color: #1e3a8a; font-size: 14px; font-weight: 900; }
+    .thinking-group textarea { background: #fff; min-height: 110px; }
+
     .panel {
       background: var(--panel);
       border: 1px solid var(--line);
@@ -1489,6 +1496,23 @@
         controlOther: "",
         researchQuestion: "",
         hypothesis: "",
+        question_individual: "",
+        question_group: "",
+        hypothesis_individual: "",
+        hypothesis_group: "",
+        conclusion_individual: "",
+        conclusion_group: "",
+        reflection_individual: "",
+        reflection_group: "",
+        independentVariable_group: "N的大小",
+        dependentMemory_group: true,
+        dependentBrain_group: false,
+        controlContentType_group: true,
+        controlOther_group: "",
+        researchQuestion_group: "",
+        conclusionSupported_group: "尚未判断",
+        improvement_group: "",
+        persuasiveness_group: "",
         materialType: "image",
         stimulusMaterial: "图片",
         experimentDesign: "N的大小",
@@ -1603,6 +1627,7 @@
     }
 
     function saveState() {
+      syncThinkingFields();
       state.savedAt = new Date().toISOString();
       localStorage.setItem(STORAGE_KEY, JSON.stringify(state));
     }
@@ -1614,6 +1639,38 @@
         .replaceAll(">", "&gt;")
         .replaceAll('"', "&quot;")
         .replaceAll("'", "&#039;");
+    }
+
+    function hasThoughtText(value) { return value !== null && value !== undefined && String(value).trim() !== ""; }
+    function joinThoughts(items) { return items.filter(hasThoughtText).join("\n"); }
+    function thoughtLine(label, value) { return hasThoughtText(value) ? `${label}：${value}` : ""; }
+    function renderPairedField(label, personalHtml, groupHtml) {
+      return `<div class="field paired-field"><label>${label}</label><div class="thinking-layer"><div class="thinking-box thinking-personal"><span class="thinking-label">个人思考（我）</span>${personalHtml}</div><div class="thinking-box thinking-group"><span class="thinking-label">小组共识（我们）</span>${groupHtml}</div></div></div>`;
+    }
+    function renderGroupTextarea(field, placeholder = "请写下你与小组成员讨论后达成的一致结果") {
+      return `<textarea data-field="${field}" placeholder="${escapeHtml(placeholder)}">${escapeHtml(state.fields[field])}</textarea>`;
+    }
+    function renderGroupInput(field, placeholder = "") {
+      return `<input type="text" data-field="${field}" value="${escapeHtml(state.fields[field])}" placeholder="${escapeHtml(placeholder)}" />`;
+    }
+    function renderGroupSelect(field, options, value = state.fields[field]) {
+      return `<select data-field="${field}">${options.map((item)=>`<option value="${escapeHtml(item)}" ${value === item ? "selected" : ""}>${escapeHtml(item)}</option>`).join("")}</select>`;
+    }
+    function syncThinkingFields() {
+      const fields = state.fields;
+      const dependent = joinThoughts([fields.dependentMemory ? "工作记忆表现" : "", fields.dependentBrain ? "大脑活动水平" : ""]);
+      fields.question_individual = joinThoughts([thoughtLine("自变量", fields.independentVariable), thoughtLine("因变量", dependent), thoughtLine("研究问题", fields.researchQuestion)]);
+      fields.question_group = fields.researchQuestion_group || fields.question_group || "";
+      fields.hypothesis_individual = fields.hypothesis || "";
+      fields.hypothesis_group = fields.hypothesis_group || "";
+      fields.conclusion_individual = joinThoughts([thoughtLine("假设是否被证实", fields.conclusionSupported), thoughtLine("结论", fields.conclusion)]);
+      fields.reflection_individual = joinThoughts([thoughtLine("改进", fields.improvement), thoughtLine("提高说服力", fields.persuasiveness)]);
+      fields.reflection_group = joinThoughts([thoughtLine("改进", fields.improvement_group), thoughtLine("提高说服力", fields.persuasiveness_group)]) || fields.reflection_group || "";
+    }
+    function getThinkingRows() {
+      syncThinkingFields();
+      const fields = state.fields;
+      return [["提出问题/研究问题-个人思考", fields.researchQuestion], ["提出问题/研究问题-小组共识", fields.researchQuestion_group], ["作出假设/研究假设-个人思考", fields.hypothesis], ["作出假设/研究假设-小组共识", fields.hypothesis_group], ["得出结论/假设判断-个人思考", fields.conclusionSupported], ["得出结论/假设判断-小组共识", fields.conclusionSupported_group], ["得出结论/结论-个人思考", fields.conclusion], ["得出结论/结论-小组共识", fields.conclusion_group], ["反思交流/改进-个人思考", fields.improvement], ["反思交流/改进-小组共识", fields.improvement_group], ["反思交流/提高说服力-个人思考", fields.persuasiveness], ["反思交流/提高说服力-小组共识", fields.persuasiveness_group]];
     }
 
     function renderApp() {
@@ -2092,31 +2149,10 @@
               <p>请围绕自变量、因变量和控制变量形成研究问题。</p>
             </div>
             <div class="panel-body">
-              <div class="field">
-                <label>自变量</label>
-                <div class="choice-group">
-                  <label class="choice"><input type="radio" name="independentVariable" data-field="independentVariable" value="N的大小" ${checked("independentVariable", "N的大小")}>N-back 活动中 N 的大小</label>
-                  <label class="choice"><input type="radio" name="independentVariable" data-field="independentVariable" value="关卡数量" ${checked("independentVariable", "关卡数量")}>N-back 活动中关卡的数量</label>
-                </div>
-              </div>
-              <div class="field">
-                <label>因变量</label>
-                <div class="choice-group">
-                  <label class="choice"><input type="checkbox" data-field="dependentMemory" ${state.fields.dependentMemory ? "checked" : ""}>工作记忆表现（N-back 正确率）</label>
-                  <label class="choice"><input type="checkbox" data-field="dependentBrain" ${state.fields.dependentBrain ? "checked" : ""}>大脑活动水平（前额叶激活水平）</label>
-                </div>
-              </div>
-              <div class="field">
-                <label>控制变量</label>
-                <div class="choice-group">
-                  <label class="choice"><input type="checkbox" data-field="controlContentType" ${state.fields.controlContentType ? "checked" : ""}>N-back 任务中记忆内容的类型</label>
-                </div>
-                <input type="text" data-field="controlOther" value="${escapeHtml(state.fields.controlOther)}" placeholder="其他控制变量" />
-              </div>
-              <div class="field">
-                <label>研究问题</label>
-                <textarea data-field="researchQuestion" placeholder="写下你们小组真正想探究的问题">${escapeHtml(state.fields.researchQuestion)}</textarea>
-              </div>
+              <div class="field"><label>自变量</label><div class="choice-group"><label class="choice"><input type="radio" name="independentVariable" data-field="independentVariable" value="N的大小" ${checked("independentVariable", "N的大小")}>N-back 活动中 N 的大小</label><label class="choice"><input type="radio" name="independentVariable" data-field="independentVariable" value="关卡数量" ${checked("independentVariable", "关卡数量")}>N-back 活动中关卡的数量</label></div></div>
+              <div class="field"><label>因变量</label><div class="choice-group"><label class="choice"><input type="checkbox" data-field="dependentMemory" ${state.fields.dependentMemory ? "checked" : ""}>工作记忆表现（N-back 正确率）</label><label class="choice"><input type="checkbox" data-field="dependentBrain" ${state.fields.dependentBrain ? "checked" : ""}>大脑活动水平（前额叶激活水平）</label></div></div>
+              <div class="field"><label>控制变量</label><div class="choice-group"><label class="choice"><input type="checkbox" data-field="controlContentType" ${state.fields.controlContentType ? "checked" : ""}>N-back 任务中记忆内容的类型</label></div><input type="text" data-field="controlOther" value="${escapeHtml(state.fields.controlOther)}" placeholder="其他控制变量" /></div>
+              ${renderPairedField("研究问题", `<textarea data-field="researchQuestion" placeholder="写下你自己真正想探究的问题">${escapeHtml(state.fields.researchQuestion)}</textarea>`, renderGroupTextarea("researchQuestion_group"))}
             </div>
           </div>
         </div>
@@ -2175,7 +2211,7 @@
           <div class="panel">
             <div class="panel-head"><h3>研究假设</h3></div>
             <div class="panel-body">
-              <textarea data-field="hypothesis" placeholder="请填写你们小组的研究假设">${escapeHtml(state.fields.hypothesis)}</textarea>
+              ${renderPairedField("研究假设", `<textarea data-field="hypothesis" placeholder="请填写你自己的研究假设">${escapeHtml(state.fields.hypothesis)}</textarea>`, renderGroupTextarea("hypothesis_group"))}
             </div>
           </div>
         </div>
@@ -2503,29 +2539,21 @@
 
     function renderConclusionStep() {
       return `
-        <div class="step-layout">
+        <div class="single-step-layout">
           <div class="panel">
-            <div class="panel-head"><h3>结论判断</h3></div>
+            <div class="panel-head"><h3>得出结论</h3></div>
             <div class="panel-body">
-              <div class="field">
-                <label for="conclusionSupported">假设是否被证实</label>
-                <select id="conclusionSupported" data-field="conclusionSupported">
+              ${renderPairedField("假设是否被证实", `<select id="conclusionSupported" data-field="conclusionSupported">
                   <option value="尚未判断" ${selected("conclusionSupported", "尚未判断")}>尚未判断</option>
                   <option value="支持" ${selected("conclusionSupported", "支持")}>支持</option>
                   <option value="不支持" ${selected("conclusionSupported", "不支持")}>不支持</option>
                   <option value="部分支持" ${selected("conclusionSupported", "部分支持")}>部分支持</option>
-                </select>
-              </div>
+                </select>`, renderGroupSelect("conclusionSupported_group", ["尚未判断","支持","不支持","部分支持"]))}
               <div class="reading-card">
                 <h4>提示</h4>
                 <p>结论要回到研究问题和实验数据本身，说明数据呈现了什么趋势，以及这个趋势是否符合原先假设。</p>
               </div>
-            </div>
-          </div>
-          <div class="panel">
-            <div class="panel-head"><h3>结论</h3></div>
-            <div class="panel-body">
-              <textarea data-field="conclusion" placeholder="根据结果写出你们小组的结论">${escapeHtml(state.fields.conclusion)}</textarea>
+              ${renderPairedField("结论", `<textarea data-field="conclusion" placeholder="根据结果写出你自己的结论">${escapeHtml(state.fields.conclusion)}</textarea>`, renderGroupTextarea("conclusion_group"))}
             </div>
           </div>
         </div>
@@ -2538,14 +2566,8 @@
           <div class="panel">
             <div class="panel-head"><h3>反思评价</h3></div>
             <div class="panel-body">
-              <div class="field">
-                <label>实验设计有什么可以改进？</label>
-                <textarea data-field="improvement" placeholder="可以从任务难度设置、练习时间、测试次数、材料呈现速度、参与者状态和注意力控制等方面思考。">${escapeHtml(state.fields.improvement)}</textarea>
-              </div>
-              <div class="field">
-                <label>如何提高结果的说服力？</label>
-                <textarea data-field="persuasiveness" placeholder="可以从数据是否完整、不同条件是否具有可比性、结果是否稳定、是否需要多次测试或更多参与者等方面思考。">${escapeHtml(state.fields.persuasiveness)}</textarea>
-              </div>
+              ${renderPairedField("实验设计有什么可以改进？", `<textarea data-field="improvement" placeholder="可以从任务难度设置、练习时间、测试次数、材料呈现速度、参与者状态和注意力控制等方面思考。">${escapeHtml(state.fields.improvement)}</textarea>`, renderGroupTextarea("improvement_group"))}
+              ${renderPairedField("如何提高结果的说服力？", `<textarea data-field="persuasiveness" placeholder="可以从数据是否完整、不同条件是否具有可比性、结果是否稳定、是否需要多次测试或更多参与者等方面思考。">${escapeHtml(state.fields.persuasiveness)}</textarea>`, renderGroupTextarea("persuasiveness_group"))}
             </div>
           </div>
         </div>
@@ -3132,6 +3154,7 @@
         ]],
         ["实验过程", [
           ["字段", "内容"],
+          ...getThinkingRows(),
           ["自变量", state.fields.independentVariable],
           ["因变量-工作记忆表现", state.fields.dependentMemory ? "是" : "否"],
           ["因变量-大脑活动水平", state.fields.dependentBrain ? "是" : "否"],

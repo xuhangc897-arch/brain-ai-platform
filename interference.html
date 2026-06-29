@@ -85,6 +85,12 @@
     .reflection-layout textarea { min-height: 140px; }
     .reflection-layout textarea::placeholder { color: #98a2b3; opacity: 1; }
     .reflection-layout textarea:focus::placeholder { color: transparent; }
+    .thinking-layer { display: grid; gap: 14px; }
+    .thinking-box { border-radius: 8px; padding: 14px; }
+    .thinking-personal { border: 1px solid #dbeafe; background: #fff; }
+    .thinking-group { border: 1px dashed #bfdbfe; background: #f8fbff; }
+    .thinking-label { display: block; margin-bottom: 10px; color: #1e3a8a; font-size: 14px; font-weight: 900; }
+    .thinking-group textarea { background: #fff; min-height: 110px; }
     .reading-list { display: grid; gap: 14px; }
     .reading-card { border: 1px solid #e5edf7; border-radius: 8px; padding: 16px; background: #fbfdff; }
     .reading-card h4 { margin: 0 0 8px; color: #1e3a8a; font-size: 16px; }
@@ -520,6 +526,22 @@
         strengths: "",
         improvements: "",
         learningInsight: "",
+        question_individual: "",
+        question_group: "",
+        hypothesis_individual: "",
+        hypothesis_group: "",
+        conclusion_individual: "",
+        conclusion_group: "",
+        reflection_individual: "",
+        reflection_group: "",
+        lifeFactors_group: "",
+        materialFactors_group: "",
+        questionFactor_group: "",
+        support_group: "不确定",
+        credibility_group: "不确定",
+        strengths_group: "",
+        improvements_group: "",
+        learningInsight_group: "",
         participantId: "",
         teammate1Id: "",
         teammate1Result: "",
@@ -646,6 +668,7 @@
     }
 
     function saveState() {
+      syncThinkingFields();
       state.savedAt = new Date().toISOString();
       localStorage.setItem(STORAGE_KEY, JSON.stringify(state));
     }
@@ -653,6 +676,36 @@
       return String(value ?? "").replaceAll("&","&amp;").replaceAll("<","&lt;").replaceAll(">","&gt;").replaceAll('"',"&quot;").replaceAll("'","&#039;");
     }
     function selected(field, value) { return state.fields[field] === value ? "selected" : ""; }
+    function hasThoughtText(value) { return value !== null && value !== undefined && String(value).trim() !== ""; }
+    function joinThoughts(items) { return items.filter(hasThoughtText).join("\n"); }
+    function thoughtLine(label, value) { return hasThoughtText(value) ? `${label}：${value}` : ""; }
+    function renderPairedField(label, personalHtml, groupHtml) {
+      return `<div class="field paired-field"><label>${label}</label><div class="thinking-layer"><div class="thinking-box thinking-personal"><span class="thinking-label">个人思考（我）</span>${personalHtml}</div><div class="thinking-box thinking-group"><span class="thinking-label">小组共识（我们）</span>${groupHtml}</div></div></div>`;
+    }
+    function renderGroupTextarea(field, placeholder = "请写下你与小组成员讨论后达成的一致结果") {
+      return `<textarea data-field="${field}" placeholder="${escapeHtml(placeholder)}">${escapeHtml(state.fields[field])}</textarea>`;
+    }
+    function renderGroupInput(field, placeholder = "") {
+      return `<input type="text" data-field="${field}" value="${escapeHtml(state.fields[field])}" placeholder="${escapeHtml(placeholder)}">`;
+    }
+    function renderGroupSelect(field, options, value = state.fields[field]) {
+      return `<select data-field="${field}">${options.map((item)=>`<option value="${escapeHtml(item)}" ${value === item ? "selected" : ""}>${escapeHtml(item)}</option>`).join("")}</select>`;
+    }
+    function syncThinkingFields() {
+      const fields = state.fields;
+      fields.question_individual = joinThoughts([thoughtLine("生活中的干扰因素", fields.lifeFactors), thoughtLine("材料中的干扰因素", fields.materialFactors)]);
+      fields.question_group = joinThoughts([thoughtLine("生活中的干扰因素", fields.lifeFactors_group), thoughtLine("材料中的干扰因素", fields.materialFactors_group), thoughtLine("研究问题", fields.question || fields.questionFactor)]) || fields.question_group || "";
+      fields.hypothesis_individual = fields.hypothesis || "";
+      fields.hypothesis_group = fields.hypothesis_group || "";
+      fields.conclusion_individual = joinThoughts([thoughtLine("结论是否支持假设", fields.support), thoughtLine("结论是否可信", fields.credibility), thoughtLine("结论", fields.conclusion)]);
+      fields.reflection_individual = joinThoughts([thoughtLine("优点", fields.strengths), thoughtLine("改进", fields.improvements), thoughtLine("学习启发", fields.learningInsight)]);
+      fields.reflection_group = joinThoughts([thoughtLine("优点", fields.strengths_group), thoughtLine("改进", fields.improvements_group), thoughtLine("学习启发", fields.learningInsight_group)]) || fields.reflection_group || "";
+    }
+    function getThinkingRows() {
+      syncThinkingFields();
+      const fields = state.fields;
+      return [["提出问题/生活中的干扰因素-个人思考", fields.lifeFactors], ["提出问题/生活中的干扰因素-小组共识", fields.lifeFactors_group], ["提出问题/材料中的干扰因素-个人思考", fields.materialFactors], ["提出问题/材料中的干扰因素-小组共识", fields.materialFactors_group], ["提出问题/研究问题-小组共识", fields.question], ["作出假设/研究假设-个人思考", fields.hypothesis], ["作出假设/研究假设-小组共识", fields.hypothesis_group], ["得出结论/假设支持-个人思考", fields.support], ["得出结论/假设支持-小组共识", fields.support_group], ["得出结论/可信度-个人思考", fields.credibility], ["得出结论/可信度-小组共识", fields.credibility_group], ["得出结论/结论-个人思考", fields.conclusion], ["得出结论/结论-小组共识", fields.conclusion_group], ["反思交流/优点-个人思考", fields.strengths], ["反思交流/优点-小组共识", fields.strengths_group], ["反思交流/改进-个人思考", fields.improvements], ["反思交流/改进-小组共识", fields.improvements_group], ["反思交流/学习启发-个人思考", fields.learningInsight], ["反思交流/学习启发-小组共识", fields.learningInsight_group]];
+    }
     function renderApp() {
       if (!state.studentId || !state.groupId) {
         main.innerHTML = `<section class="panel"><div class="panel-head"><h2>需要先填写学生编号和小组编号</h2><p>请返回实验选择页录入身份信息后再进入实验。</p></div><div class="panel-body"><button class="btn" type="button" onclick="location.href='index.html'">返回实验选择</button></div></section>`;
@@ -994,8 +1047,8 @@
         <div class="question-intro-strip">
           <p>你有没有这样的经历：在回忆一篇课文时，开头和结尾的内容记得很清楚，但中间部分却总是模糊不清？其实，这可能是因为你的长时记忆受到了一些干扰。</p>
           <p>今天，我们将通过实验一起来探究，到底有哪些因素会干扰我们的长时记忆？</p>
-          <p>请先和小组成员讨论，你们能想到哪些生活中的长时记忆干扰因素？将你们想到的写在下面：</p>
-          <div class="field"><label>生活中想到的干扰因素</label><textarea data-field="lifeFactors">${escapeHtml(state.fields.lifeFactors)}</textarea></div>
+          <p>请先想一想，再和小组成员讨论：你们能想到哪些生活中的长时记忆干扰因素？</p>
+          ${renderPairedField("生活中想到的干扰因素", `<textarea data-field="lifeFactors" placeholder="请写下你自己想到的生活中的干扰因素">${escapeHtml(state.fields.lifeFactors)}</textarea>`, renderGroupTextarea("lifeFactors_group"))}
         </div>
         <div class="panel"><div class="panel-head"><h3>阅读材料</h3><p>下面是三则关于长时记忆干扰的材料，请阅读以下材料，想一想还有什么因素会干扰长时记忆。</p></div><div class="panel-body reading-list">
           <article class="reading-card">
@@ -1015,16 +1068,12 @@
           </article>
         </div></div>
         <div class="panel"><div class="panel-head"><h3>提出研究问题</h3></div><div class="panel-body">
-          ${renderInquiryCases()}
-          ${renderInquiryScaffold("question")}
-
-          <div class="field"><label>材料中列出的干扰因素</label><textarea data-field="materialFactors" placeholder="请根据阅读材料自行填写">${escapeHtml(state.fields.materialFactors)}</textarea></div>
-          <div class="field"><label>研究问题</label><p class="hint">选择你们感兴趣的1-2个因素进行探究活动，提出研究问题：</p><div class="form-grid"><input type="text" data-field="questionFactor" value="${escapeHtml(state.fields.questionFactor)}" placeholder="请输入干扰因素"><p class="hint" style="align-self:center;margin:0;">会对长时记忆造成干扰吗？</p></div></div>
+          ${renderInquiryCases()}${renderInquiryScaffold("question")}${renderPairedField("材料中列出的干扰因素", `<textarea data-field="materialFactors" placeholder="请根据阅读材料自行填写">${escapeHtml(state.fields.materialFactors)}</textarea>`, renderGroupTextarea("materialFactors_group"))}<div class="field"><label>研究问题（小组）</label><p class="hint">写下小组讨论后确定的探究因素：</p><div class="form-grid"><input type="text" data-field="questionFactor" value="${escapeHtml(state.fields.questionFactor)}" placeholder="请输入干扰因素"><p class="hint" style="align-self:center;margin:0;">会对长时记忆造成干扰吗？</p></div></div>
         </div></div>
       </div>`;
     }
     function renderHypothesisStep() {
-      return `<div class="single-step-layout"><div class="panel"><div class="panel-head"><h3>研究假设</h3></div><div class="panel-body"><textarea data-field="hypothesis" placeholder="写下你们小组对结果的预测">${escapeHtml(state.fields.hypothesis)}</textarea></div></div><div class="panel"><div class="panel-head"><h3>研究假设小助手</h3></div><div class="panel-body">${renderInquiryScaffold("hypothesis")}${renderInquiryCases()}</div></div></div>`;
+      return `<div class="single-step-layout"><div class="panel"><div class="panel-head"><h3>研究假设</h3></div><div class="panel-body">${renderPairedField("研究假设", `<textarea data-field="hypothesis" placeholder="写下你自己对结果的预测">${escapeHtml(state.fields.hypothesis)}</textarea>`, renderGroupTextarea("hypothesis_group"))}</div></div><div class="panel"><div class="panel-head"><h3>研究假设小助手</h3></div><div class="panel-body">${renderInquiryScaffold("hypothesis")}${renderInquiryCases()}</div></div></div>`;
     }
     const FLOW_STEP_CARDS = ["记忆", "休息", "测试", "倒摄干扰", "不相似干扰", "相似干扰", "中性情绪干扰", "极性情绪（愉悦/悲伤）干扰"];
     const FLOW_ANSWERS = {
@@ -1216,10 +1265,10 @@
       return `<div class="single-step-layout"><div class="panel"><div class="panel-head"><h3>条件汇总</h3></div><div class="panel-body">${summary.length ? `<table><thead><tr><th>条件</th><th>次数</th><th>平均正确数</th><th>平均正确率</th><th>平均反应时</th></tr></thead><tbody>${rows}</tbody></table>` : `<div class="empty-state">还没有实验数据。请先完成至少一轮实验。</div>`}</div></div>${renderTeamResultTable(summary)}<div class="panel"><div class="panel-head"><h3>结果展示与头环记录</h3></div><div class="panel-body"><div class="chart">${chart}</div><div class="field" style="margin-top:18px;"><label>头环观察记录</label><textarea data-field="headband" placeholder="请询问在你进行实验时观察头环的同学，并记录头环观察结果：不同干扰条件下头环颜色有什么变化？哪种条件下暖色区域更多？颜色变化是否和记忆成绩变化有关？">${escapeHtml(state.fields.headband)}</textarea></div></div></div></div>`;
     }
     function renderConclusionStep() {
-      return `<div class="step-layout"><div class="panel"><div class="panel-head"><h3>得出结论</h3></div><div class="panel-body"><div class="form-grid"><div class="field"><label>结论是否支持假设</label><select data-field="support"><option value="是" ${selected("support","是")}>是</option><option value="否" ${selected("support","否")}>否</option><option value="不确定" ${selected("support","不确定")}>不确定</option></select></div><div class="field"><label>结论是否可信</label><select data-field="credibility"><option value="是" ${selected("credibility","是")}>是</option><option value="否" ${selected("credibility","否")}>否</option><option value="不确定" ${selected("credibility","不确定")}>不确定</option></select></div></div><textarea data-field="conclusion" placeholder="通过实验，我们得到以下结论">${escapeHtml(state.fields.conclusion)}</textarea></div></div><div class="panel"><div class="panel-head"><h3>原因说明</h3></div><div class="panel-body"><div class="reading-card"><h4>提示</h4><p>结论需要回到数据：哪一轮/哪一条件正确率更低，是否说明该因素造成了更强干扰。</p></div></div></div></div>`;
+      return `<div class="step-layout"><div class="panel"><div class="panel-head"><h3>得出结论</h3></div><div class="panel-body">${renderPairedField("结论是否支持假设", `<select data-field="support"><option value="是" ${selected("support","是")}>是</option><option value="否" ${selected("support","否")}>否</option><option value="不确定" ${selected("support","不确定")}>不确定</option></select>`, renderGroupSelect("support_group", ["是","否","不确定"]))}${renderPairedField("结论是否可信", `<select data-field="credibility"><option value="是" ${selected("credibility","是")}>是</option><option value="否" ${selected("credibility","否")}>否</option><option value="不确定" ${selected("credibility","不确定")}>不确定</option></select>`, renderGroupSelect("credibility_group", ["是","否","不确定"]))}${renderPairedField("结论", `<textarea data-field="conclusion" placeholder="通过实验，我得到以下结论">${escapeHtml(state.fields.conclusion)}</textarea>`, renderGroupTextarea("conclusion_group"))}</div></div><div class="panel"><div class="panel-head"><h3>原因说明</h3></div><div class="panel-body"><div class="reading-card"><h4>提示</h4><p>结论需要回到数据：哪一轮/哪一条件正确率更低，是否说明该因素造成了更强干扰。</p></div></div></div></div>`;
     }
     function renderReflectionStep() {
-      return `<div class="reflection-layout"><div class="panel"><div class="panel-head"><h3>反思评价</h3></div><div class="panel-body"><div class="field"><label>本组实验设计有什么优点？</label><textarea data-field="strengths" placeholder="可以从干扰因素选择、变量控制、实验流程、材料设置和数据记录方式等方面思考。">${escapeHtml(state.fields.strengths)}</textarea></div><div class="field"><label>还有哪些可以改进？</label><textarea data-field="improvements" placeholder="可以从干扰条件是否清楚、无关因素是否控制、测试时间是否合理、数据是否充分等方面思考。">${escapeHtml(state.fields.improvements)}</textarea></div><div class="field"><label>本实验结论对学习有什么启发？</label><textarea data-field="learningInsight" placeholder="可以思考实验结果与平时学习、复习安排、材料相似性、情绪状态或学习环境之间有什么联系。">${escapeHtml(state.fields.learningInsight)}</textarea></div></div></div></div>`;
+      return `<div class="reflection-layout"><div class="panel"><div class="panel-head"><h3>反思评价</h3></div><div class="panel-body">${renderPairedField("实验设计有什么优点？", `<textarea data-field="strengths" placeholder="可以从干扰因素选择、变量控制、实验流程、材料设置和数据记录方式等方面思考。">${escapeHtml(state.fields.strengths)}</textarea>`, renderGroupTextarea("strengths_group"))}${renderPairedField("还有哪些可以改进？", `<textarea data-field="improvements" placeholder="可以从干扰条件是否清楚、无关因素是否控制、测试时间是否合理、数据是否充分等方面思考。">${escapeHtml(state.fields.improvements)}</textarea>`, renderGroupTextarea("improvements_group"))}${renderPairedField("本实验结论对学习有什么启发？", `<textarea data-field="learningInsight" placeholder="可以思考实验结果与平时学习、复习安排、材料相似性、情绪状态或学习环境之间有什么联系。">${escapeHtml(state.fields.learningInsight)}</textarea>`, renderGroupTextarea("learningInsight_group"))}</div></div></div>`;
     }
     function bindInputs() {
       main.querySelectorAll("[data-field]").forEach((element)=>{
@@ -1594,7 +1643,7 @@
       const summary = summarizeRecords();
       const sheets = [
         ["基本信息", [["项目","内容"],["实验","探究干扰长时记忆的因素"],["学生姓名",state.studentName || ""],["学生年龄",state.studentAge || ""],["学生编号",state.studentId],["小组编号",state.groupId],["实验时间",state.savedAt || ""],["导出时间",new Date().toLocaleString()]]],
-        ["实验过程", [["字段","内容"],["生活中的长时记忆干扰因素",state.fields.lifeFactors],["材料中列出的干扰因素",state.fields.materialFactors],["探究因素",state.fields.factor],["实验流程干扰因素",interferenceValueToLabel(state.fields.interferenceFactor)],["第一轮实验流程",normalizeFlowList(state.fields.flowRound1).join(" → ")],["第二轮实验流程",normalizeFlowList(state.fields.flowRound2).join(" → ")],["研究问题",state.fields.question],["自变量",state.fields.independentVariablePlan],["因变量",state.fields.dependentVariablePlan],["无关变量",state.fields.controlVariablePlan],["干扰阶段补全文字",state.fields.interferenceStagePlan],["研究假设",state.fields.hypothesis],["参与者",state.fields.participant],["难度",state.fields.difficulty],["情绪条件",state.fields.emotionCondition],["记忆时间s",state.fields.memorySeconds],["休息时间s",state.fields.restSeconds],["干扰时间s",state.fields.interferenceSeconds],["头环观察",state.fields.headband],["结论",state.fields.conclusion],["假设支持",state.fields.support],["可信度",state.fields.credibility],["优点",state.fields.strengths],["改进",state.fields.improvements],["学习启发",state.fields.learningInsight]]],
+        ["实验过程", [["字段","内容"], ...getThinkingRows(), ["生活中的长时记忆干扰因素",state.fields.lifeFactors],["材料中列出的干扰因素",state.fields.materialFactors],["探究因素",state.fields.factor],["实验流程干扰因素",interferenceValueToLabel(state.fields.interferenceFactor)],["第一轮实验流程",normalizeFlowList(state.fields.flowRound1).join(" → ")],["第二轮实验流程",normalizeFlowList(state.fields.flowRound2).join(" → ")],["研究问题",state.fields.question],["自变量",state.fields.independentVariablePlan],["因变量",state.fields.dependentVariablePlan],["无关变量",state.fields.controlVariablePlan],["干扰阶段补全文字",state.fields.interferenceStagePlan],["研究假设",state.fields.hypothesis],["参与者",state.fields.participant],["难度",state.fields.difficulty],["情绪条件",state.fields.emotionCondition],["记忆时间s",state.fields.memorySeconds],["休息时间s",state.fields.restSeconds],["干扰时间s",state.fields.interferenceSeconds],["头环观察",state.fields.headband],["结论",state.fields.conclusion],["假设支持",state.fields.support],["可信度",state.fields.credibility],["优点",state.fields.strengths],["改进",state.fields.improvements],["学习启发",state.fields.learningInsight]]],
         ["实验明细", [["学生姓名","学生年龄","学生编号","小组编号","参与者","轮次","实验类型","材料来源","材料类型","难度","条件","视频条件","记忆时间s","休息时间s","干扰时间s","记忆材料","干扰材料","评分规则","满分","得分","正确率","回忆内容","头环观察","情绪强度","反应时ms","记录时间"], ...state.records.map((record)=>[record.studentName || "",record.studentAge || "",record.studentId,record.groupId,record.participant,record.round,record.factor,record.materialSource,record.materialType,record.difficultyLabel || record.difficulty,record.condition,record.videoCondition,record.memorySeconds,record.restSeconds,record.interferenceSeconds,record.memoryItems,record.interferenceItems,record.scoreRule,record.fullScore,record.score ?? record.correctCount,`${record.accuracy}%`,record.recall,record.headband,record.emotionRating,record.reactionTime,record.createdAt])]],
         ["条件汇总", [["条件","次数","平均得分","平均正确率","平均反应时ms"], ...summary.map((item)=>[item.condition,item.count,item.avgCorrect,`${item.avgAccuracy}%`,item.avgRt])]],
         getTeamResultSheet(summary),
