@@ -531,6 +531,20 @@
       border: 1px solid rgba(79, 124, 255, 0.18);
     }
 
+    .logout-area {
+      display: flex;
+      align-items: center;
+      justify-content: flex-end;
+      gap: 12px;
+      margin-top: 12px;
+    }
+
+    .welcome-user {
+      color: var(--muted);
+      font-size: 13px;
+      font-weight: 800;
+    }
+
     .error {
       min-height: 22px;
       margin: 12px 0 0;
@@ -3292,6 +3306,10 @@
         </div>
 
         <p id="error" class="error"></p>
+        <div class="logout-area">
+          <span class="welcome-user" id="welcomeUser"></span>
+          <button class="btn ghost" type="button" id="logoutBtn">退出登录</button>
+        </div>
       </aside>
     </section>
 
@@ -3378,7 +3396,14 @@
     </footer>
   </main>
 
+  <script src="https://static.cloudbase.net/cloudbase-js-sdk/3.0.0/cloudbase.full.js"></script>
+  <script src="cloudbase.js"></script>
   <script>
+    /*
+     * 首页登录保护：
+     * 页面加载后先检查 CloudBase 登录态；未登录会自动跳转 login.html。
+     * 这里不改动实验入口逻辑，只是在进入首页前增加第一阶段要求的登录门禁。
+     */
     const CONTEXT_KEY = "science-inquiry-context-v1";
     const studentNameInput = document.getElementById("studentName");
     const studentAgeInput = document.getElementById("studentAge");
@@ -3386,6 +3411,13 @@
     const groupInput = document.getElementById("groupId");
     const error = document.getElementById("error");
     const scienceSection = document.getElementById("scienceSection");
+    const logoutBtn = document.getElementById("logoutBtn");
+    const welcomeUser = document.getElementById("welcomeUser");
+
+    window.BrainCloudBase.requireLogin().then((loginState) => {
+      if (!loginState) return;
+      welcomeUser.textContent = `欢迎回来，${loginState.username}`;
+    });
 
     try {
       const saved = JSON.parse(localStorage.getItem(CONTEXT_KEY) || "null");
@@ -3441,6 +3473,24 @@
     document.getElementById("hideScience").addEventListener("click", () => {
       scienceSection.classList.remove("is-visible");
       document.body.classList.remove("modal-open");
+    });
+
+    /*
+     * 退出登录：
+     * 只清除 CloudBase 登录态并返回登录页，不清理原有实验身份 localStorage，
+     * 避免影响学生编号、小组编号等既有实验流程数据。
+     */
+    logoutBtn.addEventListener("click", async () => {
+      logoutBtn.disabled = true;
+      logoutBtn.textContent = "退出中...";
+
+      try {
+        await window.BrainCloudBase.logout();
+      } catch (event) {
+        console.warn("CloudBase 退出登录失败：", event);
+      } finally {
+        window.location.href = "login.html";
+      }
     });
   </script>
   <script src="assets/ai-assistant.js"></script>

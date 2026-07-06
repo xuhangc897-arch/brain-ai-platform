@@ -1,0 +1,12 @@
+{
+  "envId": "memory-detective-platform-d369a42",
+  "functionRoot": "cloudfunctions",
+  "hosting": {
+    "public": ".",
+    "ignore": [
+      "node_modules",
+      ".git"
+    ]
+  },
+  "functions": []
+}

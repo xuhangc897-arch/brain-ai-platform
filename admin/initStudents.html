@@ -1,0 +1,525 @@
+<!doctype html>
+<html lang="zh-CN">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>学生账号初始化 - 教师工具</title>
+  <style>
+    :root {
+      --bg: #f5f8ff;
+      --panel: #fff;
+      --ink: #142033;
+      --muted: #667085;
+      --line: #d8e1f2;
+      --primary: #4f7cff;
+      --primary-dark: #315fe4;
+      --success: #16875f;
+      --warning: #b7791f;
+      --danger: #d92d20;
+      font-family: "Microsoft YaHei", "PingFang SC", "Segoe UI", Arial, sans-serif;
+    }
+
+    * {
+      box-sizing: border-box;
+    }
+
+    body {
+      margin: 0;
+      min-height: 100vh;
+      color: var(--ink);
+      background: linear-gradient(135deg, #f8fbff 0%, var(--bg) 100%);
+      padding: 32px 18px;
+    }
+
+    button,
+    input {
+      font: inherit;
+    }
+
+    .page {
+      width: min(960px, 100%);
+      margin: 0 auto;
+    }
+
+    .panel {
+      border: 1px solid var(--line);
+      border-radius: 18px;
+      background: var(--panel);
+      box-shadow: 0 18px 48px rgba(52, 79, 135, 0.12);
+      padding: 28px;
+    }
+
+    h1 {
+      margin: 0 0 8px;
+      font-size: 28px;
+      line-height: 1.25;
+    }
+
+    .intro {
+      margin: 0 0 24px;
+      color: var(--muted);
+      line-height: 1.7;
+    }
+
+    .upload-box {
+      display: grid;
+      gap: 14px;
+      padding: 18px;
+      border: 1px dashed #a9bae0;
+      border-radius: 14px;
+      background: #f9fbff;
+    }
+
+    .upload-box strong {
+      color: var(--primary-dark);
+    }
+
+    .actions {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 12px;
+      align-items: center;
+      margin-top: 16px;
+    }
+
+    .btn {
+      min-height: 42px;
+      padding: 0 18px;
+      border: 0;
+      border-radius: 999px;
+      background: linear-gradient(135deg, var(--primary), #6aa1ff);
+      color: #fff;
+      cursor: pointer;
+      font-weight: 800;
+      box-shadow: 0 12px 22px rgba(79, 124, 255, 0.22);
+    }
+
+    .btn:disabled {
+      cursor: wait;
+      opacity: 0.64;
+    }
+
+    .status {
+      min-height: 22px;
+      margin: 16px 0 0;
+      color: var(--muted);
+      font-size: 14px;
+      font-weight: 700;
+    }
+
+    .summary {
+      display: grid;
+      grid-template-columns: repeat(3, minmax(0, 1fr));
+      gap: 12px;
+      margin-top: 22px;
+    }
+
+    .stat {
+      border: 1px solid var(--line);
+      border-radius: 14px;
+      padding: 16px;
+      background: #fbfcff;
+    }
+
+    .stat span {
+      display: block;
+      color: var(--muted);
+      font-size: 13px;
+      font-weight: 700;
+    }
+
+    .stat strong {
+      display: block;
+      margin-top: 4px;
+      font-size: 28px;
+      line-height: 1;
+    }
+
+    .success strong {
+      color: var(--success);
+    }
+
+    .skipped strong {
+      color: var(--warning);
+    }
+
+    .failed strong {
+      color: var(--danger);
+    }
+
+    table {
+      width: 100%;
+      margin-top: 22px;
+      border-collapse: collapse;
+      overflow: hidden;
+      border-radius: 12px;
+      background: #fff;
+      font-size: 14px;
+    }
+
+    th,
+    td {
+      padding: 10px 12px;
+      border-bottom: 1px solid var(--line);
+      text-align: left;
+      vertical-align: top;
+    }
+
+    th {
+      background: #eef4ff;
+      color: #344054;
+      font-weight: 800;
+    }
+
+    .tag {
+      display: inline-flex;
+      min-width: 52px;
+      justify-content: center;
+      border-radius: 999px;
+      padding: 2px 8px;
+      font-size: 12px;
+      font-weight: 800;
+    }
+
+    .tag-success {
+      background: #e8f7f0;
+      color: var(--success);
+    }
+
+    .tag-skipped {
+      background: #fff4db;
+      color: var(--warning);
+    }
+
+    .tag-failed {
+      background: #fdecec;
+      color: var(--danger);
+    }
+
+    @media (max-width: 720px) {
+      .panel {
+        padding: 20px;
+      }
+
+      .summary {
+        grid-template-columns: 1fr;
+      }
+
+      table {
+        display: block;
+        overflow-x: auto;
+      }
+    }
+  </style>
+</head>
+<body>
+  <main class="page">
+    <section class="panel" aria-labelledby="pageTitle">
+      <h1 id="pageTitle">学生账号初始化</h1>
+      <p class="intro">
+        教师上传包含“学号、姓名、班级、小组”的 Excel 后，系统会使用 CloudBase Auth 创建学生账号。
+        学生账号统一为学号，默认密码为 123456。这个页面不链接到学生端，也不会开放学生自助注册。
+      </p>
+
+      <div class="upload-box">
+        <strong>Excel 表头必须包含：学号、姓名、班级、小组</strong>
+        <input id="excelFile" type="file" accept=".xlsx,.xls" />
+      </div>
+
+      <div class="actions">
+        <button class="btn" id="importBtn" type="button">开始导入</button>
+        <span class="status" id="statusText">请选择 Excel 文件。</span>
+      </div>
+
+      <div class="summary" aria-label="导入统计">
+        <div class="stat success">
+          <span>成功</span>
+          <strong id="successCount">0</strong>
+        </div>
+        <div class="stat skipped">
+          <span>跳过</span>
+          <strong id="skippedCount">0</strong>
+        </div>
+        <div class="stat failed">
+          <span>失败</span>
+          <strong id="failedCount">0</strong>
+        </div>
+      </div>
+
+      <table aria-label="导入结果">
+        <thead>
+          <tr>
+            <th>学号</th>
+            <th>姓名</th>
+            <th>班级</th>
+            <th>小组</th>
+            <th>结果</th>
+            <th>原因</th>
+          </tr>
+        </thead>
+        <tbody id="resultBody">
+          <tr>
+            <td colspan="6">尚未导入。</td>
+          </tr>
+        </tbody>
+      </table>
+    </section>
+  </main>
+
+  <script src="https://cdn.jsdelivr.net/npm/xlsx@0.18.5/dist/xlsx.full.min.js"></script>
+  <script src="https://static.cloudbase.net/cloudbase-js-sdk/3.0.0/cloudbase.full.js"></script>
+  <script src="../cloudbase.js"></script>
+  <script>
+    /*
+     * 教师初始化工具
+     * ------------------------------------------------------------
+     * 本页面只用于批量初始化学生账号，不会被学生登录页引用。
+     * 学生端 login.html 仍然只有登录能力，没有注册入口。
+     */
+    const DEFAULT_PASSWORD = "123456";
+    const REQUIRED_HEADERS = ["学号", "姓名", "班级", "小组"];
+
+    const excelFile = document.getElementById("excelFile");
+    const importBtn = document.getElementById("importBtn");
+    const statusText = document.getElementById("statusText");
+    const resultBody = document.getElementById("resultBody");
+    const successCount = document.getElementById("successCount");
+    const skippedCount = document.getElementById("skippedCount");
+    const failedCount = document.getElementById("failedCount");
+
+    /*
+     * 复用 cloudbase.js 中已经初始化好的真实 CloudBase SDK。
+     * 这里直接使用 Auth 注册接口和 students 集合，不做任何本地模拟。
+     */
+    const studentsCollection = window.BrainCloudBase.db.collection("students");
+
+    function setStatus(message) {
+      statusText.textContent = message;
+    }
+
+    function normalizeCell(value) {
+      return String(value ?? "").trim();
+    }
+
+    function escapeHtml(value) {
+      return String(value ?? "")
+        .replace(/&/g, "&amp;")
+        .replace(/</g, "&lt;")
+        .replace(/>/g, "&gt;")
+        .replace(/"/g, "&quot;")
+        .replace(/'/g, "&#039;");
+    }
+
+    function getUserUid(user) {
+      return user && (user.id || user.user_id || user.uid);
+    }
+
+    function isAccountExistsError(error) {
+      const text = [
+        error?.code,
+        error?.category,
+        error?.message,
+        error?.errMsg
+      ].filter(Boolean).join(" ").toLowerCase();
+
+      return /exist|already|duplicate|conflict|已存在|重复|占用/.test(text);
+    }
+
+    function validateHeaders(rows) {
+      const firstRow = rows[0] || {};
+      const missingHeaders = REQUIRED_HEADERS.filter((header) => !(header in firstRow));
+
+      if (missingHeaders.length > 0) {
+        throw new Error(`Excel 缺少表头：${missingHeaders.join("、")}`);
+      }
+    }
+
+    async function readExcel(file) {
+      const buffer = await file.arrayBuffer();
+      const workbook = XLSX.read(buffer, { type: "array" });
+      const firstSheetName = workbook.SheetNames[0];
+
+      if (!firstSheetName) {
+        throw new Error("Excel 中没有可读取的工作表。");
+      }
+
+      const worksheet = workbook.Sheets[firstSheetName];
+      const rows = XLSX.utils.sheet_to_json(worksheet, { defval: "" });
+      validateHeaders(rows);
+
+      return rows.map((row, index) => ({
+        rowNumber: index + 2,
+        studentId: normalizeCell(row["学号"]),
+        name: normalizeCell(row["姓名"]),
+        className: normalizeCell(row["班级"]),
+        groupName: normalizeCell(row["小组"])
+      }));
+    }
+
+    async function createStudentProfile(uid, student) {
+      const result = await studentsCollection.add({
+        uid,
+        studentId: student.studentId,
+        name: student.name,
+        class: student.className,
+        group: student.groupName,
+        createdAt: new Date()
+      });
+
+      if (result.code) {
+        throw new Error(result.message || "创建 students 学生资料失败。");
+      }
+    }
+
+    async function createAuthAccount(student) {
+      const data = await window.BrainCloudBase.createUserWithPassword(student.studentId, DEFAULT_PASSWORD);
+
+      if (data?.verifyOtp) {
+        throw new Error("当前 Auth 注册方式需要验证码，不能批量创建用户名密码账号。");
+      }
+
+      const user = data?.user || data?.session?.user || (await window.BrainCloudBase.getCurrentUser());
+      const uid = getUserUid(user);
+
+      if (!uid) {
+        throw new Error("账号创建成功，但未能获取 CloudBase uid。");
+      }
+
+      return uid;
+    }
+
+    async function importOneStudent(student, seenStudentIds) {
+      if (!student.studentId || !student.name || !student.className || !student.groupName) {
+        return {
+          status: "failed",
+          reason: `第 ${student.rowNumber} 行缺少学号、姓名、班级或小组。`
+        };
+      }
+
+      if (seenStudentIds.has(student.studentId)) {
+        return {
+          status: "skipped",
+          reason: "Excel 中学号重复，已跳过。"
+        };
+      }
+
+      seenStudentIds.add(student.studentId);
+
+      let createdUid = "";
+
+      try {
+        createdUid = await createAuthAccount(student);
+        await createStudentProfile(createdUid, student);
+
+        /*
+         * signUp 成功后 SDK 会登录到刚创建的学生账号。
+         * 教师工具完成单个学生初始化后立刻退出，避免后续页面误认为教师是该学生。
+         */
+        await window.BrainCloudBase.logout();
+
+        return {
+          status: "success",
+          reason: `已创建账号，uid：${createdUid}`
+        };
+      } catch (error) {
+        if (createdUid) {
+          await window.BrainCloudBase.logout().catch(() => {});
+        }
+
+        if (isAccountExistsError(error)) {
+          return {
+            status: "skipped",
+            reason: "CloudBase Auth 账号已存在，已跳过。"
+          };
+        }
+
+        return {
+          status: "failed",
+          reason: error.message || "导入失败。"
+        };
+      }
+    }
+
+    function renderResults(results) {
+      if (results.length === 0) {
+        resultBody.innerHTML = '<tr><td colspan="6">没有可导入的数据。</td></tr>';
+        return;
+      }
+
+      resultBody.innerHTML = results.map((item) => {
+        const tagClass = item.status === "success"
+          ? "tag-success"
+          : item.status === "skipped"
+            ? "tag-skipped"
+            : "tag-failed";
+        const label = item.status === "success"
+          ? "成功"
+          : item.status === "skipped"
+            ? "跳过"
+            : "失败";
+
+        return `
+          <tr>
+            <td>${escapeHtml(item.student.studentId)}</td>
+            <td>${escapeHtml(item.student.name)}</td>
+            <td>${escapeHtml(item.student.className)}</td>
+            <td>${escapeHtml(item.student.groupName)}</td>
+            <td><span class="tag ${tagClass}">${label}</span></td>
+            <td>${escapeHtml(item.reason)}</td>
+          </tr>
+        `;
+      }).join("");
+    }
+
+    function updateCounts(results) {
+      successCount.textContent = String(results.filter((item) => item.status === "success").length);
+      skippedCount.textContent = String(results.filter((item) => item.status === "skipped").length);
+      failedCount.textContent = String(results.filter((item) => item.status === "failed").length);
+    }
+
+    importBtn.addEventListener("click", async () => {
+      const file = excelFile.files[0];
+
+      if (!file) {
+        setStatus("请先选择 Excel 文件。");
+        return;
+      }
+
+      importBtn.disabled = true;
+      importBtn.textContent = "导入中...";
+      setStatus("正在读取 Excel...");
+      resultBody.innerHTML = '<tr><td colspan="6">正在导入，请稍候。</td></tr>';
+      updateCounts([]);
+
+      try {
+        const students = await readExcel(file);
+        const results = [];
+        const seenStudentIds = new Set();
+
+        for (let index = 0; index < students.length; index += 1) {
+          const student = students[index];
+          setStatus(`正在导入 ${index + 1} / ${students.length}：${student.studentId || "未填写学号"}`);
+
+          const result = await importOneStudent(student, seenStudentIds);
+          results.push({
+            student,
+            status: result.status,
+            reason: result.reason
+          });
+
+          renderResults(results);
+          updateCounts(results);
+        }
+
+        setStatus(`导入结束：成功 ${successCount.textContent} 人，失败 ${failedCount.textContent} 人。`);
+      } catch (error) {
+        setStatus(error.message || "导入失败，请检查 Excel 文件。");
+        resultBody.innerHTML = `<tr><td colspan="6">${escapeHtml(error.message || "导入失败。")}</td></tr>`;
+      } finally {
+        importBtn.disabled = false;
+        importBtn.textContent = "开始导入";
+      }
+    });
+  </script>
+</body>
+</html>
