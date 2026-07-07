@@ -1407,6 +1407,10 @@
     <main id="main" class="main"></main>
   </div>
 
+  <script src="auth.js"></script>
+  <script>
+    checkLogin();
+  </script>
   <script>
     const CONTEXT_KEY = "science-inquiry-context-v1";
     const STORAGE_KEY = "nback-inquiry-state-v1";
@@ -1646,6 +1650,7 @@
           merged.groupId = context.groupId;
           merged.started = true;
         }
+        Object.assign(merged, getStudentIdentityFields());
         return merged;
       } catch (error) {
         return structuredClone(defaultState);
@@ -1699,6 +1704,7 @@
 
     function saveState() {
       syncThinkingFields();
+      Object.assign(state, getStudentIdentityFields());
       state.savedAt = new Date().toISOString();
       localStorage.setItem(STORAGE_KEY, JSON.stringify(state));
     }
@@ -3102,7 +3108,7 @@
 
     function makeRecord(expected, response, isCorrect, responseTime, recordType) {
       const index = currentGame.currentIndex;
-      return {
+      const record = {
         runId: currentGame.id,
         studentName: state.studentName,
         studentAge: state.studentAge,
@@ -3126,6 +3132,8 @@
         responseTime,
         createdAt: new Date().toLocaleString()
       };
+      Object.assign(record, getStudentIdentityFields());
+      return record;
     }
 
     function finishGame() {
@@ -3262,6 +3270,10 @@
       const sheets = [
         ["基本信息", [
           ["项目", "内容"],
+          ["学号", state.studentId],
+          ["姓名", state.studentName || ""],
+          ["班级", state.className || ""],
+          ["小组", state.groupName || state.groupId || ""],
           ["学生姓名", state.studentName || ""],
           ["学生年龄", state.studentAge || ""],
           ["学生编号", state.studentId],
@@ -3293,10 +3305,14 @@
           ["提高说服力", state.fields.persuasiveness]
         ]],
         ["N-back明细记录", [
-          ["学生姓名", "学生年龄", "学生编号", "小组编号", "被测试者", "实验设计", "条件", "N", "关卡数", "每题规定作答时间s", "实验材料类别", "刺激类型", "关卡", "刺激", "正确答案", "学生答案", "记录类型", "是否漏答", "是否正确", "反应时ms", "记录时间"],
+          ["学号", "姓名", "班级", "小组", "学生姓名", "学生年龄", "学生编号", "小组编号", "被测试者", "实验设计", "条件", "N", "关卡数", "每题规定作答时间s", "实验材料类别", "刺激类型", "关卡", "刺激", "正确答案", "学生答案", "记录类型", "是否漏答", "是否正确", "反应时ms", "记录时间"],
           ...state.testRuns.map((record) => {
             const recordType = getRecordType(record);
             return [
+              record.studentId,
+              record.studentName || "",
+              record.className || "",
+              record.groupName || record.groupId || "",
               record.studentName || "",
               record.studentAge || "",
               record.studentId,
@@ -3406,8 +3422,5 @@
   <script src="assets/voice-assistant.js"></script>
 </body>
 </html>
-
-
-
 
 

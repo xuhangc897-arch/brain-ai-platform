@@ -1,5 +1,5 @@
 {
-  "envId": "memory-detective-platform-d369a42",
+  "envId": "memory-detective-platfor-d369a42",
   "functionRoot": "cloudfunctions",
   "hosting": {
     "public": ".",
@@ -8,5 +8,16 @@
       ".git"
     ]
   },
-  "functions": []
+  "functions": [
+    {
+      "name": "createStudents",
+      "timeout": 60,
+      "runtime": "Nodejs16.13"
+    },
+    {
+      "name": "studentLogin",
+      "timeout": 60,
+      "runtime": "Nodejs16.13"
+    }
+  ]
 }

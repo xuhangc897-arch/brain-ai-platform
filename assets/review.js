@@ -30,6 +30,7 @@
     const meta = ACTIVITY_META[activityType] || ACTIVITY_META.memory;
     const storageKey = STORAGE_KEYS[activityType] || STORAGE_KEYS.memory;
     const state = readState(storageKey);
+    const studentSession = readStudentSession();
     const fields = state.fields || {};
     const generatedAt = new Date().toLocaleString();
     const base = {
@@ -40,10 +41,12 @@
       meta,
       generatedAt,
       identity: {
-        studentName: state.studentName,
+        studentName: state.studentName || studentSession.name,
         studentAge: state.studentAge,
-        studentId: state.studentId,
-        groupId: state.groupId
+        studentId: state.studentId || studentSession.studentId,
+        className: state.className || studentSession.class,
+        groupId: state.groupId,
+        groupName: state.groupName || state.groupId || studentSession.group
       }
     };
     if (activityType === "poster") return buildPosterReview(base);
@@ -53,6 +56,14 @@
   function readState(storageKey) {
     try {
       return JSON.parse(localStorage.getItem(storageKey) || "null") || {};
+    } catch (error) {
+      return {};
+    }
+  }
+
+  function readStudentSession() {
+    try {
+      return JSON.parse(localStorage.getItem("studentSession") || "null") || {};
     } catch (error) {
       return {};
     }
@@ -323,10 +334,10 @@
     const info = data.identity;
     return `
       <div class="info-card">
-        <div class="info-item"><span>学生姓名</span><strong>${esc(safe(info.studentName))}</strong></div>
-        <div class="info-item"><span>学生年龄</span><strong>${esc(safe(info.studentAge))}</strong></div>
-        <div class="info-item"><span>学生编号</span><strong>${esc(safe(info.studentId))}</strong></div>
-        <div class="info-item"><span>小组编号</span><strong>${esc(safe(info.groupId))}</strong></div>
+        <div class="info-item"><span>学号</span><strong>${esc(safe(info.studentId))}</strong></div>
+        <div class="info-item"><span>姓名</span><strong>${esc(safe(info.studentName))}</strong></div>
+        <div class="info-item"><span>班级</span><strong>${esc(safe(info.className))}</strong></div>
+        <div class="info-item"><span>小组</span><strong>${esc(safe(info.groupName || info.groupId))}</strong></div>
       </div>
     `;
   }

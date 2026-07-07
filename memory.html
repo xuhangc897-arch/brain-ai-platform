@@ -1055,6 +1055,10 @@
 
   <main id="main" class="main"></main>
 
+  <script src="auth.js"></script>
+  <script>
+    checkLogin();
+  </script>
   <script>
     const CONTEXT_KEY = "science-inquiry-context-v1";
     const STORAGE_KEY = "memory-capacity-state-v1";
@@ -1301,6 +1305,7 @@
       } catch (event) {
         localStorage.removeItem(CONTEXT_KEY);
       }
+      Object.assign(merged, getStudentIdentityFields());
       return merged;
     }
 
@@ -1348,6 +1353,7 @@
 
     function saveState() {
       syncThinkingFields();
+      Object.assign(state, getStudentIdentityFields());
       state.savedAt = new Date().toISOString();
       localStorage.setItem(STORAGE_KEY, JSON.stringify(state));
     }
@@ -2560,6 +2566,7 @@
         capacityAfterTrial: game.lastCapacity,
         createdAt: new Date().toLocaleString()
       };
+      Object.assign(record, getStudentIdentityFields());
       if (isCorrect) {
         game.correctStreak += 1;
         game.wrongStreak = 0;
@@ -2705,6 +2712,10 @@
         ["基本信息", [
           ["项目", "内容"],
           ["实验", "探究短时记忆的容量"],
+          ["学号", state.studentId],
+          ["姓名", state.studentName || ""],
+          ["班级", state.className || ""],
+          ["小组", state.groupName || state.groupId || ""],
           ["学生姓名", state.studentName || ""],
           ["学生年龄", state.studentAge || ""],
           ["学生编号", state.studentId],
@@ -2737,8 +2748,12 @@
           ["探究环节反思", state.fields.inquiryReflection]
         ]],
         ["记忆任务明细", [
-          ["学生姓名", "学生年龄", "学生编号", "小组编号", "参与者", "测量次数", "方法", "实验材料类别", "材料", "呈现间隔s", "长度", "原始序列", "正确答案", "学生回答", "是否正确", "本次最终容量", "记录时间"],
+          ["学号", "姓名", "班级", "小组", "学生姓名", "学生年龄", "学生编号", "小组编号", "参与者", "测量次数", "方法", "实验材料类别", "材料", "呈现间隔s", "长度", "原始序列", "正确答案", "学生回答", "是否正确", "本次最终容量", "记录时间"],
           ...state.records.map((record) => [
+            record.studentId,
+            record.studentName || "",
+            record.className || "",
+            record.groupName || record.groupId || "",
             record.studentName || "",
             record.studentAge || "",
             record.studentId,
@@ -2817,8 +2832,5 @@
   <script src="assets/voice-assistant.js"></script>
 </body>
 </html>
-
-
-
 
 

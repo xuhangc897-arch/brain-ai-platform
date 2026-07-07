@@ -129,7 +129,7 @@
 <body>
   <main class="login-card" aria-labelledby="loginTitle">
     <h1 id="loginTitle">学生登录</h1>
-    <p>请输入腾讯云 CloudBase 中已开通的账号和密码。</p>
+    <p>请输入学生账号和密码。</p>
 
     <form id="loginForm">
       <div class="field">
@@ -147,30 +147,40 @@
     </form>
   </main>
 
-  <script src="https://static.cloudbase.net/cloudbase-js-sdk/3.0.0/cloudbase.full.js"></script>
-  <script src="cloudbase.js"></script>
   <script>
     /*
      * 登录页脚本只负责登录相关交互：
      * 1. 页面打开时先检查是否已经登录；
      * 2. 已登录则直接进入首页；
-     * 3. 未登录则等待学生输入账号密码并调用 CloudBase 登录。
+     * 3. 未登录则等待学生输入账号密码并调用 studentLogin HTTP 云函数。
      */
+    const STUDENT_LOGIN_URL = "https://memory-detective-platfor-d369a42-1441391469.ap-shanghai.app.tcloudbase.com/studentLogin";
     const loginForm = document.getElementById("loginForm");
     const accountInput = document.getElementById("account");
     const passwordInput = document.getElementById("password");
     const submitBtn = document.getElementById("submitBtn");
     const message = document.getElementById("message");
+    const redirectTarget = new URLSearchParams(window.location.search).get("redirect") || "index.html";
+
+    function getErrorMessage(error) {
+      return error?.message || error?.errMsg || error?.msg || "未知错误";
+    }
+
+    function getErrorCode(error) {
+      return error?.code || error?.errCode || error?.errorCode || error?.category || "";
+    }
 
     /*
-     * 如果浏览器里已经有 CloudBase 登录态，说明学生无需重复登录，
+     * 如果浏览器里已经有学生会话，说明学生无需重复登录，
      * 直接进入 index.html，减少重复操作。
      */
-    window.BrainCloudBase.checkLogin().then((loginState) => {
-      if (loginState.isLoggedIn) {
-        window.location.replace("index.html");
+    try {
+      if (localStorage.getItem("studentSession")) {
+        window.location.replace(redirectTarget);
       }
-    });
+    } catch (event) {
+      localStorage.removeItem("studentSession");
+    }
 
     loginForm.addEventListener("submit", async (event) => {
       event.preventDefault();
@@ -192,10 +202,33 @@
       message.textContent = "";
 
       try {
-        await window.BrainCloudBase.login(account, password);
-        window.location.href = "index.html";
+        const response = await fetch(STUDENT_LOGIN_URL, {
+          method: "POST",
+          headers: {
+            "Content-Type": "application/json"
+          },
+          body: JSON.stringify({
+            studentId: account,
+            password
+          })
+        });
+
+        if (!response.ok) {
+          throw new Error(`登录请求失败：HTTP ${response.status}`);
+        }
+
+        const cloudFunctionResult = await response.json();
+
+        if (!cloudFunctionResult.ok) {
+          message.textContent = cloudFunctionResult.message || "登录失败";
+          return;
+        }
+
+        localStorage.setItem("studentSession", JSON.stringify(cloudFunctionResult.student));
+        window.location.href = redirectTarget;
       } catch (error) {
-        message.textContent = error.message || "用户名或密码错误。";
+        console.error("studentLogin failed:", error);
+        message.textContent = getErrorMessage(error) || "登录失败";
       } finally {
         submitBtn.disabled = false;
         submitBtn.textContent = "登录";

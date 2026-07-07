@@ -649,6 +649,10 @@
 
   <main id="main" class="main"></main>
 
+  <script src="auth.js"></script>
+  <script>
+    checkLogin();
+  </script>
   <script>
     const CONTEXT_KEY = "science-inquiry-context-v1";
     const STORAGE_KEY = "poster-making-state-v1";
@@ -739,6 +743,7 @@
           merged.groupId = context.groupId || merged.groupId;
         }
       } catch (event) { localStorage.removeItem(CONTEXT_KEY); }
+      Object.assign(merged, getStudentIdentityFields());
       return merged;
     }
 
@@ -749,7 +754,12 @@
       if (Array.isArray(incoming.qaRecords) && incoming.qaRecords.length) {
         merged.qaRecords = incoming.qaRecords.map((item) => ({
           question: String(item?.question ?? ""),
-          answer: String(item?.answer ?? "")
+          answer: String(item?.answer ?? ""),
+          studentId: item?.studentId || "",
+          studentName: item?.studentName || "",
+          className: item?.className || "",
+          groupName: item?.groupName || item?.groupId || "",
+          createdAt: item?.createdAt || ""
         }));
       } else {
         const legacyQuestion = String(incoming.fields?.askedQuestions ?? "");
@@ -763,6 +773,7 @@
     }
 
     function saveState() {
+      Object.assign(state, getStudentIdentityFields());
       state.savedAt = new Date().toISOString();
       localStorage.setItem(STORAGE_KEY, JSON.stringify(state));
     }
@@ -1293,6 +1304,7 @@
           const key = element.dataset.score + "_" + element.dataset.group;
           const value = Number(element.dataset.value || element.value || 0);
           state.scores[key] = value || "";
+          savePosterScoreRecord(element.dataset.score, element.dataset.group, value);
           saveState();
           renderApp();
         });
@@ -1300,6 +1312,7 @@
           const key = element.dataset.score + "_" + element.dataset.group;
           const value = Number(element.dataset.value || element.value || 0);
           state.scores[key] = value || "";
+          savePosterScoreRecord(element.dataset.score, element.dataset.group, value);
           saveState();
           renderApp();
         });
@@ -1324,7 +1337,7 @@
       const addQuestion = document.getElementById("addQuestionBtn");
       if (addQuestion) {
         addQuestion.addEventListener("click", () => {
-          state.questions.push({ group: "", type: "研究问题", question: "", answer: "" });
+          state.questions.push({ group: "", type: "研究问题", question: "", answer: "", ...getStudentIdentityFields() });
           saveState();
           renderApp();
         });
@@ -1341,11 +1354,12 @@
       const field = element.dataset.qaField;
       if (!Number.isInteger(index) || !state.qaRecords[index] || !["question", "answer"].includes(field)) return;
       state.qaRecords[index][field] = element.value;
+      Object.assign(state.qaRecords[index], getStudentIdentityFields());
       saveState();
     }
 
     function addQaRecord() {
-      state.qaRecords.push({ question: "", answer: "" });
+      state.qaRecords.push({ question: "", answer: "", ...getStudentIdentityFields() });
       saveState();
       renderApp();
     }
@@ -1361,6 +1375,7 @@
       const index = Number(element.dataset.questionIndex);
       const field = element.dataset.questionField;
       state.questions[index][field] = element.value;
+      Object.assign(state.questions[index], getStudentIdentityFields());
       saveState();
     }
 
@@ -1375,6 +1390,32 @@
       if (finalExport) finalExport.addEventListener("click", exportExcel);
       const reviewReport = document.getElementById("reviewReportBtn");
       if (reviewReport) reviewReport.addEventListener("click", () => generateReviewReport("poster"));
+    }
+
+    function savePosterScoreRecord(indicatorKey, groupNumber, value) {
+      if (!indicatorKey || !groupNumber) return;
+      if (!Array.isArray(state.scoreRecords)) state.scoreRecords = [];
+
+      const indicator = indicators.find((item) => item.key === indicatorKey) || {};
+      const targetGroup = getPosterGroups()[Number(groupNumber) - 1] || `第${groupNumber}组`;
+      const recordKey = `${indicatorKey}_${groupNumber}`;
+      const existing = state.scoreRecords.find((item) => item.recordKey === recordKey);
+      const data = {
+        recordKey,
+        indicatorKey,
+        dimension: indicator.dimension || "",
+        title: indicator.title || "",
+        targetGroup,
+        score: value || "",
+        createdAt: new Date().toLocaleString(),
+        ...getStudentIdentityFields()
+      };
+
+      if (existing) {
+        Object.assign(existing, data);
+      } else {
+        state.scoreRecords.push(data);
+      }
     }
 
     function generateReviewReport(activityType) {
@@ -1417,6 +1458,10 @@
         ["基本信息", [
           ["项目", "内容"],
           ["模块", "海报制作与分享交流"],
+          ["学号", state.studentId],
+          ["姓名", state.studentName || ""],
+          ["班级", state.className || ""],
+          ["小组", state.groupName || state.groupId || ""],
           ["学生姓名", state.studentName || ""],
           ["学生年龄", state.studentAge || ""],
           ["学生编号", state.studentId],
@@ -1442,22 +1487,23 @@
           ["图画图标或素材计划", state.fields.visualPlan]
         ]],
         ["分享交流记录", [
-          ["字段", "内容"],
-          ["小小讲解员", state.fields.presenter],
-          ["小小讲解员学生编号", state.fields.presenterStudentId],
-          ["讲解要点", state.fields.speakingPoints],
+          ["学号", "姓名", "班级", "小组", "字段", "内容"],
+          [state.studentId, state.studentName || "", state.className || "", state.groupName || state.groupId || "", "小小讲解员", state.fields.presenter],
+          [state.studentId, state.studentName || "", state.className || "", state.groupName || state.groupId || "", "小小讲解员学生编号", state.fields.presenterStudentId],
+          [state.studentId, state.studentName || "", state.className || "", state.groupName || state.groupId || "", "讲解要点", state.fields.speakingPoints],
           ...state.qaRecords.flatMap((item, index) => [
-            [`问题${index + 1}`, item.question],
-            [`回答${index + 1}`, item.answer]
+            [item.studentId || state.studentId, item.studentName || state.studentName || "", item.className || state.className || "", item.groupName || item.groupId || state.groupName || state.groupId || "", `问题${index + 1}`, item.question],
+            [item.studentId || state.studentId, item.studentName || state.studentName || "", item.className || state.className || "", item.groupName || item.groupId || state.groupName || state.groupId || "", `回答${index + 1}`, item.answer]
           ])
         ]],
         ["提问记录", [
-          ["序号", "提问对象", "问题类型", "具体问题", "对方回答摘要"],
-          ...state.questions.map((item, index) => [index + 1, item.group, item.type, item.question, item.answer])
+          ["学号", "姓名", "班级", "小组", "序号", "提问对象", "问题类型", "具体问题", "对方回答摘要"],
+          ...state.questions.map((item, index) => [item.studentId || state.studentId, item.studentName || state.studentName || "", item.className || state.className || "", item.groupName || item.groupId || state.groupName || state.groupId || "", index + 1, item.group, item.type, item.question, item.answer])
         ]],
         ["海报评分明细", [
-          ["评价维度", "具体指标", "被评分小组", "得分"],
-          ...scoreRows
+          ["学号", "姓名", "班级", "小组", "评价维度", "具体指标", "被评分小组", "得分", "记录时间"],
+          ...(state.scoreRecords || []).map((record) => [record.studentId || state.studentId, record.studentName || state.studentName || "", record.className || state.className || "", record.groupName || record.groupId || state.groupName || state.groupId || "", record.dimension, record.title, record.targetGroup, record.score, record.createdAt]),
+          ...scoreRows.map((row) => [state.studentId, state.studentName || "", state.className || "", state.groupName || state.groupId || "", ...row, ""])
         ]],
         ["各组汇总得分", [
           ["小组", "科学性", "美观性", "创意性", "交流展示", "总分"],

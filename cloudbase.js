@@ -11,7 +11,7 @@
    * CloudBase 环境 ID。
    * 后续更换环境时，只需要改这里，页面脚本无需分散修改。
    */
-  const ENV_ID = "memory-detective-platform-d369a42";
+  const ENV_ID = "memory-detective-platfor-d369a42";
 
   /*
    * CloudBase SDK 由页面中的 cloudbase.full.js 提供。
@@ -26,15 +26,18 @@
    * region 不传时默认上海地域；这里显式写出，便于和腾讯云环境保持一致。
    */
   const app = window.cloudbase.init({
-    env: ENV_ID,
-    region: "ap-shanghai"
+    env: ENV_ID
   });
 
   /*
    * V3 SDK 中 Auth 模块挂在 app.auth 上，数据库通过 app.database() 获取。
    */
-  const auth = typeof app.auth === "function" ? app.auth() : app.auth;
+  const auth = app.auth();
+  window.app = app;
+  window.auth = auth;
+
   const db = app.database();
+  window.db = db;
   const studentsCollection = db.collection("students");
 
   /*
@@ -77,42 +80,133 @@
     return result && "data" in result ? result.data : result;
   }
 
+  function isMissingCloudBaseCredentialError(error) {
+    const text = [
+      error && error.message,
+      error && error.errMsg,
+      error && error.msg,
+      error && error.code,
+      error && error.errCode
+    ].filter(Boolean).join(" ").toLowerCase();
+
+    return text.includes("unauthenticated") || text.includes("credentials not found");
+  }
+
+  function getAuthMethodNames() {
+    const names = new Set();
+    let target = auth;
+
+    while (target && target !== Object.prototype) {
+      Object.getOwnPropertyNames(target).forEach((name) => {
+        if (typeof auth[name] === "function") {
+          names.add(name);
+        }
+      });
+      target = Object.getPrototypeOf(target);
+    }
+
+    return Array.from(names).sort();
+  }
+
+  function getErrorDetails(error) {
+    return {
+      message: (error && (error.message || error.errMsg || error.msg)) || String(error),
+      code: (error && (error.code || error.errCode || error.errorCode || error.category)) || "",
+      raw: error
+    };
+  }
+
+  function formatErrorDetails(error) {
+    const details = getErrorDetails(error);
+    return [
+      details.message || "未知错误",
+      details.code ? `code: ${details.code}` : ""
+    ].filter(Boolean).join("；");
+  }
+
+  async function getRawCloudBaseLoginState() {
+    if (typeof auth.getLoginState === "function") {
+      return assertCloudBaseResult(await auth.getLoginState(), "检查 CloudBase 登录态失败。");
+    }
+
+    if (typeof auth.getSession === "function") {
+      return assertCloudBaseResult(await auth.getSession(), "检查 CloudBase 登录态失败。");
+    }
+
+    throw new Error("当前 CloudBase SDK 不支持检查登录态。");
+  }
+
+  async function ensureCloudBaseLogin() {
+    console.info("CloudBase auth methods:", getAuthMethodNames());
+
+    let loginState = null;
+
+    try {
+      loginState = await getRawCloudBaseLoginState();
+    } catch (error) {
+      console.warn("CloudBase loginState check failed, will try anonymous login:", getErrorDetails(error));
+    }
+
+    if (loginState) {
+      console.info("CloudBase loginState already exists:", loginState);
+      return loginState;
+    }
+
+    const errors = [];
+    const strategies = [
+      {
+        name: "auth.anonymousAuthProvider().signIn()",
+        isAvailable: () => (
+          typeof auth.anonymousAuthProvider === "function" &&
+          typeof auth.anonymousAuthProvider().signIn === "function"
+        ),
+        signIn: () => auth.anonymousAuthProvider().signIn()
+      },
+      {
+        name: "auth.signInAnonymously()",
+        isAvailable: () => typeof auth.signInAnonymously === "function",
+        signIn: () => auth.signInAnonymously()
+      }
+    ];
+
+    for (const strategy of strategies) {
+      if (!strategy.isAvailable()) {
+        errors.push(`${strategy.name}: 当前 SDK 不支持`);
+        continue;
+      }
+
+      try {
+        console.info("CloudBase anonymous login strategy:", strategy.name);
+        assertCloudBaseResult(await strategy.signIn(), "CloudBase 匿名登录失败。");
+        loginState = await getRawCloudBaseLoginState();
+        console.info("CloudBase anonymous login succeeded with:", strategy.name);
+        console.info("CloudBase loginState after anonymous login:", loginState);
+        return loginState;
+      } catch (error) {
+        console.error(`CloudBase anonymous login failed with ${strategy.name}:`, error);
+        errors.push(`${strategy.name}: ${formatErrorDetails(error)}`);
+      }
+    }
+
+    throw new Error(`CloudBase 匿名登录失败：${errors.join(" | ")}`);
+  }
+
+  window.ensureCloudBaseLogin = ensureCloudBaseLogin;
+
   /*
    * 兼容不同 CloudBase Web SDK 版本的用户名密码登录方法。
    * 新版文档中是 signInWithPassword，当前 CDN 3.0.0 中常见方法名是 signIn。
    */
   async function signInByPassword(username, password) {
-    if (typeof auth.signInWithPassword === "function") {
-      return await auth.signInWithPassword({ username, password });
-    }
-
     if (typeof auth.signIn === "function") {
       return await auth.signIn({ username, password });
     }
 
+    if (typeof auth.signInWithPassword === "function") {
+      return await auth.signInWithPassword({ username, password });
+    }
+
     throw new Error("当前 CloudBase SDK 不支持用户名密码登录。");
-  }
-
-  /*
-   * 兼容不同 SDK 版本的用户名密码注册方法。
-   * 该方法只给教师初始化工具使用，学生登录页不会调用它。
-   */
-  async function createUserWithPassword(username, password) {
-    if (typeof auth.signUp === "function") {
-      return assertCloudBaseResult(
-        await auth.signUp({ username, password }),
-        "创建 CloudBase Auth 账号失败。"
-      );
-    }
-
-    if (typeof auth.signUpWithPassword === "function") {
-      return assertCloudBaseResult(
-        await auth.signUpWithPassword({ username, password }),
-        "创建 CloudBase Auth 账号失败。"
-      );
-    }
-
-    throw new Error("当前 CloudBase SDK 不支持创建用户名密码账号。");
   }
 
   function normalizeUserFromAuthData(data) {
@@ -305,9 +399,9 @@
     db,
     login,
     logout,
+    ensureCloudBaseLogin,
     getCurrentUser,
     checkLogin,
-    createUserWithPassword,
     loginWithAccount: login,
     getLoginState: checkLogin,
     requireLogin

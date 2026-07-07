@@ -74,6 +74,31 @@
       color: var(--primary-dark);
     }
 
+    .auth-gate {
+      display: none;
+      margin-bottom: 18px;
+      padding: 16px 18px;
+      border: 1px solid #f1c16d;
+      border-radius: 14px;
+      background: #fff8e8;
+      color: #7a4f01;
+    }
+
+    .auth-gate.is-visible {
+      display: block;
+    }
+
+    .auth-gate p {
+      margin: 0 0 12px;
+      font-weight: 800;
+    }
+
+    .auth-gate .btn {
+      display: inline-flex;
+      align-items: center;
+      text-decoration: none;
+    }
+
     .actions {
       display: flex;
       flex-wrap: wrap;
@@ -196,6 +221,38 @@
       color: var(--danger);
     }
 
+    .error-details {
+      display: none;
+      margin-top: 22px;
+      border: 1px solid #f1b8b8;
+      border-radius: 14px;
+      background: #fff8f8;
+      overflow: hidden;
+    }
+
+    .error-details.is-visible {
+      display: block;
+    }
+
+    .error-details h2 {
+      margin: 0;
+      padding: 12px 16px;
+      border-bottom: 1px solid #f1b8b8;
+      color: var(--danger);
+      font-size: 16px;
+    }
+
+    .error-details pre {
+      margin: 0;
+      max-height: 320px;
+      overflow: auto;
+      padding: 16px;
+      color: #7a271a;
+      font: 13px/1.55 Consolas, "SFMono-Regular", Menlo, monospace;
+      white-space: pre-wrap;
+      word-break: break-word;
+    }
+
     @media (max-width: 720px) {
       .panel {
         padding: 20px;
@@ -217,9 +274,14 @@
     <section class="panel" aria-labelledby="pageTitle">
       <h1 id="pageTitle">学生账号初始化</h1>
       <p class="intro">
-        教师上传包含“学号、姓名、班级、小组”的 Excel 后，系统会使用 CloudBase Auth 创建学生账号。
-        学生账号统一为学号，默认密码为 123456。这个页面不链接到学生端，也不会开放学生自助注册。
+        教师上传包含“学号、姓名、班级、小组”的 Excel 后，系统会导入学生资料。
+        请在 CloudBase 控制台创建同名用户名密码账号后，学生即可登录。
       </p>
+
+      <div class="auth-gate" id="authGate">
+        <p>请先登录后再导入学生账号。</p>
+        <a class="btn" href="../login.html?redirect=admin/initStudents.html">去登录</a>
+      </div>
 
       <div class="upload-box">
         <strong>Excel 表头必须包含：学号、姓名、班级、小组</strong>
@@ -263,12 +325,17 @@
           </tr>
         </tbody>
       </table>
+
+      <section class="error-details" id="errorDetails" aria-labelledby="errorDetailsTitle">
+        <h2 id="errorDetailsTitle">详细错误信息</h2>
+        <pre id="errorDetailsContent">暂无错误。</pre>
+      </section>
     </section>
   </main>
 
-  <script src="https://cdn.jsdelivr.net/npm/xlsx@0.18.5/dist/xlsx.full.min.js"></script>
   <script src="https://static.cloudbase.net/cloudbase-js-sdk/3.0.0/cloudbase.full.js"></script>
   <script src="../cloudbase.js"></script>
+  <script src="https://cdn.jsdelivr.net/npm/xlsx@0.18.5/dist/xlsx.full.min.js"></script>
   <script>
     /*
      * 教师初始化工具
@@ -276,7 +343,6 @@
      * 本页面只用于批量初始化学生账号，不会被学生登录页引用。
      * 学生端 login.html 仍然只有登录能力，没有注册入口。
      */
-    const DEFAULT_PASSWORD = "123456";
     const REQUIRED_HEADERS = ["学号", "姓名", "班级", "小组"];
 
     const excelFile = document.getElementById("excelFile");
@@ -286,12 +352,45 @@
     const successCount = document.getElementById("successCount");
     const skippedCount = document.getElementById("skippedCount");
     const failedCount = document.getElementById("failedCount");
+    const authGate = document.getElementById("authGate");
+    const errorDetails = document.getElementById("errorDetails");
+    const errorDetailsContent = document.getElementById("errorDetailsContent");
 
     /*
-     * 复用 cloudbase.js 中已经初始化好的真实 CloudBase SDK。
-     * 这里直接使用 Auth 注册接口和 students 集合，不做任何本地模拟。
+     * admin 页面不再自行初始化 CloudBase，也不再自行创建 Auth 实例。
+     * 全项目统一使用 ../cloudbase.js 暴露的 window.app 和 window.auth。
      */
-    const studentsCollection = window.BrainCloudBase.db.collection("students");
+    let isLoggedIn = false;
+
+    importBtn.disabled = true;
+
+    async function getAdminLoginState() {
+      if (window.auth && typeof window.auth.getLoginState === "function") {
+        const loginState = await window.auth.getLoginState();
+        return Boolean(loginState || window.auth.currentUser);
+      }
+
+      throw new Error("当前 CloudBase SDK 不支持检查登录状态。");
+    }
+
+    async function checkAdminLogin() {
+      try {
+        isLoggedIn = await getAdminLoginState();
+      } catch (error) {
+        console.error(error);
+        isLoggedIn = false;
+      }
+
+      if (isLoggedIn) {
+        authGate.classList.remove("is-visible");
+        importBtn.disabled = false;
+        setStatus("已登录，请选择 Excel 文件。");
+      } else {
+        authGate.classList.add("is-visible");
+        importBtn.disabled = true;
+        setStatus("请先登录后再导入学生账号。");
+      }
+    }
 
     function setStatus(message) {
       statusText.textContent = message;
@@ -310,19 +409,46 @@
         .replace(/'/g, "&#039;");
     }
 
-    function getUserUid(user) {
-      return user && (user.id || user.user_id || user.uid);
+    function getErrorMessage(error) {
+      return error?.message || error?.errMsg || error?.msg || "未知错误";
     }
 
-    function isAccountExistsError(error) {
-      const text = [
-        error?.code,
-        error?.category,
-        error?.message,
-        error?.errMsg
-      ].filter(Boolean).join(" ").toLowerCase();
+    function getErrorCode(error) {
+      return error?.code || error?.errCode || error?.errorCode || error?.category || "";
+    }
 
-      return /exist|already|duplicate|conflict|已存在|重复|占用/.test(text);
+    function stringifyError(error) {
+      try {
+        return JSON.stringify(error, Object.getOwnPropertyNames(error), 2);
+      } catch (stringifyErrorEvent) {
+        return String(error);
+      }
+    }
+
+    function formatErrorDetails(error, context) {
+      const message = getErrorMessage(error);
+      const code = getErrorCode(error);
+      const details = [
+        `context: ${context}`,
+        `error.message: ${message}`,
+        `error.code: ${code || "无"}`,
+        "",
+        "完整 error 对象:",
+        stringifyError(error)
+      ];
+
+      return details.join("\n");
+    }
+
+    function showErrorDetails(error, context) {
+      console.error(error);
+      errorDetails.classList.add("is-visible");
+      errorDetailsContent.textContent = formatErrorDetails(error, context);
+    }
+
+    function hideErrorDetails() {
+      errorDetails.classList.remove("is-visible");
+      errorDetailsContent.textContent = "暂无错误。";
     }
 
     function validateHeaders(rows) {
@@ -356,39 +482,7 @@
       }));
     }
 
-    async function createStudentProfile(uid, student) {
-      const result = await studentsCollection.add({
-        uid,
-        studentId: student.studentId,
-        name: student.name,
-        class: student.className,
-        group: student.groupName,
-        createdAt: new Date()
-      });
-
-      if (result.code) {
-        throw new Error(result.message || "创建 students 学生资料失败。");
-      }
-    }
-
-    async function createAuthAccount(student) {
-      const data = await window.BrainCloudBase.createUserWithPassword(student.studentId, DEFAULT_PASSWORD);
-
-      if (data?.verifyOtp) {
-        throw new Error("当前 Auth 注册方式需要验证码，不能批量创建用户名密码账号。");
-      }
-
-      const user = data?.user || data?.session?.user || (await window.BrainCloudBase.getCurrentUser());
-      const uid = getUserUid(user);
-
-      if (!uid) {
-        throw new Error("账号创建成功，但未能获取 CloudBase uid。");
-      }
-
-      return uid;
-    }
-
-    async function importOneStudent(student, seenStudentIds) {
+    function validateOneStudent(student, seenStudentIds) {
       if (!student.studentId || !student.name || !student.className || !student.groupName) {
         return {
           status: "failed",
@@ -404,40 +498,66 @@
       }
 
       seenStudentIds.add(student.studentId);
+      return null;
+    }
 
-      let createdUid = "";
+    async function callCreateStudents(students) {
+      console.log("准备调用 createStudents");
+      console.log("students 数组内容", students);
+
+      let result;
 
       try {
-        createdUid = await createAuthAccount(student);
-        await createStudentProfile(createdUid, student);
-
-        /*
-         * signUp 成功后 SDK 会登录到刚创建的学生账号。
-         * 教师工具完成单个学生初始化后立刻退出，避免后续页面误认为教师是该学生。
-         */
-        await window.BrainCloudBase.logout();
-
-        return {
-          status: "success",
-          reason: `已创建账号，uid：${createdUid}`
-        };
+        result = await window.app.callFunction({
+          name: "createStudents",
+          data: { students }
+        });
+        console.log("createStudents 云函数返回结果", result);
       } catch (error) {
-        if (createdUid) {
-          await window.BrainCloudBase.logout().catch(() => {});
-        }
+        console.error("createStudents 云函数调用失败", error);
+        const debugInfo = {
+          envId: window.BrainCloudBase?.ENV_ID || "",
+          href: window.location.href,
+          origin: window.location.origin,
+          hasApp: Boolean(window.app),
+          hasCallFunction: Boolean(window.app && typeof window.app.callFunction === "function"),
+          hasAuth: Boolean(window.auth),
+          currentUser: window.auth?.currentUser || null,
+          loginState: null
+        };
 
-        if (isAccountExistsError(error)) {
-          return {
-            status: "skipped",
-            reason: "CloudBase Auth 账号已存在，已跳过。"
+        try {
+          debugInfo.loginState = await window.auth.getLoginState();
+        } catch (loginStateError) {
+          debugInfo.loginStateError = {
+            message: loginStateError?.message || "",
+            code: loginStateError?.code || "",
+            stack: loginStateError?.stack || ""
           };
         }
 
-        return {
-          status: "failed",
-          reason: error.message || "导入失败。"
-        };
+        console.error("createStudents 调用前端诊断信息", debugInfo);
+        error.debugInfo = debugInfo;
+        throw error;
       }
+
+      if (result.code) {
+        const error = new Error(result.message || "调用 createStudents 云函数失败。");
+        error.code = result.code;
+        error.raw = result;
+        throw error;
+      }
+
+      const cloudFunctionResult = result.result || result.data || {};
+
+      if (cloudFunctionResult.ok === false) {
+        const error = new Error(cloudFunctionResult.message || "createStudents 云函数执行失败。");
+        error.code = cloudFunctionResult.code || "";
+        error.raw = cloudFunctionResult;
+        throw error;
+      }
+
+      return Array.isArray(cloudFunctionResult.results) ? cloudFunctionResult.results : [];
     }
 
     function renderResults(results) {
@@ -478,6 +598,12 @@
     }
 
     importBtn.addEventListener("click", async () => {
+      if (!isLoggedIn) {
+        authGate.classList.add("is-visible");
+        setStatus("请先登录后再导入学生账号。");
+        return;
+      }
+
       const file = excelFile.files[0];
 
       if (!file) {
@@ -490,36 +616,76 @@
       setStatus("正在读取 Excel...");
       resultBody.innerHTML = '<tr><td colspan="6">正在导入，请稍候。</td></tr>';
       updateCounts([]);
+      hideErrorDetails();
 
       try {
         const students = await readExcel(file);
         const results = [];
         const seenStudentIds = new Set();
+        const validStudents = [];
+        const validStudentMap = new Map();
 
         for (let index = 0; index < students.length; index += 1) {
           const student = students[index];
-          setStatus(`正在导入 ${index + 1} / ${students.length}：${student.studentId || "未填写学号"}`);
+          const validationError = validateOneStudent(student, seenStudentIds);
 
-          const result = await importOneStudent(student, seenStudentIds);
-          results.push({
-            student,
-            status: result.status,
-            reason: result.reason
+          if (validationError) {
+            results.push({
+              student,
+              status: validationError.status,
+              reason: validationError.reason
+            });
+          } else {
+            validStudents.push({
+              studentId: student.studentId,
+              name: student.name,
+              class: student.className,
+              group: student.groupName
+            });
+            validStudentMap.set(student.studentId, student);
+          }
+
+          renderResults(results);
+          updateCounts(results);
+        }
+
+        if (validStudents.length > 0) {
+          setStatus(`正在调用 createStudents 云函数，准备导入 ${validStudents.length} 人...`);
+          const cloudResults = await callCreateStudents(validStudents);
+
+          cloudResults.forEach((item) => {
+            const student = validStudentMap.get(item.studentId) || {
+              studentId: item.studentId || "",
+              name: item.name || "",
+              className: item.class || "",
+              groupName: item.group || ""
+            };
+
+            results.push({
+              student,
+              status: item.status || "failed",
+              reason: item.reason || item.message || "云函数未返回原因。"
+            });
           });
 
           renderResults(results);
           updateCounts(results);
         }
 
-        setStatus(`导入结束：成功 ${successCount.textContent} 人，失败 ${failedCount.textContent} 人。`);
+        setStatus(`导入结束：成功 ${successCount.textContent} 人，失败 ${failedCount.textContent} 人。已导入学生资料。请在 CloudBase 控制台创建同名用户名密码账号后，学生即可登录。`);
       } catch (error) {
-        setStatus(error.message || "导入失败，请检查 Excel 文件。");
-        resultBody.innerHTML = `<tr><td colspan="6">${escapeHtml(error.message || "导入失败。")}</td></tr>`;
+        showErrorDetails(error, "读取 Excel 或整体导入流程失败");
+        const message = getErrorMessage(error);
+        const code = getErrorCode(error);
+        setStatus(`导入失败：${message}${code ? `（code: ${code}）` : ""}`);
+        resultBody.innerHTML = `<tr><td colspan="6">${escapeHtml(`message: ${message}${code ? `；code: ${code}` : ""}`)}</td></tr>`;
       } finally {
         importBtn.disabled = false;
         importBtn.textContent = "开始导入";
       }
     });
+
+    checkAdminLogin();
   </script>
 </body>
 </html>
