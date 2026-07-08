@@ -433,6 +433,17 @@
 
     function getStudentIdentityFields() {
       const student = currentStudent || readJson("studentSession") || {};
+
+      if (student.isGuest) {
+        return {
+          studentName: "游客",
+          studentId: "guest",
+          className: "游客模式",
+          groupName: "本地体验",
+          isGuest: true
+        };
+      }
+
       return {
         studentName: student.name || student.studentName || "",
         studentId: student.studentId || "",
