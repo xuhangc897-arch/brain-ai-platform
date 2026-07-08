@@ -305,20 +305,14 @@
       white-space: pre-wrap;
     }
 
-    .reflection-actions {
-      display: grid;
-      grid-template-columns: repeat(2, minmax(0, 1fr));
-      gap: 12px;
-    }
-
-    .reflection-actions .btn {
-      width: 100%;
-    }
-
     .single-step-layout {
       display: grid;
       gap: 16px;
       width: 100%;
+    }
+
+    .final-step-action {
+      margin-left: auto;
     }
 
     .share-record-form {
@@ -608,8 +602,8 @@
         grid-template-columns: 1fr;
       }
 
-      .reflection-actions {
-        grid-template-columns: 1fr;
+      .final-step-action {
+        width: 100%;
       }
     }
 
@@ -639,7 +633,6 @@
         <div class="top-actions">
           <button class="btn secondary" id="devModeBtn" type="button">开发者模式</button>
           <button class="btn secondary" id="homeBtn" type="button">回到首页</button>
-          <button class="btn secondary" id="exportBtn" type="button">导出 Excel</button>
           <button class="btn danger" id="resetBtn" type="button">重置本模块</button>
         </div>
       </div>
@@ -650,6 +643,7 @@
   <main id="main" class="main"></main>
 
   <script src="auth.js"></script>
+  <script src="assets/experiment-uploader.js"></script>
   <script>
     checkLogin();
   </script>
@@ -969,10 +963,13 @@
     }
 
     function renderNavigation() {
+      const isFinalStep = state.currentStep === steps.length - 1;
       return `
         <div class="actions">
           <button class="btn ghost" type="button" id="prevStep" ${state.currentStep === 0 ? "disabled" : ""}>上一步</button>
-          <button class="btn" type="button" id="nextStep" ${state.currentStep === steps.length - 1 ? "disabled" : ""}>下一步</button>
+          ${isFinalStep
+            ? '<button class="btn secondary final-step-action" type="button" id="reviewReportBtn">生成记忆侦探报告</button>'
+            : '<button class="btn" type="button" id="nextStep">下一步</button>'}
         </div>
       `;
     }
@@ -1257,10 +1254,6 @@
               ${field("nextUse", "今后如何应用探究成果", "textarea", reflectionPrompts.nextUse)}
             </div>
           </div>
-          <div class="reflection-actions">
-            <button class="btn secondary" type="button" id="reviewReportBtn">生成记忆侦探报告</button>
-            <button class="btn" type="button" id="finalExportBtn">导出海报制作 Excel</button>
-          </div>
         </div>
       `;
     }
@@ -1386,8 +1379,6 @@
         if (state.currentStep > 0) goToStep(state.currentStep - 1);
       });
       if (next) next.addEventListener("click", goNextStep);
-      const finalExport = document.getElementById("finalExportBtn");
-      if (finalExport) finalExport.addEventListener("click", exportExcel);
       const reviewReport = document.getElementById("reviewReportBtn");
       if (reviewReport) reviewReport.addEventListener("click", () => generateReviewReport("poster"));
     }
@@ -1420,7 +1411,28 @@
 
     function generateReviewReport(activityType) {
       saveState();
+      submitPosterRecord("generateReport");
+      if (typeof window.submitAiChatRecord === "function") window.submitAiChatRecord("poster", "generateReport").then((result) => console.info("AI chat upload result:", result));
       window.open(`review.html?activityType=${encodeURIComponent(activityType)}`, "_blank");
+    }
+    function submitPosterRecord(submitAction) {
+      if (typeof window.uploadExperimentRecords !== "function") return;
+      const snapshot = structuredClone(state);
+      const submittedAt = new Date().toISOString();
+      window.uploadExperimentRecords({
+        module: "poster",
+        recordType: "submission",
+        records: [{
+          submitAction,
+          studentId: snapshot.studentId || "",
+          studentName: snapshot.studentName || "",
+          className: snapshot.className || "",
+          groupName: snapshot.groupName || snapshot.groupId || "",
+          fullState: snapshot,
+          createdAt: submittedAt,
+          clientRecordId: `poster|submission|${snapshot.studentId || ""}|${submitAction}|${submittedAt}`
+        }]
+      });
     }
 
     function getScore(indicatorKey, groupNumber) {
@@ -1543,7 +1555,8 @@
 
     document.getElementById("homeBtn").addEventListener("click", () => { location.href = "index.html"; });
     document.getElementById("devModeBtn").addEventListener("click", enableDeveloperMode);
-    document.getElementById("exportBtn").addEventListener("click", exportExcel);
+    const exportBtn = document.getElementById("exportBtn");
+    if (exportBtn) exportBtn.addEventListener("click", exportExcel);
     document.getElementById("resetBtn").addEventListener("click", () => {
       if (!confirm("确定要清空本模块在当前浏览器中保存的数据吗？")) return;
       localStorage.removeItem(STORAGE_KEY);
@@ -1553,7 +1566,7 @@
 
     renderApp();
   </script>
-  <script src="assets/ai-assistant.js"></script>
+  <script src="assets/ai-assistant.js?v=ai-chat-upload-20260708"></script>
   <script>
     window.BRAIN_ASR_SIGN_ENDPOINT = "https://1441391469-7ppckhczkq.ap-shanghai.tencentscf.com";
   </script>

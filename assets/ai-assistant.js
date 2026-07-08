@@ -195,11 +195,13 @@
 
   function readIdentity() {
     const identity = readJson(CONTEXT_KEY, {});
+    const student = readJson("studentSession", {});
     return {
-      studentName: identity.studentName || "",
+      studentName: identity.studentName || student.name || student.studentName || "",
       studentAge: identity.studentAge || "",
-      studentId: identity.studentId || "",
-      groupId: identity.groupId || ""
+      studentId: identity.studentId || student.studentId || "",
+      className: identity.className || student.class || student.className || "",
+      groupId: identity.groupId || identity.groupName || student.group || student.groupName || ""
     };
   }
 
@@ -287,6 +289,7 @@
       studentName: context.studentName,
       studentAge: context.studentAge,
       studentId: context.studentId,
+      className: context.className,
       groupId: context.groupId,
       pageTitle: context.pageTitle,
       experimentName: context.experimentName,
@@ -301,6 +304,70 @@
     const logs = readLogs();
     logs.push(buildLog(context, answer));
     saveLogs(logs);
+  }
+
+  function getCurrentPageLogs() {
+    const identity = readIdentity();
+    return readLogs().filter((log) => {
+      if (identity.studentId && log.studentId && log.studentId !== identity.studentId) return false;
+      return !log.path || log.path === location.pathname;
+    }).map((log) => Object.assign({}, log, {
+      studentName: log.studentName || identity.studentName || "",
+      studentId: log.studentId || identity.studentId || "",
+      className: log.className || identity.className || "",
+      groupId: log.groupId || identity.groupId || "",
+      path: log.path || location.pathname,
+      experimentName: log.experimentName || getExperimentName(),
+      currentStep: log.currentStep || getCurrentStep()
+    }));
+  }
+
+  function buildAiChatSubmission(sourceModule, submitAction) {
+    const identity = readIdentity();
+    const logs = getCurrentPageLogs();
+    if (!logs.length) return null;
+    const submittedAt = new Date().toISOString();
+    return {
+      submitAction,
+      sourceModule,
+      studentId: identity.studentId || "",
+      studentName: identity.studentName || "",
+      className: identity.className || "",
+      groupName: identity.groupId || "",
+      pageTitle: document.title || "",
+      experimentName: getExperimentName(),
+      path: location.pathname,
+      logs,
+      logCount: logs.length,
+      createdAt: submittedAt,
+      clientRecordId: `aiChat|${sourceModule || "unknown"}|${identity.studentId || ""}|${submitAction || "submit"}|${submittedAt}`
+    };
+  }
+
+  function submitAiChatRecord(sourceModule, submitAction = "generateReport") {
+    if (typeof window.uploadExperimentRecords !== "function") {
+      console.warn("[AI Assistant] uploadExperimentRecords is not available; AI chat was not uploaded.");
+      return Promise.resolve({ ok: false, skipped: true, message: "uploadExperimentRecords unavailable" });
+    }
+    const record = buildAiChatSubmission(sourceModule, submitAction);
+    if (!record) {
+      console.info("[AI Assistant] no AI chat logs for current page; skip upload.", {
+        sourceModule,
+        path: location.pathname
+      });
+      return Promise.resolve({ ok: true, skipped: true, message: "no AI chat logs" });
+    }
+    console.info("[AI Assistant] uploading AI chat logs:", {
+      sourceModule,
+      logCount: record.logCount,
+      studentId: record.studentId,
+      path: record.path
+    });
+    return window.uploadExperimentRecords({
+      module: "aiChat",
+      recordType: "submission",
+      records: [record]
+    });
   }
 
   function makeAssistantError(reason) {
@@ -370,12 +437,13 @@
       return;
     }
 
-    const headers = ["时间", "学生姓名", "学生年龄", "学生编号", "小组编号", "页面", "实验", "阶段", "学生问题", "AI回答"];
+    const headers = ["时间", "学生姓名", "学生年龄", "学生编号", "班级", "小组编号", "页面", "实验", "阶段", "学生问题", "AI回答"];
     const rows = logs.map((log) => [
       log.timestamp,
       log.studentName,
       log.studentAge,
       log.studentId,
+      log.className,
       log.groupId,
       log.pageTitle || log.path,
       log.experimentName,
@@ -443,6 +511,13 @@
     if (document.querySelector(".ai-assistant")) return;
     document.body.appendChild(root);
     renderHistory();
+    window.BrainAIChat = {
+      readLogs,
+      getCurrentPageLogs,
+      buildAiChatSubmission,
+      submitAiChatRecord
+    };
+    window.submitAiChatRecord = submitAiChatRecord;
   }
 
   if (document.readyState === "loading") {

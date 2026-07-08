@@ -143,6 +143,12 @@
       box-shadow: 0 0 0 3px rgba(37, 99, 235, 0.12);
     }
 
+    input[readonly] {
+      background: #f7faff;
+      color: var(--muted);
+      cursor: not-allowed;
+    }
+
     .survey-intro {
       display: grid;
       gap: 8px;
@@ -336,16 +342,19 @@
       <div class="panel-body">
         <div class="identity-grid">
           <label>学生姓名
-            <input id="studentName" type="text" autocomplete="off">
+            <input id="studentName" type="text" autocomplete="off" readonly>
           </label>
           <label>学生年龄
             <input id="studentAge" type="number" min="1" max="99" autocomplete="off">
           </label>
+          <label>班级
+            <input id="className" type="text" autocomplete="off" readonly>
+          </label>
           <label>学生编号
-            <input id="studentId" type="text" autocomplete="off">
+            <input id="studentId" type="text" autocomplete="off" readonly>
           </label>
           <label>小组编号
-            <input id="groupId" type="text" autocomplete="off">
+            <input id="groupId" type="text" autocomplete="off" readonly>
           </label>
         </div>
       </div>
@@ -368,7 +377,10 @@
     </section>
   </main>
 
+  <script src="auth.js"></script>
+  <script src="assets/experiment-uploader.js"></script>
   <script>
+    const currentStudent = checkLogin();
     const CONTEXT_KEY = "science-inquiry-context-v1";
     const PRETEST_KEY = "pretestData";
     const QUALIFICATION_KEY = "detectiveQualificationData";
@@ -391,6 +403,7 @@
     const inputs = {
       studentName: document.getElementById("studentName"),
       studentAge: document.getElementById("studentAge"),
+      className: document.getElementById("className"),
       studentId: document.getElementById("studentId"),
       groupId: document.getElementById("groupId")
     };
@@ -404,14 +417,27 @@
     function loadState() {
       const context = readJson(CONTEXT_KEY) || {};
       const saved = readJson(PRETEST_KEY) || readJson(QUALIFICATION_KEY) || {};
+      const identity = getStudentIdentityFields();
       return {
-        studentName: saved.studentName || context.studentName || "",
+        studentName: identity.studentName || saved.studentName || context.studentName || "",
         studentAge: saved.studentAge || context.studentAge || "",
-        studentId: saved.studentId || context.studentId || "",
-        groupId: saved.groupId || context.groupId || "",
+        className: identity.className || saved.className || context.className || "",
+        studentId: identity.studentId || saved.studentId || context.studentId || "",
+        groupId: identity.groupName || saved.groupId || context.groupId || "",
+        groupName: identity.groupName || saved.groupName || context.groupName || "",
         answers: Object.assign({}, saved.answers || saved.preMeta || {}),
         completed: Boolean(saved.completed),
         completedAt: saved.completedAt || ""
+      };
+    }
+
+    function getStudentIdentityFields() {
+      const student = currentStudent || readJson("studentSession") || {};
+      return {
+        studentName: student.name || student.studentName || "",
+        studentId: student.studentId || "",
+        className: student.class || student.className || "",
+        groupName: student.group || student.groupName || student.groupId || ""
       };
     }
 
@@ -425,14 +451,22 @@
     }
 
     function saveIdentity() {
+      Object.assign(state, getStudentIdentityFields());
+      if (state.groupName) state.groupId = state.groupName;
       Object.keys(inputs).forEach((key) => {
-        state[key] = inputs[key].value.trim();
+        if (key === "studentAge") {
+          state[key] = inputs[key].value.trim();
+        } else {
+          inputs[key].value = state[key] || "";
+        }
       });
       localStorage.setItem(CONTEXT_KEY, JSON.stringify({
         studentName: state.studentName,
         studentAge: state.studentAge,
+        className: state.className,
         studentId: state.studentId,
         groupId: state.groupId,
+        groupName: state.groupName,
         savedAt: new Date().toISOString()
       }));
     }
@@ -443,8 +477,10 @@
       const payload = {
         studentName: state.studentName,
         studentAge: state.studentAge,
+        className: state.className,
         studentId: state.studentId,
         groupId: state.groupId,
+        groupName: state.groupName,
         answers: state.answers,
         preMeta: state.answers,
         answered: summary.answered,
@@ -540,10 +576,54 @@
         return;
       }
       state.completed = true;
-      state.completedAt = new Date().toISOString();
+      state.completedAt = state.completedAt || new Date().toISOString();
       saveState();
+      submitScreeningRecord("completeScreening");
       exportExcel();
       renderSummary();
+    }
+
+    function buildScreeningSnapshot() {
+      const summary = summarize();
+      return {
+        studentName: state.studentName,
+        studentAge: state.studentAge,
+        className: state.className,
+        studentId: state.studentId,
+        groupId: state.groupId,
+        groupName: state.groupName || state.groupId,
+        surveyTitle: surveyDef.title,
+        answers: state.answers,
+        items: surveyDef.items,
+        labels: surveyDef.labels,
+        answered: summary.answered,
+        total: summary.total,
+        average: summary.average,
+        complete: summary.complete,
+        completed: state.completed,
+        completedAt: state.completedAt,
+        savedAt: new Date().toISOString()
+      };
+    }
+
+    function submitScreeningRecord(submitAction) {
+      if (typeof window.uploadExperimentRecords !== "function") return;
+      const snapshot = buildScreeningSnapshot();
+      const submittedAt = snapshot.completedAt || new Date().toISOString();
+      window.uploadExperimentRecords({
+        module: "screening",
+        recordType: "submission",
+        records: [{
+          submitAction,
+          studentId: snapshot.studentId || "",
+          studentName: snapshot.studentName || "",
+          className: snapshot.className || "",
+          groupName: snapshot.groupName || snapshot.groupId || "",
+          fullState: snapshot,
+          createdAt: submittedAt,
+          clientRecordId: `screening|submission|${snapshot.studentId || ""}|${submitAction}|${submittedAt}`
+        }]
+      });
     }
 
     function resetPretest() {
@@ -573,8 +653,9 @@
       const identityRows = [
         ["学生姓名", saved.studentName || state.studentName || ""],
         ["学生年龄", saved.studentAge || state.studentAge || ""],
+        ["班级", saved.className || state.className || ""],
         ["学生编号", saved.studentId || state.studentId || ""],
-        ["小组编号", saved.groupId || state.groupId || ""],
+        ["小组编号", saved.groupName || saved.groupId || state.groupName || state.groupId || ""],
         ["提交时间", submittedAt]
       ];
       const answerRows = surveyDef.items.map((item, index) => {
