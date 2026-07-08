@@ -116,6 +116,38 @@
       opacity: 0.68;
     }
 
+    .guest-entry {
+      margin-top: 14px;
+      padding-top: 14px;
+      border-top: 1px solid var(--line);
+      text-align: center;
+    }
+
+    .guest-btn {
+      width: 100%;
+      min-height: 42px;
+      border: 1px solid rgba(79, 124, 255, 0.24);
+      border-radius: 999px;
+      background: rgba(255, 255, 255, 0.72);
+      color: var(--primary-dark);
+      cursor: pointer;
+      font-weight: 800;
+      transition: transform 160ms ease, box-shadow 160ms ease, border-color 160ms ease;
+    }
+
+    .guest-btn:hover {
+      transform: translateY(-1px);
+      border-color: rgba(79, 124, 255, 0.46);
+      box-shadow: 0 12px 24px rgba(79, 124, 255, 0.14);
+    }
+
+    .guest-note {
+      margin: 10px 0 0;
+      color: var(--muted);
+      font-size: 12px;
+      line-height: 1.5;
+    }
+
     .message {
       min-height: 22px;
       margin: 14px 0 0;
@@ -145,6 +177,11 @@
       <button class="submit-btn" id="submitBtn" type="submit">登录</button>
       <p class="message" id="message" role="alert"></p>
     </form>
+
+    <div class="guest-entry" aria-label="游客入口">
+      <button class="guest-btn" id="guestBtn" type="button">游客体验</button>
+      <p class="guest-note">游客模式可完成实验并生成报告，但实验记录不会上传后台。</p>
+    </div>
   </main>
 
   <script>
@@ -159,8 +196,16 @@
     const accountInput = document.getElementById("account");
     const passwordInput = document.getElementById("password");
     const submitBtn = document.getElementById("submitBtn");
+    const guestBtn = document.getElementById("guestBtn");
     const message = document.getElementById("message");
     const redirectTarget = new URLSearchParams(window.location.search).get("redirect") || "index.html";
+    const GUEST_SESSION = {
+      isGuest: true,
+      studentId: "guest",
+      name: "游客",
+      class: "游客模式",
+      group: "本地体验"
+    };
 
     function getErrorMessage(error) {
       return error?.message || error?.errMsg || error?.msg || "未知错误";
@@ -181,6 +226,11 @@
     } catch (event) {
       localStorage.removeItem("studentSession");
     }
+
+    guestBtn.addEventListener("click", () => {
+      localStorage.setItem("studentSession", JSON.stringify(GUEST_SESSION));
+      window.location.href = redirectTarget;
+    });
 
     loginForm.addEventListener("submit", async (event) => {
       event.preventDefault();

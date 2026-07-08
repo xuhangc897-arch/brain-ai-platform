@@ -11,6 +11,10 @@
     }
   }
 
+  function isGuestStudent(student) {
+    return Boolean(student && student.isGuest);
+  }
+
   function normalizeText(value) {
     return String(value == null ? "" : value).trim();
   }
@@ -69,6 +73,20 @@
     }
 
     const student = readStudentSession();
+    if (isGuestStudent(student)) {
+      console.info("guest mode: skip experiment record upload", {
+        module,
+        recordType,
+        recordCount: records.length
+      });
+      return {
+        ok: true,
+        skipped: true,
+        guest: true,
+        message: "游客模式下实验记录不会上传后台，请在本地生成或下载报告。"
+      };
+    }
+
     const payloadRecords = records.map((record) => attachIdentity(module, recordType, record, student));
 
     try {
