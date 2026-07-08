@@ -275,7 +275,7 @@
       <h1 id="pageTitle">学生账号初始化</h1>
       <p class="intro">
         教师上传包含“学号、姓名、班级、小组”的 Excel 后，系统会导入学生资料。
-        请在 CloudBase 控制台创建同名用户名密码账号后，学生即可登录。
+        学生资料已导入，可使用学号和默认密码登录。
       </p>
 
       <div class="auth-gate" id="authGate">
@@ -284,7 +284,7 @@
       </div>
 
       <div class="upload-box">
-        <strong>Excel 表头必须包含：学号、姓名、班级、小组</strong>
+        <strong>Excel 表头必须包含：学号、姓名、班级、小组；可选包含：密码</strong>
         <input id="excelFile" type="file" accept=".xlsx,.xls" />
       </div>
 
@@ -335,7 +335,17 @@
 
   <script src="https://static.cloudbase.net/cloudbase-js-sdk/3.0.0/cloudbase.full.js"></script>
   <script src="../cloudbase.js"></script>
-  <script src="https://cdn.jsdelivr.net/npm/xlsx@0.18.5/dist/xlsx.full.min.js"></script>
+  <script src="../assets/vendor/xlsx.full.min.js"></script>
+  <script>
+    if (!window.XLSX) {
+      document.write('<script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"><\/script>');
+    }
+  </script>
+  <script>
+    if (!window.XLSX) {
+      document.write('<script src="https://unpkg.com/xlsx@0.18.5/dist/xlsx.full.min.js"><\/script>');
+    }
+  </script>
   <script>
     /*
      * 教师初始化工具
@@ -344,6 +354,8 @@
      * 学生端 login.html 仍然只有登录能力，没有注册入口。
      */
     const REQUIRED_HEADERS = ["学号", "姓名", "班级", "小组"];
+    const NO_STUDENTS_MESSAGE = "没有读取到学生数据，请检查 Excel 表头是否包含：学号、姓名、班级、小组。";
+    const CREATE_STUDENTS_HTTP_URL = "https://memory-detective-platfor-d369a42-1441391469.ap-shanghai.app.tcloudbase.com/createStudents";
 
     const excelFile = document.getElementById("excelFile");
     const importBtn = document.getElementById("importBtn");
@@ -365,9 +377,13 @@
     importBtn.disabled = true;
 
     async function getAdminLoginState() {
+      if (typeof window.ensureCloudBaseLogin === "function") {
+        await window.ensureCloudBaseLogin();
+      }
+
       if (window.auth && typeof window.auth.getLoginState === "function") {
         const loginState = await window.auth.getLoginState();
-        return Boolean(loginState || window.auth.currentUser);
+        return Boolean(loginState && (loginState.user || loginState.uid || loginState.userId || loginState.accessToken || loginState.refreshToken || loginState.credential || loginState.loginType));
       }
 
       throw new Error("当前 CloudBase SDK 不支持检查登录状态。");
@@ -417,9 +433,35 @@
       return error?.code || error?.errCode || error?.errorCode || error?.category || "";
     }
 
+    function isPermissionDenied(error) {
+      const text = [
+        error?.message,
+        error?.msg,
+        error?.errMsg,
+        error?.code,
+        error?.errCode,
+        error?.errorCode,
+        stringifyError(error)
+      ].filter(Boolean).join(" ");
+
+      return text.includes("PERMISSION_DENIED") || text.includes("Permission denied");
+    }
+
     function stringifyError(error) {
       try {
-        return JSON.stringify(error, Object.getOwnPropertyNames(error), 2);
+        const seen = new WeakSet();
+        return JSON.stringify(error, (key, value) => {
+          if (typeof value === "object" && value !== null) {
+            if (seen.has(value)) {
+              return "[Circular]";
+            }
+            seen.add(value);
+          }
+          if (typeof value === "function") {
+            return `[Function ${value.name || "anonymous"}]`;
+          }
+          return value;
+        }, 2);
       } catch (stringifyErrorEvent) {
         return String(error);
       }
@@ -428,14 +470,21 @@
     function formatErrorDetails(error, context) {
       const message = getErrorMessage(error);
       const code = getErrorCode(error);
+      const debugInfo = error?.debugInfo || null;
+      const raw = error?.raw || null;
       const details = [
         `context: ${context}`,
+        "调用目标: createStudents 云函数",
+        `错误来源: ${error?.source || "读取 Excel、调用 createStudents 或云函数返回"}`,
+        "前端直接写 students 集合: 否，本页面只解析 Excel 并调用 createStudents",
         `error.message: ${message}`,
         `error.code: ${code || "无"}`,
+        debugInfo ? `debugInfo: ${stringifyError(debugInfo)}` : "",
+        raw ? `cloudFunctionRaw: ${stringifyError(raw)}` : "",
         "",
         "完整 error 对象:",
         stringifyError(error)
-      ];
+      ].filter((item) => item !== "");
 
       return details.join("\n");
     }
@@ -452,6 +501,10 @@
     }
 
     function validateHeaders(rows) {
+      if (rows.length === 0) {
+        throw new Error(NO_STUDENTS_MESSAGE);
+      }
+
       const firstRow = rows[0] || {};
       const missingHeaders = REQUIRED_HEADERS.filter((header) => !(header in firstRow));
 
@@ -460,7 +513,16 @@
       }
     }
 
+    function assertXlsxLoaded() {
+      if (window.XLSX && typeof window.XLSX.read === "function" && window.XLSX.utils) {
+        return;
+      }
+
+      throw new Error("Excel 解析库 XLSX 加载失败。请检查网络是否能访问 CDN，或下载 xlsx.full.min.js 到 assets/vendor/xlsx.full.min.js 后刷新页面。");
+    }
+
     async function readExcel(file) {
+      assertXlsxLoaded();
       const buffer = await file.arrayBuffer();
       const workbook = XLSX.read(buffer, { type: "array" });
       const firstSheetName = workbook.SheetNames[0];
@@ -473,13 +535,20 @@
       const rows = XLSX.utils.sheet_to_json(worksheet, { defval: "" });
       validateHeaders(rows);
 
-      return rows.map((row, index) => ({
+      const students = rows.map((row, index) => ({
         rowNumber: index + 2,
         studentId: normalizeCell(row["学号"]),
         name: normalizeCell(row["姓名"]),
         className: normalizeCell(row["班级"]),
-        groupName: normalizeCell(row["小组"])
+        groupName: normalizeCell(row["小组"]),
+        password: normalizeCell(row["密码"])
       }));
+
+      if (students.length === 0) {
+        throw new Error(NO_STUDENTS_MESSAGE);
+      }
+
+      return students;
     }
 
     function validateOneStudent(student, seenStudentIds) {
@@ -501,20 +570,92 @@
       return null;
     }
 
+    function normalizeCreateStudentsResult(cloudFunctionResult) {
+      if (cloudFunctionResult.ok === false) {
+        const error = new Error(cloudFunctionResult.message || "createStudents 云函数执行失败。");
+        error.code = cloudFunctionResult.code || "";
+        error.raw = cloudFunctionResult;
+        error.source = "createStudents 云函数返回失败";
+        throw error;
+      }
+
+      return {
+        success: Number(cloudFunctionResult.success) || 0,
+        skipped: Number(cloudFunctionResult.skipped) || 0,
+        failed: Number(cloudFunctionResult.failed) || 0,
+        message: cloudFunctionResult.message || "",
+        results: Array.isArray(cloudFunctionResult.results) ? cloudFunctionResult.results : []
+      };
+    }
+
+    async function callCreateStudentsByHttp(students, originalError) {
+      console.warn("callFunction 被权限拒绝，改用 HTTP 网关调用 createStudents。", originalError);
+
+      const response = await fetch(CREATE_STUDENTS_HTTP_URL, {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json"
+        },
+        body: JSON.stringify({ students })
+      });
+
+      const text = await response.text();
+      let data = {};
+
+      try {
+        data = text ? JSON.parse(text) : {};
+      } catch (error) {
+        const parseError = new Error(`createStudents HTTP 网关返回了非 JSON 内容：${text.slice(0, 200)}`);
+        parseError.source = "createStudents HTTP 网关返回格式错误";
+        parseError.raw = text;
+        throw parseError;
+      }
+
+      if (!response.ok) {
+        const error = new Error(data.message || data.msg || `createStudents HTTP 网关调用失败：HTTP ${response.status}`);
+        error.code = data.code || data.errCode || response.status;
+        error.raw = data;
+        error.source = "createStudents HTTP 网关调用失败";
+        throw error;
+      }
+
+      return normalizeCreateStudentsResult(data.result || data);
+    }
+
     async function callCreateStudents(students) {
       console.log("准备调用 createStudents");
-      console.log("students 数组内容", students);
+      console.log("students 数组内容", students.map((student) => ({
+        ...student,
+        password: student.password ? "[已提供]" : "[使用默认密码]"
+      })));
 
       let result;
 
       try {
-        result = await window.app.callFunction({
+        if (typeof window.ensureCloudBaseLogin === "function") {
+          await window.ensureCloudBaseLogin();
+        }
+
+        const callFunctionTask = window.app.callFunction({
           name: "createStudents",
           data: { students }
         });
+
+        const timeoutTask = new Promise((resolve, reject) => {
+          window.setTimeout(() => {
+            reject(new Error("调用 createStudents 云函数超时，请到 CloudBase 控制台查看 createStudents 最新日志。"));
+          }, 30000);
+        });
+
+        result = await Promise.race([callFunctionTask, timeoutTask]);
         console.log("createStudents 云函数返回结果", result);
       } catch (error) {
         console.error("createStudents 云函数调用失败", error);
+
+        if (isPermissionDenied(error)) {
+          return await callCreateStudentsByHttp(students, error);
+        }
+
         const debugInfo = {
           envId: window.BrainCloudBase?.ENV_ID || "",
           href: window.location.href,
@@ -538,6 +679,7 @@
 
         console.error("createStudents 调用前端诊断信息", debugInfo);
         error.debugInfo = debugInfo;
+        error.source = "调用 createStudents 云函数失败，不是前端直接写 students 集合";
         throw error;
       }
 
@@ -545,19 +687,12 @@
         const error = new Error(result.message || "调用 createStudents 云函数失败。");
         error.code = result.code;
         error.raw = result;
+        error.source = "CloudBase callFunction 返回错误，调用目标是 createStudents";
         throw error;
       }
 
       const cloudFunctionResult = result.result || result.data || {};
-
-      if (cloudFunctionResult.ok === false) {
-        const error = new Error(cloudFunctionResult.message || "createStudents 云函数执行失败。");
-        error.code = cloudFunctionResult.code || "";
-        error.raw = cloudFunctionResult;
-        throw error;
-      }
-
-      return Array.isArray(cloudFunctionResult.results) ? cloudFunctionResult.results : [];
+      return normalizeCreateStudentsResult(cloudFunctionResult);
     }
 
     function renderResults(results) {
@@ -640,7 +775,8 @@
               studentId: student.studentId,
               name: student.name,
               class: student.className,
-              group: student.groupName
+              group: student.groupName,
+              password: student.password
             });
             validStudentMap.set(student.studentId, student);
           }
@@ -649,36 +785,46 @@
           updateCounts(results);
         }
 
-        if (validStudents.length > 0) {
-          setStatus(`正在调用 createStudents 云函数，准备导入 ${validStudents.length} 人...`);
-          const cloudResults = await callCreateStudents(validStudents);
-
-          cloudResults.forEach((item) => {
-            const student = validStudentMap.get(item.studentId) || {
-              studentId: item.studentId || "",
-              name: item.name || "",
-              className: item.class || "",
-              groupName: item.group || ""
-            };
-
-            results.push({
-              student,
-              status: item.status || "failed",
-              reason: item.reason || item.message || "云函数未返回原因。"
-            });
-          });
-
-          renderResults(results);
-          updateCounts(results);
+        if (students.length === 0) {
+          throw new Error(NO_STUDENTS_MESSAGE);
         }
 
-        setStatus(`导入结束：成功 ${successCount.textContent} 人，失败 ${failedCount.textContent} 人。已导入学生资料。请在 CloudBase 控制台创建同名用户名密码账号后，学生即可登录。`);
+        if (validStudents.length === 0) {
+          renderResults(results);
+          updateCounts(results);
+          setStatus(NO_STUDENTS_MESSAGE);
+          return;
+        }
+
+        setStatus(`正在调用 createStudents 云函数，准备导入 ${validStudents.length} 人...`);
+        const cloudImportResult = await callCreateStudents(validStudents);
+
+        cloudImportResult.results.forEach((item) => {
+          const student = validStudentMap.get(item.studentId) || {
+            studentId: item.studentId || "",
+            name: item.name || "",
+            className: item.class || "",
+            groupName: item.group || ""
+          };
+
+          results.push({
+            student,
+            status: item.status || "failed",
+            reason: item.reason || item.message || "云函数未返回原因。"
+          });
+        });
+
+        renderResults(results);
+        updateCounts(results);
+
+        setStatus(`导入结束：成功 ${cloudImportResult.success} 人，跳过 ${cloudImportResult.skipped} 人，失败 ${cloudImportResult.failed} 人。学生资料已导入，可使用学号和默认密码登录。`);
       } catch (error) {
         showErrorDetails(error, "读取 Excel 或整体导入流程失败");
         const message = getErrorMessage(error);
         const code = getErrorCode(error);
-        setStatus(`导入失败：${message}${code ? `（code: ${code}）` : ""}`);
-        resultBody.innerHTML = `<tr><td colspan="6">${escapeHtml(`message: ${message}${code ? `；code: ${code}` : ""}`)}</td></tr>`;
+        const source = error?.source || "读取 Excel、调用 createStudents 或云函数返回";
+        setStatus(`导入失败：${message}${code ? `（code: ${code}）` : ""}；调用目标：createStudents；错误来源：${source}`);
+        resultBody.innerHTML = `<tr><td colspan="6">${escapeHtml(`message: ${message}${code ? `；code: ${code}` : ""}；调用目标：createStudents；错误来源：${source}`)}</td></tr>`;
       } finally {
         importBtn.disabled = false;
         importBtn.textContent = "开始导入";

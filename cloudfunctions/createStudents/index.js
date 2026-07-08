@@ -3,7 +3,6 @@
 const cloudbase = require("@cloudbase/node-sdk");
 
 const STUDENTS_COLLECTION = "students";
-const DEFAULT_PASSWORD = "Student@123";
 
 const app = cloudbase.init({
   env: cloudbase.SYMBOL_CURRENT_ENV
@@ -17,12 +16,23 @@ function normalizeCell(value) {
 }
 
 function normalizeStudent(rawStudent) {
+  const studentId = normalizeCell(rawStudent && rawStudent.studentId);
+  const explicitPassword = normalizeCell(rawStudent && rawStudent.password);
+
   return {
-    studentId: normalizeCell(rawStudent && rawStudent.studentId),
+    studentId,
     name: normalizeCell(rawStudent && rawStudent.name),
     class: normalizeCell(rawStudent && (rawStudent.class || rawStudent.className)),
-    group: normalizeCell(rawStudent && (rawStudent.group || rawStudent.groupName))
+    group: normalizeCell(rawStudent && (rawStudent.group || rawStudent.groupName)),
+    password: explicitPassword || getDefaultPassword(studentId)
   };
+}
+
+function getDefaultPassword(studentId) {
+  const normalizedStudentId = normalizeCell(studentId);
+  return normalizedStudentId.length > 6
+    ? normalizedStudentId.slice(-6)
+    : normalizedStudentId;
 }
 
 function getErrorMessage(error) {
@@ -64,7 +74,7 @@ async function createStudentProfile(student) {
     name: student.name,
     class: student.class,
     group: student.group,
-    password: DEFAULT_PASSWORD,
+    password: student.password,
     mustChangePassword: true,
     createdAt: now,
     updatedAt: now
@@ -129,8 +139,25 @@ async function createOneStudent(rawStudent) {
   }
 }
 
+function parsePayload(event) {
+  if (event && typeof event.body === "string") {
+    try {
+      return JSON.parse(event.body);
+    } catch (error) {
+      return {};
+    }
+  }
+
+  if (event && event.body && typeof event.body === "object") {
+    return event.body;
+  }
+
+  return event || {};
+}
+
 exports.main = async (event) => {
-  const students = Array.isArray(event && event.students) ? event.students : [];
+  const payload = parsePayload(event);
+  const students = Array.isArray(payload && payload.students) ? payload.students : [];
 
   if (students.length === 0) {
     return {
@@ -156,7 +183,7 @@ exports.main = async (event) => {
     success,
     skipped,
     failed,
-    message: "已导入学生资料。",
+    message: "学生资料已导入，可使用学号和默认密码登录。",
     results
   };
 };
