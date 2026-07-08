@@ -1,0 +1,1525 @@
+<!doctype html>
+<html lang="zh-CN">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>实验数据后台 - 教师工具</title>
+  <style>
+    :root {
+      --bg: #f5f8ff;
+      --panel: #fff;
+      --ink: #142033;
+      --muted: #667085;
+      --line: #d8e1f2;
+      --primary: #4f7cff;
+      --primary-dark: #315fe4;
+      --danger: #d92d20;
+      font-family: "Microsoft YaHei", "PingFang SC", "Segoe UI", Arial, sans-serif;
+    }
+
+    * {
+      box-sizing: border-box;
+    }
+
+    body {
+      margin: 0;
+      min-height: 100vh;
+      color: var(--ink);
+      background: linear-gradient(135deg, #f8fbff 0%, var(--bg) 100%);
+      padding: 32px 18px;
+    }
+
+    button,
+    input,
+    select {
+      font: inherit;
+    }
+
+    .page {
+      width: min(1180px, 100%);
+      margin: 0 auto;
+    }
+
+    .panel {
+      border: 1px solid var(--line);
+      border-radius: 18px;
+      background: var(--panel);
+      box-shadow: 0 18px 48px rgba(52, 79, 135, 0.12);
+      padding: 24px;
+    }
+
+    .header {
+      display: flex;
+      align-items: flex-start;
+      justify-content: space-between;
+      gap: 16px;
+      margin-bottom: 18px;
+    }
+
+    h1 {
+      margin: 0 0 8px;
+      font-size: 28px;
+      line-height: 1.25;
+    }
+
+    .intro {
+      margin: 0;
+      color: var(--muted);
+      line-height: 1.7;
+    }
+
+    .auth-gate {
+      display: none;
+      margin-bottom: 18px;
+      padding: 16px 18px;
+      border: 1px solid #f1c16d;
+      border-radius: 14px;
+      background: #fff8e8;
+      color: #7a4f01;
+    }
+
+    .auth-gate.is-visible {
+      display: block;
+    }
+
+    .filters {
+      display: grid;
+      grid-template-columns: repeat(5, minmax(120px, 1fr));
+      gap: 12px;
+      margin: 18px 0;
+    }
+
+    .field {
+      display: grid;
+      gap: 6px;
+    }
+
+    .field label {
+      color: var(--muted);
+      font-size: 13px;
+      font-weight: 800;
+    }
+
+    .field input,
+    .field select {
+      width: 100%;
+      min-height: 40px;
+      border: 1px solid var(--line);
+      border-radius: 12px;
+      padding: 0 12px;
+      color: var(--ink);
+      background: #fbfcff;
+    }
+
+    .actions {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 10px;
+      align-items: center;
+      margin-bottom: 14px;
+    }
+
+    .btn {
+      min-height: 40px;
+      padding: 0 16px;
+      border: 0;
+      border-radius: 999px;
+      background: linear-gradient(135deg, var(--primary), #6aa1ff);
+      color: #fff;
+      cursor: pointer;
+      font-weight: 800;
+      box-shadow: 0 12px 22px rgba(79, 124, 255, 0.22);
+    }
+
+    .btn.secondary {
+      border: 1px solid var(--line);
+      background: #fff;
+      color: var(--primary-dark);
+      box-shadow: none;
+    }
+
+    .btn:disabled {
+      cursor: wait;
+      opacity: 0.64;
+    }
+
+    .status {
+      min-height: 22px;
+      color: var(--muted);
+      font-size: 14px;
+      font-weight: 700;
+    }
+
+    .table-wrap {
+      overflow: auto;
+      border: 1px solid var(--line);
+      border-radius: 14px;
+    }
+
+    table {
+      width: 100%;
+      border-collapse: collapse;
+      min-width: 980px;
+      background: #fff;
+    }
+
+    th,
+    td {
+      padding: 12px 10px;
+      border-bottom: 1px solid var(--line);
+      text-align: left;
+      vertical-align: top;
+      font-size: 14px;
+    }
+
+    th {
+      background: #f0f4ff;
+      color: #2f477a;
+      font-weight: 900;
+      white-space: nowrap;
+    }
+
+    tr:last-child td {
+      border-bottom: 0;
+    }
+
+    .empty {
+      padding: 24px;
+      text-align: center;
+      color: var(--muted);
+      font-weight: 800;
+    }
+
+    dialog {
+      width: min(760px, calc(100% - 32px));
+      border: 1px solid var(--line);
+      border-radius: 18px;
+      padding: 0;
+      color: var(--ink);
+      box-shadow: 0 24px 70px rgba(20, 32, 51, 0.24);
+    }
+
+    dialog::backdrop {
+      background: rgba(20, 32, 51, 0.36);
+    }
+
+    .dialog-head {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 12px;
+      padding: 18px 20px;
+      border-bottom: 1px solid var(--line);
+    }
+
+    .dialog-head h2 {
+      margin: 0;
+      font-size: 20px;
+    }
+
+    pre {
+      margin: 0;
+      padding: 20px;
+      max-height: 62vh;
+      overflow: auto;
+      white-space: pre-wrap;
+      word-break: break-word;
+      background: #fbfcff;
+      color: #26364f;
+    }
+
+    @media (max-width: 860px) {
+      .header {
+        display: grid;
+      }
+
+      .filters {
+        grid-template-columns: repeat(2, minmax(0, 1fr));
+      }
+    }
+  </style>
+</head>
+<body>
+  <main class="page">
+    <section class="panel">
+      <div class="header">
+        <div>
+          <h1>实验数据后台</h1>
+          <p class="intro">查看学生自动上传到 CloudBase 的实验记录。</p>
+        </div>
+        <a class="btn secondary" href="../index.html">返回首页</a>
+      </div>
+
+      <div class="auth-gate" id="authGate">
+        <p>请先登录后再查看实验数据。</p>
+        <a class="btn" href="../login.html?redirect=admin/dashboard.html">去登录</a>
+      </div>
+
+      <div class="filters">
+        <div class="field">
+          <label for="moduleFilter">实验模块</label>
+          <select id="moduleFilter">
+            <option value="memory">记忆容量</option>
+            <option value="nback">N-back 工作记忆</option>
+            <option value="interference">长时记忆干扰</option>
+            <option value="strategies">长时记忆策略</option>
+            <option value="poster">海报制作</option>
+            <option value="screening">资格审查</option>
+            <option value="aiChat">AI 对话合集</option>
+          </select>
+        </div>
+        <div class="field">
+          <label for="studentIdFilter">学号</label>
+          <input id="studentIdFilter" placeholder="例如：001">
+        </div>
+        <div class="field">
+          <label for="classNameFilter">班级</label>
+          <input id="classNameFilter" placeholder="例如：一班">
+        </div>
+        <div class="field">
+          <label for="groupNameFilter">小组</label>
+          <input id="groupNameFilter" placeholder="例如：1组">
+        </div>
+        <div class="field">
+          <label for="limitFilter">读取条数</label>
+          <select id="limitFilter">
+            <option value="100">100</option>
+            <option value="200">200</option>
+            <option value="500">500</option>
+          </select>
+        </div>
+        <div class="field">
+          <label for="dateFromFilter">开始日期</label>
+          <input id="dateFromFilter" type="date">
+        </div>
+        <div class="field">
+          <label for="dateToFilter">结束日期</label>
+          <input id="dateToFilter" type="date">
+        </div>
+        <div class="field">
+          <label for="sourceModuleFilter">AI 来源模块</label>
+          <select id="sourceModuleFilter">
+            <option value="">全部</option>
+            <option value="memory">记忆容量</option>
+            <option value="nback">N-back 工作记忆</option>
+            <option value="interference">长时记忆干扰</option>
+            <option value="strategies">长时记忆策略</option>
+            <option value="poster">海报制作</option>
+          </select>
+        </div>
+      </div>
+
+      <div class="actions">
+        <button class="btn" id="queryBtn" type="button">查询记录</button>
+        <button class="btn secondary" id="resetBtn" type="button">清空筛选</button>
+        <button class="btn secondary" id="exportBtn" type="button">导出 Excel</button>
+      </div>
+
+      <p class="status" id="status">正在检查登录状态...</p>
+
+      <div class="table-wrap" id="tableWrap">
+        <div class="empty">暂无数据</div>
+      </div>
+    </section>
+  </main>
+
+  <dialog id="detailDialog">
+    <div class="dialog-head">
+      <h2>记录详情</h2>
+      <button class="btn secondary" id="closeDialogBtn" type="button">关闭</button>
+    </div>
+    <pre id="detailContent"></pre>
+  </dialog>
+
+  <script src="https://static.cloudbase.net/cloudbase-js-sdk/3.0.0/cloudbase.full.js"></script>
+  <script src="../cloudbase.js"></script>
+  <script>
+    const GET_EXPERIMENT_RECORDS_URL = "https://memory-detective-platfor-d369a42-1441391469.ap-shanghai.app.tcloudbase.com/getExperimentRecords";
+
+    const authGate = document.getElementById("authGate");
+    const statusEl = document.getElementById("status");
+    const tableWrap = document.getElementById("tableWrap");
+    const queryBtn = document.getElementById("queryBtn");
+    const resetBtn = document.getElementById("resetBtn");
+    const exportBtn = document.getElementById("exportBtn");
+    const detailDialog = document.getElementById("detailDialog");
+    const detailContent = document.getElementById("detailContent");
+    const closeDialogBtn = document.getElementById("closeDialogBtn");
+    const filters = {
+      module: document.getElementById("moduleFilter"),
+      studentId: document.getElementById("studentIdFilter"),
+      className: document.getElementById("classNameFilter"),
+      groupName: document.getElementById("groupNameFilter"),
+      dateFrom: document.getElementById("dateFromFilter"),
+      dateTo: document.getElementById("dateToFilter"),
+      sourceModule: document.getElementById("sourceModuleFilter"),
+      limit: document.getElementById("limitFilter")
+    };
+
+    let isLoggedIn = false;
+    let records = [];
+
+    function escapeHtml(value) {
+      return String(value ?? "")
+        .replaceAll("&", "&amp;")
+        .replaceAll("<", "&lt;")
+        .replaceAll(">", "&gt;")
+        .replaceAll('"', "&quot;")
+        .replaceAll("'", "&#039;");
+    }
+
+    function setStatus(message) {
+      statusEl.textContent = message;
+    }
+
+    async function getAdminLoginState() {
+      if (window.auth && typeof window.auth.getLoginState === "function") {
+        const loginState = await window.auth.getLoginState();
+        return Boolean(loginState || window.auth.currentUser);
+      }
+
+      throw new Error("当前 CloudBase SDK 不支持检查登录状态。");
+    }
+
+    async function checkAdminLogin() {
+      try {
+        isLoggedIn = await getAdminLoginState();
+      } catch (error) {
+        console.error("检查登录状态失败", error);
+        isLoggedIn = false;
+      }
+
+      if (isLoggedIn) {
+        authGate.classList.remove("is-visible");
+        setStatus("已登录，可以查询实验记录。");
+        await loadRecords();
+      } else {
+        authGate.classList.add("is-visible");
+        setStatus("请先登录后再查看实验记录。");
+      }
+    }
+
+    function buildQueryPayload() {
+      return {
+        module: filters.module.value.trim(),
+        recordType: "submission",
+        studentId: filters.studentId.value.trim(),
+        className: filters.className.value.trim(),
+        groupName: filters.groupName.value.trim(),
+        dateFrom: filters.dateFrom.value,
+        dateTo: filters.dateTo.value,
+        sourceModule: filters.sourceModule.value.trim(),
+        limit: Number(filters.limit.value) || 100,
+        skip: 0
+      };
+    }
+
+    async function fetchRecords(payload) {
+      const response = await fetch(GET_EXPERIMENT_RECORDS_URL, {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json"
+        },
+        body: JSON.stringify(payload)
+      });
+      const result = await response.json();
+
+      if (!response.ok || !result.ok) {
+        throw new Error(result.message || `读取失败：HTTP ${response.status}`);
+      }
+
+      return Array.isArray(result.records) ? result.records : [];
+    }
+
+    async function loadRecords() {
+      if (!isLoggedIn) {
+        authGate.classList.add("is-visible");
+        setStatus("请先登录后再查看实验记录。");
+        return;
+      }
+
+      queryBtn.disabled = true;
+      setStatus("正在读取实验记录...");
+
+      try {
+        records = await fetchRecords(buildQueryPayload());
+        renderSubmissionTable();
+        setStatus(`已读取 ${records.length} 条实验记录。`);
+      } catch (error) {
+        console.error("读取实验记录失败", error);
+        records = [];
+        renderSubmissionTable();
+        setStatus(error.message || "读取实验记录失败。");
+      } finally {
+        queryBtn.disabled = false;
+      }
+    }
+
+    function renderTable() {
+      if (!records.length) {
+        tableWrap.innerHTML = '<div class="empty">暂无数据</div>';
+        return;
+      }
+
+      tableWrap.innerHTML = `
+        <table>
+          <thead>
+            <tr>
+              <th>上传时间</th>
+              <th>学号</th>
+              <th>姓名</th>
+              <th>班级</th>
+              <th>小组</th>
+              <th>模块</th>
+              <th>被试</th>
+              <th>次数</th>
+              <th>方法</th>
+              <th>材料</th>
+              <th>长度</th>
+              <th>是否正确</th>
+              <th>最终容量</th>
+              <th>操作</th>
+            </tr>
+          </thead>
+          <tbody>
+            ${records.map((record, index) => {
+              const data = record.data || {};
+              return `
+                <tr>
+                  <td>${escapeHtml(formatDate(record.uploadedAt || record.createdAt))}</td>
+                  <td>${escapeHtml(record.studentId)}</td>
+                  <td>${escapeHtml(record.studentName)}</td>
+                  <td>${escapeHtml(record.className)}</td>
+                  <td>${escapeHtml(record.groupName)}</td>
+                  <td>${escapeHtml(record.module)}</td>
+                  <td>${escapeHtml(data.subject)}</td>
+                  <td>${escapeHtml(data.runNumber)}</td>
+                  <td>${escapeHtml(data.method)}</td>
+                  <td>${escapeHtml(data.materialType || data.material)}</td>
+                  <td>${escapeHtml(data.length)}</td>
+                  <td>${data.isCorrect ? "正确" : "错误"}</td>
+                  <td>${escapeHtml(data.finalCapacity ?? data.capacityAfterTrial ?? "")}</td>
+                  <td><button class="btn secondary" type="button" data-detail="${index}">详情</button></td>
+                </tr>
+              `;
+            }).join("")}
+          </tbody>
+        </table>
+      `;
+
+      tableWrap.querySelectorAll("[data-detail]").forEach((button) => {
+        button.addEventListener("click", () => showDetail(Number(button.dataset.detail)));
+      });
+    }
+
+    function renderSubmissionTable() {
+      if (!records.length) {
+        tableWrap.innerHTML = '<div class="empty">暂无数据</div>';
+        return;
+      }
+
+      tableWrap.innerHTML = `
+        <table>
+          <thead>
+            <tr>
+              <th>提交时间</th>
+              <th>学号</th>
+              <th>姓名</th>
+              <th>班级</th>
+              <th>小组</th>
+              <th>实验模块</th>
+              <th>提交方式</th>
+              <th>明细数</th>
+              <th>操作</th>
+            </tr>
+          </thead>
+          <tbody>
+            ${records.map((record, index) => {
+              const data = record.data || {};
+              const detailCount = getRecordDetailCount(record);
+              return `
+                <tr>
+                  <td>${escapeHtml(formatDate(record.uploadedAt || record.createdAt))}</td>
+                  <td>${escapeHtml(record.studentId)}</td>
+                  <td>${escapeHtml(record.studentName)}</td>
+                  <td>${escapeHtml(record.className)}</td>
+                  <td>${escapeHtml(record.groupName)}</td>
+                  <td>${escapeHtml(getModuleLabel(record.module))}</td>
+                  <td>${escapeHtml(getSubmitActionLabel(data.submitAction))}</td>
+                  <td>${escapeHtml(detailCount)}</td>
+                  <td><button class="btn secondary" type="button" data-detail="${index}">详情</button></td>
+                </tr>
+              `;
+            }).join("")}
+          </tbody>
+        </table>
+      `;
+
+      tableWrap.querySelectorAll("[data-detail]").forEach((button) => {
+        button.addEventListener("click", () => showDetail(Number(button.dataset.detail)));
+      });
+    }
+
+    function formatDate(value) {
+      if (!value) return "";
+      if (typeof value === "string") return value;
+      if (value.$date) return new Date(value.$date).toLocaleString();
+      if (value.seconds) return new Date(value.seconds * 1000).toLocaleString();
+      return String(value);
+    }
+
+    function showDetail(index) {
+      const record = records[index];
+      detailContent.textContent = JSON.stringify(record, null, 2);
+      detailDialog.showModal();
+    }
+
+    function getModuleLabel(module) {
+      return {
+        memory: "记忆容量",
+        nback: "N-back 工作记忆",
+        interference: "长时记忆干扰",
+        strategies: "长时记忆策略",
+        poster: "海报制作",
+        screening: "资格审查",
+        aiChat: "AI 对话合集"
+      }[module] || module || "";
+    }
+
+    function getRecordDetailCount(record) {
+      const data = record.data || {};
+      const fullState = data.fullState || {};
+      if (record.module === "nback") return Array.isArray(fullState.testRuns) ? fullState.testRuns.length : 0;
+      if (record.module === "strategies") {
+        return (Array.isArray(fullState.records) ? fullState.records.length : 0) + (Array.isArray(fullState.strategyScores) ? fullState.strategyScores.length : 0);
+      }
+      if (record.module === "poster") {
+        return (Array.isArray(fullState.qaRecords) ? fullState.qaRecords.length : 0) + (Array.isArray(fullState.questions) ? fullState.questions.length : 0) + (Array.isArray(fullState.scoreRecords) ? fullState.scoreRecords.length : 0);
+      }
+      if (record.module === "screening") return fullState.answered || Object.keys(fullState.answers || {}).length || 0;
+      if (record.module === "aiChat") return Array.isArray(data.logs) ? data.logs.length : data.logCount || 0;
+      return Array.isArray(fullState.records) ? fullState.records.length : 0;
+    }
+
+    function getSubmitActionLabel(action) {
+      return {
+        generateReport: "生成侦探报告",
+        completeScreening: "完成资格审查"
+      }[action] || action || "完整提交";
+    }
+
+    function getMaterialTypeLabel(type) {
+      return {
+        number: "数字",
+        letter: "英文大写字母",
+        chinese: "汉字",
+        shape: "图形",
+        数字: "数字",
+        字母: "英文大写字母",
+        英文大写字母: "英文大写字母",
+        汉字: "汉字",
+        图形: "图形"
+      }[type] || "数字";
+    }
+
+    function getNbackMaterialTypeLabel(type) {
+      return {
+        image: "图片",
+        number: "数字",
+        letter: "英文大写字母",
+        chinese: "汉字",
+        图形: "图片",
+        图片: "图片",
+        数字: "数字",
+        字母: "英文大写字母",
+        英文大写字母: "英文大写字母",
+        汉字: "汉字"
+      }[type] || "图片";
+    }
+
+    function summarizeMemoryRecords(memoryRecords) {
+      const byRun = new Map();
+      memoryRecords.forEach((record) => {
+        const key = `${record.subject}|${record.runNumber}`;
+        byRun.set(key, record.finalCapacity ?? record.capacityAfterTrial ?? 0);
+      });
+
+      const bySubject = new Map();
+      byRun.forEach((capacity, key) => {
+        const subject = key.split("|")[0];
+        if (!bySubject.has(subject)) bySubject.set(subject, []);
+        bySubject.get(subject).push(Number(capacity) || 0);
+      });
+
+      return Array.from(bySubject.entries()).map(([subject, runs]) => ({
+        subject,
+        runs,
+        count: runs.length,
+        average: runs.length ? Number((runs.reduce((sum, value) => sum + value, 0) / runs.length).toFixed(1)) : 0
+      }));
+    }
+
+    function getPersonalShortTermMemory(summary) {
+      const first = summary[0];
+      return first ? first.average : "";
+    }
+
+    function getShortTermGroupAverage(personalResult) {
+      const values = [personalResult].map(Number).filter((value) => Number.isFinite(value) && value > 0);
+      return values.length ? Number((values.reduce((sum, value) => sum + value, 0) / values.length).toFixed(1)) : "";
+    }
+
+    function getThinkingRowsFromState(state) {
+      const fields = state.fields || {};
+      return [
+        ["提出问题/研究问题-个人思考", fields.question],
+        ["提出问题/研究问题-小组共识", fields.question_group],
+        ["作出假设/研究假设-个人思考", fields.hypothesis],
+        ["作出假设/研究假设-小组共识", fields.hypothesis_group],
+        ["得出结论/最终结论-个人思考", fields.finalConclusion],
+        ["得出结论/最终结论-小组共识", fields.finalConclusion_group],
+        ["反思交流/实验设计改进-个人思考", fields.designImprove],
+        ["反思交流/实验设计改进-小组共识", fields.designImprove_group],
+        ["反思交流/团队合作反思-个人思考", fields.teamwork],
+        ["反思交流/团队合作反思-小组共识", fields.teamwork_group],
+        ["反思交流/探究环节反思-个人思考", fields.inquiryReflection],
+        ["反思交流/探究环节反思-小组共识", fields.inquiryReflection_group]
+      ];
+    }
+
+    const MEMORY_SURVEY_DEFS = {
+      postMeta: {
+        title: "学习收获调查",
+        labels: { 1: "非常不同意", 2: "不同意", 3: "一般", 4: "同意", 5: "非常同意" },
+        items: [
+          "我能够理解本次科学探究中获得的有关短时记忆容量的知识。",
+          "这些有关短时记忆容量的知识对我很有用，我会继续运用。",
+          "在学习这些有关短时记忆容量的知识时，我会与现实生活进行联系。",
+          "我会根据今天科学探究中获得的知识，反思自己以前记忆过程中做得不足的地方并加以改进。",
+          "在学习这些有关短时记忆容量的知识时，我会联想到之前学过或了解过的知识。",
+          "我能够利用本次科学探究的结果，解释为什么人的短时记忆容量是有限的。"
+        ]
+      },
+      cognitiveLoad: {
+        title: "侦探小结-认知负荷",
+        labels: { 1: "非常低", 2: "很低", 3: "较低", 4: "稍低", 5: "中等偏低", 6: "中等偏高", 7: "稍高", 8: "较高", 9: "很高", 10: "非常高" },
+        items: [
+          "你认为刚才科学探究活动的学习材料难度如何？（得分越高，难度越大）",
+          "你在刚才的科学探究活动中投入了多少心理努力？（得分越高，投入的心理努力越多）"
+        ]
+      },
+      inquiryParticipation: {
+        title: "侦探小结-探究参与",
+        labels: { 1: "完全否", 2: "较少", 3: "一般", 4: "较多", 5: "完全是" },
+        items: [
+          "我能清晰地表达我想要研究的问题。",
+          "我可以针对问题的答案提出合乎科学事实的假设。",
+          "我能明确探究目标，提出可操作的探究步骤。",
+          "我能积极参与并顺利完成实验操作。",
+          "我学会了运用实验收集解决问题所需要的证据。",
+          "我能分析归纳获得的证据，并得出科学结论。",
+          "我能发现探究过程中未解决的问题，发现新的问题。",
+          "我在探究活动中能够与他人很好地合作。",
+          "在探究活动中，我既能表达自己的观点，又能听取他人建议。"
+        ]
+      }
+    };
+
+    const NBACK_SURVEY_DEFS = {
+      postMeta: {
+        title: "学习收获调查",
+        labels: { 1: "非常不同意", 2: "不同意", 3: "一般", 4: "同意", 5: "非常同意" },
+        items: [
+          "我能够理解本次科学探究中获得的有关工作记忆的知识。",
+          "这些有关工作记忆的知识对我很有用，我会继续运用。",
+          "在学习这些有关工作记忆的知识时，我会与现实生活进行联系。",
+          "我会根据今天科学探究中获得的知识，反思自己以前完成复杂任务时的表现，并尝试加以改进。",
+          "在学习这些有关工作记忆的知识时，我会联想到之前学过或了解过的知识。",
+          "我能够利用本次科学探究的结果，解释为什么任务难度增加时，工作记忆的负担会发生变化。"
+        ]
+      },
+      cognitiveLoad: MEMORY_SURVEY_DEFS.cognitiveLoad,
+      inquiryParticipation: MEMORY_SURVEY_DEFS.inquiryParticipation
+    };
+
+    const MEMORY_KNOWLEDGE_ITEMS = [
+      { question: "本次实验主要探究的是（ ）", options: { A: "长时记忆容量", B: "工作记忆能力", C: "短时记忆容量", D: "情绪对记忆的影响" }, answer: "C" },
+      { question: "实验中我们可以使用什么材料测量短时记忆容量？", options: { A: "图形", B: "汉字", C: "数字", D: "以上都可以" }, answer: "D" },
+      { question: "随着数字长度不断增加，大多数人的正确率通常会（ ）", options: { A: "提高", B: "保持不变", C: "降低", D: "先升高再降低" }, answer: "C" },
+      { question: "下列哪项最可能影响短时记忆实验结果？", options: { A: "是否专心", B: "数字呈现速度", C: "数字长度", D: "以上都有可能" }, answer: "D" },
+      { question: "为了保证实验公平，下列哪项最好保持一致？", options: { A: "测试方式", B: "数字呈现时间", C: "实验环境", D: "以上都要" }, answer: "D" },
+      { question: "本次实验结论主要依据什么得出？", options: { A: "老师讲解", B: "同学猜测", C: "实验数据", D: "网络资料" }, answer: "C" },
+      { question: "如果连续两次实验结果差别很大，下列哪项最值得先检查？", options: { A: "是否认真完成实验", B: "是否记录准确", C: "是否受到干扰", D: "以上都有可能" }, answer: "D" },
+      { question: "为了让实验结果更加可靠，可以怎样做？", options: { A: "增加测试次数", B: "增加参与人数", C: "比较多次结果", D: "以上都可以" }, answer: "D" },
+      { question: "如果要记住一串较长的电话号码，下面哪种方法更符合今天实验得到的启示？", options: { A: "一次全部记住", B: "分成几段分别记忆", C: "只看一遍", D: "闭眼等待" }, answer: "B" },
+      { question: "如果老师一次说了很多内容，你应该怎样做更容易记住？", options: { A: "全部硬记", B: "边听边整理重点", C: "什么也不记", D: "等别人告诉自己" }, answer: "B" }
+    ];
+
+    function buildSurveySheet(studentLabel, state, surveyKey, surveyDefs = MEMORY_SURVEY_DEFS) {
+      const def = surveyDefs[surveyKey];
+      const answers = state.surveys?.[surveyKey] || {};
+      const values = def.items.map((_, index) => Number(answers[`q${index + 1}`] || 0)).filter(Boolean);
+      const total = values.reduce((sum, value) => sum + value, 0);
+      const average = values.length ? Number((total / values.length).toFixed(2)) : "";
+
+      return [`${studentLabel}-${def.title}`, [
+        ["题号", "题目", "得分", "选项含义"],
+        ...def.items.map((item, index) => {
+          const score = answers[`q${index + 1}`] || "";
+          return [String(index + 1), item, score, score ? def.labels[score] || "" : ""];
+        }),
+        ["合计", "总分", total, ""],
+        ["合计", "均分", average, ""],
+        ["合计", "已答题数", values.length, ""]
+      ]];
+    }
+
+    function buildKnowledgeQuizSheet(studentLabel, state) {
+      const quiz = state.knowledgeQuiz || {};
+      const answers = quiz.answers || {};
+
+      return [`${studentLabel}-案件知识验证`, [
+        ["题号", "题目", "学生答案", "正确答案", "是否正确"],
+        ...MEMORY_KNOWLEDGE_ITEMS.map((item, index) => {
+          const itemKey = `q${index + 1}`;
+          const answer = answers[itemKey] || "";
+          const answerText = answer ? `${answer} ${item.options[answer] || ""}` : "";
+          const correctText = `${item.answer} ${item.options[item.answer]}`;
+          return [String(index + 1), item.question, answerText, correctText, answer ? (answer === item.answer ? "正确" : "错误") : "未作答"];
+        }),
+        ["汇总", "答对数量", `${quiz.correctCount || 0} / ${MEMORY_KNOWLEDGE_ITEMS.length}`, "", ""],
+        ["汇总", "知识验证得分", quiz.score || 0, "总成绩", `${quiz.score || 0} / 100`],
+        ["汇总", "提交时间", quiz.submittedAt ? new Date(quiz.submittedAt).toLocaleString() : "", "", ""]
+      ]];
+    }
+
+    function buildKnowledgeHistorySheet(studentLabel, state) {
+      const history = Array.isArray(state.knowledgeQuiz?.history) ? state.knowledgeQuiz.history : [];
+      return [`${studentLabel}-知识验证历史`, [
+        ["提交次数", "提交时间", "得分", "正确题数", "总题数", "正确率", "错误题号"],
+        ...history.map((record) => [
+          record.attemptNumber,
+          record.submittedAt ? new Date(record.submittedAt).toLocaleString() : "",
+          record.score,
+          record.correctCount,
+          record.totalCount,
+          `${record.accuracy}%`,
+          Array.isArray(record.wrongQuestions) ? record.wrongQuestions.join("、") : ""
+        ])
+      ]];
+    }
+
+    function buildMemoryStateSheets(stateRecord) {
+      const state = stateRecord.data?.fullState || stateRecord.data || {};
+      const fields = state.fields || {};
+      const memoryRecords = Array.isArray(state.records) ? state.records : [];
+      const summary = summarizeMemoryRecords(memoryRecords);
+      const personalResult = getPersonalShortTermMemory(summary);
+      const groupAverage = fields.groupAverageShortTermMemory || getShortTermGroupAverage(personalResult);
+      const studentLabel = state.studentId || stateRecord.studentId || "未知学生";
+
+      return [
+        [`${studentLabel}-基本信息`, [
+          ["项目", "内容"],
+          ["实验", "探究短时记忆的容量"],
+          ["学号", state.studentId || stateRecord.studentId],
+          ["姓名", state.studentName || stateRecord.studentName || ""],
+          ["班级", state.className || stateRecord.className || ""],
+          ["小组", state.groupName || state.groupId || stateRecord.groupName || ""],
+          ["学生姓名", state.studentName || stateRecord.studentName || ""],
+          ["学生年龄", state.studentAge || ""],
+          ["学生编号", state.studentId || stateRecord.studentId],
+          ["小组编号", state.groupId || state.groupName || stateRecord.groupName || ""],
+          ["实验时间", state.savedAt || ""],
+          ["导出时间", new Date().toLocaleString()]
+        ]],
+        [`${studentLabel}-实验过程`, [
+          ["字段", "内容"],
+          ...getThinkingRowsFromState(state),
+          ["研究问题", fields.question],
+          ["研究假设", fields.hypothesis],
+          ["测量方法", fields.method],
+          ["实验材料类别", getMaterialTypeLabel(fields.materialType)],
+          ["实验材料", fields.material],
+          ["起始长度", fields.startLength],
+          ["每个项目呈现间隔s", fields.itemInterval],
+          ["每位参与者测量次数", fields.trialsPerParticipant],
+          ["测试员", fields.roleTester],
+          ["参与者", fields.roleParticipant],
+          ["记录员1", fields.roleRecorder1],
+          ["记录员2", fields.roleRecorder2],
+          ["头环观察记录", fields.brainFinding],
+          ["结论容量", fields.conclusionCapacity],
+          ["与假设是否一致", fields.hypothesisRelation],
+          ["与7±2理论是否一致", fields.millerRelation],
+          ["最终结论", fields.finalConclusion],
+          ["实验设计改进", fields.designImprove],
+          ["团队合作反思", fields.teamwork],
+          ["探究环节反思", fields.inquiryReflection],
+          ["全部字段JSON", JSON.stringify(fields)]
+        ]],
+        [`${studentLabel}-记忆任务明细`, [
+          ["学号", "姓名", "班级", "小组", "学生姓名", "学生年龄", "学生编号", "小组编号", "参与者", "测量次数", "方法", "实验材料类别", "材料", "呈现间隔s", "长度", "原始序列", "正确答案", "学生回答", "是否正确", "本次最终容量", "记录时间"],
+          ...memoryRecords.map((record) => [
+            record.studentId,
+            record.studentName || "",
+            record.className || "",
+            record.groupName || record.groupId || "",
+            record.studentName || "",
+            record.studentAge || "",
+            record.studentId,
+            record.groupId,
+            record.subject,
+            record.runNumber,
+            record.method,
+            getMaterialTypeLabel(record.materialType || record.material),
+            record.material,
+            record.itemInterval,
+            record.length,
+            record.sequence,
+            record.expected,
+            record.answer,
+            record.isCorrect ? "正确" : "错误",
+            record.finalCapacity,
+            record.createdAt
+          ])
+        ]],
+        [`${studentLabel}-容量汇总`, [
+          ["参与者", "各次容量", "平均容量", "有效次数"],
+          ...summary.map((item) => [item.subject, item.runs.join("、"), item.average, item.count])
+        ]],
+        [`${studentLabel}-小组记录`, [
+          ["本人编号", "本人结果", "组员1编号", "组员1结果", "组员2编号", "组员2结果", "小组平均长度"],
+          [fields.participantId || state.studentId, personalResult, fields.teammate1Id, fields.teammate1Result, fields.teammate2Id, fields.teammate2Result, groupAverage]
+        ]],
+        buildSurveySheet(studentLabel, state, "postMeta", NBACK_SURVEY_DEFS),
+        buildSurveySheet(studentLabel, state, "cognitiveLoad", NBACK_SURVEY_DEFS),
+        buildSurveySheet(studentLabel, state, "inquiryParticipation", NBACK_SURVEY_DEFS),
+        buildKnowledgeQuizSheet(studentLabel, state),
+        buildKnowledgeHistorySheet(studentLabel, state),
+        [`${studentLabel}-系统信息`, [
+          ["项目", "内容"],
+          ["实验版本", "science-inquiry-static-v1"],
+          ["保存时间", state.savedAt || ""],
+          ["导出时间", new Date().toLocaleString()],
+          ["当前步骤", state.currentStep == null ? "" : String(Number(state.currentStep) + 1)],
+          ["过程性实验记录数", memoryRecords.length]
+        ]],
+        [`${studentLabel}-localStorage原始数据`, [
+          ["localStorage key", "JSON"],
+          ["memory-capacity-state-v1", JSON.stringify(state)]
+        ]]
+      ];
+    }
+
+    function getLatestStateRecords(stateRecords) {
+      const byStudent = new Map();
+      stateRecords.forEach((record) => {
+        const key = `${record.module || ""}|${record.data?.sourceModule || ""}|${record.studentId || record.data?.studentId || record.clientRecordId}`;
+        const previous = byStudent.get(key);
+        const currentTime = String(record.createdAt || record.data?.savedAt || "");
+        const previousTime = previous ? String(previous.createdAt || previous.data?.savedAt || "") : "";
+        if (!previous || currentTime >= previousTime) byStudent.set(key, record);
+      });
+      return Array.from(byStudent.values());
+    }
+
+    function buildOverviewSheet(stateRecords) {
+      return ["提交总览", [
+        ["上传时间", "学号", "姓名", "班级", "小组", "模块", "来源模块", "提交方式", "明细数", "客户端记录ID"],
+        ...stateRecords.map((record) => {
+          const data = record.data || {};
+          return [
+            formatDate(record.uploadedAt || record.createdAt),
+            record.studentId || data.studentId || "",
+            record.studentName || data.studentName || "",
+            record.className || data.className || "",
+            record.groupName || data.groupName || data.groupId || "",
+            getModuleLabel(record.module),
+            data.sourceModule ? getModuleLabel(data.sourceModule) : "",
+            getSubmitActionLabel(data.submitAction),
+            getRecordDetailCount(record),
+            record.clientRecordId || data.clientRecordId || ""
+          ];
+        })
+      ]];
+    }
+
+    function buildFallbackSheets() {
+      return [[
+        "实验明细",
+        [
+          ["上传时间", "学号", "姓名", "班级", "小组", "模块", "记录类型", "被试", "次数", "方法", "材料类别", "材料", "长度", "原始序列", "正确答案", "学生回答", "是否正确", "最终容量", "记录时间"],
+          ...records.map((record) => {
+            const data = record.data || {};
+            return [
+              formatDate(record.uploadedAt || record.createdAt),
+              record.studentId,
+              record.studentName,
+              record.className,
+              record.groupName,
+              record.module,
+              record.recordType,
+              data.subject,
+              data.runNumber,
+              data.method,
+              data.materialType,
+              data.material,
+              data.length,
+              data.sequence,
+              data.expected,
+              data.answer,
+              data.isCorrect ? "正确" : "错误",
+              data.finalCapacity ?? data.capacityAfterTrial ?? "",
+              data.createdAt
+            ];
+          })
+        ]
+      ]];
+    }
+
+    function getNbackRecordType(record) {
+      if (record.recordType) return record.recordType;
+      if (record.isCorrect === null) return "observe";
+      if (record.response === "漏答") return "miss";
+      return "answer";
+    }
+
+    function summarizeNbackRuns(testRuns) {
+      const groups = new Map();
+      testRuns.forEach((record) => {
+        const recordType = getNbackRecordType(record);
+        if (recordType === "observe") return;
+        const key = `${record.subject}|${record.conditionLabel}|${record.stimulusType}`;
+        if (!groups.has(key)) {
+          groups.set(key, {
+            subject: record.subject,
+            conditionLabel: record.conditionLabel,
+            stimulusType: record.stimulusType,
+            totalAnswered: 0,
+            correct: 0,
+            missed: 0,
+            responseTimes: []
+          });
+        }
+        const group = groups.get(key);
+        if (recordType === "miss") {
+          group.missed += 1;
+        } else {
+          group.totalAnswered += 1;
+          if (record.isCorrect) group.correct += 1;
+          if (Number(record.responseTime) > 0) group.responseTimes.push(Number(record.responseTime));
+        }
+      });
+
+      return Array.from(groups.values()).map((item) => {
+        const attempts = item.totalAnswered + item.missed;
+        const accuracy = item.totalAnswered ? Math.round((item.correct / item.totalAnswered) * 100) : 0;
+        const missRate = attempts ? Math.round((item.missed / attempts) * 100) : 0;
+        const avgRt = item.responseTimes.length ? Math.round(item.responseTimes.reduce((sum, value) => sum + value, 0) / item.responseTimes.length) : "";
+        return Object.assign(item, { accuracy, missRate, avgRt });
+      });
+    }
+
+    function getNbackThinkingRows(state) {
+      const fields = state.fields || {};
+      return [
+        ["提出问题/研究问题-个人思考", fields.researchQuestion],
+        ["提出问题/研究问题-小组共识", fields.researchQuestion_group],
+        ["作出假设/研究假设-个人思考", fields.hypothesis],
+        ["作出假设/研究假设-小组共识", fields.hypothesis_group],
+        ["得出结论/假设判断-个人思考", fields.conclusionSupported],
+        ["得出结论/假设判断-小组共识", fields.conclusionSupported_group],
+        ["得出结论/结论-个人思考", fields.conclusion],
+        ["得出结论/结论-小组共识", fields.conclusion_group],
+        ["反思交流/改进-个人思考", fields.improvement],
+        ["反思交流/改进-小组共识", fields.improvement_group],
+        ["反思交流/提高说服力-个人思考", fields.persuasiveness],
+        ["反思交流/提高说服力-小组共识", fields.persuasiveness_group]
+      ];
+    }
+
+    function buildNbackStateSheets(stateRecord) {
+      const state = stateRecord.data?.fullState || stateRecord.data || {};
+      const fields = state.fields || {};
+      const testRuns = Array.isArray(state.testRuns) ? state.testRuns : [];
+      const summary = summarizeNbackRuns(testRuns);
+      const studentLabel = state.studentId || stateRecord.studentId || "未知学生";
+
+      return [
+        [`${studentLabel}-基本信息`, [
+          ["项目", "内容"],
+          ["实验", "探究神奇的 N-back"],
+          ["学号", state.studentId || stateRecord.studentId],
+          ["姓名", state.studentName || stateRecord.studentName || ""],
+          ["班级", state.className || stateRecord.className || ""],
+          ["小组", state.groupName || state.groupId || stateRecord.groupName || ""],
+          ["学生姓名", state.studentName || stateRecord.studentName || ""],
+          ["学生年龄", state.studentAge || ""],
+          ["学生编号", state.studentId || stateRecord.studentId],
+          ["小组编号", state.groupId || state.groupName || stateRecord.groupName || ""],
+          ["实验时间", state.savedAt || ""],
+          ["导出时间", new Date().toLocaleString()]
+        ]],
+        [`${studentLabel}-实验过程`, [
+          ["字段", "内容"],
+          ...getNbackThinkingRows(state),
+          ["自变量", fields.independentVariable],
+          ["因变量-工作记忆表现", fields.dependentMemory ? "是" : "否"],
+          ["因变量-大脑活动水平", fields.dependentBrain ? "是" : "否"],
+          ["控制变量-记忆内容类型", fields.controlContentType ? "是" : "否"],
+          ["其他控制变量", fields.controlOther],
+          ["研究问题", fields.researchQuestion],
+          ["研究假设", fields.hypothesis],
+          ["实验材料类别", getNbackMaterialTypeLabel(fields.materialType || fields.stimulusMaterial)],
+          ["实验材料", fields.stimulusMaterial],
+          ["实验设计", fields.experimentDesign],
+          ["A 被测试者", fields.roleA],
+          ["B 被测试者", fields.roleB],
+          ["C 指导与操作", fields.roleC],
+          ["D 记录与统计", fields.roleD],
+          ["头环观察记录", fields.headbandObservation],
+          ["假设判断", fields.conclusionSupported],
+          ["结论", fields.conclusion],
+          ["改进", fields.improvement],
+          ["提高说服力", fields.persuasiveness],
+          ["全部字段JSON", JSON.stringify(fields)]
+        ]],
+        [`${studentLabel}-N-back明细记录`, [
+          ["学号", "姓名", "班级", "小组", "学生姓名", "学生年龄", "学生编号", "小组编号", "被测试者", "实验设计", "条件", "N", "关卡数", "每题规定作答时间s", "实验材料类别", "刺激类型", "关卡", "刺激", "正确答案", "学生答案", "记录类型", "是否漏答", "是否正确", "反应时ms", "记录时间"],
+          ...testRuns.map((record) => {
+            const recordType = getNbackRecordType(record);
+            return [
+              record.studentId,
+              record.studentName || "",
+              record.className || "",
+              record.groupName || record.groupId || "",
+              record.studentName || "",
+              record.studentAge || "",
+              record.studentId,
+              record.groupId,
+              record.subject,
+              record.mode,
+              record.conditionLabel,
+              record.n,
+              record.totalTrials,
+              record.intervalSeconds || "",
+              getNbackMaterialTypeLabel(record.materialType || record.stimulusType),
+              record.stimulusType,
+              record.trialNumber,
+              record.stimulus,
+              record.expected,
+              record.response,
+              recordType === "observe" ? "观察" : recordType === "miss" ? "漏答" : "作答",
+              recordType === "miss" ? "是" : "否",
+              recordType === "observe" ? "无需判断" : recordType === "miss" ? "漏答" : record.isCorrect ? "正确" : "错误",
+              record.responseTime,
+              record.createdAt
+            ];
+          })
+        ]],
+        [`${studentLabel}-条件汇总正确率`, [
+          ["被测试者", "条件", "作答题数", "正确题数", "正确率", "漏答数", "漏答率", "平均反应时ms"],
+          ...summary.map((item) => [item.subject, item.conditionLabel, item.totalAnswered, item.correct, `${item.accuracy}%`, item.missed, `${item.missRate}%`, item.avgRt || ""])
+        ]],
+        [`${studentLabel}-小组记录`, [
+          ["成员", "编号", "材料类别", "平均正确率", "平均漏答率", "结果摘要", "旧版结果文本"],
+          ["本人", fields.participantId || state.studentId, getNbackMaterialTypeLabel(fields.materialType || fields.stimulusMaterial), "", "", JSON.stringify(summary), ""],
+          ["组员1", fields.teammate1Id, getNbackMaterialTypeLabel(fields.teammate1MaterialType), fields.teammate1AverageAccuracy, fields.teammate1AverageMissRate, "", fields.teammate1Result || ""],
+          ["组员2", fields.teammate2Id, getNbackMaterialTypeLabel(fields.teammate2MaterialType), fields.teammate2AverageAccuracy, fields.teammate2AverageMissRate, "", fields.teammate2Result || ""]
+        ]],
+        buildSurveySheet(studentLabel, state, "postMeta"),
+        buildSurveySheet(studentLabel, state, "cognitiveLoad"),
+        buildSurveySheet(studentLabel, state, "inquiryParticipation"),
+        [`${studentLabel}-系统信息`, [
+          ["项目", "内容"],
+          ["实验版本", "science-inquiry-static-v1"],
+          ["保存时间", state.savedAt || ""],
+          ["导出时间", new Date().toLocaleString()],
+          ["当前步骤", state.currentStep == null ? "" : String(Number(state.currentStep) + 1)],
+          ["过程性实验记录数", testRuns.length]
+        ]],
+        [`${studentLabel}-localStorage原始数据`, [
+          ["localStorage key", "JSON"],
+          ["nback-inquiry-state-v1", JSON.stringify(state)]
+        ]]
+      ];
+    }
+
+    function formatSheetCell(value) {
+      if (Array.isArray(value)) return value.join("；");
+      if (value && typeof value === "object") return JSON.stringify(value);
+      return value == null ? "" : value;
+    }
+
+    function buildLongTermBaseSheets(stateRecord, experimentTitle, storageKey) {
+      const state = stateRecord.data?.fullState || stateRecord.data || {};
+      const fields = state.fields || {};
+      const studentLabel = state.studentId || stateRecord.studentId || "未知学生";
+
+      return {
+        state,
+        fields,
+        studentLabel,
+        sheets: [
+          [`${studentLabel}-基本信息`, [
+            ["项目", "内容"],
+            ["实验", experimentTitle],
+            ["学号", state.studentId || stateRecord.studentId],
+            ["姓名", state.studentName || stateRecord.studentName || ""],
+            ["班级", state.className || stateRecord.className || ""],
+            ["小组", state.groupName || state.groupId || stateRecord.groupName || ""],
+            ["学生年龄", state.studentAge || ""],
+            ["实验时间", state.savedAt || ""],
+            ["后台提交时间", formatDate(stateRecord.uploadedAt || stateRecord.createdAt)],
+            ["导出时间", new Date().toLocaleString()]
+          ]],
+          [`${studentLabel}-探究填写字段`, [
+            ["字段", "内容"],
+            ...Object.entries(fields).map(([key, value]) => [key, formatSheetCell(value)])
+          ]],
+          buildSurveySheet(studentLabel, state, "postMeta"),
+          buildSurveySheet(studentLabel, state, "cognitiveLoad"),
+          buildSurveySheet(studentLabel, state, "inquiryParticipation"),
+          [`${studentLabel}-localStorage原始数据`, [
+            ["localStorage key", "JSON"],
+            [storageKey, JSON.stringify(state)]
+          ]]
+        ]
+      };
+    }
+
+    function buildInterferenceStateSheets(stateRecord) {
+      const base = buildLongTermBaseSheets(stateRecord, "探究干扰长时记忆的因素", "longterm-interference-state-v1");
+      const records = Array.isArray(base.state.records) ? base.state.records : [];
+      const detailSheet = [`${base.studentLabel}-实验明细`, [
+        ["学号", "姓名", "班级", "小组", "参与者", "轮次", "实验类型", "材料来源", "材料类型", "难度", "条件", "视频条件", "记忆时间s", "休息时间s", "干扰时间s", "记忆材料", "干扰材料", "评分规则", "满分", "得分", "正确率", "回忆内容", "头环观察", "情绪强度", "反应时ms", "记录时间"],
+        ...records.map((record) => [
+          record.studentId,
+          record.studentName || "",
+          record.className || "",
+          record.groupName || record.groupId || "",
+          record.participant,
+          record.round,
+          record.factor,
+          record.materialSource,
+          record.materialType,
+          record.difficultyLabel || record.difficulty,
+          record.condition,
+          record.videoCondition,
+          record.memorySeconds,
+          record.restSeconds,
+          record.interferenceSeconds,
+          record.memoryItems,
+          record.interferenceItems,
+          record.scoreRule,
+          record.fullScore,
+          record.score ?? record.correctCount,
+          `${record.accuracy}%`,
+          record.recall,
+          record.headband,
+          record.emotionRating,
+          record.reactionTime,
+          record.createdAt
+        ])
+      ]];
+
+      base.sheets.splice(2, 0, detailSheet);
+      return base.sheets;
+    }
+
+    function buildStrategiesStateSheets(stateRecord) {
+      const base = buildLongTermBaseSheets(stateRecord, "改善长时记忆的策略有哪些", "longterm-strategies-state-v1");
+      const records = Array.isArray(base.state.records) ? base.state.records : [];
+      const strategyScores = Array.isArray(base.state.strategyScores) ? base.state.strategyScores : [];
+      const detailSheet = [`${base.studentLabel}-测试明细`, [
+        ["学号", "姓名", "班级", "小组", "阶段", "策略", "材料类型", "题目总数", "记忆时间s", "找不同时间s", "测试时间s", "题目", "学生回答", "正确项目", "正确数", "回忆率", "找不同命中", "找不同点击", "反应时ms", "头环观察", "评分总分", "记录时间"],
+        ...records.map((record) => [
+          record.studentId,
+          record.studentName || "",
+          record.className || "",
+          record.groupName || record.groupId || "",
+          record.stage,
+          record.strategy,
+          record.materialType,
+          record.itemCount,
+          record.memorySeconds,
+          record.puzzleSeconds,
+          record.testSeconds,
+          record.items,
+          record.recall,
+          record.correctItems,
+          record.correctCount,
+          `${record.accuracy}%`,
+          record.puzzleHits || 0,
+          record.puzzleAttempts || 0,
+          record.reactionTime,
+          record.headband,
+          record.scoreTotal,
+          record.createdAt
+        ])
+      ]];
+      const scoreSheet = [`${base.studentLabel}-策略评分记录`, [
+        ["学号", "姓名", "班级", "小组", "策略名称", "答案准确性得分", "策略利用率得分", "记忆信心度得分", "策略迁移性得分", "策略总分", "记录时间"],
+        ...strategyScores.map((record) => [
+          record.studentId,
+          record.studentName || "",
+          record.className || "",
+          record.groupName || record.groupId || "",
+          record.strategyName,
+          record.scoreAccuracy,
+          record.scoreUse,
+          record.scoreConfidence,
+          record.scoreTransfer,
+          record.scoreTotal,
+          record.createdAt
+        ])
+      ]];
+
+      base.sheets.splice(2, 0, detailSheet, scoreSheet);
+      return base.sheets;
+    }
+
+    function buildPosterStateSheets(stateRecord) {
+      const state = stateRecord.data?.fullState || stateRecord.data || {};
+      const fields = state.fields || {};
+      const studentLabel = state.studentId || stateRecord.studentId || "未知学生";
+      const qaRecords = Array.isArray(state.qaRecords) ? state.qaRecords : [];
+      const questions = Array.isArray(state.questions) ? state.questions : [];
+      const scoreRecords = Array.isArray(state.scoreRecords) ? state.scoreRecords : [];
+      const scores = state.scores || {};
+      const posterGroups = Array.isArray(state.posterGroups) ? state.posterGroups : [];
+
+      return [
+        [`${studentLabel}-基本信息`, [
+          ["项目", "内容"],
+          ["模块", "海报制作与分享交流"],
+          ["学号", state.studentId || stateRecord.studentId],
+          ["姓名", state.studentName || stateRecord.studentName || ""],
+          ["班级", state.className || stateRecord.className || ""],
+          ["小组", state.groupName || state.groupId || stateRecord.groupName || ""],
+          ["学生年龄", state.studentAge || ""],
+          ["实验时间", state.savedAt || ""],
+          ["后台提交时间", formatDate(stateRecord.uploadedAt || stateRecord.createdAt)],
+          ["导出时间", new Date().toLocaleString()]
+        ]],
+        [`${studentLabel}-海报方案与反思`, [
+          ["字段", "内容"],
+          ["研究问题", fields.researchQuestion],
+          ["研究假设", fields.hypothesis],
+          ["研究计划", fields.researchPlan],
+          ["实验数据呈现方式", fields.dataDisplay],
+          ["研究结论", fields.conclusion],
+          ["反思不足", fields.limitation],
+          ["生活启示", fields.lifeApplication],
+          ["小组分工", fields.division],
+          ["版式草图说明", fields.layoutSketch],
+          ["主要图表类型", fields.chartPlan],
+          ["AI辅助建议记录", fields.aiSupport],
+          ["图画图标或素材计划", fields.visualPlan],
+          ["小小讲解员", fields.presenter],
+          ["小小讲解员学生编号", fields.presenterStudentId],
+          ["讲解要点", fields.speakingPoints],
+          ["我心中的最优海报", fields.bestPoster],
+          ["本次交流最大的收获", fields.reflectionGain],
+          ["海报还可以怎样改进", fields.reflectionImprove],
+          ["小组合作反思", fields.teamReflection],
+          ["今后如何应用探究成果", fields.nextUse],
+          ["全部字段JSON", JSON.stringify(fields)]
+        ]],
+        [`${studentLabel}-分享交流记录`, [
+          ["学号", "姓名", "班级", "小组", "序号", "问题", "回答"],
+          ...qaRecords.map((item, index) => [
+            item.studentId || state.studentId,
+            item.studentName || state.studentName || "",
+            item.className || state.className || "",
+            item.groupName || item.groupId || state.groupName || state.groupId || "",
+            index + 1,
+            item.question,
+            item.answer
+          ])
+        ]],
+        [`${studentLabel}-提问记录`, [
+          ["学号", "姓名", "班级", "小组", "序号", "提问对象", "问题类型", "具体问题", "对方回答摘要"],
+          ...questions.map((item, index) => [
+            item.studentId || state.studentId,
+            item.studentName || state.studentName || "",
+            item.className || state.className || "",
+            item.groupName || item.groupId || state.groupName || state.groupId || "",
+            index + 1,
+            item.group,
+            item.type,
+            item.question,
+            item.answer
+          ])
+        ]],
+        [`${studentLabel}-海报评分明细`, [
+          ["学号", "姓名", "班级", "小组", "评价维度", "具体指标", "被评分小组", "得分", "记录时间"],
+          ...scoreRecords.map((record) => [
+            record.studentId || state.studentId,
+            record.studentName || state.studentName || "",
+            record.className || state.className || "",
+            record.groupName || record.groupId || state.groupName || state.groupId || "",
+            record.dimension,
+            record.title,
+            record.targetGroup,
+            record.score,
+            record.createdAt
+          ]),
+          ...Object.entries(scores).map(([key, value]) => [
+            state.studentId || stateRecord.studentId,
+            state.studentName || stateRecord.studentName || "",
+            state.className || stateRecord.className || "",
+            state.groupName || state.groupId || stateRecord.groupName || "",
+            "",
+            key,
+            "",
+            value,
+            ""
+          ])
+        ]],
+        [`${studentLabel}-海报组别`, [
+          ["序号", "组别"],
+          ...posterGroups.map((group, index) => [index + 1, group])
+        ]],
+        [`${studentLabel}-localStorage原始数据`, [
+          ["localStorage key", "JSON"],
+          ["poster-making-state-v1", JSON.stringify(state)]
+        ]]
+      ];
+    }
+
+    function buildScreeningStateSheets(stateRecord) {
+      const state = stateRecord.data?.fullState || stateRecord.data || {};
+      const answers = state.answers || state.preMeta || {};
+      const items = Array.isArray(state.items) ? state.items : [];
+      const labels = state.labels || {};
+      const studentLabel = state.studentId || stateRecord.studentId || "未知学生";
+
+      return [
+        [`${studentLabel}-基本信息`, [
+          ["项目", "内容"],
+          ["模块", "记忆侦探资格审查"],
+          ["学号", state.studentId || stateRecord.studentId],
+          ["姓名", state.studentName || stateRecord.studentName || ""],
+          ["班级", state.className || stateRecord.className || ""],
+          ["小组", state.groupName || state.groupId || stateRecord.groupName || ""],
+          ["学生年龄", state.studentAge || ""],
+          ["完成时间", state.completedAt || ""],
+          ["后台提交时间", formatDate(stateRecord.uploadedAt || stateRecord.createdAt)],
+          ["导出时间", new Date().toLocaleString()]
+        ]],
+        [`${studentLabel}-资格审查结果`, [
+          ["题号", "题目", "作答结果", "每题得分"],
+          ...items.map((item, index) => {
+            const score = Number(answers[`q${index + 1}`] || 0);
+            return [String(index + 1), item, labels[score] || "", score || ""];
+          }),
+          ["合计", "已完成题目", "", state.answered || Object.keys(answers).length],
+          ["合计", "总分", "", state.total || ""],
+          ["合计", "均分", "", state.average || ""],
+          ["合计", "是否完成", "", state.complete || state.completed ? "是" : "否"]
+        ]],
+        [`${studentLabel}-localStorage原始数据`, [
+          ["localStorage key", "JSON"],
+          ["detectiveQualificationData", JSON.stringify(state)]
+        ]]
+      ];
+    }
+
+    function buildAiChatStateSheets(stateRecord) {
+      const data = stateRecord.data || {};
+      const logs = Array.isArray(data.logs) ? data.logs : [];
+      const studentLabel = stateRecord.studentId || data.studentId || "未知学生";
+
+      return [
+        [`${studentLabel}-${data.sourceModule || "AI"}-AI对话`, [
+          ["学号", "姓名", "班级", "小组", "来源模块", "实验/页面", "阶段", "提问时间", "学生问题", "AI回答"],
+          ...logs.map((log) => [
+            log.studentId || data.studentId || stateRecord.studentId,
+            log.studentName || data.studentName || stateRecord.studentName || "",
+            log.className || data.className || stateRecord.className || "",
+            log.groupName || log.groupId || data.groupName || stateRecord.groupName || "",
+            data.sourceModule || "",
+            log.experimentName || data.experimentName || log.pageTitle || data.pageTitle || "",
+            log.currentStep || "",
+            log.timestamp || "",
+            log.question || "",
+            log.answer || ""
+          ])
+        ]],
+        [`${studentLabel}-${data.sourceModule || "AI"}-AI原始数据`, [
+          ["字段", "内容"],
+          ["来源模块", data.sourceModule || ""],
+          ["页面路径", data.path || ""],
+          ["对话条数", logs.length],
+          ["提交时间", data.createdAt || stateRecord.createdAt || ""],
+          ["JSON", JSON.stringify(data)]
+        ]]
+      ];
+    }
+
+    async function exportExcel() {
+      setStatus("正在生成完整导出...");
+
+      let sheets = [];
+      try {
+        const latestStateRecords = getLatestStateRecords(records);
+        const detailSheets = latestStateRecords.flatMap((record) => {
+          if (record.module === "nback") return buildNbackStateSheets(record);
+          if (record.module === "interference") return buildInterferenceStateSheets(record);
+          if (record.module === "strategies") return buildStrategiesStateSheets(record);
+          if (record.module === "poster") return buildPosterStateSheets(record);
+          if (record.module === "screening") return buildScreeningStateSheets(record);
+          if (record.module === "aiChat") return buildAiChatStateSheets(record);
+          return buildMemoryStateSheets(record);
+        });
+        sheets = [buildOverviewSheet(latestStateRecords), ...detailSheets];
+      } catch (error) {
+        console.warn("读取完整状态快照失败，将使用明细记录导出。", error);
+      }
+
+      if (!sheets.length) {
+        sheets = buildFallbackSheets();
+      }
+
+      if (!sheets.length || !sheets.some(([, rows]) => rows.length > 1)) {
+        setStatus("没有可导出的记录。");
+        return;
+      }
+
+      const html = `<html><head><meta charset="utf-8"></head><body>${sheets.map(([title, rows]) => `
+        <h2>${escapeHtml(title)}</h2>
+        <table border="1">${rows.map((row) => `<tr>${row.map((cell) => `<td>${escapeHtml(cell)}</td>`).join("")}</tr>`).join("")}</table>
+        <br>
+      `).join("")}</body></html>`;
+      const blob = new Blob(["\ufeff", html], { type: "application/vnd.ms-excel;charset=utf-8" });
+      const url = URL.createObjectURL(blob);
+      const link = document.createElement("a");
+      link.href = url;
+      link.download = `实验完整数据_${new Date().toISOString().slice(0, 10)}.xls`;
+      document.body.appendChild(link);
+      link.click();
+      document.body.removeChild(link);
+      URL.revokeObjectURL(url);
+      setStatus(`已导出 ${sheets.length} 个数据表。`);
+    }
+
+    queryBtn.addEventListener("click", loadRecords);
+    exportBtn.addEventListener("click", exportExcel);
+    resetBtn.addEventListener("click", () => {
+      filters.studentId.value = "";
+      filters.className.value = "";
+      filters.groupName.value = "";
+      filters.dateFrom.value = "";
+      filters.dateTo.value = "";
+      filters.sourceModule.value = "";
+      filters.limit.value = "100";
+      loadRecords();
+    });
+    closeDialogBtn.addEventListener("click", () => detailDialog.close());
+
+    checkAdminLogin();
+  </script>
+</body>
+</html>

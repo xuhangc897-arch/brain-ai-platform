@@ -303,7 +303,6 @@
         <div class="top-actions">
           <button class="btn secondary" id="devModeBtn" type="button">开发者模式</button>
           <button class="btn secondary" id="homeBtn" type="button">回到首页</button>
-          <button class="btn secondary" id="exportBtn" type="button">导出 Excel</button>
           <button class="btn danger" id="resetBtn" type="button">重置本实验</button>
         </div>
       </div>
@@ -311,6 +310,11 @@
     </div>
   </header>
   <main id="main" class="main"></main>
+  <script src="auth.js"></script>
+  <script src="assets/experiment-uploader.js"></script>
+  <script>
+    checkLogin();
+  </script>
   <script>
     const CONTEXT_KEY = "science-inquiry-context-v1";
     const STORAGE_KEY = "longterm-strategies-state-v1";
@@ -570,6 +574,7 @@
           merged.groupId = context.groupId || merged.groupId;
         }
       } catch (event) { localStorage.removeItem(CONTEXT_KEY); }
+      Object.assign(merged, getStudentIdentityFields());
       return merged;
     }
     function mergeState(base, incoming) {
@@ -636,7 +641,7 @@
       renderApp();
     }
 
-    function saveState() { syncThinkingFields(); state.savedAt = new Date().toISOString(); localStorage.setItem(STORAGE_KEY, JSON.stringify(state)); }
+    function saveState() { syncThinkingFields(); Object.assign(state, getStudentIdentityFields()); state.savedAt = new Date().toISOString(); localStorage.setItem(STORAGE_KEY, JSON.stringify(state)); }
     function escapeHtml(value) { return String(value ?? "").replaceAll("&","&amp;").replaceAll("<","&lt;").replaceAll(">","&gt;").replaceAll('"',"&quot;").replaceAll("'","&#039;"); }
     function selected(field, value) { return state.fields[field] === value ? "selected" : ""; }
     function hasThoughtText(value) { return value !== null && value !== undefined && String(value).trim() !== ""; }
@@ -801,7 +806,7 @@
     }
 
     function renderPosttestExportArea() {
-      return '<div class="actions" style="justify-content:flex-end;"><button class="btn secondary" type="button" id="reviewReportBtn">生成记忆侦探报告</button><button class="btn success" type="button" id="finalExportBtn">导出完整实验记录</button></div>';
+      return '<div class="actions" style="justify-content:flex-end;"><button class="btn secondary" type="button" id="reviewReportBtn">生成记忆侦探报告</button></div>';
     }
 
     function renderSurveyForm(surveyKey, defKey) {
@@ -1252,6 +1257,7 @@
         scoreTotal: getScoreTotal(),
         createdAt: new Date().toLocaleString()
       };
+      Object.assign(record, getStudentIdentityFields());
       state.strategyScores.push(record);
       saveState();
       renderApp();
@@ -1301,14 +1307,34 @@
       if (stepId === "evidence") bindGameEvents();
       if (stepId === "hypothesis") bindStrategyMatchEvents();
       if (stepId === "analysis") bindScoreEvents();
-      const finalExport = document.getElementById("finalExportBtn");
-      if (finalExport) finalExport.addEventListener("click", exportExcel);
       const reviewReport = document.getElementById("reviewReportBtn");
       if (reviewReport) reviewReport.addEventListener("click", () => generateReviewReport("strategies"));
     }
     function generateReviewReport(activityType) {
       saveState();
+      submitStrategiesRecord("generateReport");
+      if (typeof window.submitAiChatRecord === "function") window.submitAiChatRecord("strategies", "generateReport").then((result) => console.info("AI chat upload result:", result));
       window.open(`review.html?activityType=${encodeURIComponent(activityType)}`, "_blank");
+    }
+    function submitStrategiesRecord(submitAction) {
+      if (typeof window.uploadExperimentRecords !== "function") return;
+      syncThinkingFields();
+      const snapshot = structuredClone(state);
+      const submittedAt = new Date().toISOString();
+      window.uploadExperimentRecords({
+        module: "strategies",
+        recordType: "submission",
+        records: [{
+          submitAction,
+          studentId: snapshot.studentId || "",
+          studentName: snapshot.studentName || "",
+          className: snapshot.className || "",
+          groupName: snapshot.groupName || snapshot.groupId || "",
+          fullState: snapshot,
+          createdAt: submittedAt,
+          clientRecordId: `strategies|submission|${snapshot.studentId || ""}|${submitAction}|${submittedAt}`
+        }]
+      });
     }
     function bindScoreEvents() {
       const add = document.getElementById("addStrategyScoreBtn");
@@ -1477,6 +1503,7 @@
       const accuracy = session.items.length ? Math.round((correct.length / session.items.length) * 100) : 0;
       const reactionTime = Math.round(performance.now() - session.recallStartedAt);
       const record = { runId: session.id, studentName: state.studentName, studentAge: state.studentAge, studentId: state.studentId, groupId: state.groupId, stage: session.stage, strategy: session.strategy, materialType: state.fields.materialType, itemCount: session.items.length, memorySeconds: state.fields.memorySeconds, puzzleSeconds: state.fields.puzzleSeconds, testSeconds: state.fields.testSeconds, items: session.items.join("；"), recall, correctItems: correct.join("；"), correctCount: correct.length, accuracy, reactionTime, puzzleHits: session.puzzleHits, puzzleAttempts: session.puzzleAttempts, headband, scoreTotal: getScoreTotal(), createdAt: new Date().toLocaleString() };
+      Object.assign(record, getStudentIdentityFields());
       state.records.push(record);
       saveState();
       const finished = session;
@@ -1529,16 +1556,16 @@
       const noStrategyResult = getStrategySummaryText("简单复述", summary) || getStrategySummaryText("不使用策略（简单复述）", summary);
       const strategyResult = summary.filter((item)=>item.strategy !== "简单复述").map((item)=>`${item.strategy}：平均正确数${item.avgCorrect}，平均回忆率${item.avgAccuracy}%`).join("；");
       const sheets = [
-        ["基本信息", [["项目","内容"],["实验","改善长时记忆的策略有哪些"],["学生姓名",state.studentName || ""],["学生年龄",state.studentAge || ""],["学生编号",state.studentId],["小组编号",state.groupId],["实验时间",state.savedAt || ""],["导出时间",new Date().toLocaleString()]]],
+        ["基本信息", [["项目","内容"],["实验","改善长时记忆的策略有哪些"],["学号",state.studentId],["姓名",state.studentName || ""],["班级",state.className || ""],["小组",state.groupName || state.groupId || ""],["学生姓名",state.studentName || ""],["学生年龄",state.studentAge || ""],["学生编号",state.studentId],["小组编号",state.groupId],["实验时间",state.savedAt || ""],["导出时间",new Date().toLocaleString()]]],
         ["实验过程", [["字段","内容"], ...getThinkingRows(), ["研究问题",state.fields.question],["材料策略匹配选择",formatMatchSelections()],["材料策略匹配是否成功",state.fields.strategyMatchConfirmed ? "是" : "否"],["策略1假设",state.fields.hypothesis1],["策略2假设",state.fields.hypothesis2],["阶段一策略",state.fields.stage1Strategy || "简单复述"],["阶段二策略1",state.fields.strategy1],["阶段二策略2",state.fields.strategy2],["阶段一：简单复述结果",noStrategyResult],["阶段二：使用策略结果",strategyResult],["材料类型",state.fields.materialType],["初级数量",state.fields.lowCount],["中级数量",state.fields.midCount],["高级数量",state.fields.highCount],["记忆时间s",state.fields.memorySeconds],["找不同时间s",state.fields.puzzleSeconds],["测试时间s",state.fields.testSeconds],["组长",state.fields.leader],["记录员",state.fields.recorder],["组员A",state.fields.memberA],["组员B",state.fields.memberB],["头环观察",state.fields.headband],["结论",state.fields.conclusion],["设计改进",state.fields.designImprove],["结果意外原因",state.fields.surprise],["适用性反思",state.fields.applicability]]],
-        ["测试明细", [["学生姓名","学生年龄","学生编号","小组编号","阶段","策略","材料类型","题目总数","记忆时间s","找不同时间s","测试时间s","题目","学生回答","正确项目","正确数","回忆率","找不同命中","找不同点击","反应时ms","头环观察","评分总分","记录时间"], ...state.records.map((r)=>[r.studentName || "",r.studentAge || "",r.studentId,r.groupId,r.stage,r.strategy,r.materialType,r.itemCount,r.memorySeconds,r.puzzleSeconds,r.testSeconds,r.items,r.recall,r.correctItems,r.correctCount,`${r.accuracy}%`,r.puzzleHits || 0,r.puzzleAttempts || 0,r.reactionTime,r.headband,r.scoreTotal,r.createdAt])]],
+        ["测试明细", [["学号","姓名","班级","小组","学生姓名","学生年龄","学生编号","小组编号","阶段","策略","材料类型","题目总数","记忆时间s","找不同时间s","测试时间s","题目","学生回答","正确项目","正确数","回忆率","找不同命中","找不同点击","反应时ms","头环观察","评分总分","记录时间"], ...state.records.map((r)=>[r.studentId,r.studentName || "",r.className || "",r.groupName || r.groupId || "",r.studentName || "",r.studentAge || "",r.studentId,r.groupId,r.stage,r.strategy,r.materialType,r.itemCount,r.memorySeconds,r.puzzleSeconds,r.testSeconds,r.items,r.recall,r.correctItems,r.correctCount,`${r.accuracy}%`,r.puzzleHits || 0,r.puzzleAttempts || 0,r.reactionTime,r.headband,r.scoreTotal,r.createdAt])]],
         ["策略汇总", [["策略","次数","平均正确数","平均回忆率","平均反应时ms","头环观察结果"], ...summary.map((item)=>[item.strategy,item.count,item.avgCorrect,`${item.avgAccuracy}%`,item.avgRt,item.headbandSummary || ""])],
         ],
         getTeamResultSheet(summary),
         getHeadbandSummarySheet(),
         getSystemInfoSheet(state.records.length),
         getRawStorageSheet(),
-        ["策略评分记录", [["策略名称","答案准确性得分","策略利用率得分","记忆信心度得分","策略迁移性得分","策略总分","记录时间"], ...(state.strategyScores || []).map((record)=>[record.strategyName, record.scoreAccuracy, record.scoreUse, record.scoreConfidence, record.scoreTransfer, record.scoreTotal, record.createdAt])]],
+        ["策略评分记录", [["学号","姓名","班级","小组","策略名称","答案准确性得分","策略利用率得分","记忆信心度得分","策略迁移性得分","策略总分","记录时间"], ...(state.strategyScores || []).map((record)=>[record.studentId, record.studentName || "", record.className || "", record.groupName || record.groupId || "", record.strategyName, record.scoreAccuracy, record.scoreUse, record.scoreConfidence, record.scoreTransfer, record.scoreTotal, record.createdAt])]],
         ...getSurveySheets()
       ];
       const html = `<html><head><meta charset="utf-8"></head><body>${sheets.map(([title,rows])=>`<h2>${escapeHtml(title)}</h2><table border="1">${rows.map((row)=>`<tr>${row.map((cell)=>`<td>${escapeHtml(cell)}</td>`).join("")}</tr>`).join("")}</table><br>`).join("")}</body></html>`;
@@ -1554,11 +1581,12 @@
     }
     document.getElementById("homeBtn").addEventListener("click",()=>{ location.href = "index.html"; });
     document.getElementById("devModeBtn").addEventListener("click", enableDeveloperMode);
-    document.getElementById("exportBtn").addEventListener("click", exportExcel);
+    const exportBtn = document.getElementById("exportBtn");
+    if (exportBtn) exportBtn.addEventListener("click", exportExcel);
     document.getElementById("resetBtn").addEventListener("click",()=>{ if (!confirm("确定要清空本实验在当前浏览器中保存的数据吗？")) return; localStorage.removeItem(STORAGE_KEY); state = loadState(); session = null; clearTimers(); renderApp(); });
     renderApp();
   </script>
-  <script src="assets/ai-assistant.js"></script>
+  <script src="assets/ai-assistant.js?v=ai-chat-upload-20260708"></script>
   <script>
     window.BRAIN_ASR_SIGN_ENDPOINT = "https://1441391469-7ppckhczkq.ap-shanghai.tencentscf.com";
   </script>
@@ -1567,8 +1595,3 @@
   <script src="assets/voice-assistant.js"></script>
 </body>
 </html>
-
-
-
-
-

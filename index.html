@@ -531,6 +531,20 @@
       border: 1px solid rgba(79, 124, 255, 0.18);
     }
 
+    .logout-area {
+      display: flex;
+      align-items: center;
+      justify-content: flex-end;
+      gap: 12px;
+      margin-top: 12px;
+    }
+
+    .welcome-user {
+      color: var(--muted);
+      font-size: 13px;
+      font-weight: 800;
+    }
+
     .error {
       min-height: 22px;
       margin: 12px 0 0;
@@ -3292,6 +3306,10 @@
         </div>
 
         <p id="error" class="error"></p>
+        <div class="logout-area">
+          <span class="welcome-user" id="welcomeUser"></span>
+          <button class="btn ghost" type="button" id="logoutBtn">退出登录</button>
+        </div>
       </aside>
     </section>
 
@@ -3378,7 +3396,16 @@
     </footer>
   </main>
 
+  <script src="auth.js"></script>
   <script>
+    checkLogin();
+  </script>
+  <script>
+    /*
+     * 首页登录保护：
+     * 页面加载后先检查学生本地会话；未登录会自动跳转 login.html。
+     * 这里不改动实验入口逻辑，只是在进入首页前增加登录门禁。
+     */
     const CONTEXT_KEY = "science-inquiry-context-v1";
     const studentNameInput = document.getElementById("studentName");
     const studentAgeInput = document.getElementById("studentAge");
@@ -3442,6 +3469,7 @@
       scienceSection.classList.remove("is-visible");
       document.body.classList.remove("modal-open");
     });
+
   </script>
   <script src="assets/ai-assistant.js"></script>
   <script>

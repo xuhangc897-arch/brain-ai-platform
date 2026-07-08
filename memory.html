@@ -1045,7 +1045,6 @@
         <div class="top-actions">
           <button class="btn secondary" id="devModeBtn" type="button">开发者模式</button>
           <button class="btn secondary" id="homeBtn" type="button">回到首页</button>
-          <button class="btn secondary" id="exportBtn" type="button">导出 Excel</button>
           <button class="btn danger" id="resetBtn" type="button">重置本实验</button>
         </div>
       </div>
@@ -1055,6 +1054,11 @@
 
   <main id="main" class="main"></main>
 
+  <script src="auth.js"></script>
+  <script src="assets/experiment-uploader.js"></script>
+  <script>
+    checkLogin();
+  </script>
   <script>
     const CONTEXT_KEY = "science-inquiry-context-v1";
     const STORAGE_KEY = "memory-capacity-state-v1";
@@ -1301,6 +1305,7 @@
       } catch (event) {
         localStorage.removeItem(CONTEXT_KEY);
       }
+      Object.assign(merged, getStudentIdentityFields());
       return merged;
     }
 
@@ -1348,6 +1353,7 @@
 
     function saveState() {
       syncThinkingFields();
+      Object.assign(state, getStudentIdentityFields());
       state.savedAt = new Date().toISOString();
       localStorage.setItem(STORAGE_KEY, JSON.stringify(state));
     }
@@ -1552,7 +1558,7 @@
     }
 
     function renderPosttestExportArea() {
-      return '<div class="actions" style="justify-content:flex-end;"><button class="btn secondary" type="button" id="reviewReportBtn">生成记忆侦探报告</button><button class="btn success" type="button" id="finalExportBtn">导出完整实验记录</button></div>';
+      return '<div class="actions" style="justify-content:flex-end;"><button class="btn secondary" type="button" id="reviewReportBtn">生成记忆侦探报告</button></div>';
     }
 
     function renderSurveyForm(surveyKey, defKey) {
@@ -2329,15 +2335,38 @@
       if (stepId === "evidence") bindGameEvents();
       const completeGroupAverageBtn = document.getElementById("completeGroupAverageBtn");
       if (completeGroupAverageBtn) completeGroupAverageBtn.addEventListener("click", completeGroupAverage);
-      const finalExport = document.getElementById("finalExportBtn");
-      if (finalExport) finalExport.addEventListener("click", exportExcel);
       const reviewReport = document.getElementById("reviewReportBtn");
       if (reviewReport) reviewReport.addEventListener("click", () => generateReviewReport("memory"));
     }
 
     function generateReviewReport(activityType) {
       saveState();
+      submitMemoryRecord("generateReport");
+      if (typeof window.submitAiChatRecord === "function") window.submitAiChatRecord("memory", "generateReport").then((result) => console.info("AI chat upload result:", result));
       window.open(`review.html?activityType=${encodeURIComponent(activityType)}`, "_blank");
+    }
+
+    function submitMemoryRecord(submitAction) {
+      if (!window.uploadExperimentRecords) return;
+      syncThinkingFields();
+
+      const snapshot = structuredClone(state);
+      const submittedAt = new Date().toISOString();
+
+      window.uploadExperimentRecords({
+        module: "memory",
+        recordType: "submission",
+        records: [{
+          submitAction,
+          studentId: snapshot.studentId || "",
+          studentName: snapshot.studentName || "",
+          className: snapshot.className || "",
+          groupName: snapshot.groupName || snapshot.groupId || "",
+          fullState: snapshot,
+          createdAt: submittedAt,
+          clientRecordId: `memory|submission|${snapshot.studentId || ""}|${submitAction}|${submittedAt}`
+        }]
+      });
     }
 
     function getCurrentPlanOrderFromDom() {
@@ -2560,6 +2589,7 @@
         capacityAfterTrial: game.lastCapacity,
         createdAt: new Date().toLocaleString()
       };
+      Object.assign(record, getStudentIdentityFields());
       if (isCorrect) {
         game.correctStreak += 1;
         game.wrongStreak = 0;
@@ -2705,6 +2735,10 @@
         ["基本信息", [
           ["项目", "内容"],
           ["实验", "探究短时记忆的容量"],
+          ["学号", state.studentId],
+          ["姓名", state.studentName || ""],
+          ["班级", state.className || ""],
+          ["小组", state.groupName || state.groupId || ""],
           ["学生姓名", state.studentName || ""],
           ["学生年龄", state.studentAge || ""],
           ["学生编号", state.studentId],
@@ -2737,8 +2771,12 @@
           ["探究环节反思", state.fields.inquiryReflection]
         ]],
         ["记忆任务明细", [
-          ["学生姓名", "学生年龄", "学生编号", "小组编号", "参与者", "测量次数", "方法", "实验材料类别", "材料", "呈现间隔s", "长度", "原始序列", "正确答案", "学生回答", "是否正确", "本次最终容量", "记录时间"],
+          ["学号", "姓名", "班级", "小组", "学生姓名", "学生年龄", "学生编号", "小组编号", "参与者", "测量次数", "方法", "实验材料类别", "材料", "呈现间隔s", "长度", "原始序列", "正确答案", "学生回答", "是否正确", "本次最终容量", "记录时间"],
           ...state.records.map((record) => [
+            record.studentId,
+            record.studentName || "",
+            record.className || "",
+            record.groupName || record.groupId || "",
             record.studentName || "",
             record.studentAge || "",
             record.studentId,
@@ -2795,7 +2833,8 @@
     });
     document.getElementById("devModeBtn").addEventListener("click", enableDeveloperMode);
 
-    document.getElementById("exportBtn").addEventListener("click", exportExcel);
+    const exportBtn = document.getElementById("exportBtn");
+    if (exportBtn) exportBtn.addEventListener("click", exportExcel);
 
     document.getElementById("resetBtn").addEventListener("click", () => {
       if (!confirm("确定要清空本实验在当前浏览器中保存的数据吗？")) return;
@@ -2808,7 +2847,7 @@
 
     renderApp();
   </script>
-  <script src="assets/ai-assistant.js"></script>
+  <script src="assets/ai-assistant.js?v=ai-chat-upload-20260708"></script>
   <script>
     window.BRAIN_ASR_SIGN_ENDPOINT = "https://1441391469-7ppckhczkq.ap-shanghai.tencentscf.com";
   </script>
@@ -2817,8 +2856,3 @@
   <script src="assets/voice-assistant.js"></script>
 </body>
 </html>
-
-
-
-
-
