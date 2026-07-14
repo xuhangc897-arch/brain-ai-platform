@@ -11,6 +11,7 @@
   const root = document.createElement("div");
   root.className = "ai-assistant";
   root.innerHTML = `
+    <div class="ai-hint" aria-hidden="true">我是你的AI侦探助手，有什么问题都可以问我噢！</div>
     <button class="ai-toggle" type="button" aria-label="打开 AI 助手">
       <span class="ai-brain-wrap" aria-hidden="true">
         <svg class="ai-brain-icon" viewBox="0 0 64 64" focusable="false">
