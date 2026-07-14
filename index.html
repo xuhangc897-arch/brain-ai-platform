@@ -3236,6 +3236,317 @@
         padding-bottom: 2px;
       }
     }
+    .memory-video-promo {
+      display: flex;
+      align-items: center;
+      gap: 10px;
+      width: fit-content;
+      max-width: 100%;
+      margin-top: 12px;
+    }
+
+    .memory-video-trigger {
+      display: inline-grid;
+      flex: 0 0 auto;
+      place-items: center;
+      width: 44px;
+      height: 44px;
+      padding: 0;
+      border: 1px solid rgba(255, 235, 184, 0.72);
+      border-radius: 50%;
+      background: #f0d29a;
+      color: #34200d;
+      box-shadow: 0 8px 18px rgba(0, 0, 0, 0.25);
+      cursor: pointer;
+      font-size: 18px;
+      line-height: 1;
+      transition: transform 160ms ease, box-shadow 160ms ease, background 160ms ease;
+    }
+
+    .memory-video-trigger:hover,
+    .memory-video-trigger:focus-visible {
+      background: #ffe5ad;
+      box-shadow: 0 10px 24px rgba(0, 0, 0, 0.34);
+      outline: none;
+      transform: translateY(-2px) scale(1.04);
+    }
+
+    .memory-video-bubble {
+      position: relative;
+      max-width: min(430px, calc(100vw - 120px));
+      padding: 9px 12px;
+      border: 1px solid rgba(255, 235, 184, 0.42);
+      border-radius: 12px 12px 12px 3px;
+      background: rgba(255, 247, 226, 0.96);
+      color: #39240e;
+      box-shadow: 0 8px 20px rgba(0, 0, 0, 0.18);
+      font-size: 12px;
+      font-weight: 800;
+      line-height: 1.45;
+      animation: memoryVideoBubble 8s ease-in-out infinite;
+    }
+
+    .memory-video-bubble::before {
+      content: "";
+      position: absolute;
+      left: -7px;
+      top: 15px;
+      width: 12px;
+      height: 12px;
+      border-left: 1px solid rgba(255, 235, 184, 0.42);
+      border-bottom: 1px solid rgba(255, 235, 184, 0.42);
+      background: #fff7e2;
+      transform: rotate(45deg);
+    }
+
+    @keyframes memoryVideoBubble {
+      0%, 58%, 100% { opacity: 0; transform: translateX(-6px); }
+      64%, 88% { opacity: 1; transform: translateX(0); }
+    }
+
+    .memory-video-modal {
+      width: min(900px, calc(100vw - 32px));
+      padding: 0;
+      border: 1px solid rgba(143, 204, 255, 0.44);
+      border-radius: 16px;
+      background: #071426;
+      color: #eef7ff;
+      box-shadow: 0 26px 90px rgba(0, 0, 0, 0.56);
+    }
+
+    .memory-video-modal::backdrop {
+      background: rgba(0, 6, 18, 0.72);
+      backdrop-filter: blur(5px);
+    }
+
+    .memory-video-modal-inner {
+      padding: 18px;
+    }
+
+    .memory-video-modal-head {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 16px;
+      margin-bottom: 12px;
+    }
+
+    .memory-video-modal-head h2 {
+      margin: 0;
+      color: #f8e1ae;
+      font-size: 18px;
+    }
+
+    .memory-video-close {
+      display: inline-grid;
+      place-items: center;
+      width: 34px;
+      height: 34px;
+      padding: 0;
+      border: 1px solid rgba(143, 204, 255, 0.34);
+      border-radius: 50%;
+      background: rgba(255, 255, 255, 0.08);
+      color: #eef7ff;
+      cursor: pointer;
+      font-size: 22px;
+      line-height: 1;
+    }
+
+    .memory-video-player {
+      display: block;
+      width: 100%;
+      max-height: 70vh;
+      border-radius: 10px;
+      background: #000;
+    }
+
+    .memory-video-empty {
+      display: none;
+      padding: 28px 18px;
+      border: 1px dashed rgba(143, 204, 255, 0.42);
+      border-radius: 10px;
+      color: #cfe7fa;
+      font-size: 14px;
+      line-height: 1.6;
+      text-align: center;
+    }
+
+    @media (max-width: 760px) {
+      .memory-video-promo {
+        align-items: flex-start;
+      }
+
+      .memory-video-bubble {
+        max-width: calc(100vw - 96px);
+        font-size: 11px;
+      }
+
+      .memory-video-modal-inner {
+        padding: 12px;
+      }
+    }
+
+    @media (prefers-reduced-motion: reduce) {
+      .memory-video-bubble {
+        animation: none;
+        opacity: 1;
+        transform: none;
+      }
+    }
+
+    .identity-confirm-row {
+      display: flex;
+      justify-content: flex-end;
+      margin-top: 14px;
+    }
+
+    .identity-confirm {
+      min-height: 42px;
+      padding: 0 24px;
+      border: 1px solid rgba(255, 226, 164, 0.72);
+      border-radius: 10px;
+      background: linear-gradient(135deg, #f3d79d, #c99a55);
+      color: #2b1b0c;
+      box-shadow: 0 10px 22px rgba(0, 0, 0, 0.24);
+      cursor: pointer;
+      font-size: 14px;
+      font-weight: 900;
+      transition: transform 160ms ease, filter 160ms ease, box-shadow 160ms ease;
+    }
+
+    .identity-confirm:hover,
+    .identity-confirm:focus-visible {
+      filter: brightness(1.08);
+      outline: none;
+      transform: translateY(-2px);
+      box-shadow: 0 13px 26px rgba(0, 0, 0, 0.3);
+    }
+
+    .identity-confirm:disabled {
+      cursor: default;
+      filter: saturate(0.45);
+      opacity: 0.7;
+      transform: none;
+    }
+
+    .case-content {
+      margin-top: 14px;
+    }
+
+    .case-content[hidden] {
+      display: none;
+    }
+
+    .case-content.is-revealed {
+      animation: caseContentReveal 360ms ease both;
+    }
+
+    @keyframes caseContentReveal {
+      from { opacity: 0; transform: translateY(10px); }
+      to { opacity: 1; transform: translateY(0); }
+    }
+
+    .panel-footer {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 18px;
+      margin-top: 16px;
+    }
+
+    .panel-footer .memory-video-promo {
+      margin-top: 0;
+    }
+
+    .panel-footer .memory-video-trigger {
+      display: inline-flex;
+      align-items: center;
+      justify-content: flex-start;
+      width: auto;
+      min-width: 154px;
+      height: 50px;
+      padding: 0 15px 0 10px;
+      gap: 10px;
+      border: 1px solid rgba(255, 231, 178, 0.82);
+      border-radius: 14px;
+      background: linear-gradient(135deg, #ffe6ad, #d6a45c);
+      color: #2f1c0b;
+      box-shadow: 0 10px 24px rgba(0, 0, 0, 0.28), inset 0 1px 0 rgba(255, 255, 255, 0.52);
+      font-size: 13px;
+    }
+
+    .panel-footer .memory-video-trigger:hover,
+    .panel-footer .memory-video-trigger:focus-visible {
+      background: linear-gradient(135deg, #ffefc8, #e0b977);
+    }
+
+    .memory-video-play {
+      display: inline-grid;
+      flex: 0 0 auto;
+      place-items: center;
+      width: 32px;
+      height: 32px;
+      border: 1px solid rgba(91, 57, 19, 0.24);
+      border-radius: 10px;
+      background: rgba(255, 250, 232, 0.78);
+      color: #5c3614;
+      font-size: 14px;
+    }
+
+    .memory-video-label {
+      display: grid;
+      gap: 2px;
+      text-align: left;
+    }
+
+    .memory-video-label strong {
+      font-size: 13px;
+      line-height: 1.1;
+    }
+
+    .memory-video-label small {
+      color: rgba(58, 34, 12, 0.72);
+      font-size: 10px;
+      font-weight: 900;
+      letter-spacing: 0.08em;
+    }
+
+    .panel-footer .memory-video-bubble {
+      max-width: min(390px, 32vw);
+    }
+
+    .panel-footer .logout-area {
+      flex: 0 0 auto;
+      margin-top: 0;
+    }
+
+    @media (max-width: 760px) {
+      .identity-confirm-row {
+        margin-top: 10px;
+      }
+
+      .identity-confirm {
+        width: 100%;
+      }
+
+      .panel-footer {
+        align-items: stretch;
+        flex-direction: column;
+        gap: 10px;
+      }
+
+      .panel-footer .memory-video-promo {
+        align-items: flex-start;
+      }
+
+      .panel-footer .memory-video-bubble {
+        max-width: calc(100vw - 96px);
+      }
+
+      .panel-footer .logout-area {
+        align-self: flex-end;
+      }
+    }
   </style>
   <link rel="stylesheet" href="assets/ai-assistant.css">
   <link rel="stylesheet" href="assets/voice-assistant.css">
@@ -3271,8 +3582,12 @@
           </div>
         </div>
 
-        <div class="module-grid">
-          <div class="learning-flow"><span>①</span>&nbsp;记忆侦探资格审查&nbsp;→&nbsp;<span>②</span>&nbsp;科学探究案件&nbsp;→&nbsp;<span>③</span>&nbsp;海报成果展示</div>
+        <div class="identity-confirm-row">
+          <button class="identity-confirm" id="confirmIdentityBtn" type="button">确认信息</button>
+        </div>
+
+        <div class="case-content" id="caseContent" hidden>
+          <div class="module-grid">
 
           <article class="qualification-pass">
             <div>
@@ -3303,12 +3618,22 @@
             </div>
             <button class="btn secondary" type="button" data-module="poster">进入海报制作</button>
           </article>
+          </div>
         </div>
 
         <p id="error" class="error"></p>
-        <div class="logout-area">
-          <span class="welcome-user" id="welcomeUser"></span>
-          <button class="btn ghost" type="button" id="logoutBtn">退出登录</button>
+        <div class="panel-footer">
+          <div class="memory-video-promo">
+            <button class="memory-video-trigger" id="memoryVideoTrigger" type="button" aria-label="播放小明的记忆森林探险之旅" title="播放记忆科普视频">
+              <span class="memory-video-play" aria-hidden="true">▶</span>
+              <span class="memory-video-label"><strong>记忆森林</strong><small>科普视频</small></span>
+            </button>
+            <div class="memory-video-bubble">想要了解更多有关记忆的知识吗？一起来看看小明的记忆森林探险之旅吧！</div>
+          </div>
+          <div class="logout-area">
+            <span class="welcome-user" id="welcomeUser"></span>
+            <button class="btn ghost" type="button" id="logoutBtn">退出登录</button>
+          </div>
         </div>
       </aside>
     </section>
@@ -3396,6 +3721,17 @@
     </footer>
   </main>
 
+  <dialog class="memory-video-modal" id="memoryVideoModal" aria-labelledby="memoryVideoTitle">
+    <div class="memory-video-modal-inner">
+      <div class="memory-video-modal-head">
+        <h2 id="memoryVideoTitle">小明的记忆森林探险之旅</h2>
+        <button class="memory-video-close" id="memoryVideoClose" type="button" aria-label="关闭视频">×</button>
+      </div>
+      <video class="memory-video-player" id="memoryVideoPlayer" controls preload="metadata" playsinline></video>
+      <div class="memory-video-empty" id="memoryVideoEmpty">视频地址还未配置。上传到腾讯云后，把首页脚本中的视频 URL 替换成腾讯云的公开播放地址即可。</div>
+    </div>
+  </dialog>
+
   <script src="auth.js"></script>
   <script>
     checkLogin();
@@ -3413,6 +3749,9 @@
     const groupInput = document.getElementById("groupId");
     const error = document.getElementById("error");
     const scienceSection = document.getElementById("scienceSection");
+    const confirmIdentityBtn = document.getElementById("confirmIdentityBtn");
+    const caseContent = document.getElementById("caseContent");
+    const identityInputs = [studentNameInput, studentAgeInput, studentInput, groupInput];
 
     try {
       const saved = JSON.parse(localStorage.getItem(CONTEXT_KEY) || "null");
@@ -3431,8 +3770,8 @@
       const studentAge = studentAgeInput.value.trim();
       const studentId = studentInput.value.trim();
       const groupId = groupInput.value.trim();
-      if (!studentId || !groupId) {
-        error.textContent = "请先填写学生编号和小组编号。";
+      if (!studentName || !studentAge || !studentId || !groupId) {
+        error.textContent = "请完整填写姓名、年龄、学生编号和小组编号。";
         return false;
       }
       error.textContent = "";
@@ -3445,6 +3784,25 @@
       }));
       return true;
     }
+
+    confirmIdentityBtn.addEventListener("click", () => {
+      if (!saveIdentity()) return;
+      caseContent.hidden = false;
+      caseContent.classList.remove("is-revealed");
+      requestAnimationFrame(() => caseContent.classList.add("is-revealed"));
+      confirmIdentityBtn.disabled = true;
+      confirmIdentityBtn.textContent = "信息已确认";
+    });
+
+    identityInputs.forEach((input) => {
+      input.addEventListener("input", () => {
+        if (caseContent.hidden) return;
+        caseContent.hidden = true;
+        caseContent.classList.remove("is-revealed");
+        confirmIdentityBtn.disabled = false;
+        confirmIdentityBtn.textContent = "确认信息";
+      });
+    });
 
     document.querySelectorAll("[data-module]").forEach((button) => {
       button.addEventListener("click", () => {
@@ -3469,6 +3827,43 @@
       scienceSection.classList.remove("is-visible");
       document.body.classList.remove("modal-open");
     });
+
+    // Upload the video to Tencent Cloud, then replace this empty string with its direct MP4 URL.
+    const MEMORY_FOREST_VIDEO_URL = "https://brain-ai-video-1441391469.cos.ap-shanghai.myqcloud.com/memory-forest.mp4";
+    const memoryVideoTrigger = document.getElementById("memoryVideoTrigger");
+    const memoryVideoModal = document.getElementById("memoryVideoModal");
+    const memoryVideoPlayer = document.getElementById("memoryVideoPlayer");
+    const memoryVideoEmpty = document.getElementById("memoryVideoEmpty");
+    const memoryVideoClose = document.getElementById("memoryVideoClose");
+
+    function closeMemoryVideo() {
+      memoryVideoPlayer.pause();
+      if (typeof memoryVideoModal.close === "function") memoryVideoModal.close();
+      else memoryVideoModal.removeAttribute("open");
+      document.body.classList.remove("modal-open");
+    }
+
+    memoryVideoTrigger.addEventListener("click", () => {
+      if (MEMORY_FOREST_VIDEO_URL) {
+        memoryVideoPlayer.src = MEMORY_FOREST_VIDEO_URL;
+        memoryVideoPlayer.style.display = "block";
+        memoryVideoEmpty.style.display = "none";
+      } else {
+        memoryVideoPlayer.removeAttribute("src");
+        memoryVideoPlayer.style.display = "none";
+        memoryVideoEmpty.style.display = "block";
+      }
+      if (typeof memoryVideoModal.showModal === "function") memoryVideoModal.showModal();
+      else memoryVideoModal.setAttribute("open", "open");
+      document.body.classList.add("modal-open");
+      if (MEMORY_FOREST_VIDEO_URL) memoryVideoPlayer.play().catch(() => {});
+    });
+
+    memoryVideoClose.addEventListener("click", closeMemoryVideo);
+    memoryVideoModal.addEventListener("click", (event) => {
+      if (event.target === memoryVideoModal) closeMemoryVideo();
+    });
+    memoryVideoModal.addEventListener("cancel", closeMemoryVideo);
 
   </script>
   <script src="assets/ai-assistant.js"></script>
