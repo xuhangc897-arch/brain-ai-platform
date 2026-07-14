@@ -2801,7 +2801,7 @@
 
     .identity {
       display: grid;
-      grid-template-columns: repeat(4, minmax(0, 1fr));
+      grid-template-columns: repeat(3, minmax(0, 1fr));
       gap: 14px;
       margin-bottom: 0;
     }
@@ -3441,6 +3441,10 @@
       animation: caseContentReveal 360ms ease both;
     }
 
+    .identity-registration.is-confirmed {
+      display: none;
+    }
+
     @keyframes caseContentReveal {
       from { opacity: 0; transform: translateY(10px); }
       to { opacity: 1; transform: translateY(0); }
@@ -3558,32 +3562,30 @@
   <main class="page home-content">
     <section class="hero">
       <aside class="identity-panel case-panel">
-        <div class="panel-heading">
-          <span>CASE REGISTRY</span>
-          <strong>侦探身份登记</strong>
-        </div>
+        <div class="identity-registration" id="identityRegistration">
+          <div class="panel-heading">
+            <span>CASE REGISTRY</span>
+            <strong>侦探身份登记</strong>
+          </div>
 
-        <div class="identity">
-          <div>
-            <label for="studentName">学生姓名</label>
-            <input id="studentName" type="text" autocomplete="off" placeholder="例如：张同学" />
+          <div class="identity">
+            <div>
+              <label for="studentId">学生编号</label>
+              <input id="studentId" type="text" autocomplete="off" />
+            </div>
+            <div>
+              <label for="studentName">学生姓名</label>
+              <input id="studentName" type="text" autocomplete="off" />
+            </div>
+            <div>
+              <label for="groupId">小组编号</label>
+              <input id="groupId" type="text" autocomplete="off" />
+            </div>
           </div>
-          <div>
-            <label for="studentAge">学生年龄</label>
-            <input id="studentAge" type="number" min="1" max="99" autocomplete="off" placeholder="例如：12" />
-          </div>
-          <div>
-            <label for="studentId">学生编号</label>
-            <input id="studentId" type="text" autocomplete="off" placeholder="例如：S01" />
-          </div>
-          <div>
-            <label for="groupId">小组编号</label>
-            <input id="groupId" type="text" autocomplete="off" placeholder="例如：第3组" />
-          </div>
-        </div>
 
-        <div class="identity-confirm-row">
-          <button class="identity-confirm" id="confirmIdentityBtn" type="button">确认信息</button>
+          <div class="identity-confirm-row">
+            <button class="identity-confirm" id="confirmIdentityBtn" type="button">确认信息</button>
+          </div>
         </div>
 
         <div class="case-content" id="caseContent" hidden>
@@ -3611,7 +3613,7 @@
           <article class="module-card case-folder poster-folder">
             <div class="module-head">
               <div>
-                <span class="case-stamp">CASE 05-06</span>
+                <span class="case-stamp">CASE 05</span>
                 <h3>海报成果展示</h3>
                 <p>整理探究成果，完成海报制作与交流展示。</p>
               </div>
@@ -3744,40 +3746,30 @@
      */
     const CONTEXT_KEY = "science-inquiry-context-v1";
     const studentNameInput = document.getElementById("studentName");
-    const studentAgeInput = document.getElementById("studentAge");
     const studentInput = document.getElementById("studentId");
     const groupInput = document.getElementById("groupId");
     const error = document.getElementById("error");
     const scienceSection = document.getElementById("scienceSection");
     const confirmIdentityBtn = document.getElementById("confirmIdentityBtn");
+    const identityRegistration = document.getElementById("identityRegistration");
     const caseContent = document.getElementById("caseContent");
-    const identityInputs = [studentNameInput, studentAgeInput, studentInput, groupInput];
+    const loginIdentity = getStudentIdentityFields();
 
-    try {
-      const saved = JSON.parse(localStorage.getItem(CONTEXT_KEY) || "null");
-      if (saved) {
-        studentNameInput.value = saved.studentName || "";
-        studentAgeInput.value = saved.studentAge || "";
-        studentInput.value = saved.studentId || "";
-        groupInput.value = saved.groupId || "";
-      }
-    } catch (event) {
-      localStorage.removeItem(CONTEXT_KEY);
-    }
+    studentInput.value = loginIdentity.studentId;
+    studentNameInput.value = loginIdentity.studentName;
+    groupInput.value = loginIdentity.groupName;
 
     function saveIdentity() {
       const studentName = studentNameInput.value.trim();
-      const studentAge = studentAgeInput.value.trim();
       const studentId = studentInput.value.trim();
       const groupId = groupInput.value.trim();
-      if (!studentName || !studentAge || !studentId || !groupId) {
-        error.textContent = "请完整填写姓名、年龄、学生编号和小组编号。";
+      if (!studentId || !studentName || !groupId) {
+        error.textContent = "请完整填写学生编号、学生姓名和小组编号。";
         return false;
       }
       error.textContent = "";
       localStorage.setItem(CONTEXT_KEY, JSON.stringify({
         studentName,
-        studentAge,
         studentId,
         groupId,
         savedAt: new Date().toISOString()
@@ -3790,18 +3782,7 @@
       caseContent.hidden = false;
       caseContent.classList.remove("is-revealed");
       requestAnimationFrame(() => caseContent.classList.add("is-revealed"));
-      confirmIdentityBtn.disabled = true;
-      confirmIdentityBtn.textContent = "信息已确认";
-    });
-
-    identityInputs.forEach((input) => {
-      input.addEventListener("input", () => {
-        if (caseContent.hidden) return;
-        caseContent.hidden = true;
-        caseContent.classList.remove("is-revealed");
-        confirmIdentityBtn.disabled = false;
-        confirmIdentityBtn.textContent = "确认信息";
-      });
+      identityRegistration.classList.add("is-confirmed");
     });
 
     document.querySelectorAll("[data-module]").forEach((button) => {
