@@ -153,6 +153,7 @@
     const root = document.createElement("div");
     root.className = "voice-assistant";
     root.innerHTML = `
+      <div class="voice-hint" aria-hidden="true">打字慢？别担心，让我来帮你！</div>
       <button class="voice-toggle" type="button" aria-label="打开语音助手">🎙 语音助手</button>
       <section class="voice-panel" aria-label="语音转文字助手">
         <header class="voice-head">
