@@ -245,7 +245,7 @@
       <div class="header">
         <div>
           <h1>实验数据后台</h1>
-          <p class="intro">查看学生自动上传到 CloudBase 的实验记录。</p>
+          <p class="intro">查看学生自动上传到 CloudBase 的实验记录（当前为临时免登录维护模式）。</p>
         </div>
         <a class="btn secondary" href="../index.html">返回首页</a>
       </div>
@@ -356,6 +356,12 @@
       limit: document.getElementById("limitFilter")
     };
 
+    /*
+     * 临时维护开关（2026-07-21）：教师近期需要直接读取已上传数据。
+     * 仅绕过 dashboard.html 的前端登录遮罩，不影响学生登录、学生导入页或数据库内容。
+     * 完成正式教师认证后删除此开关和 checkAdminLogin 中的临时分支。
+     */
+    const TEMPORARY_DASHBOARD_LOGIN_BYPASS = true;
     let isLoggedIn = false;
     let records = [];
 
@@ -382,6 +388,14 @@
     }
 
     async function checkAdminLogin() {
+      if (TEMPORARY_DASHBOARD_LOGIN_BYPASS) {
+        isLoggedIn = true;
+        authGate.classList.remove("is-visible");
+        setStatus("临时免登录维护模式：正在读取实验记录...");
+        await loadRecords();
+        return;
+      }
+
       try {
         isLoggedIn = await getAdminLoginState();
       } catch (error) {
