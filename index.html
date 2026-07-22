@@ -4,6 +4,7 @@
   <meta charset="utf-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1" />
   <title>记忆侦探社</title>
+  <link rel="preload" as="image" href="assets/home-hero-bg.webp" type="image/webp" fetchpriority="high" />
   <style>
     :root {
       --bg: #eef4ff;
@@ -2717,6 +2718,10 @@
       z-index: 0;
       background-color: #03101f;
       background-image: url("assets/home-hero-bg.png");
+      background-image: image-set(
+        url("assets/home-hero-bg.webp") type("image/webp"),
+        url("assets/home-hero-bg.png") type("image/png")
+      );
       background-repeat: no-repeat;
       background-position: center top;
       background-size: cover;
