@@ -3,7 +3,7 @@
     memory: "memory-capacity-state-v1",
     nback: "nback-inquiry-state-v1",
     interference: "longterm-interference-state-v1",
-    strategies: "longterm-strategies-state-v1",
+    strategies: "longterm-strategies-state-v4",
     poster: "poster-making-state-v1"
   };
 
@@ -189,12 +189,49 @@
   }
 
   function buildStrategiesContent(state, fields) {
-    const summary = summarizeBy(state.records || [], "strategy", (records) => {
-      const accuracy = records.map((record) => number(record.accuracy)).filter((value) => value >= 0);
-      const average = accuracy.length ? Math.round(avg(accuracy)) : 0;
-      return { value: average, label: average ? `${average}%` : "暂未填写" };
+    const records = Array.isArray(state.records) ? state.records : [];
+    const grouped = new Map();
+    records.forEach((record) => {
+      const round = number(record.round);
+      const stage = number(record.stage);
+      const roundLabel = record.roundLabel || (round === 1 ? "第一轮" : round === 2 ? "第二轮" : "历史记录");
+      const stageLabel = record.stageLabel || (stage === 1 ? "第一阶段" : stage === 2 ? "第二阶段" : "未标记阶段");
+      const strategy = safe(record.strategy);
+      const key = round && stage ? `${round}-${stage}` : `legacy-${stage}-${strategy}`;
+      if (!grouped.has(key)) grouped.set(key, { key, round, stage, roundLabel, stageLabel, strategy, records: [] });
+      grouped.get(key).records.push(record);
     });
-    const questionThought = thinkingSummary(fields.question_individual || fields.question, fields.question_group);
+    const summary = Array.from(grouped.values()).sort((left, right) => (left.round - right.round) || (left.stage - right.stage)).map((group) => {
+      const accuracy = group.records.map((record) => number(record.accuracy)).filter((value) => value >= 0);
+      const correct = group.records.map((record) => number(record.correctCount)).filter((value) => value >= 0);
+      const averageAccuracy = accuracy.length ? Math.round(avg(accuracy)) : 0;
+      const averageCorrect = correct.length ? round(avg(correct), 1) : 0;
+      return Object.assign(group, {
+        value: averageAccuracy,
+        label: `${group.roundLabel}·${group.stageLabel}·${group.strategy}`,
+        resultText: `平均正确数 ${averageCorrect}，平均回忆率 ${averageAccuracy}%`
+      });
+    });
+    const completed = new Set(records.filter((record) => record.round && record.stage).map((record) => `${number(record.round)}-${number(record.stage)}`));
+    const completionText = ["1-1", "1-2", "2-1", "2-2"].every((key) => completed.has(key)) ? "四个组合均已完成" : `已完成 ${completed.size}/4 个组合`;
+    const materialLabels = { word: "英文单词", poem: "古诗", idiom: "中文词语/成语", code: "数字字母串（历史记录）", formula: "公式（历史记录）" };
+    const roundPlanText = (round) => {
+      const prefix = `round${round}`;
+      const type = fields[`${prefix}MaterialType`] || fields.materialType || "";
+      const low = number(fields[`${prefix}LowCount`] ?? fields.lowCount);
+      const mid = number(fields[`${prefix}MidCount`] ?? fields.midCount);
+      const high = number(fields[`${prefix}HighCount`] ?? fields.highCount);
+      const strategy = round === 1 ? fields.strategy1 : fields.strategy2;
+      return `第${round === 1 ? "一" : "二"}轮：简单复述 vs ${safe(strategy)}；材料：${materialLabels[type] || safe(type)}；初级${low}题、中级${mid}题、高级${high}题，共${low + mid + high}题`;
+    };
+    const experimentPlan = `${roundPlanText(1)}；${roundPlanText(2)}`;
+    const groupedResult = summary.map((item) => `${item.label}：${item.resultText}`).join("；") || "暂未填写";
+    const brainstormThought = thinkingSummary(fields.brainstormIndividual || fields.question_individual, fields.brainstormGroup || fields.question_group);
+    const researchQuestion = safe(fields.question || (fields.questionStrategy ? `${fields.questionStrategy}可以改善长时记忆` : ""));
+    const questionThought = joinText([
+      brainstormThought ? `头脑风暴：${brainstormThought}` : "",
+      researchQuestion ? `研究问题（小组）：${researchQuestion}` : ""
+    ]);
     const hypothesisThought = thinkingSummary(fields.hypothesis_individual || joinText([fields.hypothesis1, fields.hypothesis2]), fields.hypothesis_group || joinText([fields.hypothesis1_group, fields.hypothesis2_group]));
     const conclusionThought = thinkingSummary(fields.conclusion_individual || fields.conclusion, fields.conclusion_group);
     const reflectionThought = thinkingSummary(fields.reflection_individual || joinText([fields.designImprove, fields.surprise, fields.applicability]), fields.reflection_group || joinText([fields.designImprove_group, fields.surprise_group, fields.applicability_group]));
@@ -202,18 +239,21 @@
       steps: [
         ["提出问题", questionThought],
         ["作出假设", hypothesisThought],
-        ["制定计划", `策略：${safe(fields.strategy1)}、${safe(fields.strategy2)}；材料：${safe(fields.materialType)}。`],
-        ["搜集证据", `已记录 ${count(state.records)} 条记忆策略数据。`],
+        ["制定计划", `${experimentPlan}；找不同 ${safe(fields.puzzleSeconds)} 秒；测试 ${safe(fields.testSeconds)} 秒。`],
+        ["搜集证据", `${completionText}，共记录 ${count(records)} 条记忆策略数据。`],
         ["处理信息", fields.headband],
         ["得出结论", conclusionThought]
       ],
       resultTitle: "不同策略下的记忆表现",
-      chartRows: summary.length ? summary.map((item) => ({ label: item.name, value: item.value, text: item.label })) : [],
-      resultHighlight: `重点比较策略：${safe(fields.strategy1)}、${safe(fields.strategy2)}`,
+      chartRows: summary.length ? summary.map((item) => ({ label: item.label, value: item.value, text: `${item.value}%` })) : [],
+      resultHighlight: experimentPlan,
       evidence: [
-        ["研究问题", questionThought],
+        ["头脑风暴", brainstormThought],
+        ["研究问题（小组）", researchQuestion],
         ["研究假设", hypothesisThought],
-        ["所选记忆策略", `${safe(fields.strategy1)}；${safe(fields.strategy2)}`],
+        ["实验计划", experimentPlan],
+        ["组合完成情况", completionText],
+        ["轮次阶段结果", groupedResult],
         ["头环观察记录", fields.headband]
       ],
       conclusion: joinText([conclusionThought, reflectionThought])

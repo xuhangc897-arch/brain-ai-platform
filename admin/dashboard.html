@@ -413,10 +413,10 @@
       }
     }
 
-    function buildQueryPayload() {
+    function buildQueryPayload(recordType = "submission") {
       return {
         module: filters.module.value.trim(),
-        recordType: "submission",
+        recordType,
         studentId: filters.studentId.value.trim(),
         className: filters.className.value.trim(),
         groupName: filters.groupName.value.trim(),
@@ -605,7 +605,8 @@
       const fullState = data.fullState || {};
       if (record.module === "nback") return Array.isArray(fullState.testRuns) ? fullState.testRuns.length : 0;
       if (record.module === "strategies") {
-        return (Array.isArray(fullState.records) ? fullState.records.length : 0) + (Array.isArray(fullState.strategyScores) ? fullState.strategyScores.length : 0);
+        const attempts = Array.isArray(fullState.attemptHistory) ? fullState.attemptHistory : fullState.records;
+        return (Array.isArray(attempts) ? attempts.length : 0) + (Array.isArray(fullState.strategyScores) ? fullState.strategyScores.length : 0);
       }
       if (record.module === "poster") {
         return (Array.isArray(fullState.qaRecords) ? fullState.qaRecords.length : 0) + (Array.isArray(fullState.questions) ? fullState.questions.length : 0) + (Array.isArray(fullState.scoreRecords) ? fullState.scoreRecords.length : 0);
@@ -1243,19 +1244,57 @@
     }
 
     function buildStrategiesStateSheets(stateRecord) {
-      const base = buildLongTermBaseSheets(stateRecord, "改善长时记忆的策略有哪些", "longterm-strategies-state-v1");
+      const rawState = stateRecord.data?.fullState || stateRecord.data || {};
+      const storageKey = rawState.fields?.round1MaterialType ? "longterm-strategies-state-v4" : "longterm-strategies-state-v3";
+      const base = buildLongTermBaseSheets(stateRecord, "改善长时记忆的策略有哪些", storageKey);
       const records = Array.isArray(base.state.records) ? base.state.records : [];
       const strategyScores = Array.isArray(base.state.strategyScores) ? base.state.strategyScores : [];
+      const fields = base.fields || {};
+      const materialLabels = { word: "英文单词", poem: "古诗", idiom: "中文词语/成语", code: "数字字母串（历史记录）", formula: "公式（历史记录）" };
+      const getRoundPlan = (round) => {
+        const prefix = `round${round}`;
+        const materialType = fields[`${prefix}MaterialType`] || fields.materialType || "";
+        const low = Number(fields[`${prefix}LowCount`] ?? fields.lowCount) || 0;
+        const mid = Number(fields[`${prefix}MidCount`] ?? fields.midCount) || 0;
+        const high = Number(fields[`${prefix}HighCount`] ?? fields.highCount) || 0;
+        return { materialType, materialLabel: materialLabels[materialType] || materialType, low, mid, high, total: low + mid + high };
+      };
+      const formatDifficultyCounts = (counts = {}) => `初级${Number(counts.low) || 0}题；中级${Number(counts.mid) || 0}题；高级${Number(counts.high) || 0}题`;
+      const adjustedScoreTotal = (record) => (Number(record.scoreAccuracy) || 0) + (Number(record.scoreUse) || 0) + (Number(record.scoreConfidence) || 0);
+      const getRoundLabel = (record) => record.roundLabel || (Number(record.round) === 1 ? "第一轮" : Number(record.round) === 2 ? "第二轮" : "");
+      const getStageLabel = (record) => record.stageLabel || (Number(record.stage) === 1 ? "第一阶段" : Number(record.stage) === 2 ? "第二阶段" : record.stage || "");
+      const groups = new Map();
+      records.forEach((record) => {
+        const roundLabel = getRoundLabel(record) || "历史记录";
+        const stageLabel = getStageLabel(record) || "未标记阶段";
+        const strategy = record.strategy || "未记录策略";
+        const key = record.round && record.stage ? `${record.round}-${record.stage}` : `legacy-${stageLabel}-${strategy}`;
+        if (!groups.has(key)) groups.set(key, { roundLabel, stageLabel, strategy, combinationKey: record.combinationKey || key, count: 0, correct: 0, accuracy: 0, reactionTime: 0 });
+        const group = groups.get(key);
+        group.count += 1;
+        group.correct += Number(record.correctCount) || 0;
+        group.accuracy += Number(record.accuracy) || 0;
+        group.reactionTime += Number(record.reactionTime) || 0;
+      });
+      const planSheet = [`${base.studentLabel}-实验计划`, [
+        ["实验轮次", "第一阶段策略", "第二阶段策略", "材料类型", "初级数量", "中级数量", "高级数量", "题目总数", "记忆时间s", "找不同时间s", "测试时间s"],
+        ["第一轮", "简单复述", fields.strategy1 || "", getRoundPlan(1).materialLabel, getRoundPlan(1).low, getRoundPlan(1).mid, getRoundPlan(1).high, getRoundPlan(1).total, fields.memorySeconds, fields.puzzleSeconds, fields.testSeconds],
+        ["第二轮", "简单复述", fields.strategy2 || "", getRoundPlan(2).materialLabel, getRoundPlan(2).low, getRoundPlan(2).mid, getRoundPlan(2).high, getRoundPlan(2).total, fields.memorySeconds, fields.puzzleSeconds, fields.testSeconds]
+      ]];
       const detailSheet = [`${base.studentLabel}-测试明细`, [
-        ["学号", "姓名", "班级", "小组", "阶段", "策略", "材料类型", "题目总数", "记忆时间s", "找不同时间s", "测试时间s", "题目", "学生回答", "正确项目", "正确数", "回忆率", "找不同命中", "找不同点击", "反应时ms", "头环观察", "评分总分", "记录时间"],
+        ["学号", "姓名", "班级", "小组", "实验轮次", "实验阶段", "使用策略", "组合标识", "材料类型", "难度数量", "结构化题目明细", "题目总数", "记忆时间s", "找不同时间s", "测试时间s", "题目", "学生回答", "正确项目", "正确数", "回忆率", "找不同命中", "找不同点击", "反应时ms", "头环观察", "评分总分", "记录时间"],
         ...records.map((record) => [
           record.studentId,
           record.studentName || "",
           record.className || "",
           record.groupName || record.groupId || "",
-          record.stage,
+          getRoundLabel(record),
+          getStageLabel(record),
           record.strategy,
-          record.materialType,
+          record.combinationKey || (record.round && record.stage ? `${record.round}-${record.stage}` : ""),
+          record.materialTypeLabel || materialLabels[record.materialType] || record.materialType,
+          record.difficultySummary || formatDifficultyCounts(record.difficultyCounts),
+          JSON.stringify(record.itemDetails || []),
           record.itemCount,
           record.memorySeconds,
           record.puzzleSeconds,
@@ -1273,8 +1312,21 @@
           record.createdAt
         ])
       ]];
+      const summarySheet = [`${base.studentLabel}-轮次阶段汇总`, [
+        ["实验轮次", "实验阶段", "使用策略", "组合标识", "次数", "平均正确数", "平均回忆率", "平均反应时ms"],
+        ...Array.from(groups.values()).map((group) => [
+          group.roundLabel,
+          group.stageLabel,
+          group.strategy,
+          group.combinationKey,
+          group.count,
+          group.count ? Number((group.correct / group.count).toFixed(1)) : 0,
+          group.count ? `${Math.round(group.accuracy / group.count)}%` : "0%",
+          group.count ? Math.round(group.reactionTime / group.count) : 0
+        ])
+      ]];
       const scoreSheet = [`${base.studentLabel}-策略评分记录`, [
-        ["学号", "姓名", "班级", "小组", "策略名称", "答案准确性得分", "策略利用率得分", "记忆信心度得分", "策略迁移性得分", "策略总分", "记录时间"],
+        ["学号", "姓名", "班级", "小组", "策略名称", "答案准确性得分", "策略利用率得分", "记忆信心度得分", "策略总分（满分15分）", "记录时间"],
         ...strategyScores.map((record) => [
           record.studentId,
           record.studentName || "",
@@ -1284,14 +1336,79 @@
           record.scoreAccuracy,
           record.scoreUse,
           record.scoreConfidence,
-          record.scoreTransfer,
-          record.scoreTotal,
+          adjustedScoreTotal(record),
           record.createdAt
         ])
       ]];
 
-      base.sheets.splice(2, 0, detailSheet, scoreSheet);
+      base.sheets.splice(2, 0, planSheet, detailSheet, summarySheet, scoreSheet);
       return base.sheets;
+    }
+
+    function collectStrategyAttemptHistory(stateRecords, cloudAttemptRecords) {
+      const byKey = new Map();
+      const addAttempt = (attempt, meta = {}) => {
+        if (!attempt || typeof attempt !== "object") return;
+        const studentId = attempt.studentId || meta.studentId || "";
+        const key = attempt.runId
+          ? `${studentId}|${attempt.runId}`
+          : `${studentId}|${attempt.combinationKey || `${attempt.round || ""}-${attempt.stage || ""}`}|${attempt.createdAt || ""}|${attempt.items || ""}`;
+        byKey.set(key, Object.assign({}, attempt, {
+          studentId,
+          studentName: attempt.studentName || meta.studentName || "",
+          className: attempt.className || meta.className || "",
+          groupName: attempt.groupName || attempt.groupId || meta.groupName || "",
+          cloudUploadedAt: formatDate(meta.uploadedAt || meta.createdAt) || attempt.cloudUploadedAt || "",
+          clientRecordId: meta.clientRecordId || attempt.clientRecordId || ""
+        }));
+      };
+      (stateRecords || []).filter((record) => record.module === "strategies").forEach((record) => {
+        const state = record.data?.fullState || {};
+        const history = Array.isArray(state.attemptHistory) ? state.attemptHistory : (Array.isArray(state.records) ? state.records : []);
+        history.forEach((attempt) => addAttempt(attempt, record));
+      });
+      (cloudAttemptRecords || []).filter((record) => record.module === "strategies" && record.recordType === "experiment").forEach((record) => {
+        addAttempt(record.data || {}, {
+          studentId: record.studentId,
+          studentName: record.studentName,
+          className: record.className,
+          groupName: record.groupName,
+          uploadedAt: formatDate(record.uploadedAt || record.createdAt),
+          clientRecordId: record.clientRecordId
+        });
+      });
+      return Array.from(byKey.values()).sort((left, right) => String(left.createdAt || "").localeCompare(String(right.createdAt || "")));
+    }
+
+    function buildStrategyAttemptHistorySheet(attempts) {
+      const materialLabels = { word: "英文单词", poem: "古诗", idiom: "中文词语/成语", code: "数字字母串（历史记录）", formula: "公式（历史记录）" };
+      return ["实验四-全部测试历史", [
+        ["测试序号", "运行ID", "学号", "姓名", "班级", "小组", "实验轮次", "实验阶段", "使用策略", "组合标识", "材料类型", "难度数量", "题目总数", "题目", "学生回答", "正确项目", "正确数", "回忆率", "反应时ms", "记录时间", "CloudBase上传时间", "客户端记录ID"],
+        ...attempts.map((record, index) => [
+          index + 1,
+          record.runId || "",
+          record.studentId || "",
+          record.studentName || "",
+          record.className || "",
+          record.groupName || record.groupId || "",
+          record.roundLabel || (Number(record.round) === 1 ? "第一轮" : Number(record.round) === 2 ? "第二轮" : ""),
+          record.stageLabel || (Number(record.stage) === 1 ? "第一阶段" : Number(record.stage) === 2 ? "第二阶段" : ""),
+          record.strategy || "",
+          record.combinationKey || (record.round && record.stage ? `${record.round}-${record.stage}` : ""),
+          record.materialTypeLabel || materialLabels[record.materialType] || record.materialType || "",
+          record.difficultySummary || "",
+          record.itemCount || "",
+          record.items || "",
+          record.recall || "",
+          record.correctItems || "",
+          record.correctCount ?? "",
+          record.accuracy == null ? "" : `${record.accuracy}%`,
+          record.reactionTime || "",
+          record.createdAt || "",
+          record.cloudUploadedAt || "",
+          record.clientRecordId || ""
+        ])
+      ]];
     }
 
     function buildPosterStateSheets(stateRecord) {
@@ -1479,6 +1596,12 @@
       let sheets = [];
       try {
         const latestStateRecords = getLatestStateRecords(records);
+        let cloudAttemptRecords = [];
+        try {
+          cloudAttemptRecords = await fetchRecords(Object.assign({}, buildQueryPayload("experiment"), { limit: 500 }));
+        } catch (error) {
+          console.warn("读取逐次实验记录失败，将使用最新状态快照中的历史记录。", error);
+        }
         const detailSheets = latestStateRecords.flatMap((record) => {
           if (record.module === "nback") return buildNbackStateSheets(record);
           if (record.module === "interference") return buildInterferenceStateSheets(record);
@@ -1488,7 +1611,9 @@
           if (record.module === "aiChat") return buildAiChatStateSheets(record);
           return buildMemoryStateSheets(record);
         });
-        sheets = [buildOverviewSheet(latestStateRecords), ...detailSheets];
+        const strategyAttemptHistory = collectStrategyAttemptHistory(latestStateRecords, cloudAttemptRecords);
+        const attemptSheets = strategyAttemptHistory.length ? [buildStrategyAttemptHistorySheet(strategyAttemptHistory)] : [];
+        sheets = [buildOverviewSheet(latestStateRecords), ...detailSheets, ...attemptSheets];
       } catch (error) {
         console.warn("读取完整状态快照失败，将使用明细记录导出。", error);
       }
