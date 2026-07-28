@@ -1004,3 +1004,93 @@
 ### 部署与回滚
 
 本阶段没有云函数或数据库变更。部署时必须把整合层、报告脚本、AI 助手、教师后台及所有新增脚本引用作为同一个静态版本发布。回滚不需要数据迁移，但必须同步恢复这些静态文件。
+
+---
+
+## 2026-07-28｜任务 018：阶段 7——构建、部署、监控与遗留清理
+
+### 目标
+
+建立可重复、可校验、可监控和可回滚的 GitHub Pages 发布流程，清理已确认无引用的低风险历史文件，并为以后所有修改建立强制阅读入口。
+
+### 影响范围
+
+- 新增最小静态发布包构建、发布包校验、线上冒烟和遗留检查。
+- 新增 GitHub Pages 构建部署工作流和每小时只读监控。
+- Pages 部署源从仓库根目录分支发布迁移为 GitHub Actions artifact。
+- 删除无引用旧 AI 脚本及历史页面副本。
+- 替换占位 README 和旧部署说明。
+- 新增根目录 `修改须知.md`。
+- 不修改学生实验逻辑、CloudBase 云函数、数据库、AI 后端或真实环境数据。
+
+### 修改文件
+
+- `.gitignore`
+- `.github/workflows/pages.yml`
+- `.github/workflows/pages-monitor.yml`
+- `package.json`
+- `scripts/build-site.js`
+- `scripts/check-dist.js`
+- `scripts/smoke-deployment.js`
+- `scripts/check-legacy.js`
+- `scripts/check-workflows.js`
+- `README.md`
+- `DEPLOY.md`
+- `修改须知.md`
+- `docs/BUILD_DEPLOY_MONITOR.md`
+- `docs/LEGACY_REGISTER.md`
+- `docs/HARDENING_CHANGELOG.md`
+- `docs/HARDENING_GUARDRAILS.md`
+
+### 删除文件
+
+- 根目录 `ai-assistant.js`：旧版本，无页面引用；当前页面使用 `assets/ai-assistant.js`。
+- `脑育智能体/`：旧版七个页面与部署说明，无外部引用且内容落后于根目录当前页面。
+
+删除内容仍存在于 Git 历史，可按阶段 7 前 commit 恢复。
+
+### 构建与发布包
+
+- `npm run build` 清理固定的仓库 `dist/` 后，只复制九个页面、根公共脚本、`assets/` 和 `admin/`。
+- 构建生成 `.nojekyll`、`health.json` 和带 SHA-256 的 `deploy-manifest.json`。
+- `npm run check:dist` 验证必要文件、禁止目录、HTML 本地引用、健康文件和 manifest 一致性。
+- 数据库备份、云函数、API、文档、开发脚本和敏感配置不会进入发布包。
+
+### 部署与监控
+
+- 面向 `main` 的 PR 运行检查、构建和发布包校验，不部署。
+- 合并 `main` 或手动触发后使用 GitHub Pages artifact 部署。
+- 部署后立即检查健康文件、首页、注册表、平台核心、整合层、报告和教师后台。
+- 定时监控每小时第 17 分钟运行同一只读检查。
+- 线上监控不登录、不提交、不读取学生数据、不调用 AI、不写 CloudBase。
+
+### 遗留保留
+
+以下项目登记但未清理：
+
+- 教师后台临时免登录。
+- 服务端授权与学生数据归属。
+- 明文或可推导密码。
+- CloudBase Node.js 16.13 运行时。
+- `备份/` 数据库导出。
+- AI 后端密钥、限流、CORS 和真实环境日志治理。
+
+### 验证结果
+
+- 遗留检查确认旧 AI 脚本和旧页面目录已移除，保留高风险遗留均写入修改须知。
+- 本地构建生成 40 个 manifest 文件，发布内容约 9.8 MB。
+- 发布包校验通过，共 41 个文件（包含 manifest）。
+- GitHub Actions 使用零依赖工作流契约检查，不要求本机额外安装 YAML 解析包。
+- 完整契约、五个实验页面迁移、教师/报告/AI 整合、可靠上传、数据库 v2、基线、遗留和工作流契约检查全部通过。
+- 使用本地临时 HTTP 服务对 `dist/` 执行只读部署冒烟，健康文件、首页、公共运行时、报告页和教师后台均通过。
+- `git diff --check` 通过；仅报告 Windows 工作区既有的 LF/CRLF 转换提示。
+- 阶段 7 发布前检查当前线上 `health.json` 返回 HTTP 404，说明新 artifact 尚未部署；这是发布前基线，不是本地构建失败。
+- GitHub Pages Actions 和线上部署待 GitHub CLI 安装、认证及 PR 发布后验证。
+
+### 部署前人工设置
+
+GitHub 仓库 `Settings → Pages → Build and deployment → Source` 必须从分支发布改为 `GitHub Actions`。未完成该设置前不能把工作流成功视为已部署。
+
+### 回滚
+
+代码回滚使用 `git revert` 恢复阶段 7 commit，然后由 Pages workflow 重新部署完整 artifact。旧文件如确需恢复，应从阶段 7 前 commit 恢复，不要复制未知本地版本。

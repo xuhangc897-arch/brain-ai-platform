@@ -4,8 +4,14 @@
   "main": "app.js",
   "private": true,
   "scripts": {
+    "build": "node scripts/build-site.js",
     "check:baseline": "node scripts/check-baseline.js",
     "check:contracts": "node scripts/check-experiment-registry.js && node scripts/check-experiment-page-migration.js && node scripts/check-experiment-integration.js && node scripts/check-platform-contracts.js && node scripts/check-platform-integration.js",
+    "check:dist": "node scripts/check-dist.js",
+    "check:legacy": "node scripts/check-legacy.js",
+    "check:workflows": "node scripts/check-workflows.js",
+    "verify": "node scripts/check-experiment-registry.js && node scripts/check-experiment-page-migration.js && node scripts/check-experiment-integration.js && node scripts/check-platform-contracts.js && node scripts/check-platform-integration.js && node scripts/check-baseline.js && node scripts/check-legacy.js && node scripts/check-workflows.js",
+    "monitor": "node scripts/smoke-deployment.js",
     "dev": "node local-static-server.js",
     "start": "node app.js"
   },
