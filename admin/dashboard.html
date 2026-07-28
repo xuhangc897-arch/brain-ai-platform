@@ -258,15 +258,7 @@
       <div class="filters">
         <div class="field">
           <label for="moduleFilter">实验模块</label>
-          <select id="moduleFilter">
-            <option value="memory">记忆容量</option>
-            <option value="nback">N-back 工作记忆</option>
-            <option value="interference">长时记忆干扰</option>
-            <option value="strategies">长时记忆策略</option>
-            <option value="poster">海报制作</option>
-            <option value="screening">资格审查</option>
-            <option value="aiChat">AI 对话合集</option>
-          </select>
+          <select id="moduleFilter"></select>
         </div>
         <div class="field">
           <label for="studentIdFilter">学号</label>
@@ -300,11 +292,6 @@
           <label for="sourceModuleFilter">AI 来源模块</label>
           <select id="sourceModuleFilter">
             <option value="">全部</option>
-            <option value="memory">记忆容量</option>
-            <option value="nback">N-back 工作记忆</option>
-            <option value="interference">长时记忆干扰</option>
-            <option value="strategies">长时记忆策略</option>
-            <option value="poster">海报制作</option>
           </select>
         </div>
       </div>
@@ -332,10 +319,19 @@
   </dialog>
 
   <script src="https://static.cloudbase.net/cloudbase-js-sdk/3.0.0/cloudbase.full.js"></script>
+  <script src="../assets/experiment-registry.js"></script>
   <script src="../assets/platform-core.js"></script>
   <script src="../cloudbase.js"></script>
   <script>
     const GET_EXPERIMENT_RECORDS_URL = window.BrainPlatform.config.endpoints.getExperimentRecords;
+    const experimentRegistry = window.BrainExperimentRegistry;
+
+    experimentRegistry.entries.forEach((entry) => {
+      document.getElementById("moduleFilter").add(new Option(entry.label, entry.id));
+    });
+    experimentRegistry.experiments.forEach((entry) => {
+      document.getElementById("sourceModuleFilter").add(new Option(entry.label, entry.id));
+    });
 
     const authGate = document.getElementById("authGate");
     const statusEl = document.getElementById("status");
@@ -599,15 +595,8 @@
     }
 
     function getModuleLabel(module) {
-      return {
-        memory: "记忆容量",
-        nback: "N-back 工作记忆",
-        interference: "长时记忆干扰",
-        strategies: "长时记忆策略",
-        poster: "海报制作",
-        screening: "资格审查",
-        aiChat: "AI 对话合集"
-      }[module] || module || "";
+      const entry = experimentRegistry.get(module);
+      return entry ? entry.label : module || "";
     }
 
     function getRecordDetailCount(record) {

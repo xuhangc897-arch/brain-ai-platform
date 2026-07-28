@@ -1,14 +1,6 @@
 (function () {
   const platform = window.BrainPlatform;
-  const STORAGE_KEYS = platform.config.storageKeys.experiments;
-
-  const ACTIVITY_META = {
-    memory: { caseNo: "案件01", caseTitle: "记忆容量调查", activityName: "探索短时记忆的容量", type: "science" },
-    nback: { caseNo: "案件02", caseTitle: "工作记忆追踪", activityName: "探索神奇的 N-back", type: "science" },
-    interference: { caseNo: "案件03", caseTitle: "遗忘元凶调查", activityName: "探究干扰长时记忆的因素", type: "science" },
-    strategies: { caseNo: "案件04", caseTitle: "记忆策略破解", activityName: "改善长时记忆的策略有哪些？", type: "science" },
-    poster: { caseNo: "案件05", caseTitle: "科学海报创作档案", activityName: "海报制作与分享交流", type: "poster" }
-  };
+  const registry = window.BrainExperimentRegistry;
 
   const root = document.getElementById("reviewRoot");
   const printBtn = document.getElementById("printBtn");
@@ -18,12 +10,22 @@
   }
 
   const params = new URLSearchParams(window.location.search);
-  const activityType = params.get("activityType") || "memory";
+  const requestedActivityType = params.get("activityType") || "memory";
+  const requestedActivity = registry.get(requestedActivityType);
+  const activityType = requestedActivity && requestedActivity.reportEnabled
+    ? requestedActivityType
+    : "memory";
   renderReviewPage(buildReviewData(activityType));
 
   function buildReviewData(activityType) {
-    const meta = ACTIVITY_META[activityType] || ACTIVITY_META.memory;
-    const storageKey = STORAGE_KEYS[activityType] || STORAGE_KEYS.memory;
+    const activity = registry.get(activityType) || registry.get("memory");
+    const meta = {
+      caseNo: activity.caseNo,
+      caseTitle: activity.caseTitle,
+      activityName: activity.activityName,
+      type: activity.reportType
+    };
+    const storageKey = activity.storageKey;
     const state = readState(storageKey);
     const studentSession = readStudentSession();
     const fields = state.fields || {};

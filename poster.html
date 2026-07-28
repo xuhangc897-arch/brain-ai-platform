@@ -643,9 +643,11 @@
 
   <main id="main" class="main"></main>
 
+  <script src="assets/experiment-registry.js"></script>
   <script src="assets/platform-core.js"></script>
   <script src="auth.js"></script>
   <script src="assets/experiment-uploader.js"></script>
+  <script src="assets/experiment-bridge.js"></script>
   <script>
     checkLogin();
   </script>
@@ -1417,26 +1419,13 @@
     function generateReviewReport(activityType) {
       saveState();
       submitPosterRecord("generateReport");
-      if (typeof window.submitAiChatRecord === "function") window.submitAiChatRecord("poster", "generateReport");
-      window.open(`review.html?activityType=${encodeURIComponent(activityType)}`, "_blank");
+      window.BrainExperimentBridge.finishReport(activityType, "generateReport");
     }
     function submitPosterRecord(submitAction) {
-      if (typeof window.uploadExperimentRecords !== "function") return;
-      const snapshot = structuredClone(state);
-      const submittedAt = new Date().toISOString();
-      window.uploadExperimentRecords({
-        module: "poster",
-        recordType: "submission",
-        records: [{
-          submitAction,
-          studentId: snapshot.studentId || "",
-          studentName: snapshot.studentName || "",
-          className: snapshot.className || "",
-          groupName: snapshot.groupName || snapshot.groupId || "",
-          fullState: snapshot,
-          createdAt: submittedAt,
-          clientRecordId: `poster|submission|${snapshot.studentId || ""}|${submitAction}|${submittedAt}`
-        }]
+      return window.BrainExperimentBridge.submitState({
+        moduleId: "poster",
+        state,
+        submitAction
       });
     }
 

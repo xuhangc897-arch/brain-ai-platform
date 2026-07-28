@@ -5,7 +5,11 @@ const fs = require("fs");
 const path = require("path");
 const vm = require("vm");
 
-const source = fs.readFileSync(
+const registrySource = fs.readFileSync(
+  path.resolve(__dirname, "..", "assets", "experiment-registry.js"),
+  "utf8"
+);
+const coreSource = fs.readFileSync(
   path.resolve(__dirname, "..", "assets", "platform-core.js"),
   "utf8"
 );
@@ -29,7 +33,8 @@ function loadPlatform(initialStorage) {
   const window = {
     localStorage: createStorage(initialStorage)
   };
-  vm.runInNewContext(source, { window, console, Date });
+  vm.runInNewContext(registrySource, { window, console, Date });
+  vm.runInNewContext(coreSource, { window, console, Date });
   return window;
 }
 

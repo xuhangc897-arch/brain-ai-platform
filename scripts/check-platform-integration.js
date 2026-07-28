@@ -7,6 +7,7 @@ const vm = require("vm");
 const Module = require("module");
 
 const root = path.resolve(__dirname, "..");
+const registrySource = fs.readFileSync(path.join(root, "assets", "experiment-registry.js"), "utf8");
 const coreSource = fs.readFileSync(path.join(root, "assets", "platform-core.js"), "utf8");
 const uploaderSource = fs.readFileSync(path.join(root, "assets", "experiment-uploader.js"), "utf8");
 
@@ -115,6 +116,7 @@ async function main() {
       error() {}
     }
   };
+  vm.runInNewContext(registrySource, context);
   vm.runInNewContext(coreSource, context);
   vm.runInNewContext(uploaderSource, context);
 

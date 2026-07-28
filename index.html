@@ -3592,7 +3592,7 @@
               <h3>记忆侦探资格审查</h3>
               <p>先完成基础挑战，获得进入案件调查的资格</p>
             </div>
-            <button class="btn" type="button" data-target="pretest.html">开始资格审查</button>
+            <button class="btn" type="button" data-experiment-id="screening">开始资格审查</button>
           </article>
 
           <article class="module-card case-folder science-folder">
@@ -3614,7 +3614,7 @@
                 <p>整理探究成果，完成海报制作与交流展示。</p>
               </div>
             </div>
-            <button class="btn secondary" type="button" data-module="poster">进入海报制作</button>
+            <button class="btn secondary" type="button" data-experiment-id="poster">进入海报制作</button>
           </article>
           </div>
         </div>
@@ -3660,7 +3660,7 @@
             <span class="badge">容量线索</span>
             <span class="badge">网页实验</span>
           </div>
-          <button class="btn secondary" type="button" data-target="memory.html">进入案件01</button>
+          <button class="btn secondary" type="button" data-experiment-id="memory">进入案件01</button>
         </article>
 
         <article class="experiment-card">
@@ -3676,7 +3676,7 @@
             <span class="badge">N-back</span>
             <span class="badge">反应追踪</span>
           </div>
-          <button class="btn" type="button" data-target="nback.html">进入案件02</button>
+          <button class="btn" type="button" data-experiment-id="nback">进入案件02</button>
         </article>
 
         <article class="experiment-card">
@@ -3692,7 +3692,7 @@
             <span class="badge">干扰因素</span>
             <span class="badge">证据比对</span>
           </div>
-          <button class="btn secondary" type="button" data-target="interference.html">进入案件03</button>
+          <button class="btn secondary" type="button" data-experiment-id="interference">进入案件03</button>
         </article>
 
         <article class="experiment-card">
@@ -3708,7 +3708,7 @@
             <span class="badge">主动回忆</span>
             <span class="badge">策略评分</span>
           </div>
-          <button class="btn" type="button" data-target="strategies.html">进入案件04</button>
+          <button class="btn" type="button" data-experiment-id="strategies">进入案件04</button>
         </article>
       </div>
     </section>
@@ -3730,6 +3730,7 @@
     </div>
   </dialog>
 
+  <script src="assets/experiment-registry.js"></script>
   <script src="assets/platform-core.js"></script>
   <script src="auth.js"></script>
   <script>
@@ -3788,16 +3789,17 @@
         if (button.dataset.module === "science") {
           scienceSection.classList.add("is-visible");
           document.body.classList.add("modal-open");
-        } else {
-          window.location.href = "poster.html";
         }
       });
     });
 
-    document.querySelectorAll("[data-target]").forEach((button) => {
+    document.querySelectorAll("[data-experiment-id]").forEach((button) => {
       button.addEventListener("click", () => {
         if (!saveIdentity()) return;
-        window.location.href = button.dataset.target;
+        const experiment = window.BrainExperimentRegistry.get(button.dataset.experimentId);
+        if (experiment && experiment.route) {
+          window.location.href = experiment.route;
+        }
       });
     });
 
