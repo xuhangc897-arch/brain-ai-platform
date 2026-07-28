@@ -1,6 +1,6 @@
 (function () {
   const platform = window.BrainPlatform;
-  const registry = window.BrainExperimentRegistry;
+  const integration = window.BrainExperimentIntegration;
 
   const root = document.getElementById("reviewRoot");
   const printBtn = document.getElementById("printBtn");
@@ -11,14 +11,11 @@
 
   const params = new URLSearchParams(window.location.search);
   const requestedActivityType = params.get("activityType") || "memory";
-  const requestedActivity = registry.get(requestedActivityType);
-  const activityType = requestedActivity && requestedActivity.reportEnabled
-    ? requestedActivityType
-    : "memory";
+  const activityType = integration.resolveReportActivity(requestedActivityType, "memory").id;
   renderReviewPage(buildReviewData(activityType));
 
   function buildReviewData(activityType) {
-    const activity = registry.get(activityType) || registry.get("memory");
+    const activity = integration.resolveReportActivity(activityType, "memory");
     const meta = {
       caseNo: activity.caseNo,
       caseTitle: activity.caseTitle,

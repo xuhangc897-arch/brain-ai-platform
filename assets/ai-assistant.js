@@ -2,6 +2,7 @@
   "use strict";
 
   const platform = window.BrainPlatform;
+  const integration = window.BrainExperimentIntegration;
   const AI_API_ENDPOINT = platform.config.endpoints.aiChat;
   const CONTEXT_KEY = platform.config.storageKeys.inquiryContext;
   const LOG_KEY = platform.config.storageKeys.aiChatLogs;
@@ -332,9 +333,10 @@
     const logs = getCurrentPageLogs();
     if (!logs.length) return null;
     const submittedAt = new Date().toISOString();
+    const resolvedSourceModule = integration.resolveSourceModule(sourceModule, location.pathname);
     return {
       submitAction,
-      sourceModule,
+      sourceModule: resolvedSourceModule,
       studentId: identity.studentId || "",
       studentName: identity.studentName || "",
       className: identity.className || "",
@@ -345,7 +347,7 @@
       logs,
       logCount: logs.length,
       createdAt: submittedAt,
-      clientRecordId: `aiChat|${sourceModule || "unknown"}|${identity.studentId || ""}|${submitAction || "submit"}|${submittedAt}`
+      clientRecordId: `aiChat|${resolvedSourceModule || "unknown"}|${identity.studentId || ""}|${submitAction || "submit"}|${submittedAt}`
     };
   }
 
@@ -362,7 +364,7 @@
       return Promise.resolve({ ok: true, skipped: true, message: "no AI chat logs" });
     }
     console.info("[AI Assistant] uploading AI chat logs:", {
-      sourceModule,
+      sourceModule: record.sourceModule,
       logCount: record.logCount
     });
     return window.uploadExperimentRecords({

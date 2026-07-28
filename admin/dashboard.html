@@ -321,10 +321,12 @@
   <script src="https://static.cloudbase.net/cloudbase-js-sdk/3.0.0/cloudbase.full.js"></script>
   <script src="../assets/experiment-registry.js"></script>
   <script src="../assets/platform-core.js"></script>
+  <script src="../assets/experiment-integration.js"></script>
   <script src="../cloudbase.js"></script>
   <script>
     const GET_EXPERIMENT_RECORDS_URL = window.BrainPlatform.config.endpoints.getExperimentRecords;
     const experimentRegistry = window.BrainExperimentRegistry;
+    const experimentIntegration = window.BrainExperimentIntegration;
 
     experimentRegistry.entries.forEach((entry) => {
       document.getElementById("moduleFilter").add(new Option(entry.label, entry.id));
@@ -595,13 +597,12 @@
     }
 
     function getModuleLabel(module) {
-      const entry = experimentRegistry.get(module);
-      return entry ? entry.label : module || "";
+      return experimentIntegration.getModuleLabel(module);
     }
 
     function getRecordDetailCount(record) {
-      const data = record.data || {};
-      const fullState = data.fullState || {};
+      const data = experimentIntegration.getRecordPayload(record);
+      const fullState = experimentIntegration.getRecordState(record);
       if (record.module === "nback") return Array.isArray(fullState.testRuns) ? fullState.testRuns.length : 0;
       if (record.module === "strategies") {
         const attempts = Array.isArray(fullState.attemptHistory) ? fullState.attemptHistory : fullState.records;
@@ -1564,7 +1565,7 @@
     }
 
     function buildAiChatStateSheets(stateRecord) {
-      const data = stateRecord.data || {};
+      const data = experimentIntegration.getRecordPayload(stateRecord);
       const logs = Array.isArray(data.logs) ? data.logs : [];
       const studentLabel = stateRecord.studentId || data.studentId || "未知学生";
 
@@ -1595,6 +1596,16 @@
       ];
     }
 
+    const stateSheetDispatcher = experimentIntegration.createModuleDispatcher({
+      memory: buildMemoryStateSheets,
+      nback: buildNbackStateSheets,
+      interference: buildInterferenceStateSheets,
+      strategies: buildStrategiesStateSheets,
+      poster: buildPosterStateSheets,
+      screening: buildScreeningStateSheets,
+      aiChat: buildAiChatStateSheets
+    }, buildMemoryStateSheets);
+
     async function exportExcel() {
       setStatus("正在生成完整导出...");
 
@@ -1607,15 +1618,9 @@
         } catch (error) {
           console.warn("读取逐次实验记录失败，将使用最新状态快照中的历史记录。", getErrorSummary(error));
         }
-        const detailSheets = latestStateRecords.flatMap((record) => {
-          if (record.module === "nback") return buildNbackStateSheets(record);
-          if (record.module === "interference") return buildInterferenceStateSheets(record);
-          if (record.module === "strategies") return buildStrategiesStateSheets(record);
-          if (record.module === "poster") return buildPosterStateSheets(record);
-          if (record.module === "screening") return buildScreeningStateSheets(record);
-          if (record.module === "aiChat") return buildAiChatStateSheets(record);
-          return buildMemoryStateSheets(record);
-        });
+        const detailSheets = latestStateRecords.flatMap((record) => (
+          stateSheetDispatcher.dispatch(record.module, record)
+        ));
         const strategyAttemptHistory = collectStrategyAttemptHistory(latestStateRecords, cloudAttemptRecords);
         const attemptSheets = strategyAttemptHistory.length ? [buildStrategyAttemptHistorySheet(strategyAttemptHistory)] : [];
         sheets = [buildOverviewSheet(latestStateRecords), ...detailSheets, ...attemptSheets];
