@@ -28,12 +28,25 @@ function send(response, statusCode, body, headers) {
 }
 
 function resolveRequestPath(requestUrl) {
-  const url = new URL(requestUrl, `http://localhost:${PORT}`);
-  const pathname = decodeURIComponent(url.pathname);
+  let pathname;
+
+  try {
+    const url = new URL(requestUrl, `http://localhost:${PORT}`);
+    pathname = decodeURIComponent(url.pathname);
+  } catch (error) {
+    return null;
+  }
+
   const normalizedPath = pathname === "/" ? "/login.html" : pathname;
   const filePath = path.resolve(ROOT, `.${normalizedPath}`);
+  const relativePath = path.relative(ROOT, filePath);
 
-  if (!filePath.startsWith(ROOT)) {
+  if (
+    !relativePath ||
+    relativePath === ".." ||
+    relativePath.startsWith(`..${path.sep}`) ||
+    path.isAbsolute(relativePath)
+  ) {
     return null;
   }
 

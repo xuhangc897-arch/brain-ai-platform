@@ -1,0 +1,293 @@
+.memory-partner {
+  position: fixed;
+  right: max(18px, env(safe-area-inset-right));
+  bottom: max(18px, env(safe-area-inset-bottom));
+  z-index: 10000;
+  color: #edf6ff;
+  font-family: "PingFang SC", "HarmonyOS Sans SC", "Microsoft YaHei UI", "MiSans", system-ui, -apple-system, BlinkMacSystemFont, sans-serif;
+}
+
+.memory-partner.is-dragged {
+  right: auto;
+  bottom: auto;
+}
+
+.memory-partner.is-dragging {
+  user-select: none;
+}
+
+.memory-partner *,
+.memory-partner *::before,
+.memory-partner *::after {
+  box-sizing: border-box;
+}
+
+.memory-partner-launcher {
+  display: grid;
+  justify-items: center;
+  gap: 4px;
+  min-width: 124px;
+  min-height: 158px;
+  padding: 0;
+  border: 0;
+  background: transparent;
+  color: inherit;
+  box-shadow: none;
+  cursor: grab;
+  font: inherit;
+  text-align: center;
+  touch-action: none;
+  transition: transform 180ms ease;
+}
+
+.memory-partner.is-dragging .memory-partner-launcher {
+  cursor: grabbing;
+}
+
+.memory-partner-launcher:hover,
+.memory-partner-launcher:focus-visible {
+  outline: none;
+  transform: translateY(-2px);
+}
+
+.memory-partner-avatar {
+  position: relative;
+  display: block;
+  width: 96px;
+  height: 128px;
+  flex: 0 0 auto;
+  overflow: visible;
+}
+
+.memory-partner-pose {
+  position: absolute;
+  inset: 0;
+  background-image: url("memory-detective-states.png");
+  background-position-y: center;
+  background-repeat: no-repeat;
+  background-size: 200% 100%;
+  filter:
+    drop-shadow(1.5px 0 0 #fff)
+    drop-shadow(-1.5px 0 0 #fff)
+    drop-shadow(0 1.5px 0 #fff)
+    drop-shadow(0 -1.5px 0 #fff);
+  transition: opacity 160ms ease, transform 180ms ease;
+}
+
+.memory-partner-launcher:focus-visible .memory-partner-pose {
+  filter:
+    drop-shadow(1.5px 0 0 #fff)
+    drop-shadow(-1.5px 0 0 #fff)
+    drop-shadow(0 1.5px 0 #fff)
+    drop-shadow(0 -1.5px 0 #fff)
+    drop-shadow(0 0 7px rgba(90, 215, 255, 0.9));
+}
+
+.memory-partner-pose.is-initial {
+  background-position-x: left;
+  opacity: 1;
+}
+
+.memory-partner-pose.is-thinking {
+  background-position-x: right;
+  opacity: 0;
+  transform: scale(0.98);
+}
+
+.memory-partner:hover .memory-partner-pose.is-initial,
+.memory-partner.is-thinking .memory-partner-pose.is-initial,
+.memory-partner.is-dragging .memory-partner-pose.is-initial {
+  opacity: 0;
+}
+
+.memory-partner:hover .memory-partner-pose.is-thinking,
+.memory-partner.is-thinking .memory-partner-pose.is-thinking,
+.memory-partner.is-dragging .memory-partner-pose.is-thinking {
+  opacity: 1;
+  transform: scale(1);
+}
+
+.memory-partner-copy {
+  display: block;
+}
+
+.memory-partner-name {
+  display: block;
+  color: #fff;
+  font-size: 14px;
+  font-weight: 800;
+  letter-spacing: 0.01em;
+  line-height: 1.25;
+  text-align: center;
+  text-shadow: 0 1px 2px #06111f, 0 0 5px #06111f;
+  white-space: nowrap;
+}
+
+.memory-partner-status {
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  overflow: hidden;
+  clip: rect(0 0 0 0);
+  clip-path: inset(50%);
+  white-space: nowrap;
+}
+
+.memory-partner-menu {
+  position: absolute;
+  right: 0;
+  bottom: calc(100% + 10px);
+  display: none;
+  width: min(310px, calc(100vw - 28px));
+  padding: 10px;
+  border: 1px solid rgba(126, 190, 255, 0.26);
+  border-radius: 18px;
+  background: linear-gradient(150deg, rgba(10, 27, 54, 0.99), rgba(6, 15, 30, 0.99));
+  box-shadow: 0 24px 70px rgba(2, 9, 22, 0.5);
+}
+
+.memory-partner.is-menu-open .memory-partner-menu {
+  display: grid;
+  gap: 8px;
+  animation: memoryPartnerIn 160ms ease both;
+}
+
+.memory-partner-menu-title {
+  margin: 1px 4px 4px;
+  color: rgba(237, 246, 255, 0.72);
+  font-size: 12px;
+  font-weight: 650;
+}
+
+.memory-partner-action {
+  display: grid;
+  grid-template-columns: 34px 1fr;
+  gap: 10px;
+  align-items: center;
+  width: 100%;
+  padding: 11px 12px;
+  border: 1px solid rgba(126, 190, 255, 0.16);
+  border-radius: 14px;
+  background: rgba(255, 255, 255, 0.05);
+  color: inherit;
+  cursor: pointer;
+  font: inherit;
+  text-align: left;
+  transition: background 160ms ease, border-color 160ms ease;
+}
+
+.memory-partner-action:hover,
+.memory-partner-action:focus-visible {
+  border-color: rgba(126, 210, 255, 0.44);
+  background: rgba(90, 215, 255, 0.1);
+  outline: none;
+}
+
+.memory-partner-action-icon {
+  display: grid;
+  place-items: center;
+  width: 34px;
+  height: 34px;
+  border-radius: 11px;
+  background: rgba(90, 215, 255, 0.12);
+  font-size: 18px;
+}
+
+.memory-partner-action-copy {
+  display: grid;
+  gap: 2px;
+}
+
+.memory-partner-action-copy strong {
+  font-size: 14px;
+}
+
+.memory-partner-action-copy small {
+  color: rgba(221, 241, 255, 0.67);
+  font-size: 11px;
+  line-height: 1.4;
+}
+
+body.has-memory-partner .ai-assistant,
+body.has-memory-partner .voice-assistant {
+  right: max(18px, env(safe-area-inset-right));
+  top: auto;
+  bottom: max(18px, env(safe-area-inset-bottom));
+}
+
+body.has-memory-partner .ai-toggle,
+body.has-memory-partner .ai-hint,
+body.has-memory-partner .voice-toggle,
+body.has-memory-partner .voice-hint {
+  display: none !important;
+}
+
+body.has-memory-partner .ai-panel,
+body.has-memory-partner .voice-panel {
+  position: fixed;
+  right: max(18px, env(safe-area-inset-right));
+  bottom: calc(max(18px, env(safe-area-inset-bottom)) + 140px);
+  left: auto;
+  top: auto;
+}
+
+body.has-memory-partner .ai-title,
+body.has-memory-partner .voice-title {
+  letter-spacing: 0.01em;
+}
+
+@keyframes memoryPartnerIn {
+  from {
+    opacity: 0;
+    transform: translateY(6px) scale(0.98);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0) scale(1);
+  }
+}
+
+@media (max-width: 640px) {
+  .memory-partner {
+    right: 12px;
+    bottom: 12px;
+  }
+
+  .memory-partner-launcher {
+    min-width: 102px;
+    min-height: 124px;
+    padding: 0;
+  }
+
+  .memory-partner-avatar {
+    width: 72px;
+    height: 96px;
+  }
+
+  .memory-partner-copy {
+    display: block;
+  }
+
+  .memory-partner-name {
+    font-size: 12px;
+  }
+
+  .memory-partner-menu {
+    right: 0;
+  }
+
+  body.has-memory-partner .ai-panel,
+  body.has-memory-partner .voice-panel {
+    right: 12px;
+    bottom: 120px;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .memory-partner *,
+  .memory-partner *::before,
+  .memory-partner *::after {
+    animation: none !important;
+    transition: none !important;
+  }
+}

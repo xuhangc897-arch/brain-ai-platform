@@ -11,7 +11,7 @@
    * CloudBase 环境 ID。
    * 后续更换环境时，只需要改这里，页面脚本无需分散修改。
    */
-  const ENV_ID = "memory-detective-platfor-d369a42";
+  const ENV_ID = window.BrainPlatform.config.envId;
 
   /*
    * CloudBase SDK 由页面中的 cloudbase.full.js 提供。
@@ -92,27 +92,10 @@
     return text.includes("unauthenticated") || text.includes("credentials not found");
   }
 
-  function getAuthMethodNames() {
-    const names = new Set();
-    let target = auth;
-
-    while (target && target !== Object.prototype) {
-      Object.getOwnPropertyNames(target).forEach((name) => {
-        if (typeof auth[name] === "function") {
-          names.add(name);
-        }
-      });
-      target = Object.getPrototypeOf(target);
-    }
-
-    return Array.from(names).sort();
-  }
-
   function getErrorDetails(error) {
     return {
       message: (error && (error.message || error.errMsg || error.msg)) || String(error),
-      code: (error && (error.code || error.errCode || error.errorCode || error.category)) || "",
-      raw: error
+      code: (error && (error.code || error.errCode || error.errorCode || error.category)) || ""
     };
   }
 
@@ -137,18 +120,17 @@
   }
 
   async function ensureCloudBaseLogin() {
-    console.info("CloudBase auth methods:", getAuthMethodNames());
-
     let loginState = null;
 
     try {
       loginState = await getRawCloudBaseLoginState();
     } catch (error) {
-      console.warn("CloudBase loginState check failed, will try anonymous login:", getErrorDetails(error));
+      console.warn("CloudBase loginState check failed, will try anonymous login:", {
+        code: getErrorDetails(error).code || "UNKNOWN"
+      });
     }
 
     if (loginState) {
-      console.info("CloudBase loginState already exists:", loginState);
       return loginState;
     }
 
@@ -176,14 +158,13 @@
       }
 
       try {
-        console.info("CloudBase anonymous login strategy:", strategy.name);
         assertCloudBaseResult(await strategy.signIn(), "CloudBase 匿名登录失败。");
         loginState = await getRawCloudBaseLoginState();
-        console.info("CloudBase anonymous login succeeded with:", strategy.name);
-        console.info("CloudBase loginState after anonymous login:", loginState);
         return loginState;
       } catch (error) {
-        console.error(`CloudBase anonymous login failed with ${strategy.name}:`, error);
+        console.error(`CloudBase anonymous login failed with ${strategy.name}:`, {
+          code: getErrorDetails(error).code || "UNKNOWN"
+        });
         errors.push(`${strategy.name}: ${formatErrorDetails(error)}`);
       }
     }

@@ -1,15 +1,10 @@
 (function () {
   "use strict";
 
-  const SESSION_KEY = "studentSession";
+  const platform = window.BrainPlatform;
 
   function readStudentSession() {
-    try {
-      return JSON.parse(localStorage.getItem(SESSION_KEY) || "null");
-    } catch (event) {
-      localStorage.removeItem(SESSION_KEY);
-      return null;
-    }
+    return platform.identity.readStudentSession();
   }
 
   function redirectToLogin() {
@@ -75,7 +70,7 @@
     logoutBtn.addEventListener("click", () => {
       logoutBtn.disabled = true;
       logoutBtn.textContent = "退出中...";
-      localStorage.removeItem(SESSION_KEY);
+      platform.identity.clearStudentSession();
       window.location.href = "login.html";
     });
   }
@@ -94,26 +89,7 @@
   }
 
   function getStudentIdentityFields() {
-    const student = readStudentSession() || {};
-
-    if (isGuestStudent(student)) {
-      return {
-        studentId: "guest",
-        studentName: "游客",
-        className: "游客模式",
-        groupName: "本地体验",
-        isGuest: true,
-        createdAt: new Date().toLocaleString()
-      };
-    }
-
-    return {
-      studentId: student.studentId || "",
-      studentName: student.name || "",
-      className: student.class || "",
-      groupName: student.group || "",
-      createdAt: new Date().toLocaleString()
-    };
+    return platform.identity.getStudentIdentityFields();
   }
 
   window.checkLogin = checkLogin;

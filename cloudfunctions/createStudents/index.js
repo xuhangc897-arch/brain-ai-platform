@@ -3,6 +3,7 @@
 const cloudbase = require("@cloudbase/node-sdk");
 
 const STUDENTS_COLLECTION = "students";
+const CURRENT_SCHEMA_VERSION = 1;
 
 const app = cloudbase.init({
   env: cloudbase.SYMBOL_CURRENT_ENV
@@ -43,16 +44,6 @@ function getErrorCode(error) {
   return (error && (error.code || error.errCode || error.errorCode || error.category)) || "";
 }
 
-function serializeError(error) {
-  try {
-    return JSON.parse(JSON.stringify(error, Object.getOwnPropertyNames(error)));
-  } catch (event) {
-    return {
-      message: String(error)
-    };
-  }
-}
-
 async function findStudentByStudentId(studentId) {
   const result = await studentsCollection
     .where({ studentId })
@@ -60,7 +51,7 @@ async function findStudentByStudentId(studentId) {
     .get();
 
   if (result.code) {
-    throw new Error(result.message || "查询 students 集合失败。");
+    throw new Error("查询学生资料失败。");
   }
 
   const records = Array.isArray(result.data) ? result.data : [];
@@ -70,6 +61,8 @@ async function findStudentByStudentId(studentId) {
 async function createStudentProfile(student) {
   const now = new Date();
   const result = await studentsCollection.add({
+    schemaVersion: CURRENT_SCHEMA_VERSION,
+    role: "student",
     studentId: student.studentId,
     name: student.name,
     class: student.class,
@@ -81,7 +74,7 @@ async function createStudentProfile(student) {
   });
 
   if (result.code) {
-    throw new Error(result.message || "写入 students 集合失败。");
+    throw new Error("写入学生资料失败。");
   }
 
   return result;
@@ -133,8 +126,7 @@ async function createOneStudent(rawStudent) {
       class: student.class,
       group: student.group,
       reason: getErrorMessage(error),
-      code: getErrorCode(error),
-      error: serializeError(error)
+      code: getErrorCode(error)
     };
   }
 }

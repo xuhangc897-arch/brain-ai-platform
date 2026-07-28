@@ -2,11 +2,10 @@
 
 const cloudbase = require("@cloudbase/node-sdk");
 
-const ENV_ID = "memory-detective-platfor-d369a42";
 const RECORDS_COLLECTION = "experimentRecords";
 
 const app = cloudbase.init({
-  env: ENV_ID
+  env: cloudbase.SYMBOL_CURRENT_ENV
 });
 
 const db = app.database();
@@ -107,12 +106,12 @@ exports.main = async (event) => {
     : limit;
 
   console.log("getExperimentRecords query:", JSON.stringify({
-    condition,
+    filterKeys: Object.keys(condition),
     limit,
     skip,
-    dateFrom: extraFilters.dateFrom ? extraFilters.dateFrom.toISOString() : "",
-    dateTo: extraFilters.dateTo ? extraFilters.dateTo.toISOString() : "",
-    sourceModule: extraFilters.sourceModule
+    hasDateFrom: Boolean(extraFilters.dateFrom),
+    hasDateTo: Boolean(extraFilters.dateTo),
+    hasSourceModule: Boolean(extraFilters.sourceModule)
   }));
 
   const result = await recordsCollection
@@ -126,7 +125,7 @@ exports.main = async (event) => {
     return {
       ok: false,
       code: result.code,
-      message: result.message || "读取实验记录失败",
+      message: "读取实验记录失败",
       records: []
     };
   }

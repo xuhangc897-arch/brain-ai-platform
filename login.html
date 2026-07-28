@@ -184,6 +184,7 @@
     </div>
   </main>
 
+  <script src="assets/platform-core.js"></script>
   <script>
     /*
      * 登录页脚本只负责登录相关交互：
@@ -191,7 +192,7 @@
      * 2. 已登录则直接进入首页；
      * 3. 未登录则等待学生输入账号密码并调用 studentLogin HTTP 云函数。
      */
-    const STUDENT_LOGIN_URL = "https://memory-detective-platfor-d369a42-1441391469.ap-shanghai.app.tcloudbase.com/studentLogin";
+    const STUDENT_LOGIN_URL = window.BrainPlatform.config.endpoints.studentLogin;
     const loginForm = document.getElementById("loginForm");
     const accountInput = document.getElementById("account");
     const passwordInput = document.getElementById("password");
@@ -220,15 +221,15 @@
      * 直接进入 index.html，减少重复操作。
      */
     try {
-      if (localStorage.getItem("studentSession")) {
+      if (window.BrainPlatform.identity.readStudentSession()) {
         window.location.replace(redirectTarget);
       }
     } catch (event) {
-      localStorage.removeItem("studentSession");
+      window.BrainPlatform.identity.clearStudentSession();
     }
 
     guestBtn.addEventListener("click", () => {
-      localStorage.setItem("studentSession", JSON.stringify(GUEST_SESSION));
+      window.BrainPlatform.identity.writeStudentSession(GUEST_SESSION);
       window.location.href = redirectTarget;
     });
 
@@ -274,10 +275,13 @@
           return;
         }
 
-        localStorage.setItem("studentSession", JSON.stringify(cloudFunctionResult.student));
+        window.BrainPlatform.identity.writeStudentSession(cloudFunctionResult.student);
         window.location.href = redirectTarget;
       } catch (error) {
-        console.error("studentLogin failed:", error);
+        console.error("studentLogin failed:", {
+          name: (error && error.name) || "Error",
+          code: getErrorCode(error) || "UNKNOWN"
+        });
         message.textContent = getErrorMessage(error) || "登录失败";
       } finally {
         submitBtn.disabled = false;

@@ -334,6 +334,7 @@
   </main>
 
   <script src="https://static.cloudbase.net/cloudbase-js-sdk/3.0.0/cloudbase.full.js"></script>
+  <script src="../assets/platform-core.js"></script>
   <script src="../cloudbase.js"></script>
   <script src="../assets/vendor/xlsx.full.min.js"></script>
   <script>
@@ -355,7 +356,7 @@
      */
     const REQUIRED_HEADERS = ["学号", "姓名", "班级", "小组"];
     const NO_STUDENTS_MESSAGE = "没有读取到学生数据，请检查 Excel 表头是否包含：学号、姓名、班级、小组。";
-    const CREATE_STUDENTS_HTTP_URL = "https://memory-detective-platfor-d369a42-1441391469.ap-shanghai.app.tcloudbase.com/createStudents";
+    const CREATE_STUDENTS_HTTP_URL = window.BrainPlatform.config.endpoints.createStudents;
 
     const excelFile = document.getElementById("excelFile");
     const importBtn = document.getElementById("importBtn");
@@ -393,7 +394,10 @@
       try {
         isLoggedIn = await getAdminLoginState();
       } catch (error) {
-        console.error(error);
+        console.error("检查教师导入登录状态失败", {
+          name: (error && error.name) || "Error",
+          code: getErrorCode(error) || "UNKNOWN"
+        });
         isLoggedIn = false;
       }
 
@@ -470,27 +474,24 @@
     function formatErrorDetails(error, context) {
       const message = getErrorMessage(error);
       const code = getErrorCode(error);
-      const debugInfo = error?.debugInfo || null;
-      const raw = error?.raw || null;
       const details = [
         `context: ${context}`,
         "调用目标: createStudents 云函数",
         `错误来源: ${error?.source || "读取 Excel、调用 createStudents 或云函数返回"}`,
         "前端直接写 students 集合: 否，本页面只解析 Excel 并调用 createStudents",
         `error.message: ${message}`,
-        `error.code: ${code || "无"}`,
-        debugInfo ? `debugInfo: ${stringifyError(debugInfo)}` : "",
-        raw ? `cloudFunctionRaw: ${stringifyError(raw)}` : "",
-        "",
-        "完整 error 对象:",
-        stringifyError(error)
-      ].filter((item) => item !== "");
+        `error.code: ${code || "无"}`
+      ];
 
       return details.join("\n");
     }
 
     function showErrorDetails(error, context) {
-      console.error(error);
+      console.error("教师导入流程失败", {
+        context,
+        name: (error && error.name) || "Error",
+        code: getErrorCode(error) || "UNKNOWN"
+      });
       errorDetails.classList.add("is-visible");
       errorDetailsContent.textContent = formatErrorDetails(error, context);
     }
@@ -572,9 +573,8 @@
 
     function normalizeCreateStudentsResult(cloudFunctionResult) {
       if (cloudFunctionResult.ok === false) {
-        const error = new Error(cloudFunctionResult.message || "createStudents 云函数执行失败。");
+        const error = new Error("createStudents 云函数执行失败。");
         error.code = cloudFunctionResult.code || "";
-        error.raw = cloudFunctionResult;
         error.source = "createStudents 云函数返回失败";
         throw error;
       }
@@ -589,7 +589,9 @@
     }
 
     async function callCreateStudentsByHttp(students, originalError) {
-      console.warn("callFunction 被权限拒绝，改用 HTTP 网关调用 createStudents。", originalError);
+      console.warn("callFunction 被权限拒绝，改用 HTTP 网关调用 createStudents。", {
+        code: getErrorCode(originalError) || "UNKNOWN"
+      });
 
       const response = await fetch(CREATE_STUDENTS_HTTP_URL, {
         method: "POST",
@@ -605,16 +607,14 @@
       try {
         data = text ? JSON.parse(text) : {};
       } catch (error) {
-        const parseError = new Error(`createStudents HTTP 网关返回了非 JSON 内容：${text.slice(0, 200)}`);
+        const parseError = new Error("createStudents HTTP 网关返回格式错误。");
         parseError.source = "createStudents HTTP 网关返回格式错误";
-        parseError.raw = text;
         throw parseError;
       }
 
       if (!response.ok) {
-        const error = new Error(data.message || data.msg || `createStudents HTTP 网关调用失败：HTTP ${response.status}`);
+        const error = new Error(`createStudents HTTP 网关调用失败：HTTP ${response.status}`);
         error.code = data.code || data.errCode || response.status;
-        error.raw = data;
         error.source = "createStudents HTTP 网关调用失败";
         throw error;
       }
@@ -623,12 +623,6 @@
     }
 
     async function callCreateStudents(students) {
-      console.log("准备调用 createStudents");
-      console.log("students 数组内容", students.map((student) => ({
-        ...student,
-        password: student.password ? "[已提供]" : "[使用默认密码]"
-      })));
-
       let result;
 
       try {
@@ -648,45 +642,43 @@
         });
 
         result = await Promise.race([callFunctionTask, timeoutTask]);
-        console.log("createStudents 云函数返回结果", result);
       } catch (error) {
-        console.error("createStudents 云函数调用失败", error);
+        console.error("createStudents 云函数调用失败", {
+          code: getErrorCode(error) || "UNKNOWN"
+        });
 
         if (isPermissionDenied(error)) {
           return await callCreateStudentsByHttp(students, error);
         }
 
+        const callError = new Error("调用 createStudents 云函数失败。");
+        callError.code = getErrorCode(error);
+        callError.source = "调用 createStudents 云函数失败，不是前端直接写 students 集合";
+
         const debugInfo = {
           envId: window.BrainCloudBase?.ENV_ID || "",
-          href: window.location.href,
-          origin: window.location.origin,
           hasApp: Boolean(window.app),
           hasCallFunction: Boolean(window.app && typeof window.app.callFunction === "function"),
           hasAuth: Boolean(window.auth),
-          currentUser: window.auth?.currentUser || null,
-          loginState: null
+          hasCurrentUser: Boolean(window.auth?.currentUser),
+          hasLoginState: false
         };
 
         try {
-          debugInfo.loginState = await window.auth.getLoginState();
+          debugInfo.hasLoginState = Boolean(await window.auth.getLoginState());
         } catch (loginStateError) {
           debugInfo.loginStateError = {
-            message: loginStateError?.message || "",
-            code: loginStateError?.code || "",
-            stack: loginStateError?.stack || ""
+            code: getErrorCode(loginStateError) || "UNKNOWN"
           };
         }
 
         console.error("createStudents 调用前端诊断信息", debugInfo);
-        error.debugInfo = debugInfo;
-        error.source = "调用 createStudents 云函数失败，不是前端直接写 students 集合";
-        throw error;
+        throw callError;
       }
 
       if (result.code) {
-        const error = new Error(result.message || "调用 createStudents 云函数失败。");
+        const error = new Error("调用 createStudents 云函数失败。");
         error.code = result.code;
-        error.raw = result;
         error.source = "CloudBase callFunction 返回错误，调用目标是 createStudents";
         throw error;
       }

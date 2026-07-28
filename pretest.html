@@ -377,13 +377,14 @@
     </section>
   </main>
 
+  <script src="assets/platform-core.js"></script>
   <script src="auth.js"></script>
   <script src="assets/experiment-uploader.js"></script>
   <script>
     const currentStudent = checkLogin();
-    const CONTEXT_KEY = "science-inquiry-context-v1";
-    const PRETEST_KEY = "pretestData";
-    const QUALIFICATION_KEY = "detectiveQualificationData";
+    const CONTEXT_KEY = window.BrainPlatform.config.storageKeys.inquiryContext;
+    const PRETEST_KEY = window.BrainPlatform.config.storageKeys.pretest;
+    const QUALIFICATION_KEY = window.BrainPlatform.config.storageKeys.qualification;
 
     const surveyDef = {
       title: "记忆相关知识元认知情况调查问卷",
@@ -432,7 +433,7 @@
     }
 
     function getStudentIdentityFields() {
-      const student = currentStudent || readJson("studentSession") || {};
+      const student = currentStudent || window.BrainPlatform.identity.readStudentSession() || {};
 
       if (student.isGuest) {
         return {
