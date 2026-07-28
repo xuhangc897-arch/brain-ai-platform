@@ -5,7 +5,7 @@
   "private": true,
   "scripts": {
     "check:baseline": "node scripts/check-baseline.js",
-    "check:contracts": "node scripts/check-experiment-registry.js && node scripts/check-platform-contracts.js && node scripts/check-platform-integration.js",
+    "check:contracts": "node scripts/check-experiment-registry.js && node scripts/check-experiment-page-migration.js && node scripts/check-platform-contracts.js && node scripts/check-platform-integration.js",
     "dev": "node local-static-server.js",
     "start": "node app.js"
   },
