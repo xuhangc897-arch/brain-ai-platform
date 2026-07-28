@@ -119,7 +119,7 @@
 ## 六、加载顺序
 
 - 所有使用公共核心的页面必须先加载 `assets/experiment-registry.js`。
-- 学生实验页面：`assets/experiment-registry.js` → `assets/platform-core.js` → `auth.js` → `assets/experiment-uploader.js` → `assets/experiment-bridge.js`
+- 学生实验页面：`assets/experiment-registry.js` → `assets/platform-core.js` → `auth.js` → `assets/experiment-uploader.js` → `assets/experiment-bridge.js` → `assets/experiment-page-runtime.js`
 - 首页和登录页：`assets/experiment-registry.js` → `assets/platform-core.js` → `auth.js`
 - AI 助手页面必须在加载 `assets/ai-assistant.js` 前加载公共核心。
 - 报告页：`assets/experiment-registry.js` → `assets/platform-core.js` → `assets/review.js`

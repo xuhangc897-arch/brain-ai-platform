@@ -648,12 +648,14 @@
   <script src="auth.js"></script>
   <script src="assets/experiment-uploader.js"></script>
   <script src="assets/experiment-bridge.js"></script>
+  <script src="assets/experiment-page-runtime.js"></script>
   <script>
     checkLogin();
   </script>
   <script>
-    const CONTEXT_KEY = window.BrainPlatform.config.storageKeys.inquiryContext;
-    const STORAGE_KEY = window.BrainPlatform.config.storageKeys.experiments.poster;
+    const pageRuntime = window.BrainExperimentPageRuntime.create("poster");
+    const CONTEXT_KEY = pageRuntime.contextKey;
+    const STORAGE_KEY = pageRuntime.storageKey;
     const DEV_MODE_KEY = "devMode";
 
     const steps = [
@@ -729,20 +731,16 @@
     const identityPill = document.getElementById("identityPill");
 
     function loadState() {
-      let saved = null;
-      try { saved = JSON.parse(localStorage.getItem(STORAGE_KEY) || "null"); } catch (event) { localStorage.removeItem(STORAGE_KEY); }
-      const merged = mergeState(defaultState, saved || {});
-      try {
-        const context = JSON.parse(localStorage.getItem(CONTEXT_KEY) || "null");
-        if (context) {
+      return pageRuntime.loadState({
+        defaultState,
+        mergeState,
+        applyContext(merged, context) {
           merged.studentName = context.studentName || merged.studentName || "";
           merged.studentAge = context.studentAge || merged.studentAge || "";
           merged.studentId = context.studentId || merged.studentId;
           merged.groupId = context.groupId || merged.groupId;
         }
-      } catch (event) { localStorage.removeItem(CONTEXT_KEY); }
-      Object.assign(merged, getStudentIdentityFields());
-      return merged;
+      });
     }
 
     function mergeState(base, incoming) {
@@ -771,9 +769,7 @@
     }
 
     function saveState() {
-      Object.assign(state, getStudentIdentityFields());
-      state.savedAt = new Date().toISOString();
-      localStorage.setItem(STORAGE_KEY, JSON.stringify(state));
+      pageRuntime.saveState(state);
     }
 
     function escapeHtml(value) {
