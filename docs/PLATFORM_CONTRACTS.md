@@ -1,6 +1,6 @@
 # 平台统一身份、配置与数据契约
 
-本文档定义阶段 3 完成后的浏览器公共契约。运行时唯一入口为 `assets/platform-core.js`，浏览器通过 `window.BrainPlatform` 使用配置、身份和实验记录契约。
+本文档定义阶段 4 完成后的浏览器公共契约。实验模块元数据入口为 `assets/experiment-registry.js`，平台配置、身份和实验记录契约入口为 `assets/platform-core.js`。浏览器分别通过 `window.BrainExperimentRegistry` 和 `window.BrainPlatform` 使用这些契约。
 
 ## 一、版本规则
 
@@ -13,13 +13,13 @@
 
 ## 二、配置契约
 
-`window.BrainPlatform.config` 是浏览器配置的唯一来源：
+`window.BrainPlatform.config` 是浏览器环境与接口配置的唯一来源：
 
 - `envId`：CloudBase 环境 ID。
 - `endpoints`：学生登录、学生导入、实验记录保存、实验记录查询和 AI 对话接口。
-- `storageKeys`：学生会话、可靠上传 outbox、探究上下文、AI 对话、前测结果、资格结果及五个实验状态 key。
+- `storageKeys`：学生会话、可靠上传 outbox、探究上下文、AI 对话、前测结果、资格结果及五个实验状态 key。其中模块相关 key 从实验注册表派生。
 
-页面不得重新硬编码以上地址和 key。CloudBase 云函数使用 `cloudbase.SYMBOL_CURRENT_ENV`，由部署环境决定当前环境；`cloudbase.json` 继续作为部署配置来源。
+页面不得重新硬编码以上地址和 key。实验 ID、名称、页面路由、报告元数据和实验状态 key 的定义见 `docs/EXPERIMENT_REGISTRY.md`。CloudBase 云函数使用 `cloudbase.SYMBOL_CURRENT_ENV`，由部署环境决定当前环境；`cloudbase.json` 继续作为部署配置来源。
 
 ## 三、身份契约
 
@@ -118,10 +118,12 @@
 
 ## 六、加载顺序
 
-- 学生页面：`assets/platform-core.js` → `auth.js` → `assets/experiment-uploader.js`
+- 所有使用公共核心的页面必须先加载 `assets/experiment-registry.js`。
+- 学生实验页面：`assets/experiment-registry.js` → `assets/platform-core.js` → `auth.js` → `assets/experiment-uploader.js` → `assets/experiment-bridge.js`
+- 首页和登录页：`assets/experiment-registry.js` → `assets/platform-core.js` → `auth.js`
 - AI 助手页面必须在加载 `assets/ai-assistant.js` 前加载公共核心。
-- 报告页：`assets/platform-core.js` → `assets/review.js`
-- 教师页：CloudBase Web SDK → `assets/platform-core.js` → `cloudbase.js`
+- 报告页：`assets/experiment-registry.js` → `assets/platform-core.js` → `assets/review.js`
+- 教师页：CloudBase Web SDK → `assets/experiment-registry.js` → `assets/platform-core.js` → `cloudbase.js`
 
 `npm run check:contracts` 会验证以上顺序、旧会话兼容、游客行为、上传载荷和云函数写入契约。
 
@@ -129,7 +131,7 @@
 
 增加实验、身份字段、接口或存储 key 时：
 
-1. 先更新公共契约和本文件。
+1. 先更新实验注册表或公共契约及对应文档。
 2. 增加向后兼容测试。
 3. 明确无版本历史数据的读取方式。
 4. 若需要迁移，提供 dry-run、备份、数量校验和回滚方案。

@@ -5,6 +5,15 @@
   const RECORD_SCHEMA_VERSION = 2;
   const ENV_ID = "memory-detective-platfor-d369a42";
   const HTTP_BASE = `https://${ENV_ID}-1441391469.ap-shanghai.app.tcloudbase.com`;
+  const experimentRegistry = global.BrainExperimentRegistry;
+
+  if (!experimentRegistry) {
+    throw new Error("实验注册表未加载。");
+  }
+
+  const experimentStorageKeys = Object.freeze(Object.fromEntries(
+    experimentRegistry.experiments.map((entry) => [entry.id, entry.storageKey])
+  ));
 
   const config = Object.freeze({
     envId: ENV_ID,
@@ -19,16 +28,10 @@
       studentSession: "studentSession",
       uploadOutbox: "experiment-upload-outbox-v1",
       inquiryContext: "science-inquiry-context-v1",
-      aiChatLogs: "aiChatLogs",
-      pretest: "pretestData",
+      aiChatLogs: experimentRegistry.get("aiChat").storageKey,
+      pretest: experimentRegistry.get("screening").storageKey,
       qualification: "detectiveQualificationData",
-      experiments: Object.freeze({
-        memory: "memory-capacity-state-v1",
-        nback: "nback-inquiry-state-v1",
-        interference: "longterm-interference-state-v1",
-        strategies: "longterm-strategies-state-v4",
-        poster: "poster-making-state-v1"
-      })
+      experiments: experimentStorageKeys
     })
   });
 
@@ -40,15 +43,7 @@
       guest: "guest",
       teacher: "teacher"
     }),
-    modules: Object.freeze([
-      "memory",
-      "nback",
-      "interference",
-      "strategies",
-      "poster",
-      "screening",
-      "aiChat"
-    ]),
+    modules: experimentRegistry.moduleIds,
     recordTypes: Object.freeze(["experiment", "state", "submission"])
   });
 

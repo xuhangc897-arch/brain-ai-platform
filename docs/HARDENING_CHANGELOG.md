@@ -808,3 +808,73 @@
 ### 部署与回滚
 
 部署必须先更新 `saveExperimentRecord` 云函数，再发布静态资源。回滚必须先回滚静态资源，再回滚云函数。v2 文档保留 v1 兼容字段，回滚前端后无需删除已写入记录。
+
+---
+
+## 2026-07-28｜任务 015：阶段 4——抽离公共模块与实验注册表
+
+### 目标
+
+在不改变实验步骤、计时、评分、状态结构和上传数据格式的前提下，统一实验 ID、名称、路由、报告元数据和 localStorage key，并抽离六个页面重复的完整状态提交与五个页面重复的报告收尾逻辑。
+
+### 影响范围
+
+- 新增只读实验注册表和页面公共桥接。
+- 首页入口从注册表读取页面路由。
+- 报告页从注册表读取报告元数据与状态 key。
+- 教师后台从注册表生成模块筛选项并读取通用显示名称。
+- 五个实验页和资格审查页保留原提交函数名，内部改为调用公共桥接。
+- 不修改实验状态机、题目、刺激材料、计时、随机化、评分、过程记录、报告计算、云函数逻辑或数据库结构。
+
+### 修改文件
+
+- `assets/experiment-registry.js`
+- `assets/experiment-bridge.js`
+- `assets/platform-core.js`
+- `assets/review.js`
+- `index.html`
+- `login.html`
+- `review.html`
+- `pretest.html`
+- `memory.html`
+- `nback.html`
+- `interference.html`
+- `strategies.html`
+- `poster.html`
+- `admin/dashboard.html`
+- `admin/initStudents.html`
+- `scripts/check-experiment-registry.js`
+- `scripts/check-platform-contracts.js`
+- `scripts/check-platform-integration.js`
+- `package.json`
+- `docs/PLATFORM_CONTRACTS.md`
+- `docs/EXPERIMENT_REGISTRY.md`
+- `docs/HARDENING_CHANGELOG.md`
+- `docs/HARDENING_GUARDRAILS.md`
+
+### 行为兼容
+
+- 原页面 `submit*Record()` 函数名和所有既有调用点保持不变。
+- 完整状态提交仍使用 `recordType: "submission"`，身份字段、`fullState`、`createdAt` 和 `clientRecordId` 格式保持不变。
+- 需要同步思考字段的四个实验仍在快照前同步；海报和资格审查保持各自原快照方式。
+- 生成报告仍按“保存状态 → 提交完整状态 → 提交 AI 对话记录 → 新窗口打开报告”的顺序执行。
+- localStorage key、模块 ID、页面 URL、报告类型及教师后台模块顺序保持不变。
+- 实验特有过程上传（例如策略实验尝试记录）未纳入公共桥接，也未修改。
+
+### 验证结果
+
+- 新注册表检查验证 7 个模块 ID、5 个实验路由、5 个状态 key 均唯一。
+- 验证注册表模块集合与保存云函数允许模块集合完全一致。
+- 验证公共核心的模块集合、前测 key、AI 对话 key 和五个实验状态 key 均从注册表派生。
+- 模拟完整状态提交，验证快照前同步、深拷贝、身份字段、提交动作、时间和 `clientRecordId` 与原格式一致。
+- 模拟报告收尾，验证 AI 对话记录先于报告窗口打开，报告 URL 与原格式一致。
+- 验证 11 个页面的注册表/公共核心顺序及 6 个提交页面的上传器/桥接顺序。
+- 平台契约、可靠上传、云函数兼容与数据库 v2 集成测试通过。
+- 项目基线通过：25 个 JavaScript 文件、17 个 HTML 文件、30 段内联脚本和 115 个本地资源引用。
+- 本地浏览器冒烟检查通过：首页 6 个入口 ID 正确，记忆报告使用注册表元数据完成渲染，教师后台生成 7 个模块选项和 5 个 AI 来源选项，三个页面均无控制台错误。
+- `git diff --check` 通过；仅有仓库现有 LF/CRLF 转换提示。
+- 未进行真实浏览器人工实验或真实 CloudBase 上传；上线前仍需按五个实验和资格审查逐页验收。
+
+### 部署与回滚
+
+本阶段没有云函数或数据库变更，只需发布完整静态站点，不能只上传单个页面或单个公共脚本。回滚时应把本任务列出的静态文件作为一组恢复，避免注册表、公共核心和页面加载顺序版本不一致。
