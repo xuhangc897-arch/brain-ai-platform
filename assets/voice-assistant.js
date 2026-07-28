@@ -223,7 +223,9 @@
         appendFinalText(textarea, text);
       },
       onError(message, error) {
-        console.warn("[Voice Assistant] ASR error:", message, error);
+        console.warn("[Voice Assistant] ASR error:", {
+          name: (error && error.name) || "Error"
+        });
         stateLabel.textContent = "识别失败";
         setStatus(status, message || "识别失败，请稍后重试。", "warning");
       }
@@ -263,7 +265,9 @@
           asrClient.sendAudio(pcmBuffer);
         });
       } catch (error) {
-        console.warn("[Voice Assistant] start failed:", error);
+        console.warn("[Voice Assistant] start failed:", {
+          name: (error && error.name) || "Error"
+        });
         stopAll();
         stateLabel.textContent = "识别失败";
         setStatus(status, error && error.message ? error.message : "识别失败，请稍后重试。", "warning");

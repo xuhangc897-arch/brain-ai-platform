@@ -307,6 +307,7 @@
   </style>
   <link rel="stylesheet" href="assets/ai-assistant.css">
   <link rel="stylesheet" href="assets/voice-assistant.css">
+  <link rel="stylesheet" href="assets/memory-partner.css">
 </head>
 <body>
   <header class="topbar">
@@ -326,14 +327,15 @@
     </div>
   </header>
   <main id="main" class="main"></main>
+  <script src="assets/platform-core.js"></script>
   <script src="auth.js"></script>
   <script src="assets/experiment-uploader.js"></script>
   <script>
     checkLogin();
   </script>
   <script>
-    const CONTEXT_KEY = "science-inquiry-context-v1";
-    const STORAGE_KEY = "longterm-strategies-state-v4";
+    const CONTEXT_KEY = window.BrainPlatform.config.storageKeys.inquiryContext;
+    const STORAGE_KEY = window.BrainPlatform.config.storageKeys.experiments.strategies;
     const DEV_MODE_KEY = "devMode";
     const FLOW_VERSION = "science-eight-step-v2";
     const steps = [
@@ -1445,7 +1447,7 @@
     function generateReviewReport(activityType) {
       saveState();
       submitStrategiesRecord("generateReport");
-      if (typeof window.submitAiChatRecord === "function") window.submitAiChatRecord("strategies", "generateReport").then((result) => console.info("AI chat upload result:", result));
+      if (typeof window.submitAiChatRecord === "function") window.submitAiChatRecord("strategies", "generateReport");
       window.open(`review.html?activityType=${encodeURIComponent(activityType)}`, "_blank");
     }
     function submitStrategiesRecord(submitAction) {
@@ -1472,8 +1474,7 @@
       if (typeof window.uploadExperimentRecords !== "function") return;
       const payload = structuredClone(record);
       payload.clientRecordId = `strategies|experiment|${payload.studentId || ""}|${payload.runId || payload.createdAt || Date.now()}`;
-      window.uploadExperimentRecords({ module: "strategies", recordType: "experiment", records: [payload] })
-        .then((result) => console.info("策略逐次实验记录上传结果:", result));
+      window.uploadExperimentRecords({ module: "strategies", recordType: "experiment", records: [payload] });
     }
     function bindScoreEvents() {
       const add = document.getElementById("addStrategyScoreBtn");
@@ -1798,5 +1799,6 @@
   <script src="assets/voice-recorder.js"></script>
   <script src="assets/asr-client.js"></script>
   <script src="assets/voice-assistant.js"></script>
+  <script src="assets/memory-partner.js"></script>
 </body>
 </html>

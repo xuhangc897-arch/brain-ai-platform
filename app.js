@@ -81,18 +81,8 @@ function createWsUrl() {
   const signText = `${HOST}${requestPath}?${sortedQueryString}`;
   const signature = createSignature(signText);
 
-  console.log("[ASR signText]", signText);
-  console.log("[ASR signature]", signature);
-
   return {
-    wsUrl: `wss://${HOST}${requestPath}?${sortedQueryString}&signature=${encodeURIComponent(signature)}`,
-    debug: {
-      signText,
-      sortedQuery: sortedQueryString,
-      voiceId: params.voice_id,
-      timestamp: params.timestamp,
-      expired: params.expired
-    }
+    wsUrl: `wss://${HOST}${requestPath}?${sortedQueryString}&signature=${encodeURIComponent(signature)}`
   };
 }
 
@@ -117,10 +107,12 @@ function handleRequest(request, response) {
 
   try {
     const result = createWsUrl();
-    console.info("[asr-sign] Created ASR WebSocket URL:", { voice_id: result.debug.voiceId });
-    writeJson(response, 200, { wsUrl: result.wsUrl, debug: result.debug });
+    console.info("[asr-sign] Created ASR WebSocket URL.");
+    writeJson(response, 200, { wsUrl: result.wsUrl });
   } catch (error) {
-    console.error("[asr-sign] Failed to create ASR WebSocket URL:", error && error.message);
+    console.error("[asr-sign] Failed to create ASR WebSocket URL:", {
+      name: (error && error.name) || "Error"
+    });
     writeJson(response, 500, { error: "Failed to create ASR WebSocket URL" });
   }
 }

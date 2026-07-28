@@ -37,19 +37,8 @@ function buildContext(body, question) {
   return lines.join("\n");
 }
 
-async function readDeepSeekError(response) {
-  const raw = await response.text().catch(() => "");
-  if (!raw) return `DeepSeek 返回错误（HTTP ${response.status}）。`;
-
-  try {
-    const data = JSON.parse(raw);
-    const message = data && data.error && data.error.message
-      ? data.error.message
-      : raw;
-    return `DeepSeek 返回错误（HTTP ${response.status}）：${clean(message, 220)}`;
-  } catch (error) {
-    return `DeepSeek 返回错误（HTTP ${response.status}）：${clean(raw, 220)}`;
-  }
+function getDeepSeekErrorMessage(status) {
+  return `AI 服务暂时不可用（HTTP ${status}）。`;
 }
 
 module.exports = async function handler(req, res) {
@@ -105,7 +94,7 @@ module.exports = async function handler(req, res) {
     });
 
     if (!response.ok) {
-      sendJson(res, 502, { error: await readDeepSeekError(response) });
+      sendJson(res, 502, { error: getDeepSeekErrorMessage(response.status) });
       return;
     }
 
@@ -122,7 +111,7 @@ module.exports = async function handler(req, res) {
     sendJson(res, 200, { reply });
   } catch (error) {
     sendJson(res, 500, {
-      error: `DeepSeek 接口请求失败：${clean(error && error.message ? error.message : "未知错误", 220)}`
+      error: "AI 服务暂时不可用，请稍后重试。"
     });
   }
 };

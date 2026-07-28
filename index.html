@@ -2300,13 +2300,6 @@
       background-clip: initial;
     }
 
-    .ai-assistant-launcher,
-    .ai-assistant-widget,
-    #aiAssistant,
-    [class*="ai-assistant"] {
-      z-index: 40;
-    }
-
     @media (max-width: 1100px) {
       .hero-panel::before,
       .hero-panel::after,
@@ -3557,8 +3550,6 @@
       }
     }
   </style>
-  <link rel="stylesheet" href="assets/ai-assistant.css">
-  <link rel="stylesheet" href="assets/voice-assistant.css">
 </head>
 <body>
   <div class="background-layer" aria-hidden="true"></div>
@@ -3739,6 +3730,7 @@
     </div>
   </dialog>
 
+  <script src="assets/platform-core.js"></script>
   <script src="auth.js"></script>
   <script>
     checkLogin();
@@ -3749,7 +3741,7 @@
      * 页面加载后先检查学生本地会话；未登录会自动跳转 login.html。
      * 这里不改动实验入口逻辑，只是在进入首页前增加登录门禁。
      */
-    const CONTEXT_KEY = "science-inquiry-context-v1";
+    const CONTEXT_KEY = window.BrainPlatform.config.storageKeys.inquiryContext;
     const studentNameInput = document.getElementById("studentName");
     const studentInput = document.getElementById("studentId");
     const groupInput = document.getElementById("groupId");
@@ -3852,12 +3844,5 @@
     memoryVideoModal.addEventListener("cancel", closeMemoryVideo);
 
   </script>
-  <script src="assets/ai-assistant.js"></script>
-  <script>
-    window.BRAIN_ASR_SIGN_ENDPOINT = "https://1441391469-7ppckhczkq.ap-shanghai.tencentscf.com";
-  </script>
-  <script src="assets/voice-recorder.js"></script>
-  <script src="assets/asr-client.js"></script>
-  <script src="assets/voice-assistant.js"></script>
 </body>
 </html>

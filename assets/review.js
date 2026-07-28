@@ -1,11 +1,6 @@
 (function () {
-  const STORAGE_KEYS = {
-    memory: "memory-capacity-state-v1",
-    nback: "nback-inquiry-state-v1",
-    interference: "longterm-interference-state-v1",
-    strategies: "longterm-strategies-state-v4",
-    poster: "poster-making-state-v1"
-  };
+  const platform = window.BrainPlatform;
+  const STORAGE_KEYS = platform.config.storageKeys.experiments;
 
   const ACTIVITY_META = {
     memory: { caseNo: "案件01", caseTitle: "记忆容量调查", activityName: "探索短时记忆的容量", type: "science" },
@@ -62,11 +57,7 @@
   }
 
   function readStudentSession() {
-    try {
-      return JSON.parse(localStorage.getItem("studentSession") || "null") || {};
-    } catch (error) {
-      return {};
-    }
+    return platform.identity.readStudentSession() || {};
   }
 
   function buildScienceReview(base) {

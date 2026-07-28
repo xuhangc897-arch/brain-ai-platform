@@ -1,9 +1,10 @@
 (function () {
   "use strict";
 
-  const AI_API_ENDPOINT = "https://1441391469-6rhud8ln4o.ap-shanghai.tencentscf.com";
-  const CONTEXT_KEY = "science-inquiry-context-v1";
-  const LOG_KEY = "aiChatLogs";
+  const platform = window.BrainPlatform;
+  const AI_API_ENDPOINT = platform.config.endpoints.aiChat;
+  const CONTEXT_KEY = platform.config.storageKeys.inquiryContext;
+  const LOG_KEY = platform.config.storageKeys.aiChatLogs;
   const MAX_QUESTION_LENGTH = 500;
   const DRAG_MARGIN = 12;
   const DRAG_THRESHOLD = 5;
@@ -189,14 +190,17 @@
       const value = JSON.parse(localStorage.getItem(key) || "null");
       return value || fallback;
     } catch (error) {
-      console.warn("[AI Assistant] localStorage parse failed:", key, error);
+      console.warn("[AI Assistant] localStorage parse failed:", {
+        key,
+        name: (error && error.name) || "Error"
+      });
       return fallback;
     }
   }
 
   function readIdentity() {
     const identity = readJson(CONTEXT_KEY, {});
-    const student = readJson("studentSession", {});
+    const student = platform.identity.readStudentSession() || {};
     return {
       studentName: identity.studentName || student.name || student.studentName || "",
       studentAge: identity.studentAge || "",
@@ -353,16 +357,13 @@
     const record = buildAiChatSubmission(sourceModule, submitAction);
     if (!record) {
       console.info("[AI Assistant] no AI chat logs for current page; skip upload.", {
-        sourceModule,
-        path: location.pathname
+        sourceModule
       });
       return Promise.resolve({ ok: true, skipped: true, message: "no AI chat logs" });
     }
     console.info("[AI Assistant] uploading AI chat logs:", {
       sourceModule,
-      logCount: record.logCount,
-      studentId: record.studentId,
-      path: record.path
+      logCount: record.logCount
     });
     return window.uploadExperimentRecords({
       module: "aiChat",
@@ -381,16 +382,14 @@
       throw new Error("AI 接口地址未配置，请在 assets/ai-assistant.js 中填写 AI_API_ENDPOINT。");
     }
     if (!/^(https?:\/\/|\/)/.test(endpoint)) {
-      console.warn("[AI Assistant] endpoint should be an absolute URL or a root-relative path:", endpoint);
+      console.warn("[AI Assistant] endpoint should be an absolute URL or a root-relative path.");
     }
 
     let response;
     try {
-      console.info("[AI Assistant] requesting:", endpoint, {
-        pageTitle: context.pageTitle,
+      console.info("[AI Assistant] requesting:", {
         experimentName: context.experimentName,
         currentStep: context.currentStep,
-        studentId: context.studentId,
         hasQuestion: Boolean(context.question)
       });
       response = await fetch(endpoint, {
@@ -399,20 +398,24 @@
         body: JSON.stringify(context)
       });
     } catch (error) {
-      console.error("[AI Assistant] fetch failed:", endpoint, error);
+      console.error("[AI Assistant] fetch failed:", {
+        name: (error && error.name) || "Error"
+      });
       throw new Error("后端接口无法访问，请检查 AI 接口地址、网络或 CORS 配置。");
     }
 
     const data = await response.json().catch((error) => {
-      console.error("[AI Assistant] response JSON parse failed:", response.status, error);
+      console.error("[AI Assistant] response JSON parse failed:", {
+        status: response.status,
+        name: (error && error.name) || "Error"
+      });
       return {};
     });
 
     if (!response.ok) {
       console.error("[AI Assistant] backend error:", {
-        endpoint,
         status: response.status,
-        data
+        code: data.code || ""
       });
       const detail = data.error || `后端返回 HTTP ${response.status}`;
       throw new Error(detail);
@@ -420,7 +423,9 @@
 
     const answer = data.reply || data.answer;
     if (!answer) {
-      console.error("[AI Assistant] missing reply field:", data);
+      console.error("[AI Assistant] missing reply field:", {
+        status: response.status
+      });
       throw new Error("后端没有返回 reply 字段。");
     }
     return answer;

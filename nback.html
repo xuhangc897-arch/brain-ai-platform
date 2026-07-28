@@ -1347,6 +1347,7 @@
   </style>
   <link rel="stylesheet" href="assets/ai-assistant.css">
   <link rel="stylesheet" href="assets/voice-assistant.css">
+  <link rel="stylesheet" href="assets/memory-partner.css">
 </head>
 <body>
   <div class="app-shell">
@@ -1406,14 +1407,15 @@
     <main id="main" class="main"></main>
   </div>
 
+  <script src="assets/platform-core.js"></script>
   <script src="auth.js"></script>
   <script src="assets/experiment-uploader.js"></script>
   <script>
     checkLogin();
   </script>
   <script>
-    const CONTEXT_KEY = "science-inquiry-context-v1";
-    const STORAGE_KEY = "nback-inquiry-state-v1";
+    const CONTEXT_KEY = window.BrainPlatform.config.storageKeys.inquiryContext;
+    const STORAGE_KEY = window.BrainPlatform.config.storageKeys.experiments.nback;
     const DEV_MODE_KEY = "devMode";
     const FLOW_VERSION = "science-eight-step-v2";
 
@@ -2787,7 +2789,7 @@
     function generateReviewReport(activityType) {
       saveState();
       submitNbackRecord("generateReport");
-      if (typeof window.submitAiChatRecord === "function") window.submitAiChatRecord("nback", "generateReport").then((result) => console.info("AI chat upload result:", result));
+      if (typeof window.submitAiChatRecord === "function") window.submitAiChatRecord("nback", "generateReport");
       window.open(`review.html?activityType=${encodeURIComponent(activityType)}`, "_blank");
     }
 
@@ -3446,5 +3448,6 @@
   <script src="assets/voice-recorder.js"></script>
   <script src="assets/asr-client.js"></script>
   <script src="assets/voice-assistant.js"></script>
+  <script src="assets/memory-partner.js"></script>
 </body>
 </html>

@@ -621,6 +621,7 @@
   </style>
   <link rel="stylesheet" href="assets/ai-assistant.css">
   <link rel="stylesheet" href="assets/voice-assistant.css">
+  <link rel="stylesheet" href="assets/memory-partner.css">
 </head>
 <body>
   <header class="topbar">
@@ -642,14 +643,15 @@
 
   <main id="main" class="main"></main>
 
+  <script src="assets/platform-core.js"></script>
   <script src="auth.js"></script>
   <script src="assets/experiment-uploader.js"></script>
   <script>
     checkLogin();
   </script>
   <script>
-    const CONTEXT_KEY = "science-inquiry-context-v1";
-    const STORAGE_KEY = "poster-making-state-v1";
+    const CONTEXT_KEY = window.BrainPlatform.config.storageKeys.inquiryContext;
+    const STORAGE_KEY = window.BrainPlatform.config.storageKeys.experiments.poster;
     const DEV_MODE_KEY = "devMode";
 
     const steps = [
@@ -1415,7 +1417,7 @@
     function generateReviewReport(activityType) {
       saveState();
       submitPosterRecord("generateReport");
-      if (typeof window.submitAiChatRecord === "function") window.submitAiChatRecord("poster", "generateReport").then((result) => console.info("AI chat upload result:", result));
+      if (typeof window.submitAiChatRecord === "function") window.submitAiChatRecord("poster", "generateReport");
       window.open(`review.html?activityType=${encodeURIComponent(activityType)}`, "_blank");
     }
     function submitPosterRecord(submitAction) {
@@ -1576,5 +1578,6 @@
   <script src="assets/voice-recorder.js"></script>
   <script src="assets/asr-client.js"></script>
   <script src="assets/voice-assistant.js"></script>
+  <script src="assets/memory-partner.js"></script>
 </body>
 </html>
