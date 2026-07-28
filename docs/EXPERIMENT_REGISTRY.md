@@ -7,9 +7,11 @@
 - `assets/experiment-registry.js` 暴露只读的 `window.BrainExperimentRegistry`。
 - `assets/experiment-bridge.js` 暴露只读的 `window.BrainExperimentBridge`。
 - `assets/experiment-page-runtime.js` 暴露只读的 `window.BrainExperimentPageRuntime`。
+- `assets/experiment-integration.js` 暴露只读的 `window.BrainExperimentIntegration`。
 - 注册表必须先于 `assets/platform-core.js` 加载。
 - 桥接模块必须在公共核心和 `assets/experiment-uploader.js` 之后加载。
 - 页面运行时必须在注册表、公共核心、认证和桥接模块之后加载。
+- 展示与数据适配层必须先于报告、AI 助手和教师后台调用方加载。
 
 ## 二、注册字段
 
