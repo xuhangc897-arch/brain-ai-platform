@@ -1,0 +1,26 @@
+name: Monitor GitHub Pages
+
+on:
+  schedule:
+    - cron: "17 * * * *"
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  smoke:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v6
+
+      - name: Set up Node.js
+        uses: actions/setup-node@v6
+        with:
+          node-version: 20.19.0
+
+      - name: Check production pages
+        env:
+          DEPLOY_URL: https://xuhangc897-arch.github.io/brain-ai-platform/
+        run: node scripts/smoke-deployment.js

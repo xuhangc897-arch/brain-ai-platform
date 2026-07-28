@@ -5,7 +5,7 @@ const path = require("path");
 const vm = require("vm");
 
 const ROOT = path.resolve(__dirname, "..");
-const SKIPPED_DIRECTORIES = new Set([".git", "node_modules"]);
+const SKIPPED_DIRECTORIES = new Set([".git", "dist", "node_modules"]);
 const SOURCE_EXTENSIONS = new Set([".html", ".js"]);
 const LOCAL_REFERENCE_PATTERN = /\b(?:src|href)\s*=\s*["']([^"'#?]+)["']/gi;
 const INLINE_SCRIPT_PATTERN = /<script([^>]*)>([\s\S]*?)<\/script>/gi;

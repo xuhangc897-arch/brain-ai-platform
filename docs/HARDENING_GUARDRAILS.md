@@ -283,3 +283,18 @@
 - 教师查询参数、表格列、Excel sheet 名称或字段变更不属于本阶段，必须单独评审。
 - 未知历史模块的导出回退不得静默改变或删除记录。
 - 每次修改整合层必须执行 `scripts/check-experiment-integration.js`、完整契约检查、报告浏览器检查和教师后台浏览器检查。
+
+## 十七、构建、部署、监控与遗留清理护栏
+
+- 后续任何修改开始前必须完整阅读根目录 `修改须知.md`。
+- 静态站点只能通过 `scripts/build-site.js` 生成的 `dist/` 发布，不得发布整个仓库。
+- 发布包不得包含 `api/`、`cloudfunctions/`、`docs/`、`scripts/`、数据库备份、开发服务器、配置文件或历史副本。
+- `dist/health.json` 和 `dist/deploy-manifest.json` 必须由构建生成，不得手工编辑。
+- GitHub Pages 使用 Actions artifact 部署，Pages Source 必须为 GitHub Actions。
+- Pull Request 只能构建和校验，只有 `main` 或明确手动触发可以部署。
+- 部署任务必须具有最小的 `pages: write`、`id-token: write` 和 `contents: read` 权限。
+- 部署后和定时监控只能执行只读 GET，不得登录、提交表单、读取学生数据、调用 AI 或写 CloudBase。
+- 监控失败时必须保留首次失败证据，先区分构建、Pages、缓存和网络问题，再决定重试或回滚。
+- 回滚使用 `git revert` 和完整重新部署，不重写 `main` 历史，不手工覆盖单个公共脚本。
+- 遗留清理前必须证明无引用、无部署依赖且可恢复；数据库备份和高风险临时开关不得作为普通文件清理。
+- 每次构建或部署修改必须运行 `npm run verify`、`npm run build`、`npm run check:dist`，并更新运维文档。
