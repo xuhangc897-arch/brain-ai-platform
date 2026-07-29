@@ -200,6 +200,18 @@
     });
   }
 
+  function notifyAcknowledged(entry, status) {
+    if (typeof global.CustomEvent !== "function" || !global.document) return;
+    global.document.dispatchEvent(new CustomEvent("experiment-records:acknowledged", {
+      detail: {
+        module: entry.module,
+        recordType: entry.recordType,
+        clientRecordId: entry.record.clientRecordId,
+        status
+      }
+    }));
+  }
+
   function scheduleRetry() {
     if (typeof global.setTimeout !== "function") return;
     if (retryTimer && typeof global.clearTimeout === "function") {
@@ -272,6 +284,7 @@
           status,
           code: outcome.code || (recordResult && recordResult.code) || ""
         });
+        notifyAcknowledged(entry, status);
       } else {
         outbox.entries[index] = updateEntryAfterFailure(entry, outcome.code);
         failed += 1;

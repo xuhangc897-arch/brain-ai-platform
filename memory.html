@@ -1056,6 +1056,7 @@
   <main id="main" class="main"></main>
 
   <script src="assets/experiment-registry.js"></script>
+  <script src="assets/knowledge-question-bank.js"></script>
   <script src="assets/platform-core.js"></script>
   <script src="auth.js"></script>
   <script src="assets/experiment-uploader.js"></script>
@@ -1129,18 +1130,7 @@
       }
     };
     const KNOWLEDGE_QUIZ = {
-      items: [
-        { question: "本次实验主要探究的是（ ）", options: { A: "长时记忆容量", B: "工作记忆能力", C: "短时记忆容量", D: "情绪对记忆的影响" }, answer: "C" },
-        { question: "实验中我们可以使用什么材料测量短时记忆容量？", options: { A: "图形", B: "汉字", C: "数字", D: "以上都可以" }, answer: "D" },
-        { question: "随着数字长度不断增加，大多数人的正确率通常会（ ）", options: { A: "提高", B: "保持不变", C: "降低", D: "先升高再降低" }, answer: "C" },
-        { question: "下列哪项最可能影响短时记忆实验结果？", options: { A: "是否专心", B: "数字呈现速度", C: "数字长度", D: "以上都有可能" }, answer: "D" },
-        { question: "为了保证实验公平，下列哪项最好保持一致？", options: { A: "测试方式", B: "数字呈现时间", C: "实验环境", D: "以上都要" }, answer: "D" },
-        { question: "本次实验结论主要依据什么得出？", options: { A: "老师讲解", B: "同学猜测", C: "实验数据", D: "网络资料" }, answer: "C" },
-        { question: "如果连续两次实验结果差别很大，下列哪项最值得先检查？", options: { A: "是否认真完成实验", B: "是否记录准确", C: "是否受到干扰", D: "以上都有可能" }, answer: "D" },
-        { question: "为了让实验结果更加可靠，可以怎样做？", options: { A: "增加测试次数", B: "增加参与人数", C: "比较多次结果", D: "以上都可以" }, answer: "D" },
-        { question: "如果要记住一串较长的电话号码，下面哪种方法更符合今天实验得到的启示？", options: { A: "一次全部记住", B: "分成几段分别记忆", C: "只看一遍", D: "闭眼等待" }, answer: "B" },
-        { question: "如果老师一次说了很多内容，你应该怎样做更容易记住？", options: { A: "全部硬记", B: "边听边整理重点", C: "什么也不记", D: "等别人告诉自己" }, answer: "B" }
-      ]
+      items: window.BrainKnowledgeQuestionBank.getExperimentQuestions("memory")
     };
 
     function createDefaultSurveys() {
@@ -1782,7 +1772,7 @@
     }
 
     function isSurveyStepComplete(stepId) {
-      if (stepId === "posttest") return summarizeSurvey("postMeta", "meta").complete && summarizeSurvey("cognitiveLoad", "load").complete && summarizeSurvey("inquiryParticipation", "inquiry").complete;
+      if (stepId === "posttest") return summarizeSurvey("postMeta", "meta").complete && summarizeSurvey("cognitiveLoad", "load").complete && summarizeSurvey("inquiryParticipation", "inquiry").complete && mergeKnowledgeQuiz(state.knowledgeQuiz).submitted;
       return true;
     }
 
@@ -2889,6 +2879,7 @@
   <script src="assets/memory-partner.js"></script>
   <script src="assets/typing-support.js"></script>
   <script src="assets/task-relevance.js"></script>
+  <script src="assets/student-memory.js"></script>
   <script>
     if (window.LearningBehaviorTracker) {
       window.LearningBehaviorTracker.init({ experimentId: "memory" });
@@ -2907,6 +2898,12 @@
     }
     if (window.TaskRelevance) {
       window.TaskRelevance.init({ experimentId: "memory" });
+    }
+    if (window.StudentMemory) {
+      window.StudentMemory.init({
+        experimentId: "memory",
+        getLearningState: () => ({ steps, currentStepIndex: state.currentStep, maxUnlockedStep: state.maxUnlockedStep })
+      });
     }
   </script>
 </body>

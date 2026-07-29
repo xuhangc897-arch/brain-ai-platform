@@ -34,6 +34,7 @@ npm run check:dist
 完整说明见：
 
 - [构建、部署与监控](docs/BUILD_DEPLOY_MONITOR.md)
+- [跨实验结构化学生记忆](docs/STUDENT_MEMORY.md)
 - [平台契约](docs/PLATFORM_CONTRACTS.md)
 - [实验注册表](docs/EXPERIMENT_REGISTRY.md)
 - [实验页面迁移](docs/EXPERIMENT_PAGE_MIGRATION.md)

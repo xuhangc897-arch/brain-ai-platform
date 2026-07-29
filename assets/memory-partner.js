@@ -148,6 +148,16 @@
           <button class="memory-partner-relevance-keep" type="button">仍然保留</button>
         </div>
       </section>
+      <section class="memory-partner-memory-support" role="dialog" aria-modal="false" aria-labelledby="memoryPartnerMemorySupportTitle" aria-hidden="true">
+        <button class="memory-partner-memory-support-close" type="button" aria-label="关闭个性化学习建议">×</button>
+        <p class="memory-partner-suggestion-kicker">上次探究带来的提示</p>
+        <h2 id="memoryPartnerMemorySupportTitle">这条建议可能对当前任务有帮助</h2>
+        <p class="memory-partner-memory-support-message" aria-live="polite"></p>
+        <div class="memory-partner-suggestion-actions">
+          <button class="memory-partner-memory-support-accept" type="button">知道了</button>
+          <button class="memory-partner-memory-support-dismiss" type="button">暂时不用</button>
+        </div>
+      </section>
       <section class="memory-partner-menu" id="memoryPartnerMenu" role="dialog" aria-modal="false" aria-labelledby="memoryPartnerMenuTitle" aria-hidden="true">
         <header class="memory-partner-menu-head">
           <div>
@@ -185,6 +195,13 @@
               <small>查看已完成和待完成的步骤</small>
             </span>
           </button>
+          <button class="memory-partner-action" type="button" data-partner-mode="memory">
+            <span class="memory-partner-action-icon" aria-hidden="true">档</span>
+            <span class="memory-partner-action-copy">
+              <strong>我的学习记录</strong>
+              <small>查看已完成实验、做得好的地方和下一次建议</small>
+            </span>
+          </button>
         </div>
         <div class="memory-partner-view" data-partner-view="detail" aria-live="polite">
           <button class="memory-partner-back" type="button">← 返回工具列表</button>
@@ -220,6 +237,11 @@
     const relevanceView = root.querySelector(".memory-partner-relevance-view");
     const relevanceModify = root.querySelector(".memory-partner-relevance-modify");
     const relevanceKeep = root.querySelector(".memory-partner-relevance-keep");
+    const memorySupport = root.querySelector(".memory-partner-memory-support");
+    const memorySupportMessage = root.querySelector(".memory-partner-memory-support-message");
+    const memorySupportClose = root.querySelector(".memory-partner-memory-support-close");
+    const memorySupportAccept = root.querySelector(".memory-partner-memory-support-accept");
+    const memorySupportDismiss = root.querySelector(".memory-partner-memory-support-dismiss");
     const menuView = root.querySelector('[data-partner-view="menu"]');
     const detailView = root.querySelector('[data-partner-view="detail"]');
     const detail = root.querySelector("[data-partner-detail]");
@@ -228,6 +250,7 @@
     const status = root.querySelector(".memory-partner-status");
     let suggestionState = null;
     let relevanceState = null;
+    let memorySupportState = null;
     const aiToggle = aiAssistant?.querySelector(".ai-toggle");
     const aiClose = aiAssistant?.querySelector(".ai-close");
     const voiceToggle = voiceAssistant?.querySelector(".voice-toggle");
@@ -406,9 +429,37 @@
       return true;
     }
 
+    function resolveMemorySupport(response, returnFocus) {
+      if (!memorySupportState) return false;
+      const current = memorySupportState;
+      memorySupportState = null;
+      root.classList.remove("has-memory-support");
+      memorySupport.setAttribute("aria-hidden", "true");
+      memorySupportMessage.textContent = "";
+      try {
+        current.onResponse(response);
+      } catch (error) {
+        console.warn("[Virtual Agent] Memory support response handler failed.");
+      }
+      if (returnFocus && current.target?.isConnected) current.target.focus();
+      return true;
+    }
+
+    function showMemorySupport(options) {
+      if (!options || typeof options.onResponse !== "function" || !options.target?.isConnected) return false;
+      if (suggestionState || relevanceState || memorySupportState || root.classList.contains("is-menu-open") || hasOpenAssistant()) return false;
+      memorySupportState = { target: options.target, onResponse: options.onResponse };
+      memorySupportMessage.textContent = asText(options.message);
+      root.classList.add("has-memory-support");
+      memorySupport.setAttribute("aria-hidden", "false");
+      status.textContent = "有一条与当前任务相关的学习建议";
+      return true;
+    }
+
     function setMenuOpen(open, options = {}) {
       if (open && suggestionState) resolveSuggestion("dismissed", false);
       if (open && relevanceState) resolveRelevanceSuggestion("closed", false);
+      if (open && memorySupportState) resolveMemorySupport("dismissed", false);
       root.classList.toggle("is-menu-open", open);
       launcher.setAttribute("aria-expanded", String(open));
       launcher.setAttribute("aria-label", `${open ? "关闭" : "打开"}${PARTNER_NAME}`);
@@ -485,6 +536,30 @@
       status.textContent = `学习进度：已完成 ${completed} / ${total}`;
     }
 
+    async function renderStudentMemory() {
+      detail.innerHTML = '<p>正在读取你的学习记录...</p>';
+      showDetail();
+      try {
+        const view = await global.StudentMemory?.getStudentView();
+        const completed = Array.isArray(view?.completedExperiments) ? view.completedExperiments : [];
+        const strengths = Array.isArray(view?.strengths) ? view.strengths : [];
+        const suggestions = Array.isArray(view?.nextSuggestions) ? view.nextSuggestions : [];
+        detail.innerHTML = `
+          <div class="memory-partner-detail-heading">
+            <span class="memory-partner-detail-label">我的学习记录</span>
+            <h3>${escapeHtml(config.experimentName || "记忆侦探学习档案")}</h3>
+          </div>
+          <dl class="memory-partner-task">
+            <div><dt>已完成实验</dt><dd>${completed.length ? completed.map((item) => escapeHtml(item.experimentId)).join("、") : "完成一次实验后会在这里形成记录"}</dd></div>
+          </dl>
+          <div class="memory-partner-unfinished"><h4>做得好的地方</h4>${strengths.length ? `<ul>${strengths.map((item) => `<li>${escapeHtml(item.message)}</li>`).join("")}</ul>` : "<p>暂时还没有可展示的摘要。</p>"}</div>
+          <div class="memory-partner-unfinished"><h4>下一次建议</h4>${suggestions.length ? `<ul>${suggestions.map((item) => `<li>${escapeHtml(item.message)}</li>`).join("")}</ul>` : "<p>继续完成探究后，我会提供与任务相关的建议。</p>"}</div>
+        `;
+      } catch (error) {
+        detail.innerHTML = "<p>学习记录暂时无法读取，不影响继续完成实验。</p>";
+      }
+    }
+
     function showDetail() {
       menuView.classList.remove("is-active");
       detailView.classList.add("is-active");
@@ -528,6 +603,7 @@
       }
       if (mode === "task") renderTask();
       if (mode === "progress") renderProgress();
+      if (mode === "memory") renderStudentMemory();
     }
 
     launcher.addEventListener("pointerdown", (event) => {
@@ -587,6 +663,9 @@
     relevanceModify.addEventListener("click", () => resolveRelevanceSuggestion("return_modify", true));
     relevanceKeep.addEventListener("click", () => resolveRelevanceSuggestion("keep", true));
     relevanceClose.addEventListener("click", () => resolveRelevanceSuggestion("closed", true));
+    memorySupportAccept.addEventListener("click", () => resolveMemorySupport("accepted", true));
+    memorySupportDismiss.addEventListener("click", () => resolveMemorySupport("dismissed", true));
+    memorySupportClose.addEventListener("click", () => resolveMemorySupport("dismissed", true));
     closeMenuButton.addEventListener("click", () => setMenuOpen(false, { returnFocus: true }));
     backButton.addEventListener("click", () => {
       showMenuView();
@@ -611,6 +690,10 @@
       if (event.key !== "Escape") return;
       if (relevanceState) {
         resolveRelevanceSuggestion("closed", true);
+        return;
+      }
+      if (memorySupportState) {
+        resolveMemorySupport("dismissed", true);
         return;
       }
       if (suggestionState) {
@@ -662,14 +745,17 @@
       hideVoiceSuggestion: (response = "ignored") => resolveSuggestion(response, false),
       showRelevanceSuggestion,
       hideRelevanceSuggestion: (response = "closed") => resolveRelevanceSuggestion(response, false),
+      showMemorySupport,
+      hideMemorySupport: (response = "ignored") => resolveMemorySupport(response, false),
       isBusy: () => Boolean(
         suggestionState ||
         relevanceState ||
+        memorySupportState ||
         root.classList.contains("is-menu-open") ||
         hasOpenAssistant()
       ),
       isSuggestionElement: (node) => Boolean(
-        node && (suggestion.contains(node) || relevance.contains(node))
+        node && (suggestion.contains(node) || relevance.contains(node) || memorySupport.contains(node))
       ),
       openTask: () => {
         setMenuOpen(true, { focus: false });
@@ -682,6 +768,7 @@
       close: () => {
         resolveSuggestion("ignored", false);
         resolveRelevanceSuggestion("closed", false);
+        resolveMemorySupport("ignored", false);
         setMenuOpen(false);
         closeAllAssistants();
       }
@@ -718,6 +805,8 @@
     hideVoiceSuggestion: (response) => Boolean(activeInstance?.hideVoiceSuggestion(response)),
     showRelevanceSuggestion: (options) => Boolean(activeInstance?.showRelevanceSuggestion(options)),
     hideRelevanceSuggestion: (response) => Boolean(activeInstance?.hideRelevanceSuggestion(response)),
+    showMemorySupport: (options) => Boolean(activeInstance?.showMemorySupport(options)),
+    hideMemorySupport: (response) => Boolean(activeInstance?.hideMemorySupport(response)),
     openVoiceFor: (target) => Boolean(activeInstance?.openVoiceFor(target)),
     isBusy: () => Boolean(activeInstance?.isBusy()),
     isSuggestionElement: (node) => Boolean(activeInstance?.isSuggestionElement(node))

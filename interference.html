@@ -321,6 +321,7 @@
   <main id="main" class="main"></main>
 
   <script src="assets/experiment-registry.js"></script>
+  <script src="assets/knowledge-question-bank.js"></script>
   <script src="assets/platform-core.js"></script>
   <script src="auth.js"></script>
   <script src="assets/experiment-uploader.js"></script>
@@ -409,18 +410,7 @@
       }
     };
     const KNOWLEDGE_QUIZ = {
-      items: [
-        { question: "本次实验主要探究的是（ ）", options: { A: "短时记忆容量", B: "影响长时记忆的干扰因素", C: "工作记忆训练", D: "海报设计方法" }, answer: "B" },
-        { question: "倒摄干扰指的是（ ）", options: { A: "后学习的材料影响先前材料的回忆", B: "先学习的材料影响后学习材料", C: "情绪不会影响记忆", D: "复述一定提高成绩" }, answer: "A" },
-        { question: "前摄干扰指的是（ ）", options: { A: "新材料影响旧材料", B: "先前学习影响后续学习或回忆", C: "数字越长越难记", D: "音乐一定提高记忆" }, answer: "B" },
-        { question: "材料相似性较高时，长时记忆回忆通常更容易（ ）", options: { A: "受到干扰", B: "完全准确", C: "没有变化", D: "不需要复习" }, answer: "A" },
-        { question: "哪些因素可能影响长时记忆效果？", options: { A: "材料相似性", B: "情绪状态", C: "干扰任务", D: "以上都可能" }, answer: "D" },
-        { question: "判断某个因素是否影响记忆，应主要依据（ ）", options: { A: "实验数据", B: "个人感觉", C: "同学猜测", D: "答案顺序" }, answer: "A" },
-        { question: "为了公平比较不同条件，应尽量控制（ ）", options: { A: "无关变量", B: "只改变记录表", C: "只改变学生编号", D: "不记录时间" }, answer: "A" },
-        { question: "为了提高结论可靠性，可以怎样做？", options: { A: "进行多轮实验", B: "增加参与人数", C: "认真记录数据", D: "以上都可以" }, answer: "D" },
-        { question: "学习新内容后立刻接触相似材料，可能会（ ）", options: { A: "减少干扰", B: "影响原来内容的回忆", C: "保证满分", D: "提升所有记忆" }, answer: "B" },
-        { question: "复习时把相似知识分开整理，可能有助于（ ）", options: { A: "增加混淆", B: "减少干扰", C: "取消实验", D: "降低理解" }, answer: "B" }
-      ]
+      items: window.BrainKnowledgeQuestionBank.getExperimentQuestions("interference")
     };
 
     function createDefaultSurveys() {
@@ -1139,7 +1129,7 @@
     }
 
     function isSurveyStepComplete(stepId) {
-      if (stepId === "posttest") return summarizeSurvey("postMeta", "meta").complete && summarizeSurvey("cognitiveLoad", "load").complete && summarizeSurvey("inquiryParticipation", "inquiry").complete;
+      if (stepId === "posttest") return summarizeSurvey("postMeta", "meta").complete && summarizeSurvey("cognitiveLoad", "load").complete && summarizeSurvey("inquiryParticipation", "inquiry").complete && mergeKnowledgeQuiz(state.knowledgeQuiz).submitted;
       return true;
     }
 
@@ -1852,6 +1842,7 @@
   <script src="assets/memory-partner.js"></script>
   <script src="assets/typing-support.js"></script>
   <script src="assets/task-relevance.js"></script>
+  <script src="assets/student-memory.js"></script>
   <script>
     if (window.LearningBehaviorTracker) {
       window.LearningBehaviorTracker.init({ experimentId: "interference" });
@@ -1870,6 +1861,12 @@
     }
     if (window.TaskRelevance) {
       window.TaskRelevance.init({ experimentId: "interference" });
+    }
+    if (window.StudentMemory) {
+      window.StudentMemory.init({
+        experimentId: "interference",
+        getLearningState: () => ({ steps, currentStepIndex: state.currentStep, maxUnlockedStep: state.maxUnlockedStep })
+      });
     }
   </script>
 </body>

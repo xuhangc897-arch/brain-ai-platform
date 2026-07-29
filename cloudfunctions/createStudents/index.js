@@ -3,6 +3,7 @@
 const cloudbase = require("@cloudbase/node-sdk");
 
 const STUDENTS_COLLECTION = "students";
+const TEACHERS_COLLECTION = "teachers";
 const CURRENT_SCHEMA_VERSION = 1;
 
 const app = cloudbase.init({
@@ -11,6 +12,15 @@ const app = cloudbase.init({
 
 const db = app.database();
 const studentsCollection = db.collection(STUDENTS_COLLECTION);
+const teachersCollection = db.collection(TEACHERS_COLLECTION);
+
+async function isTeacher() {
+  const context = typeof cloudbase.getCloudbaseContext === "function" ? cloudbase.getCloudbaseContext() : {};
+  const uid = String(context.TCB_UUID || context.UID || context.OPENID || context.WX_OPENID || "").trim();
+  if (!uid) return false;
+  const result = await teachersCollection.where({ uid, active: true, role: "teacher" }).limit(1).get();
+  return Array.isArray(result.data) && Boolean(result.data[0]);
+}
 
 function normalizeCell(value) {
   return String(value == null ? "" : value).trim();
@@ -148,6 +158,9 @@ function parsePayload(event) {
 }
 
 exports.main = async (event) => {
+  if (!await isTeacher()) {
+    return { ok: false, code: "FORBIDDEN", message: "当前账号没有教师导入权限。", results: [] };
+  }
   const payload = parsePayload(event);
   const students = Array.isArray(payload && payload.students) ? payload.students : [];
 

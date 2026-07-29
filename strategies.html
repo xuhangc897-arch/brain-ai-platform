@@ -328,6 +328,7 @@
   </header>
   <main id="main" class="main"></main>
   <script src="assets/experiment-registry.js"></script>
+  <script src="assets/knowledge-question-bank.js"></script>
   <script src="assets/platform-core.js"></script>
   <script src="auth.js"></script>
   <script src="assets/experiment-uploader.js"></script>
@@ -434,18 +435,7 @@
       }
     };
     const KNOWLEDGE_QUIZ = {
-      items: [
-        { question: "本次实验主要探究的是（ ）", options: { A: "改善长时记忆的策略", B: "短时记忆容量", C: "情绪对记忆的影响", D: "睡眠时间" }, answer: "A" },
-        { question: "主动回忆策略强调（ ）", options: { A: "不看答案先尝试回想", B: "只重复抄写", C: "等待别人提示", D: "跳过复习" }, answer: "A" },
-        { question: "信息可视化策略可以帮助我们（ ）", options: { A: "把信息转化为图像或结构", B: "忘记材料", C: "增加干扰", D: "减少理解" }, answer: "A" },
-        { question: "选择记忆策略时，应该考虑（ ）", options: { A: "学习任务特点", B: "只选最简单的", C: "不看材料", D: "随意选择" }, answer: "A" },
-        { question: "比较不同策略效果时，主要依据（ ）", options: { A: "实验记录和回忆结果", B: "个人喜好", C: "同学声音", D: "海报颜色" }, answer: "A" },
-        { question: "为了让策略比较更公平，应尽量（ ）", options: { A: "控制材料难度和测试方式", B: "随意更换材料", C: "只测一次", D: "不记录结果" }, answer: "A" },
-        { question: "如果某种策略在实验中效果更好，说明它（ ）", options: { A: "可能更适合当前任务", B: "永远适合所有人", C: "不需要练习", D: "没有价值" }, answer: "A" },
-        { question: "面对需要理解关系的知识，哪种做法更合适？", options: { A: "只看一遍", B: "建立联系并整理结构", C: "完全不复习", D: "只记页码" }, answer: "B" },
-        { question: "学习外语单词时，合理策略可能是（ ）", options: { A: "主动回忆并结合联想", B: "只等考试", C: "完全不出声", D: "只看封面" }, answer: "A" },
-        { question: "本次探究给我们的启示是（ ）", options: { A: "根据任务选择合适记忆策略", B: "所有策略都没用", C: "只靠天赋", D: "不需要数据" }, answer: "A" }
-      ]
+      items: window.BrainKnowledgeQuestionBank.getExperimentQuestions("strategies")
     };
 
     function createDefaultSurveys() {
@@ -1117,7 +1107,7 @@
     }
 
     function isSurveyStepComplete(stepId) {
-      if (stepId === "posttest") return summarizeSurvey("postMeta", "meta").complete && summarizeSurvey("cognitiveLoad", "load").complete && summarizeSurvey("inquiryParticipation", "inquiry").complete;
+      if (stepId === "posttest") return summarizeSurvey("postMeta", "meta").complete && summarizeSurvey("cognitiveLoad", "load").complete && summarizeSurvey("inquiryParticipation", "inquiry").complete && mergeKnowledgeQuiz(state.knowledgeQuiz).submitted;
       return true;
     }
 
@@ -1843,6 +1833,7 @@
   <script src="assets/memory-partner.js"></script>
   <script src="assets/typing-support.js"></script>
   <script src="assets/task-relevance.js"></script>
+  <script src="assets/student-memory.js"></script>
   <script>
     if (window.LearningBehaviorTracker) {
       window.LearningBehaviorTracker.init({ experimentId: "strategies" });
@@ -1861,6 +1852,12 @@
     }
     if (window.TaskRelevance) {
       window.TaskRelevance.init({ experimentId: "strategies" });
+    }
+    if (window.StudentMemory) {
+      window.StudentMemory.init({
+        experimentId: "strategies",
+        getLearningState: () => ({ steps, currentStepIndex: state.currentStep, maxUnlockedStep: state.maxUnlockedStep })
+      });
     }
   </script>
 </body>

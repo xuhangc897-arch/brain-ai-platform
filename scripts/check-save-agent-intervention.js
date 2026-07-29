@@ -134,6 +134,26 @@ function intervention(overrides) {
     "late ignored updates must not downgrade an accepted response");
   assert.strictEqual(documents.get(created.recordId).voiceInsertSucceeded, true);
 
+  const memorySupport = await handler.main({
+    schemaVersion: 1,
+    intervention: {
+      schemaVersion: 1,
+      studentId: "S001",
+      experimentId: "nback",
+      stageId: "analysis",
+      taskId: "analysis_support",
+      pageId: "nback.html",
+      interventionType: "memory_support",
+      supportId: "memory-analysis-evidence",
+      supportMessage: "分析结果时可以引用一项具体数据。",
+      studentResponse: "dismissed",
+      triggeredAt: "2026-07-29T02:00:00.000Z"
+    }
+  });
+  assert.strictEqual(memorySupport.ok, true);
+  assert.strictEqual(documents.get(memorySupport.recordId).interventionType, "memory_support");
+  assert.strictEqual(documents.get(memorySupport.recordId).supportMessage, "分析结果时可以引用一项具体数据。");
+
   console.log("saveAgentIntervention CloudBase mock checks passed.");
 })().catch((error) => {
   console.error(error);
