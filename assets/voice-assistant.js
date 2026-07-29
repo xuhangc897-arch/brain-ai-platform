@@ -5,6 +5,7 @@
   const COPIED_NOTICE = "已复制，可粘贴到任意填写框中";
   const DRAG_MARGIN = 12;
   const DRAG_THRESHOLD = 5;
+  let activeApi = null;
 
   function setStatus(status, message, type) {
     status.textContent = message || "";
@@ -278,6 +279,13 @@
       updateTargetDisplay();
     }
 
+    function setTarget(target) {
+      if (root.contains(target) || !isWritableTarget(target) || !target.isConnected) return false;
+      lastTarget = target;
+      updateTargetDisplay();
+      return true;
+    }
+
     function writeToTarget() {
       const text = textarea.value.trim();
       if (!text) {
@@ -311,6 +319,12 @@
       }
       lastTarget.dispatchEvent(new Event("input", { bubbles: true }));
       lastTarget.dispatchEvent(new Event("change", { bubbles: true }));
+      document.dispatchEvent(new CustomEvent("voice-assistant:text-inserted", {
+        detail: {
+          target: lastTarget,
+          insertedCharacterCount: Array.from(text).length
+        }
+      }));
       setStatus(status, `已写入“${getTargetLabel(lastTarget)}”。`, "success");
     }
 
@@ -410,8 +424,17 @@
       setStatus(status, "当前浏览器不支持语音识别助手。", "warning");
     }
 
+    activeApi = Object.freeze({
+      setTarget,
+      isOpen: () => root.classList.contains("is-open")
+    });
     document.body.appendChild(root);
   }
+
+  window.VoiceAssistant = Object.freeze({
+    setTarget: (target) => Boolean(activeApi && activeApi.setTarget(target)),
+    isOpen: () => Boolean(activeApi && activeApi.isOpen())
+  });
 
   if (document.readyState === "loading") {
     document.addEventListener("DOMContentLoaded", initVoiceAssistant);

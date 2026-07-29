@@ -1382,6 +1382,15 @@
       inquiryReflection: "reflection",
       inquiryReflection_group: "reflection"
     });
+    const VOICE_SUGGESTION_TASKS = new Set([
+      "question",
+      "hypothesis",
+      "brainFinding",
+      "finalConclusion",
+      "designImprove",
+      "teamwork",
+      "inquiryReflection"
+    ]);
 
     function applyLearningBehaviorMetadata() {
       main.querySelectorAll("textarea[data-field]").forEach((field) => {
@@ -1392,6 +1401,11 @@
         field.dataset.experimentId = "memory";
         field.dataset.stageId = stageId;
         field.dataset.taskId = taskId;
+        if (VOICE_SUGGESTION_TASKS.has(taskId) &&
+            steps[state.currentStep]?.id === stageId &&
+            state.currentStep >= state.maxUnlockedStep) {
+          field.dataset.voiceSuggestion = "true";
+        }
       });
     }
 
@@ -2869,7 +2883,9 @@
   <script src="assets/asr-client.js"></script>
   <script src="assets/voice-assistant.js"></script>
   <script src="assets/learning-behavior-tracker.js"></script>
+  <script src="assets/typing-support-rules.js"></script>
   <script src="assets/memory-partner.js"></script>
+  <script src="assets/typing-support.js"></script>
   <script>
     if (window.LearningBehaviorTracker) {
       window.LearningBehaviorTracker.init({ experimentId: "memory" });
@@ -2882,6 +2898,9 @@
       });
     } else {
       console.warn("[Virtual Agent] Component failed to load; original assistants remain available.");
+    }
+    if (window.TypingSupport) {
+      window.TypingSupport.init({ experimentId: "memory" });
     }
   </script>
 </body>

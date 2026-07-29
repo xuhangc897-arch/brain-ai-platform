@@ -123,6 +123,16 @@
     root.className = "memory-partner";
     root.dataset.experimentId = config.experimentId;
     root.innerHTML = `
+      <section class="memory-partner-suggestion" role="dialog" aria-modal="false" aria-labelledby="memoryPartnerSuggestionTitle" aria-hidden="true">
+        <button class="memory-partner-suggestion-close" type="button" aria-label="关闭语音输入建议">×</button>
+        <p class="memory-partner-suggestion-kicker">输入支持</p>
+        <h2 id="memoryPartnerSuggestionTitle">需要换一种输入方式吗？</h2>
+        <p class="memory-partner-suggestion-message" aria-live="polite"></p>
+        <div class="memory-partner-suggestion-actions">
+          <button class="memory-partner-suggestion-accept" type="button">使用语音输入</button>
+          <button class="memory-partner-suggestion-dismiss" type="button">继续打字</button>
+        </div>
+      </section>
       <section class="memory-partner-menu" id="memoryPartnerMenu" role="dialog" aria-modal="false" aria-labelledby="memoryPartnerMenuTitle" aria-hidden="true">
         <header class="memory-partner-menu-head">
           <div>
@@ -180,12 +190,18 @@
 
     const launcher = root.querySelector(".memory-partner-launcher");
     const menu = root.querySelector(".memory-partner-menu");
+    const suggestion = root.querySelector(".memory-partner-suggestion");
+    const suggestionMessage = root.querySelector(".memory-partner-suggestion-message");
+    const suggestionClose = root.querySelector(".memory-partner-suggestion-close");
+    const suggestionAccept = root.querySelector(".memory-partner-suggestion-accept");
+    const suggestionDismiss = root.querySelector(".memory-partner-suggestion-dismiss");
     const menuView = root.querySelector('[data-partner-view="menu"]');
     const detailView = root.querySelector('[data-partner-view="detail"]');
     const detail = root.querySelector("[data-partner-detail]");
     const closeMenuButton = root.querySelector(".memory-partner-menu-close");
     const backButton = root.querySelector(".memory-partner-back");
     const status = root.querySelector(".memory-partner-status");
+    let suggestionState = null;
     const aiToggle = aiAssistant?.querySelector(".ai-toggle");
     const aiClose = aiAssistant?.querySelector(".ai-close");
     const voiceToggle = voiceAssistant?.querySelector(".voice-toggle");
@@ -280,7 +296,49 @@
       detailView.classList.remove("is-active");
     }
 
+    function hasOpenAssistant() {
+      return Boolean(
+        aiAssistant?.classList.contains("is-open") ||
+        voiceAssistant?.classList.contains("is-open")
+      );
+    }
+
+    function resolveSuggestion(response, returnFocus) {
+      if (!suggestionState) return false;
+      const current = suggestionState;
+      suggestionState = null;
+      root.classList.remove("has-voice-suggestion");
+      suggestion.setAttribute("aria-hidden", "true");
+      suggestionMessage.textContent = "";
+      try {
+        current.onResponse(response);
+      } catch (error) {
+        console.warn("[Virtual Agent] Suggestion response handler failed.");
+      }
+      if (returnFocus && current.target?.isConnected) current.target.focus();
+      return true;
+    }
+
+    function showVoiceSuggestion(options) {
+      if (!options || typeof options.onResponse !== "function" || !options.target?.isConnected) {
+        return false;
+      }
+      if (suggestionState || root.classList.contains("is-menu-open") || hasOpenAssistant()) {
+        return false;
+      }
+      suggestionState = {
+        target: options.target,
+        onResponse: options.onResponse
+      };
+      suggestionMessage.textContent = asText(options.message);
+      root.classList.add("has-voice-suggestion");
+      suggestion.setAttribute("aria-hidden", "false");
+      status.textContent = "当前任务中可能需要输入支持";
+      return true;
+    }
+
     function setMenuOpen(open, options = {}) {
+      if (open && suggestionState) resolveSuggestion("dismissed", false);
       root.classList.toggle("is-menu-open", open);
       launcher.setAttribute("aria-expanded", String(open));
       launcher.setAttribute("aria-label", `${open ? "关闭" : "打开"}${PARTNER_NAME}`);
@@ -380,16 +438,17 @@
         }));
         status.textContent = "正在使用 AI 学习助手";
         window.requestAnimationFrame(positionOpenPanel);
-        return;
+        return true;
       }
       if (mode === "voice" && voiceToggle) {
         voiceToggle.click();
         status.textContent = "正在使用语音转文字";
         window.requestAnimationFrame(positionOpenPanel);
-        return;
+        return true;
       }
 
       console.warn(`[Virtual Agent] ${mode === "ai" ? "AI" : "Voice"} assistant is unavailable.`);
+      return false;
     }
 
     function openMode(mode) {
@@ -439,6 +498,9 @@
     root.querySelectorAll("[data-partner-mode]").forEach((button) => {
       button.addEventListener("click", () => openMode(button.dataset.partnerMode));
     });
+    suggestionAccept.addEventListener("click", () => resolveSuggestion("accepted", false));
+    suggestionDismiss.addEventListener("click", () => resolveSuggestion("dismissed", true));
+    suggestionClose.addEventListener("click", () => resolveSuggestion("dismissed", true));
     closeMenuButton.addEventListener("click", () => setMenuOpen(false, { returnFocus: true }));
     backButton.addEventListener("click", () => {
       showMenuView();
@@ -456,6 +518,10 @@
     });
     document.addEventListener("keydown", (event) => {
       if (event.key !== "Escape") return;
+      if (suggestionState) {
+        resolveSuggestion("dismissed", true);
+        return;
+      }
       const wasOpen = root.classList.contains("is-menu-open") || Boolean(getOpenPanel());
       setMenuOpen(false, { focus: false });
       closeAllAssistants();
@@ -493,6 +559,18 @@
       open: () => setMenuOpen(true),
       openAi: () => openAssistant("ai"),
       openVoice: () => openAssistant("voice"),
+      openVoiceFor: (target) => {
+        if (!global.VoiceAssistant?.setTarget(target)) return false;
+        return openAssistant("voice");
+      },
+      showVoiceSuggestion,
+      hideVoiceSuggestion: (response = "ignored") => resolveSuggestion(response, false),
+      isBusy: () => Boolean(
+        suggestionState ||
+        root.classList.contains("is-menu-open") ||
+        hasOpenAssistant()
+      ),
+      isSuggestionElement: (node) => Boolean(node && suggestion.contains(node)),
       openTask: () => {
         setMenuOpen(true, { focus: false });
         renderTask();
@@ -502,6 +580,7 @@
         renderProgress();
       },
       close: () => {
+        resolveSuggestion("ignored", false);
         setMenuOpen(false);
         closeAllAssistants();
       }
@@ -532,7 +611,14 @@
     }
   }
 
-  global.VirtualAgent = Object.freeze({ init });
+  global.VirtualAgent = Object.freeze({
+    init,
+    showVoiceSuggestion: (options) => Boolean(activeInstance?.showVoiceSuggestion(options)),
+    hideVoiceSuggestion: (response) => Boolean(activeInstance?.hideVoiceSuggestion(response)),
+    openVoiceFor: (target) => Boolean(activeInstance?.openVoiceFor(target)),
+    isBusy: () => Boolean(activeInstance?.isBusy()),
+    isSuggestionElement: (node) => Boolean(activeInstance?.isSuggestionElement(node))
+  });
   global.MemoryPartner = Object.freeze({
     openAi: () => activeInstance?.openAi(),
     openVoice: () => activeInstance?.openVoice(),

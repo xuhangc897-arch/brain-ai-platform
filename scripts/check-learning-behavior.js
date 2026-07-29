@@ -115,6 +115,10 @@ assert(platform.includes("learning-behavior-outbox-v1"), "outbox key missing");
     activeElement: null,
     addEventListener(name, listener) {
       (documentListeners[name] ||= []).push(listener);
+    },
+    dispatchEvent(event) {
+      for (const listener of documentListeners[event.type] || []) listener(event);
+      return true;
     }
   };
   const behaviorSandbox = {
@@ -127,6 +131,12 @@ assert(platform.includes("learning-behavior-outbox-v1"), "outbox key missing");
     Number,
     Date,
     Element: FakeElement,
+    CustomEvent: class CustomEvent {
+      constructor(type, options) {
+        this.type = type;
+        this.detail = options && options.detail;
+      }
+    },
     document: fakeDocument,
     location: { pathname: "/memory.html" },
     console,

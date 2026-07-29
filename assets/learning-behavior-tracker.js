@@ -87,8 +87,15 @@
         element: target,
         value: target.value || "",
         firstFocusedAt: 0,
+        focusCount: 0,
+        focusStartedAt: 0,
+        accumulatedFocusMs: 0,
         firstInputAt: 0,
         lastInputAt: 0,
+        supportLastInputAt: 0,
+        longPauseCount: 0,
+        longestFocusedPauseMs: 0,
+        positiveGrowthEvents: [],
         activeTypingDurationMs: 0,
         keyboardInputCharacterCount: 0,
         deleteCount: 0,
@@ -136,6 +143,7 @@
       largeDeleteCount: state.largeDeleteCount,
       pauseCount: state.pauseCount,
       longestPauseMs: state.longestPauseMs,
+      focusCount: state.focusCount,
       aiUsed: state.aiUsed,
       voiceUsed: state.voiceUsed,
       taskStatus: state.taskStatus
@@ -279,6 +287,11 @@
       return;
     }
     if (!state.firstInputAt) state.firstInputAt = now;
+    if (state.focusStartedAt && state.supportLastInputAt) {
+      const focusedGap = now - state.supportLastInputAt;
+      state.longestFocusedPauseMs = Math.max(state.longestFocusedPauseMs, focusedGap);
+      if (focusedGap >= 30000) state.longPauseCount += 1;
+    }
     if (state.lastInputAt) {
       const gap = now - state.lastInputAt;
       if (gap >= PAUSE_MS) {
@@ -299,6 +312,19 @@
       state.keyboardUsed = true;
       state.keyboardInputCharacterCount += edit.inserted;
     }
+    const beforeEffectiveCount = effectiveCount(state.value);
+    const afterEffectiveCount = effectiveCount(nextValue);
+    if (afterEffectiveCount > beforeEffectiveCount) {
+      state.positiveGrowthEvents.push({
+        at: now,
+        count: afterEffectiveCount,
+        growth: afterEffectiveCount - beforeEffectiveCount
+      });
+      state.positiveGrowthEvents = state.positiveGrowthEvents
+        .filter((item) => now - item.at <= 5 * 60 * 1000)
+        .slice(-100);
+    }
+    state.supportLastInputAt = now;
     state.value = nextValue;
     state.dirty = true;
     scheduleSave(state);
@@ -308,7 +334,13 @@
   function onFocus(event) {
     if (!trackedElement(event.target)) return;
     const state = ensureState(event.target);
-    if (!state.firstFocusedAt) state.firstFocusedAt = Date.now();
+    const now = Date.now();
+    if (!state.firstFocusedAt) state.firstFocusedAt = now;
+    if (!state.focusStartedAt) {
+      state.focusCount += 1;
+      state.focusStartedAt = now;
+      state.supportLastInputAt = now;
+    }
     lastActiveKey = state.key;
     if (pendingAiStage && pendingAiStage === state.stageId) {
       state.aiUsed = true;
@@ -353,6 +385,11 @@
   function onBlur(event) {
     if (!trackedElement(event.target)) return;
     const state = ensureState(event.target);
+    if (state.focusStartedAt) {
+      state.accumulatedFocusMs += Math.max(0, Date.now() - state.focusStartedAt);
+      state.focusStartedAt = 0;
+      state.supportLastInputAt = 0;
+    }
     global.clearTimeout(state.saveTimer);
     state.saveTimer = 0;
     if (state.dirty || state.firstFocusedAt) {
@@ -406,7 +443,45 @@
       state.dirty = true;
       persistState(state, "submitted");
     });
+    document.dispatchEvent(new CustomEvent("learning-behavior:stage-submitted", {
+      detail: {
+        experimentId: config ? config.experimentId : "",
+        stageId: String(stageId || "")
+      }
+    }));
     return drainOutbox();
+  }
+
+  function getTaskMetrics(target) {
+    if (!trackedElement(target)) return null;
+    const state = ensureState(target);
+    const now = Date.now();
+    const observedDurationMs = state.accumulatedFocusMs +
+      (state.focusStartedAt ? Math.max(0, now - state.focusStartedAt) : 0);
+    const currentPauseMs = state.focusStartedAt
+      ? Math.max(0, now - (state.supportLastInputAt || state.focusStartedAt))
+      : 0;
+    return {
+      experimentId: state.experimentId,
+      stageId: state.stageId,
+      taskId: state.taskId,
+      observedDurationMs,
+      effectiveCharacterCount: effectiveCount(state.value),
+      pauseCount: state.pauseCount,
+      longPauseCount: state.longPauseCount,
+      currentPauseMs,
+      longestPauseMs: Math.max(state.longestFocusedPauseMs, currentPauseMs),
+      deleteCount: state.deleteCount,
+      largeDeleteCount: state.largeDeleteCount,
+      focusCount: state.focusCount,
+      positiveGrowthEvents: state.positiveGrowthEvents.map((item) => ({
+        at: item.at,
+        count: item.count,
+        growth: item.growth
+      })),
+      taskStatus: state.taskStatus,
+      isFocused: document.activeElement === target
+    };
   }
 
   function init(options) {
@@ -438,6 +513,7 @@
     init,
     markStageSubmitted,
     flush,
+    getTaskMetrics,
     getDebugSummary: () => Array.from(states.values(), debugState)
   });
 
