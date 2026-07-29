@@ -764,6 +764,7 @@
             steps[state.currentStep]?.id === stageId &&
             state.currentStep >= state.maxUnlockedStep) {
           field.dataset.voiceSuggestion = "true";
+          field.dataset.relevanceCheck = "true";
         }
       });
     }
@@ -1838,8 +1839,10 @@
   <script src="assets/voice-assistant.js"></script>
   <script src="assets/learning-behavior-tracker.js"></script>
   <script src="assets/typing-support-rules.js"></script>
+  <script src="assets/task-relevance-config.js"></script>
   <script src="assets/memory-partner.js"></script>
   <script src="assets/typing-support.js"></script>
+  <script src="assets/task-relevance.js"></script>
   <script>
     if (window.LearningBehaviorTracker) {
       window.LearningBehaviorTracker.init({ experimentId: "strategies" });
@@ -1855,6 +1858,9 @@
     }
     if (window.TypingSupport) {
       window.TypingSupport.init({ experimentId: "strategies" });
+    }
+    if (window.TaskRelevance) {
+      window.TaskRelevance.init({ experimentId: "strategies" });
     }
   </script>
 </body>
