@@ -241,6 +241,50 @@
   line-height: 1.6;
 }
 
+.voice-target {
+  display: grid;
+  gap: 3px;
+  padding: 10px 12px;
+  border: 1px solid rgba(251, 191, 36, 0.22);
+  border-radius: 12px;
+  background: rgba(251, 191, 36, 0.08);
+}
+
+.voice-target.has-target {
+  border-color: rgba(45, 212, 191, 0.3);
+  background: rgba(20, 184, 166, 0.1);
+}
+
+.voice-target-label {
+  color: rgba(253, 230, 138, 0.82);
+  font-size: 10px;
+  font-weight: 850;
+  letter-spacing: 0.06em;
+}
+
+.voice-target.has-target .voice-target-label {
+  color: rgba(167, 243, 208, 0.88);
+}
+
+.voice-target strong {
+  overflow: hidden;
+  color: rgba(255, 247, 214, 0.92);
+  font-size: 12px;
+  line-height: 1.45;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.voice-target.has-target strong {
+  color: #d1fae5;
+}
+
+.voice-target small {
+  color: rgba(226, 241, 255, 0.62);
+  font-size: 10px;
+  line-height: 1.45;
+}
+
 .voice-actions {
   display: grid;
   grid-template-columns: 1fr 1fr;
@@ -274,6 +318,13 @@
   border-color: rgba(45, 212, 191, 0.32);
   background: linear-gradient(135deg, rgba(20, 184, 166, 0.95), rgba(59, 130, 246, 0.92));
   color: #06111f;
+}
+
+.voice-action.write {
+  grid-column: 1 / -1;
+  border-color: rgba(45, 212, 191, 0.28);
+  background: rgba(20, 184, 166, 0.13);
+  color: #c8fff3;
 }
 
 .voice-action:disabled {

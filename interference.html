@@ -342,14 +342,14 @@
       "愉悦": "https://brain-ai-video-1441391469.cos.ap-shanghai.myqcloud.com/pleasant.mp4"
     };
     const steps = [
-      { id: "question", title: "提出问题", minutes: "15分钟" },
-      { id: "hypothesis", title: "作出假设", minutes: "5分钟" },
-      { id: "plan", title: "制定计划", minutes: "20分钟" },
-      { id: "evidence", title: "搜集证据", minutes: "45分钟" },
-      { id: "analysis", title: "处理信息", minutes: "15分钟" },
-      { id: "conclusion", title: "得出结论", minutes: "5分钟" },
-      { id: "reflection", title: "反思交流", minutes: "15分钟" },
-      { id: "posttest", title: "侦探小结", minutes: "15分钟" }
+      { id: "question", title: "提出问题", minutes: "15分钟", taskDescription: "思考并讨论生活中的长时记忆干扰因素，阅读材料后提出研究问题。" },
+      { id: "hypothesis", title: "作出假设", minutes: "5分钟", taskDescription: "写下你自己对实验结果的预测，并与小组讨论形成共识。" },
+      { id: "plan", title: "制定计划", minutes: "20分钟", taskDescription: "根据小组选择的探究因素填写变量，并完成两轮实验流程设计。" },
+      { id: "evidence", title: "搜集证据", minutes: "45分钟", taskDescription: "选择实验轮次和参与者，按照固定材料流程完成长时记忆干扰实验。" },
+      { id: "analysis", title: "处理信息", minutes: "15分钟", taskDescription: "汇总不同干扰条件下的实验数据，并记录头环观察结果。" },
+      { id: "conclusion", title: "得出结论", minutes: "5分钟", taskDescription: "回到实验数据，判断研究因素是否造成更强干扰并写出结论。" },
+      { id: "reflection", title: "反思交流", minutes: "15分钟", taskDescription: "评价实验设计的优点和改进方向，并思考结论对学习的启发。" },
+      { id: "posttest", title: "侦探小结", minutes: "15分钟", taskDescription: "完成案件知识验证、学习收获调查、认知负荷调查和探究参与调查。" }
     ];
     const wordBanks = {
       easy: ["月亮", "书包", "河流", "窗户", "苹果", "操场", "铅笔", "云朵", "台灯", "森林", "火车", "雨伞"],
@@ -736,6 +736,40 @@
     function renderPairedField(label, personalHtml, groupHtml) {
       return `<div class="field paired-field"><label>${label}</label><div class="thinking-layer"><div class="thinking-box thinking-personal"><span class="thinking-label">个人思考（我）</span>${personalHtml}</div><div class="thinking-box thinking-group"><span class="thinking-label">小组共识（我们）</span>${groupHtml}</div></div></div>`;
     }
+    const TRACKED_TEXT_TASKS = Object.freeze({
+      lifeFactors: "question",
+      lifeFactors_group: "question",
+      materialFactors: "question",
+      materialFactors_group: "question",
+      hypothesis: "hypothesis",
+      hypothesis_group: "hypothesis",
+      interferenceStagePlan: "plan",
+      independentVariablePlan: "plan",
+      dependentVariablePlan: "plan",
+      controlVariablePlan: "plan",
+      headband: "analysis",
+      conclusion: "conclusion",
+      conclusion_group: "conclusion",
+      strengths: "reflection",
+      strengths_group: "reflection",
+      improvements: "reflection",
+      improvements_group: "reflection",
+      learningInsight: "reflection",
+      learningInsight_group: "reflection"
+    });
+    function applyLearningBehaviorMetadata() {
+      main.querySelectorAll("textarea[data-field]").forEach((field) => {
+        const taskId = field.dataset.field;
+        const stageId = TRACKED_TEXT_TASKS[taskId];
+        if (!stageId) return;
+        Object.assign(field.dataset, {
+          agentTrack: "true",
+          experimentId: "interference",
+          stageId,
+          taskId
+        });
+      });
+    }
     function renderGroupTextarea(field, placeholder = "请写下你与小组成员讨论后达成的一致结果") {
       return `<textarea data-field="${field}" placeholder="${escapeHtml(placeholder)}">${escapeHtml(state.fields[field])}</textarea>`;
     }
@@ -812,6 +846,7 @@
         return;
       }
       if (state.currentStep < steps.length - 1) {
+        window.LearningBehaviorTracker?.markStageSubmitted(steps[state.currentStep].id);
         if (!isDeveloperMode()) state.maxUnlockedStep = Math.max(state.maxUnlockedStep || 0, state.currentStep + 1);
         state.currentStep += 1;
         if (!isDeveloperMode()) saveState();
@@ -864,6 +899,7 @@
     function renderStep() {
       const step = steps[state.currentStep];
       main.innerHTML = `<section class="panel"><div class="panel-head"><h2>${step.id === "posttest" ? step.title : `${state.currentStep + 1}. ${step.title}`}</h2><p>建议时长：${step.minutes}</p></div><div class="panel-body">${getStepHtml(step.id)}${renderNavigation()}</div></section>`;
+      applyLearningBehaviorMetadata();
       bindInputs();
       bindStepEvents(step.id);
     }
@@ -1487,6 +1523,8 @@
       }
     }
     function generateReviewReport(activityType) {
+      window.LearningBehaviorTracker?.markStageSubmitted(steps[state.currentStep].id);
+      window.LearningBehaviorTracker?.flush();
       saveState();
       submitInterferenceRecord("generateReport");
       window.BrainExperimentBridge.finishReport(activityType, "generateReport");
@@ -1788,7 +1826,22 @@
   <script src="assets/voice-recorder.js"></script>
   <script src="assets/asr-client.js"></script>
   <script src="assets/voice-assistant.js"></script>
+  <script src="assets/learning-behavior-tracker.js"></script>
   <script src="assets/memory-partner.js"></script>
+  <script>
+    if (window.LearningBehaviorTracker) {
+      window.LearningBehaviorTracker.init({ experimentId: "interference" });
+    }
+    if (window.VirtualAgent) {
+      window.VirtualAgent.init({
+        experimentId: "interference",
+        experimentName: "探究干扰长时记忆的因素",
+        getLearningState: () => ({ steps, currentStepIndex: state.currentStep, maxUnlockedStep: state.maxUnlockedStep })
+      });
+    } else {
+      console.warn("[Virtual Agent] Component failed to load; original assistants remain available.");
+    }
+  </script>
 </body>
 </html>
 

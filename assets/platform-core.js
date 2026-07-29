@@ -21,12 +21,14 @@
       studentLogin: `${HTTP_BASE}/studentLogin`,
       createStudents: `${HTTP_BASE}/createStudents`,
       saveExperimentRecord: `${HTTP_BASE}/saveExperimentRecord`,
+      saveLearningRecord: `${HTTP_BASE}/saveLearningRecord`,
       getExperimentRecords: `${HTTP_BASE}/getExperimentRecords`,
       aiChat: "https://1441391469-6rhud8ln4o.ap-shanghai.tencentscf.com"
     }),
     storageKeys: Object.freeze({
       studentSession: "studentSession",
       uploadOutbox: "experiment-upload-outbox-v1",
+      learningBehaviorOutbox: "learning-behavior-outbox-v1",
       inquiryContext: "science-inquiry-context-v1",
       aiChatLogs: experimentRegistry.get("aiChat").storageKey,
       pretest: experimentRegistry.get("screening").storageKey,

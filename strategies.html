@@ -344,14 +344,14 @@
     const DEV_MODE_KEY = "devMode";
     const FLOW_VERSION = "science-eight-step-v2";
     const steps = [
-      { id: "question", title: "提出问题", minutes: "10分钟" },
-      { id: "hypothesis", title: "作出假设", minutes: "10分钟" },
-      { id: "plan", title: "制定计划", minutes: "20分钟" },
-      { id: "evidence", title: "搜集证据", minutes: "45分钟" },
-      { id: "analysis", title: "处理信息", minutes: "15分钟" },
-      { id: "conclusion", title: "得出结论", minutes: "5分钟" },
-      { id: "reflection", title: "反思交流", minutes: "15分钟" },
-      { id: "posttest", title: "侦探小结", minutes: "15分钟" }
+      { id: "question", title: "提出问题", minutes: "10分钟", taskDescription: "回忆自己的学习经历，完成头脑风暴和材料—策略匹配，并提出研究问题。" },
+      { id: "hypothesis", title: "作出假设", minutes: "10分钟", taskDescription: "阅读材料一至四，提出关于两种改善长时记忆策略的假设。" },
+      { id: "plan", title: "制定计划", minutes: "20分钟", taskDescription: "分别设置两轮实验，并确定材料类型、难度、数量和时间。" },
+      { id: "evidence", title: "搜集证据", minutes: "45分钟", taskDescription: "每轮先使用简单复述，再使用计划策略，完成记忆、找不同和测试。" },
+      { id: "analysis", title: "处理信息", minutes: "15分钟", taskDescription: "汇总轮次与阶段数据，记录头环观察，并完成长时记忆策略评分表。" },
+      { id: "conclusion", title: "得出结论", minutes: "5分钟", taskDescription: "结合回忆率、策略评分和头环观察，说明哪种策略更有效。" },
+      { id: "reflection", title: "反思交流", minutes: "15分钟", taskDescription: "反思实验设计、意外结果以及不同策略适用的学习内容。" },
+      { id: "posttest", title: "侦探小结", minutes: "15分钟", taskDescription: "完成案件知识验证、学习收获调查、认知负荷调查和探究参与调查。" }
     ];
     const MATERIAL_TYPE_LABELS = { word: "英文单词", poem: "古诗", idiom: "中文词语/成语", code: "数字字母串（历史记录）", formula: "公式（历史记录）" };
     const DIFFICULTY_LABELS = { low: "初级", mid: "中级", high: "高级" };
@@ -722,6 +722,36 @@
     function renderPairedField(label, personalHtml, groupHtml) {
       return `<div class="field paired-field"><label>${label}</label><div class="thinking-layer"><div class="thinking-box thinking-personal"><span class="thinking-label">个人思考（我）</span>${personalHtml}</div><div class="thinking-box thinking-group"><span class="thinking-label">小组共识（我们）</span>${groupHtml}</div></div></div>`;
     }
+    const TRACKED_TEXT_TASKS = Object.freeze({
+      brainstormIndividual: "question",
+      brainstormGroup: "question",
+      hypothesis1: "hypothesis",
+      hypothesis1_group: "hypothesis",
+      hypothesis2: "hypothesis",
+      hypothesis2_group: "hypothesis",
+      headband: "analysis",
+      conclusion: "conclusion",
+      conclusion_group: "conclusion",
+      designImprove: "reflection",
+      designImprove_group: "reflection",
+      surprise: "reflection",
+      surprise_group: "reflection",
+      applicability: "reflection",
+      applicability_group: "reflection"
+    });
+    function applyLearningBehaviorMetadata() {
+      main.querySelectorAll("textarea[data-field]").forEach((field) => {
+        const taskId = field.dataset.field;
+        const stageId = TRACKED_TEXT_TASKS[taskId];
+        if (!stageId) return;
+        Object.assign(field.dataset, {
+          agentTrack: "true",
+          experimentId: "strategies",
+          stageId,
+          taskId
+        });
+      });
+    }
     function renderGroupTextarea(field, placeholder = "请写下你与小组成员讨论后达成的一致结果") {
       return `<textarea data-field="${field}" placeholder="${escapeHtml(placeholder)}">${escapeHtml(state.fields[field])}</textarea>`;
     }
@@ -805,6 +835,7 @@
         return;
       }
       if (state.currentStep < steps.length - 1) {
+        window.LearningBehaviorTracker?.markStageSubmitted(steps[state.currentStep].id);
         if (!isDeveloperMode()) state.maxUnlockedStep = Math.max(state.maxUnlockedStep || 0, state.currentStep + 1);
         state.currentStep += 1;
         if (!isDeveloperMode()) saveState();
@@ -850,6 +881,7 @@
     function renderStep() {
       const step = steps[state.currentStep];
       main.innerHTML = `<section class="panel"><div class="panel-head"><h2>${step.id === "posttest" ? step.title : `${state.currentStep + 1}. ${step.title}`}</h2><p>建议时长：${step.minutes}</p></div><div class="panel-body">${getStepHtml(step.id)}${renderNavigation()}</div></section>`;
+      applyLearningBehaviorMetadata();
       bindInputs();
       bindStepEvents(step.id);
     }
@@ -1446,6 +1478,8 @@
       if (reviewReport) reviewReport.addEventListener("click", () => generateReviewReport("strategies"));
     }
     function generateReviewReport(activityType) {
+      window.LearningBehaviorTracker?.markStageSubmitted(steps[state.currentStep].id);
+      window.LearningBehaviorTracker?.flush();
       saveState();
       submitStrategiesRecord("generateReport");
       window.BrainExperimentBridge.finishReport(activityType, "generateReport");
@@ -1787,6 +1821,21 @@
   <script src="assets/voice-recorder.js"></script>
   <script src="assets/asr-client.js"></script>
   <script src="assets/voice-assistant.js"></script>
+  <script src="assets/learning-behavior-tracker.js"></script>
   <script src="assets/memory-partner.js"></script>
+  <script>
+    if (window.LearningBehaviorTracker) {
+      window.LearningBehaviorTracker.init({ experimentId: "strategies" });
+    }
+    if (window.VirtualAgent) {
+      window.VirtualAgent.init({
+        experimentId: "strategies",
+        experimentName: "改善长时记忆的策略",
+        getLearningState: () => ({ steps, currentStepIndex: state.currentStep, maxUnlockedStep: state.maxUnlockedStep })
+      });
+    } else {
+      console.warn("[Virtual Agent] Component failed to load; original assistants remain available.");
+    }
+  </script>
 </body>
 </html>

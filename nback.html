@@ -1425,14 +1425,14 @@
     const FLOW_VERSION = "science-eight-step-v2";
 
     const steps = [
-      { id: "question", title: "提出问题", minutes: "30分钟" },
-      { id: "hypothesis", title: "作出假设", minutes: "5分钟" },
-      { id: "plan", title: "制定计划", minutes: "25分钟" },
-      { id: "evidence", title: "搜集证据", minutes: "30分钟" },
-      { id: "analysis", title: "处理信息", minutes: "10分钟" },
-      { id: "conclusion", title: "得出结论", minutes: "5分钟" },
-      { id: "reflection", title: "反思交流", minutes: "15分钟" },
-      { id: "posttest", title: "侦探小结", minutes: "15分钟" }
+      { id: "question", title: "提出问题", minutes: "30分钟", taskDescription: "先回忆工作记忆，再理解 N-back、控制变量和头环测量，并提出研究问题。" },
+      { id: "hypothesis", title: "作出假设", minutes: "5分钟", taskDescription: "假设需要与研究问题对应，预测自变量变化后因变量会怎样变化。" },
+      { id: "plan", title: "制定计划", minutes: "25分钟", taskDescription: "确定实验材料、实验变量、N-back 条件和小组分工。" },
+      { id: "evidence", title: "搜集证据", minutes: "30分钟", taskDescription: "选择被测试者和实验条件后开始；前 N 关只观察，不需要判断。" },
+      { id: "analysis", title: "处理信息", minutes: "10分钟", taskDescription: "汇总不同条件下的正确率、漏答率和反应时，并记录头环观察结果。" },
+      { id: "conclusion", title: "得出结论", minutes: "5分钟", taskDescription: "根据研究问题和实验数据说明结果趋势，以及是否符合原先假设。" },
+      { id: "reflection", title: "反思交流", minutes: "15分钟", taskDescription: "反思实验设计可以怎样改进，以及如何提高结果的说服力。" },
+      { id: "posttest", title: "侦探小结", minutes: "15分钟", taskDescription: "完成案件知识验证、学习收获调查、认知负荷调查和探究参与调查。" }
     ];
     const SURVEY_DEFS = {
       meta: {
@@ -1726,6 +1726,32 @@
     function renderPairedField(label, personalHtml, groupHtml) {
       return `<div class="field paired-field"><label>${label}</label><div class="thinking-layer"><div class="thinking-box thinking-personal"><span class="thinking-label">个人思考（我）</span>${personalHtml}</div><div class="thinking-box thinking-group"><span class="thinking-label">小组共识（我们）</span>${groupHtml}</div></div></div>`;
     }
+    const TRACKED_TEXT_TASKS = Object.freeze({
+      researchQuestion: "question",
+      researchQuestion_group: "question",
+      hypothesis: "hypothesis",
+      hypothesis_group: "hypothesis",
+      headbandObservation: "analysis",
+      conclusion: "conclusion",
+      conclusion_group: "conclusion",
+      improvement: "reflection",
+      improvement_group: "reflection",
+      persuasiveness: "reflection",
+      persuasiveness_group: "reflection"
+    });
+    function applyLearningBehaviorMetadata() {
+      main.querySelectorAll("textarea[data-field]").forEach((field) => {
+        const taskId = field.dataset.field;
+        const stageId = TRACKED_TEXT_TASKS[taskId];
+        if (!stageId) return;
+        Object.assign(field.dataset, {
+          agentTrack: "true",
+          experimentId: "nback",
+          stageId,
+          taskId
+        });
+      });
+    }
     function renderGroupTextarea(field, placeholder = "请写下你与小组成员讨论后达成的一致结果") {
       return `<textarea data-field="${field}" placeholder="${escapeHtml(placeholder)}">${escapeHtml(state.fields[field])}</textarea>`;
     }
@@ -1811,6 +1837,7 @@
         return;
       }
       if (state.currentStep < steps.length - 1) {
+        window.LearningBehaviorTracker?.markStageSubmitted(steps[state.currentStep].id);
         if (!isDeveloperMode()) state.maxUnlockedStep = Math.max(state.maxUnlockedStep || 0, state.currentStep + 1);
         state.currentStep += 1;
         if (!isDeveloperMode()) saveState();
@@ -1867,6 +1894,7 @@
           </div>
         </section>
       `;
+      applyLearningBehaviorMetadata();
       bindInputs();
       bindStepEvents(step.id);
     }
@@ -2787,6 +2815,8 @@
     }
 
     function generateReviewReport(activityType) {
+      window.LearningBehaviorTracker?.markStageSubmitted(steps[state.currentStep].id);
+      window.LearningBehaviorTracker?.flush();
       saveState();
       submitNbackRecord("generateReport");
       window.BrainExperimentBridge.finishReport(activityType, "generateReport");
@@ -3433,6 +3463,21 @@
   <script src="assets/voice-recorder.js"></script>
   <script src="assets/asr-client.js"></script>
   <script src="assets/voice-assistant.js"></script>
+  <script src="assets/learning-behavior-tracker.js"></script>
   <script src="assets/memory-partner.js"></script>
+  <script>
+    if (window.LearningBehaviorTracker) {
+      window.LearningBehaviorTracker.init({ experimentId: "nback" });
+    }
+    if (window.VirtualAgent) {
+      window.VirtualAgent.init({
+        experimentId: "nback",
+        experimentName: "N-back 工作记忆实验",
+        getLearningState: () => ({ steps, currentStepIndex: state.currentStep, maxUnlockedStep: state.maxUnlockedStep })
+      });
+    } else {
+      console.warn("[Virtual Agent] Component failed to load; original assistants remain available.");
+    }
+  </script>
 </body>
 </html>
