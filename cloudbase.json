@@ -40,6 +40,21 @@
       "runtime": "Nodejs16.13"
     },
     {
+      "name": "generateExperimentMemory",
+      "timeout": 60,
+      "runtime": "Nodejs20.19"
+    },
+    {
+      "name": "getStudentMemory",
+      "timeout": 60,
+      "runtime": "Nodejs20.19"
+    },
+    {
+      "name": "getStudentMemoriesAdmin",
+      "timeout": 60,
+      "runtime": "Nodejs20.19"
+    },
+    {
       "name": "getExperimentRecords",
       "timeout": 60,
       "runtime": "Nodejs16.13"

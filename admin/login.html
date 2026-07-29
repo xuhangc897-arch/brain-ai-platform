@@ -1,0 +1,57 @@
+<!doctype html>
+<html lang="zh-CN">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>教师登录 - 记忆侦探平台</title>
+  <style>
+    :root { font-family: "Microsoft YaHei","PingFang SC","Segoe UI",sans-serif; color:#172033; background:#eef4ff; }
+    * { box-sizing:border-box; }
+    body { min-height:100vh; margin:0; display:grid; place-items:center; padding:24px; }
+    main { width:min(430px,100%); padding:30px; border:1px solid #d8e2f1; border-radius:20px; background:#fff; box-shadow:0 20px 60px rgba(31,65,120,.14); }
+    h1 { margin:0 0 8px; } p { color:#667085; line-height:1.6; }
+    label { display:block; margin:16px 0; font-weight:700; }
+    input { width:100%; margin-top:7px; min-height:44px; padding:10px 12px; border:1px solid #cbd5e1; border-radius:10px; font:inherit; }
+    button { width:100%; min-height:44px; border:0; border-radius:999px; background:#315fe4; color:#fff; font:inherit; font-weight:800; cursor:pointer; }
+    button:disabled { opacity:.65; cursor:wait; }
+    #message { min-height:24px; color:#b42318; font-weight:700; text-align:center; }
+  </style>
+</head>
+<body>
+  <main>
+    <h1>教师登录</h1>
+    <p>仅限已加入教师白名单的 CloudBase 账号访问学生数据。</p>
+    <form id="loginForm">
+      <label>教师账号<input id="account" autocomplete="username" required></label>
+      <label>密码<input id="password" type="password" autocomplete="current-password" required></label>
+      <button id="submitBtn" type="submit">登录教师后台</button>
+      <p id="message" role="alert"></p>
+    </form>
+  </main>
+  <script src="https://static.cloudbase.net/cloudbase-js-sdk/3.0.0/cloudbase.full.js"></script>
+  <script src="../assets/experiment-registry.js"></script>
+  <script src="../assets/platform-core.js"></script>
+  <script src="../cloudbase.js"></script>
+  <script>
+    const redirect = new URLSearchParams(location.search).get("redirect") || "dashboard.html";
+    document.getElementById("loginForm").addEventListener("submit", async (event) => {
+      event.preventDefault();
+      const button = document.getElementById("submitBtn");
+      const message = document.getElementById("message");
+      button.disabled = true;
+      message.textContent = "";
+      try {
+        await window.BrainCloudBase.loginTeacher(
+          document.getElementById("account").value,
+          document.getElementById("password").value
+        );
+        location.href = redirect;
+      } catch (error) {
+        message.textContent = error && error.message ? error.message : "教师登录失败。";
+      } finally {
+        button.disabled = false;
+      }
+    });
+  </script>
+</body>
+</html>

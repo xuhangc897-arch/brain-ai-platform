@@ -82,6 +82,11 @@
       redirectToLogin();
       return null;
     }
+    if (!student.isGuest && !student.sessionToken) {
+      platform.identity.clearStudentSession();
+      redirectToLogin();
+      return null;
+    }
 
     renderStudentInfo(student);
     bindLogout();

@@ -24,6 +24,8 @@
       saveLearningRecord: `${HTTP_BASE}/saveLearningRecord`,
       saveAgentIntervention: `${HTTP_BASE}/saveAgentIntervention`,
       checkTaskRelevance: `${HTTP_BASE}/checkTaskRelevance`,
+      generateExperimentMemory: `${HTTP_BASE}/generateExperimentMemory`,
+      getStudentMemory: `${HTTP_BASE}/getStudentMemory`,
       getExperimentRecords: `${HTTP_BASE}/getExperimentRecords`,
       aiChat: "https://1441391469-6rhud8ln4o.ap-shanghai.tencentscf.com"
     }),
@@ -35,6 +37,8 @@
       typingSupportState: "typing-support-state-v1",
       taskRelevanceState: "task-relevance-state-v1",
       taskRelevanceOutbox: "task-relevance-outbox-v1",
+      studentMemoryOutbox: "student-memory-generation-outbox-v1",
+      studentMemorySupportState: "student-memory-support-state-v1",
       inquiryContext: "science-inquiry-context-v1",
       aiChatLogs: experimentRegistry.get("aiChat").storageKey,
       pretest: experimentRegistry.get("screening").storageKey,
@@ -74,6 +78,8 @@
     session.group = normalizeText(value.group || value.groupName || value.groupId);
 
     if ("uid" in value) session.uid = normalizeText(value.uid);
+    if ("sessionToken" in value) session.sessionToken = normalizeText(value.sessionToken);
+    if ("sessionExpiresAt" in value) session.sessionExpiresAt = normalizeText(value.sessionExpiresAt);
     if ("mustChangePassword" in value) {
       session.mustChangePassword = Boolean(value.mustChangePassword);
     }
@@ -84,7 +90,17 @@
   function readStudentSession() {
     try {
       const value = JSON.parse(global.localStorage.getItem(config.storageKeys.studentSession) || "null");
-      return normalizeStudentSession(value);
+      const session = normalizeStudentSession(value);
+      if (
+        session &&
+        !session.isGuest &&
+        session.sessionExpiresAt &&
+        Date.parse(session.sessionExpiresAt) <= Date.now()
+      ) {
+        global.localStorage.removeItem(config.storageKeys.studentSession);
+        return null;
+      }
+      return session;
     } catch (error) {
       global.localStorage.removeItem(config.storageKeys.studentSession);
       return null;

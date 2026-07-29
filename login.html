@@ -222,7 +222,10 @@
      * 直接进入 index.html，减少重复操作。
      */
     try {
-      if (window.BrainPlatform.identity.readStudentSession()) {
+      const existingSession = window.BrainPlatform.identity.readStudentSession();
+      if (existingSession && !existingSession.isGuest && !existingSession.sessionToken) {
+        window.BrainPlatform.identity.clearStudentSession();
+      } else if (existingSession) {
         window.location.replace(redirectTarget);
       }
     } catch (event) {

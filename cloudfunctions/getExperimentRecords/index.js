@@ -3,6 +3,7 @@
 const cloudbase = require("@cloudbase/node-sdk");
 
 const RECORDS_COLLECTION = "experimentRecords";
+const TEACHERS_COLLECTION = "teachers";
 
 const app = cloudbase.init({
   env: cloudbase.SYMBOL_CURRENT_ENV
@@ -10,6 +11,21 @@ const app = cloudbase.init({
 
 const db = app.database();
 const recordsCollection = db.collection(RECORDS_COLLECTION);
+const teachersCollection = db.collection(TEACHERS_COLLECTION);
+
+function currentUid() {
+  const context = typeof cloudbase.getCloudbaseContext === "function"
+    ? cloudbase.getCloudbaseContext()
+    : {};
+  return String(context.TCB_UUID || context.UID || context.OPENID || context.WX_OPENID || "").trim();
+}
+
+async function isTeacher() {
+  const uid = currentUid();
+  if (!uid) return false;
+  const result = await teachersCollection.where({ uid, active: true, role: "teacher" }).limit(1).get();
+  return Array.isArray(result.data) && Boolean(result.data[0]);
+}
 
 function parsePayload(event) {
   if (event && typeof event.body === "string") {
@@ -86,6 +102,9 @@ function matchesExtraFilters(record, filters) {
 }
 
 exports.main = async (event) => {
+  if (!await isTeacher()) {
+    return { ok: false, code: "FORBIDDEN", message: "当前账号没有教师查看权限。", records: [] };
+  }
   const payload = parsePayload(event);
   const condition = {};
 

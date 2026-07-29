@@ -280,7 +280,7 @@
 
       <div class="auth-gate" id="authGate">
         <p>请先登录后再导入学生账号。</p>
-        <a class="btn" href="../login.html?redirect=admin/initStudents.html">去登录</a>
+        <a class="btn" href="login.html?redirect=initStudents.html">去登录</a>
       </div>
 
       <div class="upload-box">
@@ -379,16 +379,12 @@
     importBtn.disabled = true;
 
     async function getAdminLoginState() {
-      if (typeof window.ensureCloudBaseLogin === "function") {
-        await window.ensureCloudBaseLogin();
-      }
-
-      if (window.auth && typeof window.auth.getLoginState === "function") {
-        const loginState = await window.auth.getLoginState();
-        return Boolean(loginState && (loginState.user || loginState.uid || loginState.userId || loginState.accessToken || loginState.refreshToken || loginState.credential || loginState.loginType));
-      }
-
-      throw new Error("当前 CloudBase SDK 不支持检查登录状态。");
+      const response = await window.app.callFunction({
+        name: "getStudentMemoriesAdmin",
+        data: { limit: 1 }
+      });
+      const result = response && (response.result || response);
+      return Boolean(result && result.ok);
     }
 
     async function checkAdminLogin() {
@@ -627,10 +623,6 @@
       let result;
 
       try {
-        if (typeof window.ensureCloudBaseLogin === "function") {
-          await window.ensureCloudBaseLogin();
-        }
-
         const callFunctionTask = window.app.callFunction({
           name: "createStudents",
           data: { students }

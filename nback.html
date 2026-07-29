@@ -1408,6 +1408,7 @@
   </div>
 
   <script src="assets/experiment-registry.js"></script>
+  <script src="assets/knowledge-question-bank.js"></script>
   <script src="assets/platform-core.js"></script>
   <script src="auth.js"></script>
   <script src="assets/experiment-uploader.js"></script>
@@ -1481,18 +1482,7 @@
       }
     };
     const KNOWLEDGE_QUIZ = {
-      items: [
-        { question: "本次实验主要探究的是（ ）", options: { A: "长时记忆", B: "工作记忆", C: "情绪记忆", D: "机械记忆" }, answer: "B" },
-        { question: "在 N-back 任务中，N 值越高通常表示（ ）", options: { A: "任务越简单", B: "材料越少", C: "需要记住和更新的信息越多", D: "不需要注意力" }, answer: "C" },
-        { question: "工作记忆在学习中的主要作用是（ ）", options: { A: "永久保存所有信息", B: "暂时保持并加工信息", C: "只记录情绪", D: "只负责睡眠" }, answer: "B" },
-        { question: "为什么 2-back 通常比 1-back 更难？", options: { A: "图片更多", B: "需要同时记住更早的信息并不断更新", C: "测试时间一定更长", D: "答案是固定的" }, answer: "B" },
-        { question: "完成 N-back 任务时，哪项最重要？", options: { A: "保持注意力", B: "随便猜测", C: "看别人答案", D: "只记最后一个刺激" }, answer: "A" },
-        { question: "随着 N 值增大，正确率通常会（ ）", options: { A: "提高", B: "下降", C: "保持不变", D: "一定满分" }, answer: "B" },
-        { question: "如果实验时注意力分散，最可能导致（ ）", options: { A: "正确率降低", B: "成绩更稳定", C: "反应更快且更正确", D: "完全没有影响" }, answer: "A" },
-        { question: "为了提高实验结果可信度，可以怎样做？", options: { A: "多次测试", B: "认真记录数据", C: "控制材料和环境", D: "以上都可以" }, answer: "D" },
-        { question: "做数学题时，需要暂时记住条件并进行计算，主要依靠（ ）", options: { A: "长时记忆", B: "工作记忆", C: "感觉记忆", D: "情绪记忆" }, answer: "B" },
-        { question: "做作业时手机消息不断弹出，最可能会（ ）", options: { A: "提高工作记忆表现", B: "干扰注意力和工作记忆", C: "让任务更简单", D: "没有任何影响" }, answer: "B" }
-      ]
+      items: window.BrainKnowledgeQuestionBank.getExperimentQuestions("nback")
     };
 
     function createDefaultSurveys() {
@@ -2136,7 +2126,7 @@
     }
 
     function isSurveyStepComplete(stepId) {
-      if (stepId === "posttest") return summarizeSurvey("postMeta", "meta").complete && summarizeSurvey("cognitiveLoad", "load").complete && summarizeSurvey("inquiryParticipation", "inquiry").complete;
+      if (stepId === "posttest") return summarizeSurvey("postMeta", "meta").complete && summarizeSurvey("cognitiveLoad", "load").complete && summarizeSurvey("inquiryParticipation", "inquiry").complete && mergeKnowledgeQuiz(state.knowledgeQuiz).submitted;
       return true;
     }
 
@@ -3483,6 +3473,7 @@
   <script src="assets/memory-partner.js"></script>
   <script src="assets/typing-support.js"></script>
   <script src="assets/task-relevance.js"></script>
+  <script src="assets/student-memory.js"></script>
   <script>
     if (window.LearningBehaviorTracker) {
       window.LearningBehaviorTracker.init({ experimentId: "nback" });
@@ -3501,6 +3492,12 @@
     }
     if (window.TaskRelevance) {
       window.TaskRelevance.init({ experimentId: "nback" });
+    }
+    if (window.StudentMemory) {
+      window.StudentMemory.init({
+        experimentId: "nback",
+        getLearningState: () => ({ steps, currentStepIndex: state.currentStep, maxUnlockedStep: state.maxUnlockedStep })
+      });
     }
   </script>
 </body>

@@ -42,6 +42,9 @@ function loadCloudFunction(relativePath, database) {
     if (request === "@cloudbase/node-sdk") {
       return {
         SYMBOL_CURRENT_ENV: "CURRENT_ENV",
+        getCloudbaseContext() {
+          return { TCB_UUID: "teacher-uid" };
+        },
         init(options) {
           assert.strictEqual(options.env, "CURRENT_ENV");
           return { database: () => database };
@@ -60,6 +63,7 @@ function loadCloudFunction(relativePath, database) {
 }
 
 async function main() {
+  process.env.STUDENT_SESSION_SECRET = "test-session-secret-with-at-least-32-characters";
   for (const page of [
     "index.html",
     "pretest.html",
@@ -470,10 +474,18 @@ async function main() {
   assert.strictEqual(loginResult.student.schemaVersion, 1);
   assert.strictEqual(loginResult.student.role, "student");
   assert.strictEqual(loginResult.student.studentId, "S001");
+  assert(loginResult.student.sessionToken.includes("."));
 
   let createdStudent = null;
   const createDatabase = {
-    collection() {
+    collection(name) {
+      if (name === "teachers") {
+        return {
+          where() { return this; },
+          limit() { return this; },
+          async get() { return { data: [{ uid: "teacher-uid", active: true, role: "teacher" }] }; }
+        };
+      }
       return {
         where() { return this; },
         limit() { return this; },
@@ -508,7 +520,14 @@ async function main() {
     data: { createdAt: "2026-07-01 10:00:00" }
   };
   const recordsDatabase = {
-    collection() {
+    collection(name) {
+      if (name === "teachers") {
+        return {
+          where() { return this; },
+          limit() { return this; },
+          async get() { return { data: [{ uid: "teacher-uid", active: true, role: "teacher" }] }; }
+        };
+      }
       return {
         where() { return this; },
         orderBy() { return this; },

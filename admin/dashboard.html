@@ -252,7 +252,7 @@
 
       <div class="auth-gate" id="authGate">
         <p>请先登录后再查看实验数据。</p>
-        <a class="btn" href="../login.html?redirect=admin/dashboard.html">去登录</a>
+        <a class="btn" href="login.html?redirect=dashboard.html">去登录</a>
       </div>
 
       <div class="filters">
@@ -298,6 +298,7 @@
 
       <div class="actions">
         <button class="btn" id="queryBtn" type="button">查询记录</button>
+        <button class="btn secondary" id="memoryBtn" type="button">学习记忆</button>
         <button class="btn secondary" id="resetBtn" type="button">清空筛选</button>
         <button class="btn secondary" id="exportBtn" type="button">导出 Excel</button>
       </div>
@@ -324,7 +325,6 @@
   <script src="../assets/experiment-integration.js"></script>
   <script src="../cloudbase.js"></script>
   <script>
-    const GET_EXPERIMENT_RECORDS_URL = window.BrainPlatform.config.endpoints.getExperimentRecords;
     const experimentRegistry = window.BrainExperimentRegistry;
     const experimentIntegration = window.BrainExperimentIntegration;
 
@@ -339,6 +339,7 @@
     const statusEl = document.getElementById("status");
     const tableWrap = document.getElementById("tableWrap");
     const queryBtn = document.getElementById("queryBtn");
+    const memoryBtn = document.getElementById("memoryBtn");
     const resetBtn = document.getElementById("resetBtn");
     const exportBtn = document.getElementById("exportBtn");
     const detailDialog = document.getElementById("detailDialog");
@@ -360,7 +361,7 @@
      * 仅绕过 dashboard.html 的前端登录遮罩，不影响学生登录、学生导入页或数据库内容。
      * 完成正式教师认证后删除此开关和 checkAdminLogin 中的临时分支。
      */
-    const TEMPORARY_DASHBOARD_LOGIN_BYPASS = true;
+    const TEMPORARY_DASHBOARD_LOGIN_BYPASS = false;
     let isLoggedIn = false;
     let records = [];
 
@@ -385,12 +386,12 @@
     }
 
     async function getAdminLoginState() {
-      if (window.auth && typeof window.auth.getLoginState === "function") {
-        const loginState = await window.auth.getLoginState();
-        return Boolean(loginState || window.auth.currentUser);
-      }
-
-      throw new Error("当前 CloudBase SDK 不支持检查登录状态。");
+      const response = await window.app.callFunction({
+        name: "getStudentMemoriesAdmin",
+        data: { limit: 1 }
+      });
+      const result = response && (response.result || response);
+      return Boolean(result && result.ok);
     }
 
     async function checkAdminLogin() {
@@ -435,18 +436,15 @@
     }
 
     async function fetchRecords(payload) {
-      const response = await fetch(GET_EXPERIMENT_RECORDS_URL, {
-        method: "POST",
-        headers: {
-          "Content-Type": "application/json"
-        },
-        body: JSON.stringify(payload)
+      const response = await window.app.callFunction({
+        name: "getExperimentRecords",
+        data: payload
       });
-      const result = await response.json();
+      const result = response && (response.result || response);
 
-      if (!response.ok || !result.ok) {
-        const error = new Error(`读取实验记录失败：HTTP ${response.status}`);
-        error.code = result.code || response.status;
+      if (!result || !result.ok) {
+        const error = new Error((result && result.message) || "读取实验记录失败");
+        error.code = (result && result.code) || "QUERY_FAILED";
         throw error;
       }
 
@@ -598,6 +596,56 @@
 
     function getModuleLabel(module) {
       return experimentIntegration.getModuleLabel(module);
+    }
+
+    async function loadMemoryRecords() {
+      if (!isLoggedIn) return;
+      memoryBtn.disabled = true;
+      setStatus("正在读取结构化学习记忆...");
+      try {
+        const response = await window.app.callFunction({
+          name: "getStudentMemoriesAdmin",
+          data: {
+            studentId: filters.studentId.value.trim(),
+            className: filters.className.value.trim(),
+            experimentId: filters.module.value.trim(),
+            limit: Number(filters.limit.value) || 100
+          }
+        });
+        const result = response && (response.result || response);
+        if (!result || !result.ok) throw new Error((result && result.message) || "读取学习记忆失败");
+        records = Array.isArray(result.records) ? result.records : [];
+        renderMemoryTable();
+        setStatus(`已读取 ${records.length} 条结构化学习记忆。`);
+      } catch (error) {
+        records = [];
+        renderMemoryTable();
+        setStatus(error.message || "读取学习记忆失败。");
+      } finally {
+        memoryBtn.disabled = false;
+      }
+    }
+
+    function renderMemoryTable() {
+      if (!records.length) {
+        tableWrap.innerHTML = '<div class="empty">暂无学习记忆</div>';
+        return;
+      }
+      tableWrap.innerHTML = '<table><thead><tr><th>学生</th><th>班级</th><th>类型</th><th>实验</th><th>版本</th><th>完成时间</th><th>操作</th></tr></thead><tbody>' +
+        records.map((record, index) => '<tr><td>' + escapeHtml(record.studentName || record.studentId) +
+          '</td><td>' + escapeHtml(record.className || "") +
+          '</td><td>' + escapeHtml(record.memoryType === "overall" ? "综合记忆" : "实验记忆") +
+          '</td><td>' + escapeHtml(record.experimentId || record.lastCompletedExperiment || "-") +
+          '</td><td>' + escapeHtml(record.version || 1) +
+          '</td><td>' + escapeHtml(record.completedAt || "") +
+          '</td><td><button class="btn secondary" type="button" data-memory-detail="' + index + '">查看摘要</button></td></tr>').join("") +
+        '</tbody></table>';
+      tableWrap.querySelectorAll("[data-memory-detail]").forEach((button) => {
+        button.addEventListener("click", () => {
+          detailContent.textContent = JSON.stringify(records[Number(button.dataset.memoryDetail)], null, 2);
+          detailDialog.showModal();
+        });
+      });
     }
 
     function getRecordDetailCount(record) {
@@ -1655,6 +1703,7 @@
     }
 
     queryBtn.addEventListener("click", loadRecords);
+    memoryBtn.addEventListener("click", loadMemoryRecords);
     exportBtn.addEventListener("click", exportExcel);
     resetBtn.addEventListener("click", () => {
       filters.studentId.value = "";

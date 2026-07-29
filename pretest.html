@@ -360,7 +360,23 @@
       </div>
     </section>
 
-    <section class="panel">
+    <section class="panel" id="knowledgePretestPanel">
+      <div class="panel-body">
+        <div class="survey-intro">
+          <h2>记忆知识前测</h2>
+          <p>这里有来自四次探究活动的40道知识题。题目会随机排列，结果只用于比较学习前后的变化，不影响你的成绩。</p>
+        </div>
+        <div id="knowledgePretestRoot"></div>
+        <div class="actions" id="knowledgePretestActions">
+          <p class="status" id="knowledgePretestStatus" aria-live="polite"></p>
+          <button class="btn secondary" type="button" id="knowledgePrevBtn">上一页</button>
+          <button class="btn secondary" type="button" id="knowledgeNextBtn">下一页</button>
+          <button class="btn" type="button" id="knowledgeSubmitBtn">提交知识前测</button>
+        </div>
+      </div>
+    </section>
+
+    <section class="panel" id="metaSurveyPanel">
       <div class="panel-body">
         <div class="survey-intro">
           <h2>记忆相关知识元认知情况调查问卷</h2>
@@ -378,6 +394,7 @@
   </main>
 
   <script src="assets/experiment-registry.js"></script>
+  <script src="assets/knowledge-question-bank.js"></script>
   <script src="assets/platform-core.js"></script>
   <script src="auth.js"></script>
   <script src="assets/experiment-uploader.js"></script>
@@ -388,6 +405,8 @@
     const CONTEXT_KEY = window.BrainPlatform.config.storageKeys.inquiryContext;
     const PRETEST_KEY = window.BrainPlatform.config.storageKeys.pretest;
     const QUALIFICATION_KEY = window.BrainPlatform.config.storageKeys.qualification;
+    const knowledgeBank = window.BrainKnowledgeQuestionBank;
+    const KNOWLEDGE_PAGE_SIZE = 10;
 
     const surveyDef = {
       title: "记忆相关知识元认知情况调查问卷",
@@ -412,6 +431,9 @@
       groupId: document.getElementById("groupId")
     };
     const surveyRoot = document.getElementById("surveyRoot");
+    const knowledgePretestRoot = document.getElementById("knowledgePretestRoot");
+    const knowledgePretestStatus = document.getElementById("knowledgePretestStatus");
+    const metaSurveyPanel = document.getElementById("metaSurveyPanel");
     const summaryRoot = document.getElementById("summary");
     const status = document.getElementById("status");
 
@@ -422,6 +444,7 @@
       const context = readJson(CONTEXT_KEY) || {};
       const saved = readJson(PRETEST_KEY) || readJson(QUALIFICATION_KEY) || {};
       const identity = getStudentIdentityFields();
+      const legacyQualification = Boolean(saved.legacyQualification || (saved.completed && !saved.knowledgePretest));
       return {
         studentName: identity.studentName || saved.studentName || context.studentName || "",
         studentAge: saved.studentAge || context.studentAge || "",
@@ -430,9 +453,54 @@
         groupId: identity.groupName || saved.groupId || context.groupId || "",
         groupName: identity.groupName || saved.groupName || context.groupName || "",
         answers: Object.assign({}, saved.answers || saved.preMeta || {}),
+        knowledgePretest: normalizeKnowledgePretest(saved.knowledgePretest),
+        legacyQualification,
         completed: Boolean(saved.completed),
         completedAt: saved.completedAt || ""
       };
+    }
+
+    function normalizeKnowledgePretest(value) {
+      const source = value && typeof value === "object" ? value : {};
+      const validIds = new Set(knowledgeBank.questions.map((item) => item.questionId));
+      const incomingOrder = Array.isArray(source.questionOrder)
+        ? source.questionOrder.filter((id) => validIds.has(id))
+        : [];
+      const questionOrder = incomingOrder.length === knowledgeBank.questions.length
+        ? incomingOrder
+        : shuffleQuestionIds(knowledgeBank.questions.map((item) => item.questionId));
+      const answersByQuestionId = {};
+      Object.entries(source.answersByQuestionId || {}).forEach(([questionId, answer]) => {
+        if (validIds.has(questionId) && ["A", "B", "C", "D"].includes(String(answer))) {
+          answersByQuestionId[questionId] = String(answer);
+        }
+      });
+      return {
+        schemaVersion: 1,
+        questionOrder,
+        answersByQuestionId,
+        currentPage: Math.max(0, Math.min(3, Number(source.currentPage) || 0)),
+        submitted: Boolean(source.submitted),
+        submittedAt: source.submittedAt || "",
+        scoresByExperiment: source.scoresByExperiment && typeof source.scoresByExperiment === "object"
+          ? source.scoresByExperiment
+          : {}
+      };
+    }
+
+    function shuffleQuestionIds(ids) {
+      const shuffled = ids.slice();
+      for (let index = shuffled.length - 1; index > 0; index -= 1) {
+        const values = new Uint32Array(1);
+        if (window.crypto && typeof window.crypto.getRandomValues === "function") {
+          window.crypto.getRandomValues(values);
+        } else {
+          values[0] = Math.floor(Math.random() * 0xffffffff);
+        }
+        const target = values[0] % (index + 1);
+        [shuffled[index], shuffled[target]] = [shuffled[target], shuffled[index]];
+      }
+      return shuffled;
     }
 
     function getStudentIdentityFields() {
@@ -498,6 +566,8 @@
         groupName: state.groupName,
         answers: state.answers,
         preMeta: state.answers,
+        knowledgePretest: state.knowledgePretest,
+        legacyQualification: state.legacyQualification,
         answered: summary.answered,
         total: summary.total,
         average: summary.average,
@@ -518,6 +588,7 @@
           renderSummary();
         });
       });
+      renderKnowledgePretest();
       renderSurvey();
       renderSummary();
       document.getElementById("homeBtn").addEventListener("click", () => {
@@ -526,10 +597,93 @@
       });
       document.getElementById("completeBtn").addEventListener("click", completePretest);
       document.getElementById("resetBtn").addEventListener("click", resetPretest);
+      document.getElementById("knowledgePrevBtn").addEventListener("click", () => changeKnowledgePage(-1));
+      document.getElementById("knowledgeNextBtn").addEventListener("click", () => changeKnowledgePage(1));
+      document.getElementById("knowledgeSubmitBtn").addEventListener("click", submitKnowledgePretest);
       document.getElementById("exportBtn").addEventListener("click", exportExcel);
     }
 
+    function getKnowledgeQuestion(questionId) {
+      return knowledgeBank.questions.find((item) => item.questionId === questionId) || null;
+    }
+
+    function renderKnowledgePretest() {
+      const pretest = state.knowledgePretest;
+      const start = pretest.currentPage * KNOWLEDGE_PAGE_SIZE;
+      const pageIds = pretest.questionOrder.slice(start, start + KNOWLEDGE_PAGE_SIZE);
+      const answeredCount = Object.keys(pretest.answersByQuestionId).length;
+      const locked = pretest.submitted;
+      knowledgePretestRoot.innerHTML = '<section class="survey-card">' +
+        '<div><strong>第 ' + (pretest.currentPage + 1) + ' / 4 页</strong><p>已完成 ' + answeredCount + ' / 40 题。提交后答案将锁定。</p></div>' +
+        pageIds.map((questionId, pageIndex) => {
+          const item = getKnowledgeQuestion(questionId);
+          if (!item) return "";
+          const selected = pretest.answersByQuestionId[questionId] || "";
+          return '<div class="survey-item"><p>' + (start + pageIndex + 1) + ". " + escapeHtml(item.question) + '</p>' +
+            '<div class="survey-scale" role="radiogroup" aria-label="' + escapeHtml(item.question) + '">' +
+            Object.entries(item.options).map(([key, label]) => (
+              '<label class="survey-option ' + (selected === key ? "is-selected" : "") + '">' +
+              '<input type="radio" name="knowledge-' + questionId + '" data-pretest-question="' + questionId +
+              '" value="' + key + '" ' + (selected === key ? "checked" : "") + (locked ? " disabled" : "") + '>' +
+              '<span class="survey-option-card"><span class="survey-score">' + key + '</span><span class="survey-label">' +
+              escapeHtml(label) + '</span></span></label>'
+            )).join("") + '</div></div>';
+        }).join("") + '</section>';
+
+      knowledgePretestRoot.querySelectorAll("[data-pretest-question]").forEach((input) => {
+        input.addEventListener("change", () => {
+          if (state.knowledgePretest.submitted) return;
+          state.knowledgePretest.answersByQuestionId[input.dataset.pretestQuestion] = input.value;
+          saveState();
+          renderKnowledgePretest();
+        });
+      });
+
+      document.getElementById("knowledgePrevBtn").disabled = pretest.currentPage === 0;
+      document.getElementById("knowledgeNextBtn").disabled = pretest.currentPage === 3;
+      document.getElementById("knowledgeSubmitBtn").disabled = locked;
+      document.getElementById("knowledgeSubmitBtn").textContent = locked ? "知识前测已提交" : "提交知识前测";
+      knowledgePretestStatus.textContent = locked
+        ? "知识前测已锁定，可以继续完成元认知问卷。"
+        : state.legacyQualification
+          ? "你已完成旧版资格审查，本知识前测可以自愿补做。"
+          : "完成并提交40题后，才能继续元认知问卷。";
+      metaSurveyPanel.hidden = !pretest.submitted && !state.legacyQualification;
+    }
+
+    function changeKnowledgePage(offset) {
+      state.knowledgePretest.currentPage = Math.max(0, Math.min(3, state.knowledgePretest.currentPage + offset));
+      saveState();
+      renderKnowledgePretest();
+      document.getElementById("knowledgePretestPanel").scrollIntoView({ behavior: "smooth", block: "start" });
+    }
+
+    function submitKnowledgePretest() {
+      const pretest = state.knowledgePretest;
+      if (pretest.submitted) return;
+      const unanswered = pretest.questionOrder.filter((id) => !pretest.answersByQuestionId[id]);
+      if (unanswered.length) {
+        pretest.currentPage = Math.floor(pretest.questionOrder.indexOf(unanswered[0]) / KNOWLEDGE_PAGE_SIZE);
+        renderKnowledgePretest();
+        knowledgePretestStatus.textContent = "还有 " + unanswered.length + " 题未完成，请补充后再提交。";
+        return;
+      }
+      pretest.scoresByExperiment = knowledgeBank.scoreAnswers(pretest.answersByQuestionId);
+      pretest.submitted = true;
+      pretest.submittedAt = new Date().toISOString();
+      state.completed = false;
+      state.completedAt = "";
+      saveState();
+      renderKnowledgePretest();
+      renderSurvey();
+      renderSummary();
+    }
+
     function renderSurvey() {
+      if (!state.knowledgePretest.submitted && !state.legacyQualification) {
+        surveyRoot.innerHTML = "";
+        return;
+      }
       surveyRoot.innerHTML = '<section class="survey-card">' +
         '<div><strong>' + surveyDef.title + '</strong><p>' + surveyDef.note + '</p><p>' + surveyDef.anchors + '</p></div>' +
         surveyDef.items.map((item, index) => {
@@ -575,7 +729,8 @@
     function renderSummary() {
       const summary = summarize();
       summaryRoot.innerHTML = [
-        ["已完成题目", summary.answered + "/" + surveyDef.items.length]
+        ["知识前测", state.knowledgePretest.submitted ? "已提交" : Object.keys(state.knowledgePretest.answersByQuestionId).length + "/40"],
+        ["元认知问卷", summary.answered + "/" + surveyDef.items.length]
       ].map((item) => '<div><strong>' + item[1] + '</strong><span>' + item[0] + '</span></div>').join("");
       status.classList.toggle("is-complete", state.completed);
       status.textContent = state.completed ? "资格审查已完成，结果文件已自动导出，请妥善保存。" : "";
@@ -584,6 +739,10 @@
     function completePretest() {
       saveIdentity();
       const summary = summarize();
+      if (!state.knowledgePretest.submitted && !state.legacyQualification) {
+        alert("请先完成并提交40道知识前测。");
+        return;
+      }
       if (!summary.complete) {
         alert("请完成所有题目后再提交资格审查。");
         status.classList.remove("is-complete");
@@ -611,6 +770,8 @@
         answers: state.answers,
         items: surveyDef.items,
         labels: surveyDef.labels,
+        knowledgePretest: state.knowledgePretest,
+        legacyQualification: state.legacyQualification,
         answered: summary.answered,
         total: summary.total,
         average: summary.average,
@@ -650,6 +811,7 @@
       const completed = Boolean(saved.completed || saved.complete);
       const completedAt = saved.completedAt || state.completedAt || "";
       const summary = summarizeAnswers(answers);
+      const savedKnowledgePretest = saved.knowledgePretest || state.knowledgePretest;
 
       if (!completed || !summary.complete) {
         alert("请先完成资格审查，再导出结果。");
@@ -669,8 +831,28 @@
         const score = Number(answers["q" + (index + 1)] || 0);
         return [String(index + 1), item, surveyDef.labels[score] || "", score || ""];
       });
+      const knowledgeRows = savedKnowledgePretest.submitted
+        ? savedKnowledgePretest.questionOrder.map((questionId, index) => {
+            const item = getKnowledgeQuestion(questionId);
+            const selected = savedKnowledgePretest.answersByQuestionId[questionId] || "";
+            return [
+              String(index + 1),
+              item ? item.experimentId : "",
+              item ? item.question : "",
+              selected,
+              item ? item.options[selected] || "" : ""
+            ];
+          })
+        : [];
       const sheets = [
         ["基本信息", [["项目", "内容"], ...identityRows]],
+        ...(knowledgeRows.length ? [["知识前测", [
+          ["题号", "所属实验", "题目", "选择", "选择内容"],
+          ...knowledgeRows,
+          ...Object.entries(savedKnowledgePretest.scoresByExperiment || {}).map(([experimentId, score]) => [
+            "分实验得分", experimentId, "", score.correctCount + "/" + score.totalCount, score.score
+          ])
+        ]]] : []),
         ["资格审查结果", [
           ["题号", "题目", "作答结果", "每题得分"],
           ...answerRows,

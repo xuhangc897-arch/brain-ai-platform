@@ -135,7 +135,8 @@
   white-space: nowrap;
 }
 
-.memory-partner-suggestion {
+.memory-partner-suggestion,
+.memory-partner-memory-support {
   position: absolute;
   right: 0;
   bottom: calc(100% + 10px);
@@ -154,6 +155,11 @@
   animation: memoryPartnerIn 160ms ease both;
 }
 
+.memory-partner.has-memory-support .memory-partner-memory-support {
+  display: block;
+  animation: memoryPartnerIn 160ms ease both;
+}
+
 .memory-partner-suggestion-kicker {
   margin: 0 34px 4px 0;
   color: rgba(147, 211, 255, 0.78);
@@ -162,21 +168,24 @@
   letter-spacing: 0.08em;
 }
 
-.memory-partner-suggestion h2 {
+.memory-partner-suggestion h2,
+.memory-partner-memory-support h2 {
   margin: 0 34px 8px 0;
   color: #f5f9ff;
   font-size: 17px;
   line-height: 1.4;
 }
 
-.memory-partner-suggestion-message {
+.memory-partner-suggestion-message,
+.memory-partner-memory-support-message {
   margin: 0;
   color: rgba(237, 246, 255, 0.84);
   font-size: 14px;
   line-height: 1.65;
 }
 
-.memory-partner-suggestion-close {
+.memory-partner-suggestion-close,
+.memory-partner-memory-support-close {
   position: absolute;
   top: 10px;
   right: 10px;
@@ -212,12 +221,14 @@
   font-weight: 750;
 }
 
-.memory-partner-suggestion-accept {
+.memory-partner-suggestion-accept,
+.memory-partner-memory-support-accept {
   background: rgba(70, 148, 211, 0.34);
   color: #fff;
 }
 
-.memory-partner-suggestion-dismiss {
+.memory-partner-suggestion-dismiss,
+.memory-partner-memory-support-dismiss {
   background: rgba(255, 255, 255, 0.06);
   color: rgba(237, 246, 255, 0.88);
 }
@@ -225,7 +236,9 @@
 .memory-partner-suggestion-actions button:hover,
 .memory-partner-suggestion-actions button:focus-visible,
 .memory-partner-suggestion-close:hover,
-.memory-partner-suggestion-close:focus-visible {
+.memory-partner-suggestion-close:focus-visible,
+.memory-partner-memory-support-close:hover,
+.memory-partner-memory-support-close:focus-visible {
   outline: 2px solid rgba(126, 210, 255, 0.75);
   outline-offset: 2px;
 }
@@ -696,6 +709,7 @@ body.has-virtual-agent .voice-title {
 
   .memory-partner-menu,
   .memory-partner-suggestion,
+  .memory-partner-memory-support,
   .memory-partner-relevance {
     right: 0;
     width: min(318px, calc(100vw - 20px));
@@ -712,6 +726,7 @@ body.has-virtual-agent .voice-title {
 @media (max-height: 600px) {
   .memory-partner-menu,
   .memory-partner-suggestion,
+  .memory-partner-memory-support,
   .memory-partner-relevance {
     bottom: 0;
   }

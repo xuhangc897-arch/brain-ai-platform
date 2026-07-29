@@ -28,8 +28,11 @@ const requiredFiles = [
   "assets/experiment-page-runtime.js",
   "assets/experiment-integration.js",
   "assets/ai-assistant.js",
+  "assets/knowledge-question-bank.js",
+  "assets/student-memory.js",
   "assets/review.js",
   "admin/dashboard.html",
+  "admin/login.html",
   "admin/initStudents.html"
 ];
 const forbiddenRoots = [

@@ -19,7 +19,7 @@ const ID_PATTERN = /^[A-Za-z0-9_.:-]{1,100}$/;
 const ROOT_FIELDS = new Set([
   "schemaVersion", "studentId", "experimentId", "stageId", "taskId", "pageId",
   "interventionType", "triggerReasons", "triggerMetrics", "studentResponse",
-  "voiceInsertSucceeded", "triggeredAt"
+  "voiceInsertSucceeded", "triggeredAt", "supportId", "supportMessage"
 ]);
 const METRIC_FIELDS = [
   "observedDurationMs", "effectiveCharacterCount", "pauseCount", "longestPauseMs",
@@ -91,11 +91,20 @@ function validate(payload) {
   if (!EXPERIMENTS.has(text(intervention.experimentId))) {
     return result(false, "INVALID_EXPERIMENT", "实验标识无效", false);
   }
-  if (intervention.interventionType !== "suggest_voice_input") {
+  if (!["suggest_voice_input", "memory_support"].includes(intervention.interventionType)) {
     return result(false, "INVALID_INTERVENTION_TYPE", "干预类型无效", false);
   }
   if (!RESPONSES.has(intervention.studentResponse)) {
     return result(false, "INVALID_RESPONSE", "学生响应无效", false);
+  }
+  if (intervention.interventionType === "memory_support") {
+    if (!ID_PATTERN.test(text(intervention.supportId)) || !text(intervention.supportMessage) || text(intervention.supportMessage).length > 240) {
+      return result(false, "INVALID_MEMORY_SUPPORT", "长期记忆支持内容无效", false);
+    }
+    if (!intervention.triggeredAt || Number.isNaN(Date.parse(intervention.triggeredAt))) {
+      return result(false, "INVALID_TIMESTAMP", "触发时间格式无效", false);
+    }
+    return null;
   }
   if (typeof intervention.voiceInsertSucceeded !== "boolean") {
     return result(false, "INVALID_FLAG", "语音写入标记无效", false);
@@ -152,6 +161,28 @@ function mergeResponse(existing, incoming) {
 
 function buildDocument(intervention, student, existing, id) {
   const serverNow = db.serverDate();
+  if (intervention.interventionType === "memory_support") {
+    const memoryDocument = {
+      schemaVersion: SCHEMA_VERSION,
+      recordId: id,
+      studentId: text(intervention.studentId),
+      studentName: text(student.name),
+      className: text(student.class),
+      groupName: text(student.group),
+      experimentId: text(intervention.experimentId),
+      stageId: text(intervention.stageId),
+      taskId: text(intervention.taskId),
+      pageId: text(intervention.pageId),
+      interventionType: "memory_support",
+      supportId: text(intervention.supportId),
+      supportMessage: text(intervention.supportMessage).slice(0, 240),
+      studentResponse: mergeResponse(existing, intervention.studentResponse),
+      triggeredAt: existing?.triggeredAt || intervention.triggeredAt,
+      updatedAt: serverNow
+    };
+    if (!existing) memoryDocument.createdAt = serverNow;
+    return memoryDocument;
+  }
   const document = {
     schemaVersion: SCHEMA_VERSION,
     recordId: id,

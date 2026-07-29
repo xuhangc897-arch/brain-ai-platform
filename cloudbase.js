@@ -272,6 +272,29 @@
     }
   }
 
+  async function loginTeacher(username, password) {
+    const normalizedUsername = String(username || "").trim();
+    const normalizedPassword = String(password || "");
+    if (!normalizedUsername || !normalizedPassword) {
+      throw new Error("请输入教师账号和密码。");
+    }
+    try {
+      await signInByPassword(normalizedUsername, normalizedPassword);
+      const response = await app.callFunction({
+        name: "getStudentMemoriesAdmin",
+        data: { limit: 1 }
+      });
+      const result = response && (response.result || response);
+      if (!result || !result.ok) {
+        throw new Error((result && result.message) || "当前账号没有教师权限。");
+      }
+      return { ok: true };
+    } catch (error) {
+      await logout().catch(() => {});
+      throw error;
+    }
+  }
+
   /*
    * 退出登录。
    * 直接调用 CloudBase Auth signOut，清除真实会话和本地登录态。
@@ -379,6 +402,7 @@
     auth,
     db,
     login,
+    loginTeacher,
     logout,
     ensureCloudBaseLogin,
     getCurrentUser,
