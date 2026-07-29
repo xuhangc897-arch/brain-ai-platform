@@ -22,6 +22,7 @@
       createStudents: `${HTTP_BASE}/createStudents`,
       saveExperimentRecord: `${HTTP_BASE}/saveExperimentRecord`,
       saveLearningRecord: `${HTTP_BASE}/saveLearningRecord`,
+      saveAgentIntervention: `${HTTP_BASE}/saveAgentIntervention`,
       getExperimentRecords: `${HTTP_BASE}/getExperimentRecords`,
       aiChat: "https://1441391469-6rhud8ln4o.ap-shanghai.tencentscf.com"
     }),
@@ -29,6 +30,8 @@
       studentSession: "studentSession",
       uploadOutbox: "experiment-upload-outbox-v1",
       learningBehaviorOutbox: "learning-behavior-outbox-v1",
+      agentInterventionOutbox: "agent-intervention-outbox-v1",
+      typingSupportState: "typing-support-state-v1",
       inquiryContext: "science-inquiry-context-v1",
       aiChatLogs: experimentRegistry.get("aiChat").storageKey,
       pretest: experimentRegistry.get("screening").storageKey,

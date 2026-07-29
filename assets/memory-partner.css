@@ -135,6 +135,101 @@
   white-space: nowrap;
 }
 
+.memory-partner-suggestion {
+  position: absolute;
+  right: 0;
+  bottom: calc(100% + 10px);
+  display: none;
+  width: min(350px, calc(100vw - 28px));
+  padding: 16px;
+  border: 1px solid rgba(126, 190, 255, 0.28);
+  border-radius: 18px;
+  background: linear-gradient(150deg, rgba(12, 31, 59, 0.99), rgba(7, 18, 34, 0.99));
+  box-shadow: 0 22px 64px rgba(2, 9, 22, 0.48);
+  color: #edf6ff;
+}
+
+.memory-partner.has-voice-suggestion .memory-partner-suggestion {
+  display: block;
+  animation: memoryPartnerIn 160ms ease both;
+}
+
+.memory-partner-suggestion-kicker {
+  margin: 0 34px 4px 0;
+  color: rgba(147, 211, 255, 0.78);
+  font-size: 11px;
+  font-weight: 800;
+  letter-spacing: 0.08em;
+}
+
+.memory-partner-suggestion h2 {
+  margin: 0 34px 8px 0;
+  color: #f5f9ff;
+  font-size: 17px;
+  line-height: 1.4;
+}
+
+.memory-partner-suggestion-message {
+  margin: 0;
+  color: rgba(237, 246, 255, 0.84);
+  font-size: 14px;
+  line-height: 1.65;
+}
+
+.memory-partner-suggestion-close {
+  position: absolute;
+  top: 10px;
+  right: 10px;
+  display: grid;
+  place-items: center;
+  width: 30px;
+  height: 30px;
+  padding: 0;
+  border: 1px solid rgba(126, 190, 255, 0.2);
+  border-radius: 999px;
+  background: rgba(255, 255, 255, 0.06);
+  color: #edf6ff;
+  cursor: pointer;
+  font: inherit;
+  font-size: 19px;
+}
+
+.memory-partner-suggestion-actions {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 8px;
+  margin-top: 14px;
+}
+
+.memory-partner-suggestion-actions button {
+  min-height: 42px;
+  padding: 8px 10px;
+  border: 1px solid rgba(126, 190, 255, 0.28);
+  border-radius: 11px;
+  cursor: pointer;
+  font: inherit;
+  font-size: 13px;
+  font-weight: 750;
+}
+
+.memory-partner-suggestion-accept {
+  background: rgba(70, 148, 211, 0.34);
+  color: #fff;
+}
+
+.memory-partner-suggestion-dismiss {
+  background: rgba(255, 255, 255, 0.06);
+  color: rgba(237, 246, 255, 0.88);
+}
+
+.memory-partner-suggestion-actions button:hover,
+.memory-partner-suggestion-actions button:focus-visible,
+.memory-partner-suggestion-close:hover,
+.memory-partner-suggestion-close:focus-visible {
+  outline: 2px solid rgba(126, 210, 255, 0.75);
+  outline-offset: 2px;
+}
+
 .memory-partner-menu {
   position: absolute;
   right: 0;
@@ -485,7 +580,8 @@ body.has-virtual-agent .voice-title {
     font-size: 11px;
   }
 
-  .memory-partner-menu {
+  .memory-partner-menu,
+  .memory-partner-suggestion {
     right: 0;
     width: min(318px, calc(100vw - 20px));
     max-height: calc(100vh - 24px);
@@ -499,7 +595,8 @@ body.has-virtual-agent .voice-title {
 }
 
 @media (max-height: 600px) {
-  .memory-partner-menu {
+  .memory-partner-menu,
+  .memory-partner-suggestion {
     bottom: 0;
   }
 }

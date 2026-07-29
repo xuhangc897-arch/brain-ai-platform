@@ -739,6 +739,16 @@
       applicability: "reflection",
       applicability_group: "reflection"
     });
+    const VOICE_SUGGESTION_TASKS = new Set([
+      "brainstormIndividual",
+      "hypothesis1",
+      "hypothesis2",
+      "headband",
+      "conclusion",
+      "designImprove",
+      "surprise",
+      "applicability"
+    ]);
     function applyLearningBehaviorMetadata() {
       main.querySelectorAll("textarea[data-field]").forEach((field) => {
         const taskId = field.dataset.field;
@@ -750,6 +760,11 @@
           stageId,
           taskId
         });
+        if (VOICE_SUGGESTION_TASKS.has(taskId) &&
+            steps[state.currentStep]?.id === stageId &&
+            state.currentStep >= state.maxUnlockedStep) {
+          field.dataset.voiceSuggestion = "true";
+        }
       });
     }
     function renderGroupTextarea(field, placeholder = "请写下你与小组成员讨论后达成的一致结果") {
@@ -1822,7 +1837,9 @@
   <script src="assets/asr-client.js"></script>
   <script src="assets/voice-assistant.js"></script>
   <script src="assets/learning-behavior-tracker.js"></script>
+  <script src="assets/typing-support-rules.js"></script>
   <script src="assets/memory-partner.js"></script>
+  <script src="assets/typing-support.js"></script>
   <script>
     if (window.LearningBehaviorTracker) {
       window.LearningBehaviorTracker.init({ experimentId: "strategies" });
@@ -1835,6 +1852,9 @@
       });
     } else {
       console.warn("[Virtual Agent] Component failed to load; original assistants remain available.");
+    }
+    if (window.TypingSupport) {
+      window.TypingSupport.init({ experimentId: "strategies" });
     }
   </script>
 </body>
