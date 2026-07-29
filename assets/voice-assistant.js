@@ -35,6 +35,30 @@
     textarea.scrollTop = textarea.scrollHeight;
   }
 
+  function isWritableTarget(element) {
+    if (!element || element.disabled || element.readOnly) return false;
+    if (element.matches("textarea")) return true;
+    if (!element.matches("input")) return false;
+    return ["text", "search", "email", "tel", "url"].includes((element.type || "text").toLowerCase());
+  }
+
+  function getTargetLabel(element) {
+    if (!element) return "";
+    const idLabel = element.id
+      ? Array.from(document.querySelectorAll("label[for]")).find((label) => label.htmlFor === element.id)
+      : null;
+    const wrappingLabel = element.closest("label");
+    const fieldLabel = element.closest(".field, .form-group, .form-field")?.querySelector("label");
+    const label = idLabel || wrappingLabel || fieldLabel;
+    return String(
+      element.getAttribute("aria-label") ||
+      label?.textContent ||
+      element.placeholder ||
+      element.name ||
+      "当前输入框"
+    ).replace(/\s+/g, " ").trim().slice(0, 48);
+  }
+
   function installDraggable(options) {
     const { dragRoot, visibleWhenClosed, visibleWhenOpen, handles } = options;
     let pointerId = null;
@@ -167,9 +191,15 @@
           </div>
           <textarea class="voice-output" aria-label="语音转文字结果" placeholder="识别结果会显示在这里，可复制后粘贴到任意填写框。"></textarea>
           <p class="voice-partial" data-voice-partial aria-live="polite"></p>
+          <div class="voice-target" data-voice-target>
+            <span class="voice-target-label">写入目标</span>
+            <strong data-voice-target-name>请先点击页面中的输入框</strong>
+            <small>识别完成后确认写入，不会自动覆盖你的答案。</small>
+          </div>
           <div class="voice-actions" aria-label="语音助手操作">
             <button class="voice-action primary" type="button" data-voice-start>开始录音</button>
             <button class="voice-action" type="button" data-voice-stop disabled>停止录音</button>
+            <button class="voice-action write" type="button" data-voice-write disabled>写入当前输入框</button>
             <button class="voice-action" type="button" data-voice-copy>复制文字</button>
             <button class="voice-action" type="button" data-voice-clear>清空内容</button>
           </div>
@@ -184,14 +214,18 @@
     const status = root.querySelector(".voice-status");
     const startButton = root.querySelector("[data-voice-start]");
     const stopButton = root.querySelector("[data-voice-stop]");
+    const writeButton = root.querySelector("[data-voice-write]");
     const copyButton = root.querySelector("[data-voice-copy]");
     const clearButton = root.querySelector("[data-voice-clear]");
     const stateLabel = root.querySelector("[data-voice-state]");
     const timeLabel = root.querySelector("[data-voice-time]");
     const partialLabel = root.querySelector("[data-voice-partial]");
+    const targetBox = root.querySelector("[data-voice-target]");
+    const targetName = root.querySelector("[data-voice-target-name]");
     const panel = root.querySelector(".voice-panel");
     const head = root.querySelector(".voice-head");
     let isRunning = false;
+    let lastTarget = null;
 
     const dragControls = installDraggable({
       dragRoot: root,
@@ -230,6 +264,55 @@
         setStatus(status, message || "识别失败，请稍后重试。", "warning");
       }
     }) : null;
+
+    function updateTargetDisplay() {
+      const available = isWritableTarget(lastTarget) && lastTarget.isConnected;
+      targetBox.classList.toggle("has-target", available);
+      targetName.textContent = available ? getTargetLabel(lastTarget) : "请先点击页面中的输入框";
+      writeButton.disabled = !available;
+    }
+
+    function rememberTarget(event) {
+      if (root.contains(event.target) || !isWritableTarget(event.target)) return;
+      lastTarget = event.target;
+      updateTargetDisplay();
+    }
+
+    function writeToTarget() {
+      const text = textarea.value.trim();
+      if (!text) {
+        setStatus(status, EMPTY_COPY_NOTICE, "warning");
+        return;
+      }
+      if (!isWritableTarget(lastTarget) || !lastTarget.isConnected) {
+        lastTarget = null;
+        updateTargetDisplay();
+        setStatus(status, "目标输入框已失效，请重新点击需要填写的位置。", "warning");
+        return;
+      }
+
+      const position = Number.isInteger(lastTarget.selectionEnd)
+        ? lastTarget.selectionEnd
+        : lastTarget.value.length;
+      document.dispatchEvent(new CustomEvent("voice-assistant:before-text-insert", {
+        detail: {
+          target: lastTarget,
+          insertedCharacterCount: Array.from(text).length
+        }
+      }));
+      lastTarget.value =
+        lastTarget.value.slice(0, position) +
+        text +
+        lastTarget.value.slice(position);
+      const nextPosition = position + text.length;
+      lastTarget.focus();
+      if (typeof lastTarget.setSelectionRange === "function") {
+        lastTarget.setSelectionRange(nextPosition, nextPosition);
+      }
+      lastTarget.dispatchEvent(new Event("input", { bubbles: true }));
+      lastTarget.dispatchEvent(new Event("change", { bubbles: true }));
+      setStatus(status, `已写入“${getTargetLabel(lastTarget)}”。`, "success");
+    }
 
     function setRunning(nextRunning) {
       isRunning = nextRunning;
@@ -277,6 +360,7 @@
     toggle.addEventListener("click", () => {
       root.classList.add("is-open");
       dragControls.clamp();
+      updateTargetDisplay();
       window.setTimeout(() => textarea.focus(), 80);
     });
 
@@ -286,6 +370,7 @@
 
     startButton.addEventListener("click", startRecording);
     stopButton.addEventListener("click", stopAll);
+    writeButton.addEventListener("click", writeToTarget);
 
     copyButton.addEventListener("click", async () => {
       const text = textarea.value.trim();
@@ -314,6 +399,7 @@
 
     window.addEventListener("pagehide", stopAll);
     window.addEventListener("beforeunload", stopAll);
+    document.addEventListener("focusin", rememberTarget);
     document.addEventListener("visibilitychange", () => {
       if (document.visibilityState === "hidden") stopAll();
     });

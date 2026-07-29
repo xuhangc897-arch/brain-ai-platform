@@ -25,6 +25,11 @@
       "runtime": "Nodejs16.13"
     },
     {
+      "name": "saveLearningRecord",
+      "timeout": 60,
+      "runtime": "Nodejs16.13"
+    },
+    {
       "name": "getExperimentRecords",
       "timeout": 60,
       "runtime": "Nodejs16.13"

@@ -1094,3 +1094,17 @@ GitHub 仓库 `Settings → Pages → Build and deployment → Source` 必须从
 ### 回滚
 
 代码回滚使用 `git revert` 恢复阶段 7 commit，然后由 Pages workflow 重新部署完整 artifact。旧文件如确需恢复，应从阶段 7 前 commit 恢复，不要复制未知本地版本。
+# 2026-07-29：统一虚拟人与现有学习工具整合
+
+- 在现有 `assets/memory-partner.js` 和 `assets/memory-partner.css` 上增加统一的 `window.VirtualAgent.init()`，并保留 `window.MemoryPartner` 兼容入口。
+- 记忆容量、N-back、长时记忆干扰、长时记忆策略和海报制作五页共用同一虚拟人，提供 AI 学习助手、语音转文字、当前任务和学习进度四个入口。
+- 当前任务与进度只读取页面已有 `steps`、`currentStep` 和 `maxUnlockedStep`，不修改步骤验证、解锁、保存、上传或历史状态结构。
+- 语音结果增加“确认后写入当前输入框”，继续复用原 `VoiceRecorder` 和 `AsrClient`，并保留复制粘贴回退。
+- 组件成功挂载后才隐藏原助手入口；组件缺失或初始化失败时，原 AI 和语音入口继续可用。
+- 未加入行为识别、偏题识别、跨实验记忆或学习诊断。
+# 2026-07-29：第二阶段学习行为监测
+
+- 新增四个实验页共用的开放性文本行为监测器、脱敏调试摘要与本地最新快照队列。
+- 新增 `saveLearningRecord` 云函数，对正式学生身份、字段白名单、文本长度和指标进行服务端校验，并以确定性文档 ID 更新任务记录。
+- AI 助手成功打开及语音文本实际写入会分别标记当前任务；海报页不纳入监测。
+- 本阶段不包含主动提醒、内容相关性判断、跨实验记忆或最终学习诊断。

@@ -660,12 +660,12 @@
     const DEV_MODE_KEY = "devMode";
 
     const steps = [
-      { id: "plan", title: "制定初步方案", minutes: "15分钟" },
-      { id: "make", title: "制作海报", minutes: "30分钟" },
-      { id: "share", title: "分享交流", minutes: "10分钟" },
-      { id: "questions", title: "提问交流", minutes: "15分钟" },
-      { id: "score", title: "海报评分", minutes: "20分钟" },
-      { id: "reflection", title: "总结反思", minutes: "10分钟" }
+      { id: "plan", title: "制定初步方案", minutes: "15分钟", taskDescription: "依次阅读每一项说明，并直接在对应位置完成海报初步方案。" },
+      { id: "make", title: "制作海报", minutes: "30分钟", taskDescription: "根据第一步的初步方案完成正式海报，保持整洁美观。" },
+      { id: "share", title: "分享交流", minutes: "10分钟", taskDescription: "指派一位小小讲解员介绍海报，并记录交流中的问题和回答。" },
+      { id: "questions", title: "提问交流", minutes: "15分钟", taskDescription: "认真观看其他小组的科学海报，提出问题并记录对方的回答。" },
+      { id: "score", title: "海报评分", minutes: "20分钟", taskDescription: "根据海报评分表的四个维度对每组海报评分，并为最优海报点赞。" },
+      { id: "reflection", title: "总结反思", minutes: "10分钟", taskDescription: "总结交流收获、海报改进方向、小组合作情况和探究成果的应用。" }
     ];
 
     const indicators = [
@@ -1565,5 +1565,16 @@
   <script src="assets/asr-client.js"></script>
   <script src="assets/voice-assistant.js"></script>
   <script src="assets/memory-partner.js"></script>
+  <script>
+    if (window.VirtualAgent) {
+      window.VirtualAgent.init({
+        experimentId: "poster",
+        experimentName: "海报制作与分享交流",
+        getLearningState: () => ({ steps, currentStepIndex: state.currentStep, maxUnlockedStep: state.maxUnlockedStep })
+      });
+    } else {
+      console.warn("[Virtual Agent] Component failed to load; original assistants remain available.");
+    }
+  </script>
 </body>
 </html>
