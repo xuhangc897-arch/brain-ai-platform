@@ -23,6 +23,7 @@
       saveExperimentRecord: `${HTTP_BASE}/saveExperimentRecord`,
       saveLearningRecord: `${HTTP_BASE}/saveLearningRecord`,
       saveAgentIntervention: `${HTTP_BASE}/saveAgentIntervention`,
+      checkTaskRelevance: `${HTTP_BASE}/checkTaskRelevance`,
       getExperimentRecords: `${HTTP_BASE}/getExperimentRecords`,
       aiChat: "https://1441391469-6rhud8ln4o.ap-shanghai.tencentscf.com"
     }),
@@ -32,6 +33,8 @@
       learningBehaviorOutbox: "learning-behavior-outbox-v1",
       agentInterventionOutbox: "agent-intervention-outbox-v1",
       typingSupportState: "typing-support-state-v1",
+      taskRelevanceState: "task-relevance-state-v1",
+      taskRelevanceOutbox: "task-relevance-outbox-v1",
       inquiryContext: "science-inquiry-context-v1",
       aiChatLogs: experimentRegistry.get("aiChat").storageKey,
       pretest: experimentRegistry.get("screening").storageKey,

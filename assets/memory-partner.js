@@ -133,6 +133,21 @@
           <button class="memory-partner-suggestion-dismiss" type="button">继续打字</button>
         </div>
       </section>
+      <section class="memory-partner-relevance" role="dialog" aria-modal="false" aria-labelledby="memoryPartnerRelevanceTitle" aria-hidden="true">
+        <button class="memory-partner-relevance-close" type="button" aria-label="关闭任务相关性提示">×</button>
+        <p class="memory-partner-relevance-kicker">任务提示</p>
+        <h2 id="memoryPartnerRelevanceTitle"></h2>
+        <p class="memory-partner-relevance-message" aria-live="polite"></p>
+        <div class="memory-partner-relevance-requirement" hidden>
+          <strong class="memory-partner-relevance-task-title"></strong>
+          <p class="memory-partner-relevance-task-instruction"></p>
+        </div>
+        <div class="memory-partner-relevance-actions">
+          <button class="memory-partner-relevance-view" type="button">查看任务要求</button>
+          <button class="memory-partner-relevance-modify" type="button">返回修改</button>
+          <button class="memory-partner-relevance-keep" type="button">仍然保留</button>
+        </div>
+      </section>
       <section class="memory-partner-menu" id="memoryPartnerMenu" role="dialog" aria-modal="false" aria-labelledby="memoryPartnerMenuTitle" aria-hidden="true">
         <header class="memory-partner-menu-head">
           <div>
@@ -195,6 +210,16 @@
     const suggestionClose = root.querySelector(".memory-partner-suggestion-close");
     const suggestionAccept = root.querySelector(".memory-partner-suggestion-accept");
     const suggestionDismiss = root.querySelector(".memory-partner-suggestion-dismiss");
+    const relevance = root.querySelector(".memory-partner-relevance");
+    const relevanceTitle = root.querySelector("#memoryPartnerRelevanceTitle");
+    const relevanceMessage = root.querySelector(".memory-partner-relevance-message");
+    const relevanceRequirement = root.querySelector(".memory-partner-relevance-requirement");
+    const relevanceTaskTitle = root.querySelector(".memory-partner-relevance-task-title");
+    const relevanceTaskInstruction = root.querySelector(".memory-partner-relevance-task-instruction");
+    const relevanceClose = root.querySelector(".memory-partner-relevance-close");
+    const relevanceView = root.querySelector(".memory-partner-relevance-view");
+    const relevanceModify = root.querySelector(".memory-partner-relevance-modify");
+    const relevanceKeep = root.querySelector(".memory-partner-relevance-keep");
     const menuView = root.querySelector('[data-partner-view="menu"]');
     const detailView = root.querySelector('[data-partner-view="detail"]');
     const detail = root.querySelector("[data-partner-detail]");
@@ -202,6 +227,7 @@
     const backButton = root.querySelector(".memory-partner-back");
     const status = root.querySelector(".memory-partner-status");
     let suggestionState = null;
+    let relevanceState = null;
     const aiToggle = aiAssistant?.querySelector(".ai-toggle");
     const aiClose = aiAssistant?.querySelector(".ai-close");
     const voiceToggle = voiceAssistant?.querySelector(".voice-toggle");
@@ -337,8 +363,52 @@
       return true;
     }
 
+    function resolveRelevanceSuggestion(response, returnFocus) {
+      if (!relevanceState) return false;
+      const current = relevanceState;
+      relevanceState = null;
+      root.classList.remove("has-relevance-suggestion");
+      relevance.setAttribute("aria-hidden", "true");
+      relevanceRequirement.hidden = true;
+      relevanceTitle.textContent = "";
+      relevanceMessage.textContent = "";
+      relevanceTaskTitle.textContent = "";
+      relevanceTaskInstruction.textContent = "";
+      try {
+        current.onResponse(response);
+      } catch (error) {
+        console.warn("[Virtual Agent] Relevance response handler failed.");
+      }
+      if (returnFocus && current.target?.isConnected) current.target.focus();
+      return true;
+    }
+
+    function showRelevanceSuggestion(options) {
+      if (!options || typeof options.onResponse !== "function" || !options.target?.isConnected) {
+        return false;
+      }
+      if (suggestionState || relevanceState || root.classList.contains("is-menu-open") || hasOpenAssistant()) {
+        return false;
+      }
+      relevanceState = {
+        target: options.target,
+        onResponse: options.onResponse,
+        requirementViewed: false
+      };
+      relevanceTitle.textContent = asText(options.title) || "再看看当前任务";
+      relevanceMessage.textContent = asText(options.message);
+      relevanceTaskTitle.textContent = asText(options.taskTitle);
+      relevanceTaskInstruction.textContent = asText(options.taskInstruction);
+      relevanceRequirement.hidden = true;
+      root.classList.add("has-relevance-suggestion");
+      relevance.setAttribute("aria-hidden", "false");
+      status.textContent = "当前任务有一条思考提示";
+      return true;
+    }
+
     function setMenuOpen(open, options = {}) {
       if (open && suggestionState) resolveSuggestion("dismissed", false);
+      if (open && relevanceState) resolveRelevanceSuggestion("closed", false);
       root.classList.toggle("is-menu-open", open);
       launcher.setAttribute("aria-expanded", String(open));
       launcher.setAttribute("aria-label", `${open ? "关闭" : "打开"}${PARTNER_NAME}`);
@@ -501,6 +571,22 @@
     suggestionAccept.addEventListener("click", () => resolveSuggestion("accepted", false));
     suggestionDismiss.addEventListener("click", () => resolveSuggestion("dismissed", true));
     suggestionClose.addEventListener("click", () => resolveSuggestion("dismissed", true));
+    relevanceView.addEventListener("click", () => {
+      if (!relevanceState) return;
+      relevanceRequirement.hidden = false;
+      if (!relevanceState.requirementViewed) {
+        relevanceState.requirementViewed = true;
+        try {
+          relevanceState.onResponse("view_task");
+        } catch (error) {
+          console.warn("[Virtual Agent] Relevance response handler failed.");
+        }
+      }
+      relevanceModify.focus();
+    });
+    relevanceModify.addEventListener("click", () => resolveRelevanceSuggestion("return_modify", true));
+    relevanceKeep.addEventListener("click", () => resolveRelevanceSuggestion("keep", true));
+    relevanceClose.addEventListener("click", () => resolveRelevanceSuggestion("closed", true));
     closeMenuButton.addEventListener("click", () => setMenuOpen(false, { returnFocus: true }));
     backButton.addEventListener("click", () => {
       showMenuView();
@@ -514,10 +600,19 @@
     });
 
     document.addEventListener("click", (event) => {
-      if (!root.contains(event.target)) setMenuOpen(false, { focus: false });
+      if (!root.contains(event.target)) {
+        setMenuOpen(false, { focus: false });
+        if (relevanceState && event.target !== relevanceState.target) {
+          resolveRelevanceSuggestion("closed", false);
+        }
+      }
     });
     document.addEventListener("keydown", (event) => {
       if (event.key !== "Escape") return;
+      if (relevanceState) {
+        resolveRelevanceSuggestion("closed", true);
+        return;
+      }
       if (suggestionState) {
         resolveSuggestion("dismissed", true);
         return;
@@ -565,12 +660,17 @@
       },
       showVoiceSuggestion,
       hideVoiceSuggestion: (response = "ignored") => resolveSuggestion(response, false),
+      showRelevanceSuggestion,
+      hideRelevanceSuggestion: (response = "closed") => resolveRelevanceSuggestion(response, false),
       isBusy: () => Boolean(
         suggestionState ||
+        relevanceState ||
         root.classList.contains("is-menu-open") ||
         hasOpenAssistant()
       ),
-      isSuggestionElement: (node) => Boolean(node && suggestion.contains(node)),
+      isSuggestionElement: (node) => Boolean(
+        node && (suggestion.contains(node) || relevance.contains(node))
+      ),
       openTask: () => {
         setMenuOpen(true, { focus: false });
         renderTask();
@@ -581,6 +681,7 @@
       },
       close: () => {
         resolveSuggestion("ignored", false);
+        resolveRelevanceSuggestion("closed", false);
         setMenuOpen(false);
         closeAllAssistants();
       }
@@ -615,6 +716,8 @@
     init,
     showVoiceSuggestion: (options) => Boolean(activeInstance?.showVoiceSuggestion(options)),
     hideVoiceSuggestion: (response) => Boolean(activeInstance?.hideVoiceSuggestion(response)),
+    showRelevanceSuggestion: (options) => Boolean(activeInstance?.showRelevanceSuggestion(options)),
+    hideRelevanceSuggestion: (response) => Boolean(activeInstance?.hideRelevanceSuggestion(response)),
     openVoiceFor: (target) => Boolean(activeInstance?.openVoiceFor(target)),
     isBusy: () => Boolean(activeInstance?.isBusy()),
     isSuggestionElement: (node) => Boolean(activeInstance?.isSuggestionElement(node))
