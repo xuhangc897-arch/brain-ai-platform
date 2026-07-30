@@ -6,7 +6,7 @@
 
 ## 身份与写入边界
 
-前端复用 `BrainPlatform.identity` 中的正式学生会话。缺少 `studentId` 或处于游客模式时，不写本地队列和 CloudBase。`saveLearningRecord` 云函数会再次查询 `students` 集合；未知学号会被拒绝。现有前端会话保存在 localStorage，仍可能被手工替换为另一个有效学号，强化登录凭证不属于本阶段。
+前端复用 `BrainPlatform.identity` 中的正式学生会话。缺少 `studentId`、签名会话令牌或处于游客模式时，不写本地队列和 CloudBase。`saveLearningRecord` 使用 `STUDENT_SESSION_SECRET` 校验令牌、从令牌确定 `studentId`，再查询 `students` 集合；令牌篡改、请求体学号不一致和未知学号都会被拒绝。
 
 ## `learning_records` 字段
 
@@ -22,7 +22,7 @@
 2. 创建复合索引：
    - `studentId` 升序 + `updatedAt` 降序；
    - `studentId` 升序 + `experimentId` 升序 + `stageId` 升序。
-3. 部署 `saveLearningRecord` 云函数。
+3. 为 `saveLearningRecord` 配置与 `studentLogin` 完全相同的 `STUDENT_SESSION_SECRET`，并部署云函数；HTTP 网关必须允许 `Authorization` 请求头。
 4. 发布静态资源，再用正式学生账号分别验证首次创建与重复更新。
 
 记录沿用现有研究数据保留策略，保留至研究管理员人工清理。本阶段不创建学生端查询接口或定时删除任务。回滚时先恢复静态资源，再停用云函数；已有记录保留。

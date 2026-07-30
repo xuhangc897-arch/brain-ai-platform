@@ -10,6 +10,7 @@ const CURRENT_SCHEMA_VERSION = 2;
 const SUPPORTED_SCHEMA_VERSIONS = new Set([LEGACY_SCHEMA_VERSION, CURRENT_SCHEMA_VERSION]);
 const ALLOWED_MODULES = new Set(["memory", "nback", "interference", "strategies", "poster", "screening", "aiChat"]);
 const ALLOWED_RECORD_TYPES = new Set(["experiment", "state", "submission"]);
+const ID_PATTERN = /^[A-Za-z0-9_.:-]{1,100}$/;
 
 const app = cloudbase.init({
   env: cloudbase.SYMBOL_CURRENT_ENV
@@ -33,6 +34,42 @@ function parsePayload(event) {
   }
 
   return event || {};
+}
+
+function getHeader(event, name) {
+  const headers = event && event.headers && typeof event.headers === "object" ? event.headers : {};
+  const expected = String(name).toLowerCase();
+  const key = Object.keys(headers).find((item) => String(item).toLowerCase() === expected);
+  return key ? String(headers[key] || "") : "";
+}
+
+function decodeBase64url(value) {
+  const normalized = String(value || "").replace(/-/g, "+").replace(/_/g, "/");
+  return Buffer.from(normalized, "base64").toString("utf8");
+}
+
+function verifyStudentSession(event) {
+  const secret = String(process.env.STUDENT_SESSION_SECRET || "");
+  if (secret.length < 32) return null;
+  const authorization = getHeader(event, "authorization");
+  const token = authorization.replace(/^Bearer\s+/i, "").trim();
+  const parts = token.split(".");
+  if (parts.length !== 2 || !parts[0] || !parts[1]) return null;
+  const expected = crypto.createHmac("sha256", secret).update(parts[0]).digest("base64")
+    .replace(/=/g, "").replace(/\+/g, "-").replace(/\//g, "_");
+  const actualBuffer = Buffer.from(parts[1]);
+  const expectedBuffer = Buffer.from(expected);
+  if (actualBuffer.length !== expectedBuffer.length || !crypto.timingSafeEqual(actualBuffer, expectedBuffer)) return null;
+  try {
+    const payload = JSON.parse(decodeBase64url(parts[0]));
+    const now = Math.floor(Date.now() / 1000);
+    if (payload.version !== 1 || !ID_PATTERN.test(normalizeText(payload.studentId))) return null;
+    if (!Number.isFinite(payload.issuedAt) || !Number.isFinite(payload.expiresAt)) return null;
+    if (payload.issuedAt > now + 300 || payload.expiresAt <= now) return null;
+    return payload;
+  } catch (error) {
+    return null;
+  }
 }
 
 function normalizeText(value) {
@@ -131,19 +168,36 @@ function buildRecordDocument({
 }
 
 exports.main = async (event) => {
-  const payload = parsePayload(event);
+  const session = verifyStudentSession(event);
+  if (!session) {
+    return {
+      ok: false,
+      code: "UNAUTHORIZED",
+      message: "登录会话无效或已过期",
+      retryable: false,
+      results: []
+    };
+  }
+  const incoming = parsePayload(event);
+  const incomingRecords = Array.isArray(incoming.records) ? incoming.records : [];
+  if (incomingRecords.some((record) => (
+    record && normalizeText(record.studentId) && normalizeText(record.studentId) !== session.studentId
+  ))) {
+    return {
+      ok: false,
+      code: "STUDENT_MISMATCH",
+      message: "记录所属学生与登录会话不一致",
+      retryable: false,
+      results: []
+    };
+  }
+  const payload = Object.assign({}, incoming, {
+    records: incomingRecords.map((record) => Object.assign({}, record, { studentId: session.studentId }))
+  });
   const sourceSchemaVersion = Number(payload.schemaVersion) || LEGACY_SCHEMA_VERSION;
   const module = normalizeText(payload.module);
   const recordType = normalizeText(payload.recordType || "experiment");
   const records = Array.isArray(payload.records) ? payload.records : [];
-
-  console.log("saveExperimentRecord payload:", JSON.stringify({
-    sourceSchemaVersion,
-    targetSchemaVersion: CURRENT_SCHEMA_VERSION,
-    module,
-    recordType,
-    recordCount: records.length
-  }));
 
   if (!SUPPORTED_SCHEMA_VERSIONS.has(sourceSchemaVersion)) {
     return {

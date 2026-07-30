@@ -5,6 +5,12 @@ const fs = require("fs");
 const path = require("path");
 const vm = require("vm");
 const Module = require("module");
+const {
+  TEST_STUDENT_SESSION_SECRET,
+  authenticatedEvent
+} = require("./test-student-session");
+
+process.env.STUDENT_SESSION_SECRET = TEST_STUDENT_SESSION_SECRET;
 
 const root = path.resolve(__dirname, "..");
 const pageTasks = {
@@ -180,6 +186,8 @@ Module._load = function (request, parent, isMain) {
 };
 const relevanceFunction = require(path.join(root, "cloudfunctions", "checkTaskRelevance", "index.js"));
 Module._load = originalLoad;
+const rawRelevanceMain = relevanceFunction.main;
+relevanceFunction.main = (body) => rawRelevanceMain(authenticatedEvent(body));
 
 function payload(overrides) {
   return Object.assign({
@@ -249,7 +257,14 @@ function payload(overrides) {
   const unknownField = await relevanceFunction.main(payload({ unexpected: true }));
   assert.strictEqual(unknownField.code, "UNKNOWN_FIELD");
   const unknownStudent = await relevanceFunction.main(payload({ studentId: "S404" }));
-  assert.strictEqual(unknownStudent.code, "STUDENT_NOT_FOUND");
+  assert.strictEqual(unknownStudent.code, "STUDENT_MISMATCH");
+  const unauthenticated = await rawRelevanceMain(payload());
+  assert.strictEqual(unauthenticated.code, "UNAUTHORIZED");
+  const crossStudent = await rawRelevanceMain(authenticatedEvent(
+    payload({ studentId: "S002" }),
+    "S001"
+  ));
+  assert.strictEqual(crossStudent.code, "STUDENT_MISMATCH");
   const mismatchedTask = await relevanceFunction.main(payload({ stageId: "analysis" }));
   assert.strictEqual(mismatchedTask.code, "UNKNOWN_TASK");
   const overlong = await relevanceFunction.main(payload({ inputText: "字".repeat(2001) }));

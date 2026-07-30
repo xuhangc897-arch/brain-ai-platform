@@ -124,15 +124,6 @@ exports.main = async (event) => {
     ? Math.min(500, Math.max(limit + skip, 500))
     : limit;
 
-  console.log("getExperimentRecords query:", JSON.stringify({
-    filterKeys: Object.keys(condition),
-    limit,
-    skip,
-    hasDateFrom: Boolean(extraFilters.dateFrom),
-    hasDateTo: Boolean(extraFilters.dateTo),
-    hasSourceModule: Boolean(extraFilters.sourceModule)
-  }));
-
   const result = await recordsCollection
     .where(condition)
     .orderBy("uploadedAt", "desc")

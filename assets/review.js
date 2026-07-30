@@ -80,7 +80,7 @@
       activityName: activity.activityName,
       type: activity.reportType
     };
-    const storageKey = activity.storageKey;
+    const storageKey = window.BrainPlatform.storage.migrateScopedJson(activity.storageKey);
     const state = readState(storageKey);
     const studentSession = readStudentSession();
     const fields = state.fields || {};

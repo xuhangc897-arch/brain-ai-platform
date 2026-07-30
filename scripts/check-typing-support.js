@@ -208,7 +208,8 @@ function createControllerHarness(options) {
         readStudentSession: () => options.session || {
           role: "student",
           isGuest: false,
-          studentId: "S001"
+          studentId: "S001",
+          sessionToken: "signed-session-token"
         }
       }
     },

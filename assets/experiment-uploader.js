@@ -127,12 +127,23 @@
   async function sendEntry(entry) {
     let response;
     let result = {};
+    const session = platform.identity.readStudentSession() || {};
+
+    if (!session.sessionToken || normalizeText(session.studentId) !== entry.ownerKey) {
+      return {
+        acknowledged: false,
+        retryable: true,
+        code: "UNAUTHORIZED",
+        status: 0
+      };
+    }
 
     try {
       response = await global.fetch(SAVE_EXPERIMENT_RECORD_URL, {
         method: "POST",
         headers: {
-          "Content-Type": "application/json"
+          "Content-Type": "application/json",
+          Authorization: `Bearer ${session.sessionToken}`
         },
         body: JSON.stringify({
           schemaVersion: entry.schemaVersion,
@@ -245,6 +256,17 @@
     if (platform.identity.isGuestSession(student)) {
       return { ok: true, guest: true, inserted: 0, skipped: 0, failed: 0, queued: 0, results: [] };
     }
+    if (!student.studentId || !student.sessionToken) {
+      return {
+        ok: false,
+        code: "UNAUTHORIZED",
+        inserted: 0,
+        skipped: 0,
+        failed: 0,
+        queued: 0,
+        results: []
+      };
+    }
 
     const ownerKey = getOwnerKey(student);
     const force = Boolean(options && options.force);
@@ -343,16 +365,19 @@
 
     const student = platform.identity.readStudentSession() || {};
     if (platform.identity.isGuestSession(student)) {
-      console.info("guest mode: skip experiment record upload", {
-        module,
-        recordType,
-        recordCount: records.length
-      });
       return {
         ok: true,
         skipped: true,
         guest: true,
         message: "游客模式下实验记录不会上传后台，请在本地生成或下载报告。"
+      };
+    }
+    if (!student.studentId || !student.sessionToken) {
+      return {
+        ok: false,
+        code: "UNAUTHORIZED",
+        retryable: false,
+        message: "请重新登录后再上传实验记录。"
       };
     }
 
@@ -379,11 +404,6 @@
       console.warn("experiment record upload deferred:", {
         failed: result.failed,
         queued: result.queued
-      });
-    } else {
-      console.info("experiment record upload succeeded:", {
-        inserted: result.inserted,
-        skipped: result.skipped
       });
     }
 

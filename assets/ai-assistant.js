@@ -4,8 +4,8 @@
   const platform = window.BrainPlatform;
   const integration = window.BrainExperimentIntegration;
   const AI_API_ENDPOINT = platform.config.endpoints.aiChat;
-  const CONTEXT_KEY = platform.config.storageKeys.inquiryContext;
-  const LOG_KEY = platform.config.storageKeys.aiChatLogs;
+  const CONTEXT_KEY = platform.storage.migrateScopedJson(platform.config.storageKeys.inquiryContext);
+  const LOG_KEY = platform.storage.migrateScopedJson(platform.config.storageKeys.aiChatLogs);
   const MAX_QUESTION_LENGTH = 500;
   const DRAG_MARGIN = 12;
   const DRAG_THRESHOLD = 5;
@@ -358,15 +358,8 @@
     }
     const record = buildAiChatSubmission(sourceModule, submitAction);
     if (!record) {
-      console.info("[AI Assistant] no AI chat logs for current page; skip upload.", {
-        sourceModule
-      });
       return Promise.resolve({ ok: true, skipped: true, message: "no AI chat logs" });
     }
-    console.info("[AI Assistant] uploading AI chat logs:", {
-      sourceModule: record.sourceModule,
-      logCount: record.logCount
-    });
     return window.uploadExperimentRecords({
       module: "aiChat",
       recordType: "submission",
@@ -389,15 +382,16 @@
 
     let response;
     try {
-      console.info("[AI Assistant] requesting:", {
-        experimentName: context.experimentName,
-        currentStep: context.currentStep,
-        hasQuestion: Boolean(context.question)
-      });
       response = await fetch(endpoint, {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify(context)
+        body: JSON.stringify({
+          question: context.question,
+          pageTitle: context.pageTitle,
+          experimentName: context.experimentName,
+          currentStep: context.currentStep,
+          path: context.path
+        })
       });
     } catch (error) {
       console.error("[AI Assistant] fetch failed:", {

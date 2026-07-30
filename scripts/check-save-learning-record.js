@@ -3,6 +3,12 @@
 const assert = require("assert");
 const path = require("path");
 const Module = require("module");
+const {
+  TEST_STUDENT_SESSION_SECRET,
+  authenticatedEvent
+} = require("./test-student-session");
+
+process.env.STUDENT_SESSION_SECRET = TEST_STUDENT_SESSION_SECRET;
 
 const documents = new Map();
 let serverTick = 0;
@@ -72,6 +78,8 @@ Module._load = function (request, parent, isMain) {
 };
 const handler = require(path.join("..", "cloudfunctions", "saveLearningRecord", "index.js"));
 Module._load = originalLoad;
+const rawMain = handler.main;
+handler.main = (payload) => rawMain(authenticatedEvent(payload));
 
 function record(overrides) {
   return Object.assign({
@@ -105,7 +113,16 @@ function record(overrides) {
   assert.strictEqual(unknown.code, "UNKNOWN_FIELD");
 
   const missingStudent = await handler.main({ schemaVersion: 1, record: record({ studentId: "S404" }) });
-  assert.strictEqual(missingStudent.code, "STUDENT_NOT_FOUND");
+  assert.strictEqual(missingStudent.code, "STUDENT_MISMATCH");
+
+  const unauthenticated = await rawMain({ schemaVersion: 1, record: record() });
+  assert.strictEqual(unauthenticated.code, "UNAUTHORIZED");
+
+  const crossStudent = await rawMain(authenticatedEvent(
+    { schemaVersion: 1, record: record({ studentId: "S002" }) },
+    "S001"
+  ));
+  assert.strictEqual(crossStudent.code, "STUDENT_MISMATCH");
 
   const created = await handler.main({ schemaVersion: 1, record: record() });
   assert.strictEqual(created.ok, true);

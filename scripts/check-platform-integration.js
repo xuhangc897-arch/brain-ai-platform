@@ -5,6 +5,11 @@ const fs = require("fs");
 const path = require("path");
 const vm = require("vm");
 const Module = require("module");
+const {
+  TEST_STUDENT_SESSION_SECRET,
+  createToken,
+  authenticatedEvent
+} = require("./test-student-session");
 
 const root = path.resolve(__dirname, "..");
 const registrySource = fs.readFileSync(path.join(root, "assets", "experiment-registry.js"), "utf8");
@@ -63,7 +68,7 @@ function loadCloudFunction(relativePath, database) {
 }
 
 async function main() {
-  process.env.STUDENT_SESSION_SECRET = "test-session-secret-with-at-least-32-characters";
+  process.env.STUDENT_SESSION_SECRET = TEST_STUDENT_SESSION_SECRET;
   for (const page of [
     "index.html",
     "pretest.html",
@@ -85,6 +90,7 @@ async function main() {
     localStorage: createStorage({
       studentSession: JSON.stringify({
         studentId: "S001",
+        sessionToken: createToken("S001"),
         name: "测试学生",
         class: "七年级",
         group: "第一组"
@@ -135,6 +141,10 @@ async function main() {
     requests[0].url,
     window.BrainPlatform.config.endpoints.saveExperimentRecord
   );
+  assert.strictEqual(
+    requests[0].options.headers.Authorization,
+    `Bearer ${createToken("S001")}`
+  );
   const uploadPayload = JSON.parse(requests[0].options.body);
   assert.strictEqual(uploadPayload.schemaVersion, 2);
   assert.strictEqual(uploadPayload.records[0].schemaVersion, 2);
@@ -167,6 +177,7 @@ async function main() {
   const requestCountBeforeOtherStudent = requests.length;
   window.BrainPlatform.identity.writeStudentSession({
     studentId: "S002",
+    sessionToken: createToken("S002"),
     name: "另一名学生",
     class: "七年级",
     group: "第二组"
@@ -187,6 +198,7 @@ async function main() {
 
   window.BrainPlatform.identity.writeStudentSession({
     studentId: "S001",
+    sessionToken: createToken("S001"),
     name: "测试学生",
     class: "七年级",
     group: "第一组"
@@ -335,6 +347,8 @@ async function main() {
     "cloudfunctions/saveExperimentRecord/index.js",
     saveDatabase
   );
+  const rawSaveMain = saveFunction.main;
+  saveFunction.main = (payload) => rawSaveMain(authenticatedEvent(payload));
   const saved = await saveFunction.main(uploadPayload);
   assert.strictEqual(saved.ok, true);
   assert.strictEqual(saved.inserted, 1);
@@ -405,6 +419,7 @@ async function main() {
 
   window.BrainPlatform.identity.writeStudentSession({
     studentId: "S001",
+    sessionToken: createToken("S001"),
     name: "测试学生",
     class: "七年级",
     group: "第一组"

@@ -65,6 +65,42 @@ function parsePayload(event) {
   return event || {};
 }
 
+function getHeader(event, name) {
+  const headers = event && event.headers && typeof event.headers === "object" ? event.headers : {};
+  const expected = String(name).toLowerCase();
+  const key = Object.keys(headers).find((item) => String(item).toLowerCase() === expected);
+  return key ? String(headers[key] || "") : "";
+}
+
+function decodeBase64url(value) {
+  const normalized = String(value || "").replace(/-/g, "+").replace(/_/g, "/");
+  return Buffer.from(normalized, "base64").toString("utf8");
+}
+
+function verifyStudentSession(event) {
+  const secret = String(process.env.STUDENT_SESSION_SECRET || "");
+  if (secret.length < 32) return null;
+  const authorization = getHeader(event, "authorization");
+  const token = authorization.replace(/^Bearer\s+/i, "").trim();
+  const parts = token.split(".");
+  if (parts.length !== 2 || !parts[0] || !parts[1]) return null;
+  const expected = crypto.createHmac("sha256", secret).update(parts[0]).digest("base64")
+    .replace(/=/g, "").replace(/\+/g, "-").replace(/\//g, "_");
+  const actualBuffer = Buffer.from(parts[1]);
+  const expectedBuffer = Buffer.from(expected);
+  if (actualBuffer.length !== expectedBuffer.length || !crypto.timingSafeEqual(actualBuffer, expectedBuffer)) return null;
+  try {
+    const payload = JSON.parse(decodeBase64url(parts[0]));
+    const now = Math.floor(Date.now() / 1000);
+    if (payload.version !== 1 || !ID_PATTERN.test(clean(payload.studentId))) return null;
+    if (!Number.isFinite(payload.issuedAt) || !Number.isFinite(payload.expiresAt)) return null;
+    if (payload.issuedAt > now + 300 || payload.expiresAt <= now) return null;
+    return payload;
+  } catch (error) {
+    return null;
+  }
+}
+
 function clean(value) {
   return String(value == null ? "" : value).trim();
 }
@@ -448,7 +484,13 @@ function promptEligible(checkData, existing) {
 }
 
 exports.main = async (event) => {
-  const payload = parsePayload(event);
+  const session = verifyStudentSession(event);
+  if (!session) return result(false, "UNAUTHORIZED", "登录会话无效或已过期", false);
+  const incoming = parsePayload(event);
+  if (clean(incoming.studentId) && clean(incoming.studentId) !== session.studentId) {
+    return result(false, "STUDENT_MISMATCH", "任务记录所属学生与登录会话不一致", false);
+  }
+  const payload = Object.assign({}, incoming, { studentId: session.studentId });
   const validationError = validate(payload);
   if (validationError) return validationError;
   const task = taskFor(payload);

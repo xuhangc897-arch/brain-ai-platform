@@ -54,14 +54,18 @@
       ? platform.identity.readStudentSession()
       : null;
     const studentId = session && String(session.studentId || "").trim();
-    if (!session || session.isGuest || session.role === "guest" || !studentId || studentId === "guest") {
+    if (!session || session.isGuest || session.role === "guest" || studentId === "guest") {
+      return null;
+    }
+    const sessionToken = String(session.sessionToken || "").trim();
+    if (!studentId || !sessionToken) {
       if (!warnedIdentity) {
         console.error("[LearningBehaviorTracker] No verified student session; persistence is disabled.");
         warnedIdentity = true;
       }
       return null;
     }
-    return { studentId };
+    return { studentId, sessionToken };
   }
 
   function iso(time) {
@@ -224,9 +228,18 @@
   }
 
   async function sendRecord(record, keepalive) {
+    const student = currentIdentity();
+    if (!student || student.studentId !== record.studentId) {
+      const error = new Error("Student session is unavailable.");
+      error.retryable = true;
+      throw error;
+    }
     const response = await global.fetch(global.BrainPlatform.config.endpoints.saveLearningRecord, {
       method: "POST",
-      headers: { "Content-Type": "application/json" },
+      headers: {
+        "Content-Type": "application/json",
+        Authorization: `Bearer ${student.sessionToken}`
+      },
       body: JSON.stringify({ schemaVersion: SCHEMA_VERSION, record }),
       keepalive: Boolean(keepalive)
     });

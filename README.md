@@ -34,6 +34,7 @@ npm run check:dist
 完整说明见：
 
 - [构建、部署与监控](docs/BUILD_DEPLOY_MONITOR.md)
+- [虚拟学习伙伴整体技术与安全说明](docs/VIRTUAL_AGENT_SYSTEM.md)
 - [跨实验结构化学生记忆](docs/STUDENT_MEMORY.md)
 - [四次实验后的学习诊断](docs/LEARNING_DIAGNOSIS.md)
 - [平台契约](docs/PLATFORM_CONTRACTS.md)
