@@ -1,0 +1,26 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>我的记忆侦探诊断</title>
+  <link rel="stylesheet" href="assets/diagnosis.css">
+</head>
+<body>
+  <div class="diagnosis-toolbar" aria-label="诊断报告操作">
+    <a class="diagnosis-button secondary" href="index.html">返回首页</a>
+    <button class="diagnosis-button" id="retryBtn" type="button" hidden>重新生成</button>
+    <button class="diagnosis-button" id="printBtn" type="button">打印 / 保存为 PDF</button>
+  </div>
+  <main class="diagnosis-root" id="diagnosisRoot" aria-live="polite">
+    <section class="diagnosis-status">
+      <h1>你的记忆侦探诊断</h1>
+      <p>正在读取四次实验的学习记录...</p>
+    </section>
+  </main>
+  <script src="assets/experiment-registry.js"></script>
+  <script src="assets/platform-core.js"></script>
+  <script src="assets/learning-diagnosis.js"></script>
+  <script src="assets/diagnosis.js"></script>
+</body>
+</html>

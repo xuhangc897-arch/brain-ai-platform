@@ -6,6 +6,7 @@
   const DRAG_THRESHOLD = 5;
   let activeInstance = null;
   let pendingConfig = null;
+  let pendingDiagnosisState = null;
 
   function clamp(value, minimum, maximum) {
     return Math.min(Math.max(value, minimum), Math.max(minimum, maximum));
@@ -158,6 +159,16 @@
           <button class="memory-partner-memory-support-dismiss" type="button">暂时不用</button>
         </div>
       </section>
+      <section class="memory-partner-diagnosis-ready" role="dialog" aria-modal="false" aria-labelledby="memoryPartnerDiagnosisReadyTitle" aria-hidden="true">
+        <button class="memory-partner-diagnosis-ready-close" type="button" aria-label="稍后查看学习诊断">×</button>
+        <p class="memory-partner-suggestion-kicker">四次探究完成</p>
+        <h2 id="memoryPartnerDiagnosisReadyTitle">你的学习诊断已经整理好了</h2>
+        <p class="memory-partner-diagnosis-ready-message" aria-live="polite">你已经完成了全部记忆探究任务，我根据四次实验中的表现整理了一份学习诊断。</p>
+        <div class="memory-partner-suggestion-actions">
+          <button class="memory-partner-diagnosis-ready-view" type="button">查看我的学习诊断</button>
+          <button class="memory-partner-diagnosis-ready-later" type="button">稍后查看</button>
+        </div>
+      </section>
       <section class="memory-partner-menu" id="memoryPartnerMenu" role="dialog" aria-modal="false" aria-labelledby="memoryPartnerMenuTitle" aria-hidden="true">
         <header class="memory-partner-menu-head">
           <div>
@@ -202,6 +213,13 @@
               <small>查看已完成实验、做得好的地方和下一次建议</small>
             </span>
           </button>
+          <button class="memory-partner-action" type="button" data-partner-mode="diagnosis" hidden>
+            <span class="memory-partner-action-icon" aria-hidden="true">诊</span>
+            <span class="memory-partner-action-copy">
+              <strong>我的学习诊断</strong>
+              <small data-diagnosis-menu-copy>完成四次实验后查看综合诊断</small>
+            </span>
+          </button>
         </div>
         <div class="memory-partner-view" data-partner-view="detail" aria-live="polite">
           <button class="memory-partner-back" type="button">← 返回工具列表</button>
@@ -242,6 +260,12 @@
     const memorySupportClose = root.querySelector(".memory-partner-memory-support-close");
     const memorySupportAccept = root.querySelector(".memory-partner-memory-support-accept");
     const memorySupportDismiss = root.querySelector(".memory-partner-memory-support-dismiss");
+    const diagnosisReady = root.querySelector(".memory-partner-diagnosis-ready");
+    const diagnosisReadyClose = root.querySelector(".memory-partner-diagnosis-ready-close");
+    const diagnosisReadyView = root.querySelector(".memory-partner-diagnosis-ready-view");
+    const diagnosisReadyLater = root.querySelector(".memory-partner-diagnosis-ready-later");
+    const diagnosisMenuButton = root.querySelector('[data-partner-mode="diagnosis"]');
+    const diagnosisMenuCopy = root.querySelector("[data-diagnosis-menu-copy]");
     const menuView = root.querySelector('[data-partner-view="menu"]');
     const detailView = root.querySelector('[data-partner-view="detail"]');
     const detail = root.querySelector("[data-partner-detail]");
@@ -251,6 +275,8 @@
     let suggestionState = null;
     let relevanceState = null;
     let memorySupportState = null;
+    let diagnosisReadyState = null;
+    let diagnosisMenuState = null;
     const aiToggle = aiAssistant?.querySelector(".ai-toggle");
     const aiClose = aiAssistant?.querySelector(".ai-close");
     const voiceToggle = voiceAssistant?.querySelector(".voice-toggle");
@@ -456,10 +482,50 @@
       return true;
     }
 
+    function resolveDiagnosisReady(response) {
+      if (!diagnosisReadyState) return false;
+      const current = diagnosisReadyState;
+      diagnosisReadyState = null;
+      root.classList.remove("has-diagnosis-ready");
+      diagnosisReady.setAttribute("aria-hidden", "true");
+      try {
+        if (response === "viewed") current.onView();
+        else current.onLater();
+      } catch (error) {
+        console.warn("[Virtual Agent] Diagnosis response handler failed.");
+      }
+      return true;
+    }
+
+    function showDiagnosisReady(options) {
+      if (!options || typeof options.onView !== "function" || typeof options.onLater !== "function") return false;
+      if (
+        suggestionState || relevanceState || memorySupportState || diagnosisReadyState ||
+        root.classList.contains("is-menu-open") || hasOpenAssistant()
+      ) return false;
+      diagnosisReadyState = { onView: options.onView, onLater: options.onLater };
+      root.classList.add("has-diagnosis-ready");
+      diagnosisReady.setAttribute("aria-hidden", "false");
+      status.textContent = "四次实验学习诊断已经整理完成";
+      return true;
+    }
+
+    function setDiagnosisState(options) {
+      diagnosisMenuState = options && typeof options === "object" ? options : null;
+      const eligible = Boolean(diagnosisMenuState?.eligible);
+      diagnosisMenuButton.hidden = !eligible;
+      if (!eligible) return false;
+      if (diagnosisMenuState.available) diagnosisMenuCopy.textContent = "查看四次实验后的综合学习诊断";
+      else if (diagnosisMenuState.generationReady) diagnosisMenuCopy.textContent = "诊断正在整理，可稍后重试";
+      else diagnosisMenuCopy.textContent = "正在核对四次实验的学习记忆";
+      return true;
+    }
+
     function setMenuOpen(open, options = {}) {
       if (open && suggestionState) resolveSuggestion("dismissed", false);
       if (open && relevanceState) resolveRelevanceSuggestion("closed", false);
       if (open && memorySupportState) resolveMemorySupport("dismissed", false);
+      if (open && diagnosisReadyState) resolveDiagnosisReady("later");
       root.classList.toggle("is-menu-open", open);
       launcher.setAttribute("aria-expanded", String(open));
       launcher.setAttribute("aria-label", `${open ? "关闭" : "打开"}${PARTNER_NAME}`);
@@ -560,6 +626,37 @@
       }
     }
 
+    function renderDiagnosis() {
+      const available = Boolean(diagnosisMenuState?.available);
+      detail.innerHTML = `
+        <div class="memory-partner-detail-heading">
+          <span class="memory-partner-detail-label">四次探究总结</span>
+          <h3>我的学习诊断</h3>
+        </div>
+        <div class="memory-partner-unfinished">
+          <p>${available
+            ? "诊断已经整理完成，可以在新页面查看并打印。"
+            : "系统正在核对四次实验记录。这个过程不会影响你已经完成的实验和报告。"}</p>
+          <button class="memory-partner-back" type="button" data-diagnosis-action>
+            ${available ? "查看我的学习诊断" : "重新整理诊断"}
+          </button>
+        </div>
+      `;
+      showDetail();
+      detail.querySelector("[data-diagnosis-action]")?.addEventListener("click", async (event) => {
+        const button = event.currentTarget;
+        if (available) {
+          diagnosisMenuState?.open?.();
+          return;
+        }
+        button.disabled = true;
+        button.textContent = "正在整理...";
+        await diagnosisMenuState?.retry?.();
+        button.disabled = false;
+        button.textContent = "稍后再试";
+      });
+    }
+
     function showDetail() {
       menuView.classList.remove("is-active");
       detailView.classList.add("is-active");
@@ -604,6 +701,7 @@
       if (mode === "task") renderTask();
       if (mode === "progress") renderProgress();
       if (mode === "memory") renderStudentMemory();
+      if (mode === "diagnosis") renderDiagnosis();
     }
 
     launcher.addEventListener("pointerdown", (event) => {
@@ -666,6 +764,9 @@
     memorySupportAccept.addEventListener("click", () => resolveMemorySupport("accepted", true));
     memorySupportDismiss.addEventListener("click", () => resolveMemorySupport("dismissed", true));
     memorySupportClose.addEventListener("click", () => resolveMemorySupport("dismissed", true));
+    diagnosisReadyView.addEventListener("click", () => resolveDiagnosisReady("viewed"));
+    diagnosisReadyLater.addEventListener("click", () => resolveDiagnosisReady("later"));
+    diagnosisReadyClose.addEventListener("click", () => resolveDiagnosisReady("later"));
     closeMenuButton.addEventListener("click", () => setMenuOpen(false, { returnFocus: true }));
     backButton.addEventListener("click", () => {
       showMenuView();
@@ -694,6 +795,11 @@
       }
       if (memorySupportState) {
         resolveMemorySupport("dismissed", true);
+        return;
+      }
+      if (diagnosisReadyState) {
+        resolveDiagnosisReady("later");
+        launcher.focus();
         return;
       }
       if (suggestionState) {
@@ -747,15 +853,24 @@
       hideRelevanceSuggestion: (response = "closed") => resolveRelevanceSuggestion(response, false),
       showMemorySupport,
       hideMemorySupport: (response = "ignored") => resolveMemorySupport(response, false),
+      showDiagnosisReady,
+      hideDiagnosisReady: () => resolveDiagnosisReady("later"),
+      setDiagnosisState,
       isBusy: () => Boolean(
         suggestionState ||
         relevanceState ||
         memorySupportState ||
+        diagnosisReadyState ||
         root.classList.contains("is-menu-open") ||
         hasOpenAssistant()
       ),
       isSuggestionElement: (node) => Boolean(
-        node && (suggestion.contains(node) || relevance.contains(node) || memorySupport.contains(node))
+        node && (
+          suggestion.contains(node) ||
+          relevance.contains(node) ||
+          memorySupport.contains(node) ||
+          diagnosisReady.contains(node)
+        )
       ),
       openTask: () => {
         setMenuOpen(true, { focus: false });
@@ -769,6 +884,7 @@
         resolveSuggestion("ignored", false);
         resolveRelevanceSuggestion("closed", false);
         resolveMemorySupport("ignored", false);
+        resolveDiagnosisReady("later");
         setMenuOpen(false);
         closeAllAssistants();
       }
@@ -788,6 +904,7 @@
     }
     try {
       activeInstance = createVirtualAgent(config);
+      if (pendingDiagnosisState) activeInstance.setDiagnosisState(pendingDiagnosisState);
       return activeInstance;
     } catch (error) {
       document.querySelector(".memory-partner")?.remove();
@@ -807,6 +924,12 @@
     hideRelevanceSuggestion: (response) => Boolean(activeInstance?.hideRelevanceSuggestion(response)),
     showMemorySupport: (options) => Boolean(activeInstance?.showMemorySupport(options)),
     hideMemorySupport: (response) => Boolean(activeInstance?.hideMemorySupport(response)),
+    showDiagnosisReady: (options) => Boolean(activeInstance?.showDiagnosisReady(options)),
+    hideDiagnosisReady: () => Boolean(activeInstance?.hideDiagnosisReady()),
+    setDiagnosisState: (options) => {
+      pendingDiagnosisState = options;
+      return Boolean(activeInstance?.setDiagnosisState(options));
+    },
     openVoiceFor: (target) => Boolean(activeInstance?.openVoiceFor(target)),
     isBusy: () => Boolean(activeInstance?.isBusy()),
     isSuggestionElement: (node) => Boolean(activeInstance?.isSuggestionElement(node))

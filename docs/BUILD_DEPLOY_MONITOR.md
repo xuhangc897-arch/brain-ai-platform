@@ -14,7 +14,7 @@ npm run check:dist
 
 `npm run build` 只把以下内容放入 `dist/`：
 
-- 九个学生/报告 HTML 页面。
+- 十个学生/报告 HTML 页面（包含学习诊断页）。
 - `auth.js`、`cloudbase.js`。
 - `assets/`。
 - `admin/`。

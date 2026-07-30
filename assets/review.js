@@ -13,6 +13,64 @@
   const requestedActivityType = params.get("activityType") || "memory";
   const activityType = integration.resolveReportActivity(requestedActivityType, "memory").id;
   renderReviewPage(buildReviewData(activityType));
+  if (activityType === "strategies") appendLearningDiagnosis();
+
+  async function appendLearningDiagnosis() {
+    const sheet = root && root.querySelector(".report-sheet");
+    if (!sheet || !window.LearningDiagnosis) return;
+    const section = document.createElement("section");
+    section.className = "diagnosis-report-summary";
+    section.innerHTML = '<h2 class="section-label">四次实验学习诊断</h2><div class="info-card"><p>正在核对四次实验记录...</p></div>';
+    const footer = sheet.querySelector("footer");
+    sheet.insertBefore(section, footer || null);
+    const session = platform.identity.readStudentSession() || {};
+    if (!session.sessionToken || session.isGuest) {
+      section.innerHTML = '<h2 class="section-label">四次实验学习诊断</h2><div class="info-card"><p>登录正式学生账号后，可以在这里查看四次实验的综合诊断。</p></div>';
+      return;
+    }
+    window.LearningDiagnosis.init({ experimentId: "strategies" });
+    const result = await window.LearningDiagnosis.refresh();
+    if (result?.diagnosis) {
+      const report = result.diagnosis.report || {};
+      section.innerHTML = `
+        <h2 class="section-label">四次实验学习诊断</h2>
+        <div class="diagnosis-review-card">
+          <h3>你做得很好的地方</h3>
+          ${renderDiagnosisItems(report.strengths)}
+          <h3>四次实验中的进步</h3>
+          ${renderDiagnosisItems(report.progress)}
+          <h3>下一步行动建议</h3>
+          ${renderDiagnosisItems(report.nextActions)}
+          <a class="diagnosis-review-link" href="diagnosis.html" target="_blank" rel="noopener">查看完整学习诊断</a>
+        </div>
+      `;
+      return;
+    }
+    const message = result?.eligibility?.eligible
+      ? "四次实验已经完成，学习诊断正在后台整理。"
+      : "完成全部四次实验后，这里会显示综合学习诊断。";
+    section.innerHTML = `
+      <h2 class="section-label">四次实验学习诊断</h2>
+      <div class="info-card">
+        <p>${esc(message)}</p>
+        ${result?.eligibility?.eligible ? '<button class="diagnosis-review-retry" type="button">重新整理诊断</button>' : ""}
+      </div>
+    `;
+    section.querySelector(".diagnosis-review-retry")?.addEventListener("click", async (event) => {
+      event.currentTarget.disabled = true;
+      event.currentTarget.textContent = "正在整理...";
+      await window.LearningDiagnosis.requestGeneration();
+      appendLearningDiagnosis();
+      section.remove();
+    });
+  }
+
+  function renderDiagnosisItems(items) {
+    const values = Array.isArray(items) ? items.filter(Boolean).slice(0, 3) : [];
+    return values.length
+      ? `<ul>${values.map((item) => `<li>${esc(item)}</li>`).join("")}</ul>`
+      : "<p>暂时没有足够记录。</p>";
+  }
 
   function buildReviewData(activityType) {
     const activity = integration.resolveReportActivity(activityType, "memory");

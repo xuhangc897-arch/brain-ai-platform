@@ -136,7 +136,8 @@
 }
 
 .memory-partner-suggestion,
-.memory-partner-memory-support {
+.memory-partner-memory-support,
+.memory-partner-diagnosis-ready {
   position: absolute;
   right: 0;
   bottom: calc(100% + 10px);
@@ -160,6 +161,11 @@
   animation: memoryPartnerIn 160ms ease both;
 }
 
+.memory-partner.has-diagnosis-ready .memory-partner-diagnosis-ready {
+  display: block;
+  animation: memoryPartnerIn 160ms ease both;
+}
+
 .memory-partner-suggestion-kicker {
   margin: 0 34px 4px 0;
   color: rgba(147, 211, 255, 0.78);
@@ -169,7 +175,8 @@
 }
 
 .memory-partner-suggestion h2,
-.memory-partner-memory-support h2 {
+.memory-partner-memory-support h2,
+.memory-partner-diagnosis-ready h2 {
   margin: 0 34px 8px 0;
   color: #f5f9ff;
   font-size: 17px;
@@ -177,7 +184,8 @@
 }
 
 .memory-partner-suggestion-message,
-.memory-partner-memory-support-message {
+.memory-partner-memory-support-message,
+.memory-partner-diagnosis-ready-message {
   margin: 0;
   color: rgba(237, 246, 255, 0.84);
   font-size: 14px;
@@ -185,7 +193,8 @@
 }
 
 .memory-partner-suggestion-close,
-.memory-partner-memory-support-close {
+.memory-partner-memory-support-close,
+.memory-partner-diagnosis-ready-close {
   position: absolute;
   top: 10px;
   right: 10px;
@@ -222,13 +231,15 @@
 }
 
 .memory-partner-suggestion-accept,
-.memory-partner-memory-support-accept {
+.memory-partner-memory-support-accept,
+.memory-partner-diagnosis-ready-view {
   background: rgba(70, 148, 211, 0.34);
   color: #fff;
 }
 
 .memory-partner-suggestion-dismiss,
-.memory-partner-memory-support-dismiss {
+.memory-partner-memory-support-dismiss,
+.memory-partner-diagnosis-ready-later {
   background: rgba(255, 255, 255, 0.06);
   color: rgba(237, 246, 255, 0.88);
 }
@@ -238,7 +249,9 @@
 .memory-partner-suggestion-close:hover,
 .memory-partner-suggestion-close:focus-visible,
 .memory-partner-memory-support-close:hover,
-.memory-partner-memory-support-close:focus-visible {
+.memory-partner-memory-support-close:focus-visible,
+.memory-partner-diagnosis-ready-close:hover,
+.memory-partner-diagnosis-ready-close:focus-visible {
   outline: 2px solid rgba(126, 210, 255, 0.75);
   outline-offset: 2px;
 }
@@ -452,6 +465,10 @@
   font: inherit;
   text-align: left;
   transition: background 160ms ease, border-color 160ms ease, transform 160ms ease;
+}
+
+.memory-partner-action[hidden] {
+  display: none;
 }
 
 .memory-partner-action:hover,
@@ -710,6 +727,7 @@ body.has-virtual-agent .voice-title {
   .memory-partner-menu,
   .memory-partner-suggestion,
   .memory-partner-memory-support,
+  .memory-partner-diagnosis-ready,
   .memory-partner-relevance {
     right: 0;
     width: min(318px, calc(100vw - 20px));
@@ -727,6 +745,7 @@ body.has-virtual-agent .voice-title {
   .memory-partner-menu,
   .memory-partner-suggestion,
   .memory-partner-memory-support,
+  .memory-partner-diagnosis-ready,
   .memory-partner-relevance {
     bottom: 0;
   }

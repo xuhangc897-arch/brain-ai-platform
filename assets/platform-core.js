@@ -26,6 +26,8 @@
       checkTaskRelevance: `${HTTP_BASE}/checkTaskRelevance`,
       generateExperimentMemory: `${HTTP_BASE}/generateExperimentMemory`,
       getStudentMemory: `${HTTP_BASE}/getStudentMemory`,
+      generateLearningDiagnosis: `${HTTP_BASE}/generateLearningDiagnosis`,
+      getLearningDiagnosis: `${HTTP_BASE}/getLearningDiagnosis`,
       getExperimentRecords: `${HTTP_BASE}/getExperimentRecords`,
       aiChat: "https://1441391469-6rhud8ln4o.ap-shanghai.tencentscf.com"
     }),
@@ -39,6 +41,7 @@
       taskRelevanceOutbox: "task-relevance-outbox-v1",
       studentMemoryOutbox: "student-memory-generation-outbox-v1",
       studentMemorySupportState: "student-memory-support-state-v1",
+      learningDiagnosisOutbox: "learning-diagnosis-outbox-v1",
       inquiryContext: "science-inquiry-context-v1",
       aiChatLogs: experimentRegistry.get("aiChat").storageKey,
       pretest: experimentRegistry.get("screening").storageKey,
