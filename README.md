@@ -35,6 +35,7 @@ npm run check:dist
 
 - [构建、部署与监控](docs/BUILD_DEPLOY_MONITOR.md)
 - [跨实验结构化学生记忆](docs/STUDENT_MEMORY.md)
+- [四次实验后的学习诊断](docs/LEARNING_DIAGNOSIS.md)
 - [平台契约](docs/PLATFORM_CONTRACTS.md)
 - [实验注册表](docs/EXPERIMENT_REGISTRY.md)
 - [实验页面迁移](docs/EXPERIMENT_PAGE_MIGRATION.md)

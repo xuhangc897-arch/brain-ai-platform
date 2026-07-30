@@ -217,7 +217,7 @@
       font-size: 20px;
     }
 
-    pre {
+    .detail-content {
       margin: 0;
       padding: 20px;
       max-height: 62vh;
@@ -226,6 +226,35 @@
       word-break: break-word;
       background: #fbfcff;
       color: #26364f;
+    }
+
+    .detail-content h3 {
+      margin: 22px 0 8px;
+      white-space: normal;
+    }
+
+    .detail-content p,
+    .detail-content li {
+      line-height: 1.7;
+      white-space: normal;
+    }
+
+    .diagnosis-disclaimer {
+      padding: 12px 14px;
+      border: 1px solid #e9c46a;
+      border-radius: 12px;
+      background: #fff8e8;
+      color: #6f4a00;
+      white-space: normal;
+    }
+
+    .history-option {
+      display: inline-flex;
+      align-items: center;
+      gap: 6px;
+      color: var(--muted);
+      font-size: 14px;
+      font-weight: 700;
     }
 
     @media (max-width: 860px) {
@@ -245,7 +274,7 @@
       <div class="header">
         <div>
           <h1>实验数据后台</h1>
-          <p class="intro">查看学生自动上传到 CloudBase 的实验记录（当前为临时免登录维护模式）。</p>
+          <p class="intro">查看学生实验记录、结构化学习记忆和四次实验后的学习诊断。</p>
         </div>
         <a class="btn secondary" href="../index.html">返回首页</a>
       </div>
@@ -299,6 +328,8 @@
       <div class="actions">
         <button class="btn" id="queryBtn" type="button">查询记录</button>
         <button class="btn secondary" id="memoryBtn" type="button">学习记忆</button>
+        <button class="btn secondary" id="diagnosisBtn" type="button">学习诊断</button>
+        <label class="history-option"><input id="diagnosisHistory" type="checkbox">诊断全部历史版本</label>
         <button class="btn secondary" id="resetBtn" type="button">清空筛选</button>
         <button class="btn secondary" id="exportBtn" type="button">导出 Excel</button>
       </div>
@@ -316,7 +347,7 @@
       <h2>记录详情</h2>
       <button class="btn secondary" id="closeDialogBtn" type="button">关闭</button>
     </div>
-    <pre id="detailContent"></pre>
+    <div class="detail-content" id="detailContent"></div>
   </dialog>
 
   <script src="https://static.cloudbase.net/cloudbase-js-sdk/3.0.0/cloudbase.full.js"></script>
@@ -340,6 +371,8 @@
     const tableWrap = document.getElementById("tableWrap");
     const queryBtn = document.getElementById("queryBtn");
     const memoryBtn = document.getElementById("memoryBtn");
+    const diagnosisBtn = document.getElementById("diagnosisBtn");
+    const diagnosisHistory = document.getElementById("diagnosisHistory");
     const resetBtn = document.getElementById("resetBtn");
     const exportBtn = document.getElementById("exportBtn");
     const detailDialog = document.getElementById("detailDialog");
@@ -646,6 +679,98 @@
           detailDialog.showModal();
         });
       });
+    }
+
+    async function loadDiagnosisRecords() {
+      if (!isLoggedIn) return;
+      diagnosisBtn.disabled = true;
+      setStatus("正在读取学习诊断...");
+      try {
+        const response = await window.app.callFunction({
+          name: "getLearningDiagnosesAdmin",
+          data: {
+            studentId: filters.studentId.value.trim(),
+            className: filters.className.value.trim(),
+            latestOnly: !diagnosisHistory.checked,
+            limit: Number(filters.limit.value) || 100
+          }
+        });
+        const result = response && (response.result || response);
+        if (!result || !result.ok) throw new Error((result && result.message) || "读取学习诊断失败");
+        records = Array.isArray(result.records) ? result.records : [];
+        renderDiagnosisTable();
+        setStatus(`已读取 ${records.length} 条学习诊断。`);
+      } catch (error) {
+        records = [];
+        renderDiagnosisTable();
+        setStatus(error.message || "读取学习诊断失败。");
+      } finally {
+        diagnosisBtn.disabled = false;
+      }
+    }
+
+    function renderDiagnosisTable() {
+      if (!records.length) {
+        tableWrap.innerHTML = '<div class="empty">暂无学习诊断</div>';
+        return;
+      }
+      tableWrap.innerHTML = '<table><thead><tr><th>学生</th><th>班级</th><th>版本</th><th>完成实验</th><th>生成时间</th><th>操作</th></tr></thead><tbody>' +
+        records.map((record, index) => '<tr><td>' + escapeHtml(record.studentName || record.studentId) +
+          '</td><td>' + escapeHtml(record.className || "") +
+          '</td><td>第 ' + escapeHtml(record.diagnosisVersion || 1) + ' 版' +
+          '</td><td>' + escapeHtml(Array.isArray(record.completedExperiments) ? record.completedExperiments.length : 0) + ' / 4' +
+          '</td><td>' + escapeHtml(formatDate(record.generatedAt)) +
+          '</td><td><button class="btn secondary" type="button" data-diagnosis-detail="' + index + '">查看诊断</button></td></tr>').join("") +
+        '</tbody></table>';
+      tableWrap.querySelectorAll("[data-diagnosis-detail]").forEach((button) => {
+        button.addEventListener("click", () => showDiagnosisDetail(Number(button.dataset.diagnosisDetail)));
+      });
+    }
+
+    function renderTextList(items) {
+      const values = Array.isArray(items) ? items.filter(Boolean) : [];
+      return values.length
+        ? '<ul>' + values.map((item) => '<li>' + escapeHtml(typeof item === "string" ? item : item.action || item.summary || JSON.stringify(item)) + '</li>').join("") + '</ul>'
+        : '<p>暂无记录</p>';
+    }
+
+    function showDiagnosisDetail(index) {
+      const record = records[index] || {};
+      const report = record.teacherReport || {};
+      const dimensionLabels = {
+        memory_knowledge: "记忆知识理解",
+        scientific_inquiry: "科学探究能力",
+        evidence_use: "证据使用能力",
+        metacognitive_regulation: "元认知调节",
+        tool_use: "AI与语音工具使用"
+      };
+      const levelLabels = {
+        consistent: "表现较稳定",
+        developing: "正在发展",
+        support_recommended: "建议继续练习",
+        insufficient_data: "数据不足"
+      };
+      detailContent.innerHTML =
+        '<h2>' + escapeHtml(record.studentName || record.studentId) + ' · 第 ' + escapeHtml(record.diagnosisVersion || 1) + ' 版</h2>' +
+        '<p class="diagnosis-disclaimer">' + escapeHtml(report.disclaimer || "本诊断仅基于本平台中的学习过程和任务表现，用于教学支持，不构成心理或医学诊断。") + '</p>' +
+        '<h3>四次实验完成情况</h3><p>' + escapeHtml(report.completionSummary || "") + '</p>' +
+        '<h3>各维度表现</h3>' +
+        (record.dimensions || []).map((item) =>
+          '<section><h4>' + escapeHtml(dimensionLabels[item.dimensionId] || item.dimensionId) + ' · ' +
+          escapeHtml(levelLabels[item.level] || item.level) + '</h4>' +
+          renderTextList((item.evidence || []).map((entry) => entry.summary)) +
+          '<p><strong>变化：</strong>' + escapeHtml(item.progress && item.progress.summary || "") + '</p>' +
+          '<p><strong>建议：</strong>' + escapeHtml(item.suggestion || "") + '</p></section>'
+        ).join("") +
+        '<h3>过程数据摘要</h3><p>' + escapeHtml(report.processSummary || "") + '</p>' +
+        '<h3>干预次数与响应</h3><p>' + escapeHtml(report.interventionSummary || "") + '</p>' +
+        '<h3>AI与语音使用</h3><p>' + escapeHtml(report.toolUsageSummary || "") + '</p>' +
+        '<h3>四次实验中的变化</h3><p>' + escapeHtml(report.changeSummary || "") + '</p>' +
+        '<h3>系统生成建议</h3>' + renderTextList(report.recommendations) +
+        '<h3>诊断数据来源</h3><p>实验记忆版本：' + escapeHtml(JSON.stringify(record.sourceMemoryVersions || {})) + '</p>' +
+        '<p>来源记录 ID：' + escapeHtml((record.sourceRecordIds || []).join("、")) + '</p>' +
+        '<details><summary>查看客观指标</summary><pre>' + escapeHtml(JSON.stringify(record.objectiveMetrics || {}, null, 2)) + '</pre></details>';
+      detailDialog.showModal();
     }
 
     function getRecordDetailCount(record) {
@@ -1704,6 +1829,7 @@
 
     queryBtn.addEventListener("click", loadRecords);
     memoryBtn.addEventListener("click", loadMemoryRecords);
+    diagnosisBtn.addEventListener("click", loadDiagnosisRecords);
     exportBtn.addEventListener("click", exportExcel);
     resetBtn.addEventListener("click", () => {
       filters.studentId.value = "";

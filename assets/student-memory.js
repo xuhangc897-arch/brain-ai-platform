@@ -92,6 +92,15 @@
         const result = await post(global.BrainPlatform.config.endpoints.generateExperimentMemory, {
           experimentId: entry.experimentId
         });
+        if (result.ok && global.document && typeof global.CustomEvent === "function") {
+          global.document.dispatchEvent(new CustomEvent("student-memory:generated", {
+            detail: {
+              experimentId: entry.experimentId,
+              operation: result.operation || "",
+              version: result.version || 0
+            }
+          }));
+        }
         if (!result.ok && result.retryable) {
           remaining.push({ ...entry, attempts: Number(entry.attempts || 0) + 1 });
         }

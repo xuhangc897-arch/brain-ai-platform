@@ -18,6 +18,7 @@ const rootFiles = [
   "strategies.html",
   "poster.html",
   "review.html",
+  "diagnosis.html",
   "auth.js",
   "cloudbase.js"
 ];

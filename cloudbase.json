@@ -55,6 +55,21 @@
       "runtime": "Nodejs20.19"
     },
     {
+      "name": "generateLearningDiagnosis",
+      "timeout": 60,
+      "runtime": "Nodejs20.19"
+    },
+    {
+      "name": "getLearningDiagnosis",
+      "timeout": 60,
+      "runtime": "Nodejs20.19"
+    },
+    {
+      "name": "getLearningDiagnosesAdmin",
+      "timeout": 60,
+      "runtime": "Nodejs20.19"
+    },
+    {
       "name": "getExperimentRecords",
       "timeout": 60,
       "runtime": "Nodejs16.13"

@@ -2880,6 +2880,7 @@
   <script src="assets/typing-support.js"></script>
   <script src="assets/task-relevance.js"></script>
   <script src="assets/student-memory.js"></script>
+  <script src="assets/learning-diagnosis.js"></script>
   <script>
     if (window.LearningBehaviorTracker) {
       window.LearningBehaviorTracker.init({ experimentId: "memory" });
@@ -2904,6 +2905,9 @@
         experimentId: "memory",
         getLearningState: () => ({ steps, currentStepIndex: state.currentStep, maxUnlockedStep: state.maxUnlockedStep })
       });
+    }
+    if (window.LearningDiagnosis) {
+      window.LearningDiagnosis.init({ experimentId: "memory" });
     }
   </script>
 </body>
