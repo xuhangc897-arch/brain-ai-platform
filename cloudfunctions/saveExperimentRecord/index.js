@@ -239,9 +239,30 @@ exports.main = async (event) => {
     };
   }
 
+  let verifiedStudent;
+  try {
+    verifiedStudent = await findStudent(session.studentId);
+  } catch (error) {
+    return {
+      ok: false,
+      code: "STUDENT_LOOKUP_FAILED",
+      message: "学生身份核验暂时失败",
+      retryable: true,
+      results: []
+    };
+  }
+  if (!verifiedStudent) {
+    return {
+      ok: false,
+      code: "UNKNOWN_STUDENT",
+      message: "未找到有效学生账号",
+      retryable: false,
+      results: []
+    };
+  }
+
   const ids = [];
   const results = [];
-  const studentCache = new Map();
   let inserted = 0;
   let skipped = 0;
   let failed = 0;
@@ -283,19 +304,13 @@ exports.main = async (event) => {
         continue;
       }
 
-      let student = studentCache.get(studentId);
-      if (student === undefined) {
-        student = await findStudent(studentId);
-        studentCache.set(studentId, student || null);
-      }
-
       const document = buildRecordDocument({
         sourceSchemaVersion,
         recordId,
         module,
         recordType,
         record,
-        student
+        student: verifiedStudent
       });
       const result = await recordsCollection.doc(recordId).set(document);
 

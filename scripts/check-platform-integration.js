@@ -299,17 +299,21 @@ async function main() {
     serverDate: () => ({ serverDate: true }),
     collection(name) {
       if (name === "students") {
+        let studentCondition = {};
         return {
-          where() { return this; },
+          where(nextCondition) {
+            studentCondition = nextCondition;
+            return this;
+          },
           limit() { return this; },
           async get() {
             return {
-              data: [{
+              data: studentCondition.studentId === "S001" ? [{
                 studentId: "S001",
                 name: "测试学生",
                 class: "七年级",
                 group: "第一组"
-              }]
+              }] : []
             };
           }
         };
@@ -362,6 +366,17 @@ async function main() {
   assert.strictEqual(savedDocument.owner.studentId, "S001");
   assert.strictEqual(savedDocument.activity.module, "memory");
   assert.strictEqual(savedDocument.studentId, "S001");
+
+  const unknownStudentPayload = JSON.parse(JSON.stringify(uploadPayload));
+  unknownStudentPayload.records[0].studentId = "S999";
+  unknownStudentPayload.records[0].clientRecordId = "unknown-student-record";
+  const unknownStudent = await rawSaveMain(authenticatedEvent(
+    unknownStudentPayload,
+    "S999"
+  ));
+  assert.strictEqual(unknownStudent.ok, false);
+  assert.strictEqual(unknownStudent.code, "UNKNOWN_STUDENT");
+  assert.strictEqual(savedDocuments.size, 1);
 
   const duplicate = await saveFunction.main(uploadPayload);
   assert.strictEqual(duplicate.ok, true);

@@ -45,7 +45,7 @@
 | `getLearningDiagnosis` | 返回当前学生的资格与学生报告 | 学生签名令牌 |
 | `getExperimentRecords`、`getStudentMemoriesAdmin`、`getLearningDiagnosesAdmin` | 教师端受保护查询 | CloudBase Auth UID + `teachers` 白名单 |
 
-所有学生写接口都从签名令牌确定 `studentId`。请求体中的学号只能与令牌一致，不能用于切换数据归属。服务端还会核验 `students` 集合中的正式学生记录。
+所有学生写接口都从签名令牌确定 `studentId`。请求体中的学号只能与令牌一致，不能用于切换数据归属。服务端还会核验 `students` 集合中的正式学生记录；账号不存在或已移除时停止写入。
 
 ## 4. 集合与关键数据
 
@@ -162,4 +162,3 @@ studentId
 - AI 与 ASR 对外端点还需要在部署侧配置来源限制、速率限制、预算告警和日志保留策略。
 - 本地去重状态在清除浏览器数据或更换设备后不会保留；跨设备严格去重以服务端确定性记录为准。
 - 诊断是教学支持信息，不构成心理或医学诊断。
-
