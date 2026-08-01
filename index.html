@@ -3742,7 +3742,9 @@
      * 页面加载后先检查学生本地会话；未登录会自动跳转 login.html。
      * 这里不改动实验入口逻辑，只是在进入首页前增加登录门禁。
      */
-    const CONTEXT_KEY = window.BrainPlatform.config.storageKeys.inquiryContext;
+    const CONTEXT_KEY = window.BrainPlatform.storage.migrateScopedJson(
+      window.BrainPlatform.config.storageKeys.inquiryContext
+    );
     const studentNameInput = document.getElementById("studentName");
     const studentInput = document.getElementById("studentId");
     const groupInput = document.getElementById("groupId");

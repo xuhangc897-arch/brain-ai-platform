@@ -3,6 +3,12 @@
 const assert = require("assert");
 const path = require("path");
 const Module = require("module");
+const {
+  TEST_STUDENT_SESSION_SECRET,
+  authenticatedEvent
+} = require("./test-student-session");
+
+process.env.STUDENT_SESSION_SECRET = TEST_STUDENT_SESSION_SECRET;
 
 const documents = new Map();
 let serverTick = 0;
@@ -70,6 +76,8 @@ Module._load = function (request, parent, isMain) {
 };
 const handler = require(path.join("..", "cloudfunctions", "saveAgentIntervention", "index.js"));
 Module._load = originalLoad;
+const rawMain = handler.main;
+handler.main = (payload) => rawMain(authenticatedEvent(payload));
 
 function intervention(overrides) {
   return Object.assign({
@@ -107,7 +115,16 @@ function intervention(overrides) {
     schemaVersion: 1,
     intervention: intervention({ studentId: "S404" })
   });
-  assert.strictEqual(unknownStudent.code, "STUDENT_NOT_FOUND");
+  assert.strictEqual(unknownStudent.code, "STUDENT_MISMATCH");
+
+  const unauthenticated = await rawMain({ schemaVersion: 1, intervention: intervention() });
+  assert.strictEqual(unauthenticated.code, "UNAUTHORIZED");
+
+  const crossStudent = await rawMain(authenticatedEvent(
+    { schemaVersion: 1, intervention: intervention({ studentId: "S002" }) },
+    "S001"
+  ));
+  assert.strictEqual(crossStudent.code, "STUDENT_MISMATCH");
 
   const created = await handler.main({ schemaVersion: 1, intervention: intervention() });
   assert.strictEqual(created.ok, true);

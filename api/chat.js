@@ -24,10 +24,6 @@ function parseBody(req) {
 
 function buildContext(body, question) {
   const lines = [
-    `学生姓名：${clean(body.studentName, 80) || "未填写"}`,
-    `学生年龄：${clean(body.studentAge, 20) || "未填写"}`,
-    `学生编号：${clean(body.studentId, 80) || "未填写"}`,
-    `小组编号：${clean(body.groupId, 80) || "未填写"}`,
     `当前页面：${clean(body.pageTitle) || "未知"}`,
     `当前实验/模块：${clean(body.experimentName) || "未知"}`,
     `当前阶段：${clean(body.currentStep) || "未知"}`,

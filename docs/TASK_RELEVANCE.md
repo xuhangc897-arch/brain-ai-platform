@@ -23,7 +23,7 @@ TaskRelevance.init({ experimentId });
 
 ## `checkTaskRelevance` 接口
 
-请求必须包含正式学生会话中的 `studentId`，并同时发送 `experimentId`、`stageId` 和 `taskId`。同名任务在不同实验中不会混用。
+请求必须携带正式学生签名会话的 `Authorization: Bearer <token>`，并同时发送 `studentId`、`experimentId`、`stageId` 和 `taskId`。服务端从令牌确定学生身份并拒绝请求体学号不一致的请求；同名任务在不同实验中不会混用。
 
 ```javascript
 { action: "check", studentId, experimentId, stageId, taskId, inputText, trigger, pageId }
@@ -57,7 +57,7 @@ AI 输出严格校验为：
 部署顺序：
 
 1. 确认 `agent_interventions` 禁止 Web 客户端直接读写，并为 `studentId + updatedAt`、`studentId + experimentId + stageId` 建立复合索引。
-2. 为 `checkTaskRelevance` 配置 `OPENAI_API_KEY`，部署并验证云函数。
+2. 为 `checkTaskRelevance` 配置 `OPENAI_API_KEY` 以及与 `studentLogin` 完全相同的 `STUDENT_SESSION_SECRET`，部署并验证云函数；HTTP 网关必须允许 `Authorization` 请求头。
 3. 发布静态资源。
 4. 使用正式测试学生验证创建、同文去重、修改更新和最终提交。
 

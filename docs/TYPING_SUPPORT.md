@@ -42,7 +42,7 @@
 2. 创建复合索引：
    - `studentId` 升序 + `updatedAt` 降序；
    - `studentId` 升序 + `experimentId` 升序 + `stageId` 升序。
-3. 部署 `saveAgentIntervention` 云函数。
+3. 为 `saveAgentIntervention` 配置与 `studentLogin` 完全相同的 `STUDENT_SESSION_SECRET`，并部署云函数；HTTP 网关必须允许 `Authorization` 请求头。
 4. 发布静态资源，用正式学生账号分别验证 accepted、dismissed、ignored 和语音成功更新。
 
 云函数以学生、实验、环节、任务和干预类型生成确定性文档 ID，并通过 `students` 集合核验身份。响应按 `accepted > dismissed > ignored` 合并，避免延迟请求把已接受状态降级；语音成功标记只会从 false 升为 true。

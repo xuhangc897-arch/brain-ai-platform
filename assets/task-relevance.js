@@ -27,7 +27,9 @@
     if (!session || session.isGuest || session.role === "guest" || !studentId || studentId === "guest") {
       return null;
     }
-    return { studentId };
+    const sessionToken = String(session.sessionToken || "").trim();
+    if (!sessionToken) return null;
+    return { studentId, sessionToken };
   }
 
   function normalizeText(value) {
@@ -172,9 +174,18 @@
   }
 
   async function request(payload, keepalive) {
+    const student = identity();
+    if (!student || student.studentId !== payload.studentId) {
+      const error = new Error("Student session is unavailable.");
+      error.retryable = true;
+      throw error;
+    }
     const response = await global.fetch(global.BrainPlatform.config.endpoints.checkTaskRelevance, {
       method: "POST",
-      headers: { "Content-Type": "application/json" },
+      headers: {
+        "Content-Type": "application/json",
+        Authorization: `Bearer ${student.sessionToken}`
+      },
       body: JSON.stringify(payload),
       keepalive: Boolean(keepalive)
     });

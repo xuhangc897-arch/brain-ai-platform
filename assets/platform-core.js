@@ -124,6 +124,37 @@
     global.localStorage.removeItem(config.storageKeys.studentSession);
   }
 
+  function getStorageOwner(value) {
+    const session = value === undefined ? readStudentSession() : normalizeStudentSession(value);
+    if (!session) return "anonymous";
+    if (session.isGuest) return "guest";
+    return session.studentId ? `student:${session.studentId}` : "anonymous";
+  }
+
+  function scopedStorageKey(baseKey, value) {
+    const key = normalizeText(baseKey);
+    if (!key) throw new Error("Storage key is required.");
+    return `${key}::${encodeURIComponent(getStorageOwner(value))}`;
+  }
+
+  function migrateScopedJson(baseKey, value) {
+    const scopedKey = scopedStorageKey(baseKey, value);
+    if (global.localStorage.getItem(scopedKey) != null) return scopedKey;
+    const session = value === undefined ? readStudentSession() : normalizeStudentSession(value);
+    if (!session) return scopedKey;
+    try {
+      const legacy = JSON.parse(global.localStorage.getItem(baseKey) || "null");
+      const legacyStudentId = normalizeText(legacy && legacy.studentId);
+      const currentStudentId = session.isGuest ? "guest" : session.studentId;
+      if (legacy && legacyStudentId && legacyStudentId === currentStudentId) {
+        global.localStorage.setItem(scopedKey, JSON.stringify(legacy));
+      }
+    } catch (error) {
+      // Invalid legacy data is ignored instead of assigning it to another account.
+    }
+    return scopedKey;
+  }
+
   function isGuestSession(value) {
     const session = value === undefined ? readStudentSession() : normalizeStudentSession(value);
     return Boolean(session && session.isGuest);
@@ -222,6 +253,11 @@
       clearStudentSession,
       isGuestSession,
       getStudentIdentityFields
+    }),
+    storage: Object.freeze({
+      getOwner: getStorageOwner,
+      scopedKey: scopedStorageKey,
+      migrateScopedJson
     }),
     records: Object.freeze({
       buildClientRecordId,

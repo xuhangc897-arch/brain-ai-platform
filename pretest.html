@@ -402,9 +402,15 @@
   <script src="assets/experiment-integration.js"></script>
   <script>
     const currentStudent = checkLogin();
-    const CONTEXT_KEY = window.BrainPlatform.config.storageKeys.inquiryContext;
-    const PRETEST_KEY = window.BrainPlatform.config.storageKeys.pretest;
-    const QUALIFICATION_KEY = window.BrainPlatform.config.storageKeys.qualification;
+    const CONTEXT_KEY = window.BrainPlatform.storage.migrateScopedJson(
+      window.BrainPlatform.config.storageKeys.inquiryContext
+    );
+    const PRETEST_KEY = window.BrainPlatform.storage.migrateScopedJson(
+      window.BrainPlatform.config.storageKeys.pretest
+    );
+    const QUALIFICATION_KEY = window.BrainPlatform.storage.migrateScopedJson(
+      window.BrainPlatform.config.storageKeys.qualification
+    );
     const knowledgeBank = window.BrainKnowledgeQuestionBank;
     const KNOWLEDGE_PAGE_SIZE = 10;
 

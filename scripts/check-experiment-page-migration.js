@@ -26,8 +26,15 @@ function createStorage(initial = {}) {
 }
 
 function createRuntime(initialStorage = {}) {
+  const scopedInitialStorage = Object.assign({
+    studentSession: JSON.stringify({
+      studentId: "LOGIN-001",
+      name: "登录学生",
+      sessionToken: "test-token"
+    })
+  }, initialStorage);
   const window = {
-    localStorage: createStorage(initialStorage),
+    localStorage: createStorage(scopedInitialStorage),
     getStudentIdentityFields() {
       return {
         studentId: "LOGIN-001",
@@ -54,14 +61,17 @@ function mergeState(base, incoming) {
 
 const memoryKey = "memory-capacity-state-v1";
 const contextKey = "science-inquiry-context-v1";
+const scopedSuffix = "::student%3ALOGIN-001";
+const memoryScopedKey = `${memoryKey}${scopedSuffix}`;
+const contextScopedKey = `${contextKey}${scopedSuffix}`;
 const validWindow = createRuntime({
   [memoryKey]: JSON.stringify({
     currentStep: 2,
-    studentId: "SAVED-001",
+    studentId: "LOGIN-001",
     fields: { answer: "历史答案" }
   }),
   [contextKey]: JSON.stringify({
-    studentId: "CONTEXT-001",
+    studentId: "LOGIN-001",
     studentName: "上下文学生",
     groupId: "上下文小组"
   })
@@ -84,8 +94,8 @@ const loaded = memoryRuntime.loadState({
   }
 });
 
-assert.strictEqual(memoryRuntime.storageKey, memoryKey);
-assert.strictEqual(memoryRuntime.contextKey, contextKey);
+assert.strictEqual(memoryRuntime.storageKey, memoryScopedKey);
+assert.strictEqual(memoryRuntime.contextKey, contextScopedKey);
 assert.strictEqual(loaded.currentStep, 2);
 assert.strictEqual(loaded.fields.answer, "历史答案");
 assert.strictEqual(loaded.fields.untouched, "默认值");
@@ -96,8 +106,8 @@ assert.strictEqual(loaded.className, "七年级一班");
 assert.strictEqual(loaded.groupName, "第一组");
 
 const brokenStateWindow = createRuntime({
-  [memoryKey]: "{broken",
-  [contextKey]: JSON.stringify({ groupId: "保留上下文" })
+  [memoryScopedKey]: "{broken",
+  [contextKey]: JSON.stringify({ studentId: "LOGIN-001", groupId: "保留上下文" })
 });
 const recovered = brokenStateWindow.BrainExperimentPageRuntime.create("memory").loadState({
   defaultState,
@@ -106,27 +116,27 @@ const recovered = brokenStateWindow.BrainExperimentPageRuntime.create("memory").
     state.groupId = inquiryContext.groupId;
   }
 });
-assert.strictEqual(brokenStateWindow.localStorage.getItem(memoryKey), null);
+assert.strictEqual(brokenStateWindow.localStorage.getItem(memoryScopedKey), null);
 assert.strictEqual(recovered.groupId, "保留上下文");
 assert.strictEqual(recovered.studentId, "LOGIN-001");
 
 const brokenContextWindow = createRuntime({
-  [memoryKey]: JSON.stringify({ currentStep: 3 }),
-  [contextKey]: "{broken"
+  [memoryScopedKey]: JSON.stringify({ currentStep: 3 }),
+  [contextScopedKey]: "{broken"
 });
 const recoveredContext = brokenContextWindow.BrainExperimentPageRuntime.create("memory").loadState({
   defaultState,
   mergeState,
   applyContext() {}
 });
-assert.strictEqual(brokenContextWindow.localStorage.getItem(contextKey), null);
+assert.strictEqual(brokenContextWindow.localStorage.getItem(contextScopedKey), null);
 assert.strictEqual(recoveredContext.currentStep, 3);
 assert.strictEqual(recoveredContext.studentId, "LOGIN-001");
 
 const nbackKey = "nback-inquiry-state-v1";
 const fallbackWindow = createRuntime({
-  [nbackKey]: JSON.stringify({ currentStep: 4 }),
-  [contextKey]: "{broken"
+  [`${nbackKey}${scopedSuffix}`]: JSON.stringify({ currentStep: 4 }),
+  [contextScopedKey]: "{broken"
 });
 const fallbackDefault = {
   currentStep: 0,
@@ -139,7 +149,7 @@ const fallback = fallbackWindow.BrainExperimentPageRuntime.create("nback").loadS
   errorMode: "fallback",
   applyContext() {}
 });
-assert.strictEqual(fallbackWindow.localStorage.getItem(contextKey), "{broken");
+assert.strictEqual(fallbackWindow.localStorage.getItem(contextScopedKey), "{broken");
 assert.deepStrictEqual(fallback, fallbackDefault);
 assert.notStrictEqual(fallback, fallbackDefault);
 assert.strictEqual(fallback.studentId, "");
@@ -154,7 +164,7 @@ saveWindow.BrainExperimentPageRuntime.create("poster").saveState(savedState, {
     savedState.fields.synced = true;
   }
 });
-const persisted = JSON.parse(saveWindow.localStorage.getItem("poster-making-state-v1"));
+const persisted = JSON.parse(saveWindow.localStorage.getItem(`poster-making-state-v1${scopedSuffix}`));
 assert.strictEqual(persisted.fields.synced, true);
 assert.strictEqual(persisted.studentId, "LOGIN-001");
 assert.strictEqual(persisted.studentName, "登录学生");

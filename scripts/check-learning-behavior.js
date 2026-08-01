@@ -108,7 +108,8 @@ assert(platform.includes("learning-behavior-outbox-v1"), "outbox key missing");
   let session = {
     role: "student",
     isGuest: false,
-    studentId: "S001"
+    studentId: "S001",
+    sessionToken: "signed-session-token"
   };
   let fetchShouldFail = false;
   const fakeDocument = {
@@ -157,7 +158,10 @@ assert(platform.includes("learning-behavior-outbox-v1"), "outbox key missing");
       identity: { readStudentSession: () => session }
     },
     async fetch(url, options) {
-      requests.push(JSON.parse(options.body));
+      requests.push({
+        payload: JSON.parse(options.body),
+        authorization: options.headers.Authorization
+      });
       if (fetchShouldFail) throw new Error("offline");
       return { ok: true, async json() { return { ok: true }; } };
     }
@@ -205,6 +209,7 @@ assert(platform.includes("learning-behavior-outbox-v1"), "outbox key missing");
   dispatch("focusout", question);
   await new Promise((resolve) => setTimeout(resolve, 0));
   assert(storage.get("learning-behavior-outbox-v1"), "offline summary must remain in the outbox");
+  assert(requests.every((request) => request.authorization === "Bearer signed-session-token"));
 
   await behaviorSandbox.LearningBehaviorTracker.markStageSubmitted("question");
   summary = behaviorSandbox.LearningBehaviorTracker.getDebugSummary()

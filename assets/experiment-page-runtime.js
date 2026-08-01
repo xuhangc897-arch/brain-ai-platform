@@ -21,8 +21,8 @@
       throw new Error(`未知实验页面模块：${moduleId}`);
     }
 
-    const storageKey = experiment.storageKey;
-    const contextKey = platform.config.storageKeys.inquiryContext;
+    const storageKey = platform.storage.migrateScopedJson(experiment.storageKey);
+    const contextKey = platform.storage.migrateScopedJson(platform.config.storageKeys.inquiryContext);
 
     function loadRecoveredState(options) {
       let saved = null;
