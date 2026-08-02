@@ -598,9 +598,9 @@
       top: 51%;
       left: 50%;
       z-index: 4;
-      width: min(1100px, calc(100% - 28px));
+      width: min(980px, calc(100% - 150px));
       height: clamp(330px, 58vh, 500px);
-      overflow: hidden;
+      overflow: visible;
       perspective: 1500px;
       transform: translate(-50%, -50%);
       touch-action: pan-y;
@@ -610,7 +610,7 @@
       position: absolute;
       top: 50%;
       left: 50%;
-      width: clamp(220px, 24vw, 330px);
+      width: clamp(210px, 21vw, 290px);
       padding: 0;
       overflow: visible;
       border: 1px solid rgba(255, 222, 159, 0.48);
@@ -697,6 +697,7 @@
     .case-card img {
       display: block;
       width: 100%;
+      height: auto;
       aspect-ratio: 1;
       border-radius: 19px 19px 0 0;
       object-fit: cover;
@@ -736,28 +737,35 @@
       white-space: nowrap;
     }
 
-    .case-carousel-controls {
-      position: absolute;
-      left: 50%;
-      bottom: clamp(45px, 7vh, 76px);
-      z-index: 6;
-      display: flex;
-      align-items: center;
-      gap: 14px;
-      transform: translateX(-50%);
-    }
-
     .case-carousel-button {
-      min-height: 40px;
-      padding: 0 17px;
+      position: absolute;
+      top: 52%;
+      z-index: 7;
+      display: grid;
+      width: clamp(48px, 4.5vw, 64px);
+      height: clamp(48px, 4.5vw, 64px);
+      padding: 0;
       border: 1px solid rgba(255, 225, 172, 0.28);
-      border-radius: 999px;
+      border-radius: 50%;
+      place-items: center;
       color: rgba(255, 238, 204, 0.82);
       background: rgba(10, 8, 6, 0.52);
       -webkit-backdrop-filter: blur(9px);
       backdrop-filter: blur(9px);
       cursor: pointer;
+      font-family: Georgia, "Times New Roman", serif;
+      font-size: clamp(24px, 2.2vw, 34px);
+      line-height: 1;
+      transform: translateY(-50%);
       transition: border-color 180ms ease, background 180ms ease, transform 180ms ease;
+    }
+
+    .case-carousel-button--prev {
+      left: clamp(18px, 4vw, 64px);
+    }
+
+    .case-carousel-button--next {
+      right: clamp(18px, 4vw, 64px);
     }
 
     .case-carousel-button:hover,
@@ -765,11 +773,13 @@
       border-color: rgba(255, 225, 172, 0.7);
       background: rgba(55, 37, 21, 0.7);
       outline: none;
-      transform: translateY(-2px);
+      transform: translateY(-50%) scale(1.08);
     }
 
     .case-position {
+      display: block;
       min-width: 62px;
+      margin-top: 11px;
       color: rgba(255, 228, 180, 0.68);
       font-family: Georgia, "Times New Roman", serif;
       font-size: 11px;
@@ -1083,7 +1093,7 @@
 
       .case-deck {
         top: 50%;
-        width: 100%;
+        width: calc(100% - 74px);
         height: min(530px, 68vh);
       }
 
@@ -1096,15 +1106,19 @@
         transform: translate(-50%, calc(-50% - 8px)) scale(1.045);
       }
 
-      .case-carousel-controls {
-        bottom: 42px;
-        gap: 8px;
+      .case-carousel-button {
+        top: 52%;
+        width: 42px;
+        height: 42px;
+        font-size: 23px;
       }
 
-      .case-carousel-button {
-        min-height: 38px;
-        padding: 0 13px;
-        font-size: 12px;
+      .case-carousel-button--prev {
+        left: 8px;
+      }
+
+      .case-carousel-button--next {
+        right: 8px;
       }
 
       .nav-instruction {
@@ -1222,38 +1236,36 @@
       <header class="case-select-header">
         <p>Evidence archive · Select a case</p>
         <h2>选择你的调查案件</h2>
+        <output class="case-position" id="casePosition" aria-live="polite">01 / 06</output>
       </header>
       <div class="case-deck" aria-label="案件列表">
         <button class="case-card" type="button" data-case-label="侦探资格审查" data-case-route="pretest.html">
-          <img src="assets/new-frontpage/资格审查-web.webp" alt="侦探资格审查案件封面" width="720" height="720" loading="lazy" decoding="async" />
+          <img src="assets/new-frontpage/资格审查-web.webp" alt="侦探资格审查案件封面" loading="lazy" decoding="async" />
           <span class="case-card-label"><span>PRELUDE</span><strong>资格审查</strong></span>
         </button>
         <button class="case-card" type="button" data-case-label="CASE 01：记忆容量调查" data-case-route="memory.html">
-          <img src="assets/new-frontpage/实验一-web.webp" alt="CASE 01 记忆容量调查案件封面" width="720" height="720" loading="lazy" decoding="async" />
+          <img src="assets/new-frontpage/实验一-web.webp" alt="CASE 01 记忆容量调查案件封面" loading="lazy" decoding="async" />
           <span class="case-card-label"><span>CASE 01</span><strong>记忆容量调查</strong></span>
         </button>
         <button class="case-card" type="button" data-case-label="CASE 02：工作记忆追踪" data-case-route="nback.html">
-          <img src="assets/new-frontpage/实验二-web.webp" alt="CASE 02 工作记忆追踪案件封面" width="720" height="720" loading="lazy" decoding="async" />
+          <img src="assets/new-frontpage/实验二-web.webp" alt="CASE 02 工作记忆追踪案件封面" loading="lazy" decoding="async" />
           <span class="case-card-label"><span>CASE 02</span><strong>工作记忆追踪</strong></span>
         </button>
         <button class="case-card" type="button" data-case-label="CASE 03：遗忘元凶调查" data-case-route="interference.html">
-          <img src="assets/new-frontpage/实验三-web.webp" alt="CASE 03 遗忘元凶调查案件封面" width="720" height="720" loading="lazy" decoding="async" />
+          <img src="assets/new-frontpage/实验三-web.webp" alt="CASE 03 遗忘元凶调查案件封面" loading="lazy" decoding="async" />
           <span class="case-card-label"><span>CASE 03</span><strong>遗忘元凶调查</strong></span>
         </button>
         <button class="case-card" type="button" data-case-label="CASE 04：记忆策略破解" data-case-route="strategies.html">
-          <img src="assets/new-frontpage/实验四-web.webp" alt="CASE 04 记忆策略破解案件封面" width="720" height="720" loading="lazy" decoding="async" />
+          <img src="assets/new-frontpage/实验四-web.webp" alt="CASE 04 记忆策略破解案件封面" loading="lazy" decoding="async" />
           <span class="case-card-label"><span>CASE 04</span><strong>记忆策略破解</strong></span>
         </button>
         <button class="case-card" type="button" data-case-label="CASE 05：调查成果展示" data-case-route="poster.html">
-          <img src="assets/new-frontpage/成果展示-web.webp" alt="CASE 05 调查成果展示案件封面" width="720" height="720" loading="lazy" decoding="async" />
+          <img src="assets/new-frontpage/成果展示-web.webp" alt="CASE 05 调查成果展示案件封面" loading="lazy" decoding="async" />
           <span class="case-card-label"><span>CASE 05</span><strong>调查成果展示</strong></span>
         </button>
       </div>
-      <div class="case-carousel-controls" aria-label="案件轮播控制">
-        <button class="case-carousel-button" id="prevCaseButton" type="button">上一个案件</button>
-        <output class="case-position" id="casePosition" aria-live="polite">01 / 06</output>
-        <button class="case-carousel-button" id="nextCaseButton" type="button">下一个案件</button>
-      </div>
+      <button class="case-carousel-button case-carousel-button--prev" id="prevCaseButton" type="button" aria-label="上一个案件">‹</button>
+      <button class="case-carousel-button case-carousel-button--next" id="nextCaseButton" type="button" aria-label="下一个案件">›</button>
       <p class="nav-instruction">点击两侧卡片切换 · 再次点击中央卡片进入</p>
     </section>
 
