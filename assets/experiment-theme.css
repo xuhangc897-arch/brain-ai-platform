@@ -1,0 +1,469 @@
+:root {
+  color-scheme: light;
+}
+
+.theme-switch {
+  display: inline-flex;
+  flex: 0 0 auto;
+  align-items: center;
+  gap: 2px;
+  min-height: 34px;
+  padding: 2px;
+  border: 1px solid var(--line);
+  border-radius: 8px;
+  background: color-mix(in srgb, var(--panel) 88%, var(--bg));
+  box-shadow: 0 3px 10px rgba(23, 32, 51, 0.05);
+}
+
+.brand-title {
+  min-width: 0;
+  flex: 1 1 auto;
+}
+
+.top-actions {
+  flex: 0 0 auto;
+  flex-wrap: wrap;
+  gap: 6px;
+  justify-content: flex-end;
+}
+
+.top-actions > .btn {
+  flex: 0 0 auto;
+  min-height: 34px;
+  padding: 0 10px;
+  font-size: 12px;
+  white-space: nowrap;
+}
+
+button.theme-option {
+  min-height: 28px;
+  padding: 0 8px;
+  border: 1px solid transparent;
+  border-radius: 7px;
+  background: transparent;
+  color: var(--muted);
+  font-size: 11px;
+  font-weight: 800;
+  line-height: 1;
+  white-space: nowrap;
+  box-shadow: none;
+}
+
+button.theme-option:hover {
+  color: var(--primary-dark);
+  background: var(--primary-soft, #eaf1ff);
+}
+
+button.theme-option[aria-pressed="true"] {
+  border-color: color-mix(in srgb, var(--primary) 28%, transparent);
+  background: var(--primary);
+  color: #fff;
+  box-shadow: 0 3px 9px color-mix(in srgb, var(--primary) 22%, transparent);
+}
+
+html[data-theme="archive"] {
+  --bg: #f5efe3;
+  --panel: #fffaf2;
+  --ink: #33271c;
+  --muted: #746554;
+  --line: #d8bd91;
+  --primary: #9b7135;
+  --primary-dark: #65471f;
+  --primary-soft: #f1e3ca;
+  --teal: #5f765e;
+  --green: #5f765e;
+  --amber: #a86f27;
+  --red: #9b493f;
+  --shadow: 0 8px 30px rgba(80, 50, 20, 0.08);
+  --radius: 4px;
+}
+
+html[data-theme="archive"] body {
+  background-color: var(--bg);
+  background-image:
+    radial-gradient(circle at 12% 8%, rgba(181, 139, 74, 0.08), transparent 28rem),
+    linear-gradient(180deg, rgba(255, 250, 242, 0.34), rgba(245, 239, 227, 0.1));
+  color: var(--ink);
+  font-family: "Noto Serif SC", "Source Han Serif SC", "Songti SC", STSong, serif;
+}
+
+html[data-theme="archive"] body.is-focus-mode {
+  background: #08111f;
+  background-image: none;
+}
+
+html[data-theme="archive"] .topbar {
+  border-bottom-color: var(--line);
+  background: rgba(255, 250, 242, 0.94);
+  box-shadow: 0 6px 22px rgba(80, 50, 20, 0.07);
+}
+
+html[data-theme="archive"] .brand-title,
+html[data-theme="archive"] .brand {
+  position: relative;
+}
+
+html[data-theme="archive"] .brand-title h1,
+html[data-theme="archive"] .brand strong,
+html[data-theme="archive"] .panel-head h1,
+html[data-theme="archive"] .panel-head h2,
+html[data-theme="archive"] .panel-head h3 {
+  color: var(--ink);
+  font-family: "Noto Serif SC", "Source Han Serif SC", "Songti SC", STSong, serif;
+  font-weight: 700;
+  letter-spacing: 0.025em;
+}
+
+html[data-theme="archive"] .brand > span {
+  color: #9b7135;
+  font-family: Cinzel, "Cormorant Garamond", Georgia, serif;
+}
+
+html[data-theme="archive"] .identity-pill {
+  color: var(--muted);
+}
+
+html[data-theme="archive"] .progress-step {
+  position: relative;
+  border-color: var(--line);
+  border-radius: 3px;
+  background: rgba(255, 250, 242, 0.66);
+  color: var(--muted);
+  box-shadow: inset 0 1px rgba(255, 255, 255, 0.6);
+}
+
+html[data-theme="archive"] .progress-step:not(:last-child)::after {
+  content: "";
+  position: absolute;
+  z-index: 1;
+  top: 50%;
+  right: -9px;
+  width: 9px;
+  height: 1px;
+  background: var(--line);
+}
+
+html[data-theme="archive"] .progress-step strong {
+  border: 1px solid var(--line);
+  background: #f1e3ca;
+  color: #9b7135;
+  font-family: Cinzel, Georgia, serif;
+}
+
+html[data-theme="archive"] .progress-step.is-active {
+  border-color: #b58b4a;
+  background: #f1e3ca;
+  color: var(--primary-dark);
+  box-shadow: 0 4px 14px rgba(80, 50, 20, 0.08);
+}
+
+html[data-theme="archive"] .progress-step.is-active strong {
+  border-color: #9b7135;
+  background: #9b7135;
+  color: #fffaf2;
+}
+
+html[data-theme="archive"] .progress-step.is-done {
+  border-color: #c7b28f;
+  background: #eee6d6;
+  color: #5f765e;
+}
+
+html[data-theme="archive"] .progress-step.is-done strong {
+  border-color: #5f765e;
+  background: #5f765e;
+  color: #fffaf2;
+}
+
+html[data-theme="archive"] .panel,
+html[data-theme="archive"] .login-card,
+html[data-theme="archive"] .reading-card,
+html[data-theme="archive"] .material-card,
+html[data-theme="archive"] .helper-card,
+html[data-theme="archive"] .template-card,
+html[data-theme="archive"] .survey-card,
+html[data-theme="archive"] .case-card,
+html[data-theme="archive"] .stat-card,
+html[data-theme="archive"] .summary-card,
+html[data-theme="archive"] .result-card,
+html[data-theme="archive"] .strategy-info-card,
+html[data-theme="archive"] .strategy-match-card,
+html[data-theme="archive"] .score-dimension-card,
+html[data-theme="archive"] .score-footer-card {
+  border-color: var(--line);
+  border-radius: 4px;
+  background: var(--panel);
+  box-shadow: var(--shadow);
+}
+
+html[data-theme="archive"] .panel-head {
+  border-bottom-color: rgba(181, 139, 74, 0.38);
+  background: linear-gradient(90deg, rgba(181, 139, 74, 0.08), transparent 58%);
+}
+
+html[data-theme="archive"] .panel-head::before {
+  content: "RESEARCH FILE";
+  display: block;
+  margin-bottom: 4px;
+  color: #9b7135;
+  font-family: Cinzel, "Cormorant Garamond", Georgia, serif;
+  font-size: 9px;
+  font-weight: 700;
+  line-height: 1;
+  letter-spacing: 0.18em;
+}
+
+html[data-theme="archive"] .panel-head p,
+html[data-theme="archive"] .hint,
+html[data-theme="archive"] .muted,
+html[data-theme="archive"] .field-note,
+html[data-theme="archive"] .flow-empty {
+  color: var(--muted);
+}
+
+html[data-theme="archive"] .panel h4,
+html[data-theme="archive"] .helper-card h4,
+html[data-theme="archive"] .template-card h4,
+html[data-theme="archive"] .reading-card h4,
+html[data-theme="archive"] .strategy-info-card h4,
+html[data-theme="archive"] .thinking-label,
+html[data-theme="archive"] .case-card summary {
+  color: var(--ink);
+}
+
+html[data-theme="archive"] .helper-card ul,
+html[data-theme="archive"] .reading-card p,
+html[data-theme="archive"] .strategy-info-card p,
+html[data-theme="archive"] .case-body {
+  color: var(--muted);
+}
+
+html[data-theme="archive"] .case-card summary::after,
+html[data-theme="archive"] .case-tag {
+  border-color: #d8bd91;
+  background: #f1e3ca;
+  color: #7d5927;
+}
+
+html[data-theme="archive"] .thinking-box,
+html[data-theme="archive"] .thinking-personal,
+html[data-theme="archive"] .thinking-group,
+html[data-theme="archive"] .flow-round,
+html[data-theme="archive"] .flow-dropzone,
+html[data-theme="archive"] .flow-pool,
+html[data-theme="archive"] .empty-state,
+html[data-theme="archive"] .survey-option-card,
+html[data-theme="archive"] .answer-card,
+html[data-theme="archive"] .question-card {
+  border-color: #d8bd91;
+  border-radius: 3px;
+  background: #fffdf8;
+}
+
+html[data-theme="archive"] .question-prompt-strip,
+html[data-theme="archive"] .question-intro-strip,
+html[data-theme="archive"] .task-hero,
+html[data-theme="archive"] .task-card,
+html[data-theme="archive"] .survey-intro,
+html[data-theme="archive"] .survey-card-head,
+html[data-theme="archive"] .quiz-result,
+html[data-theme="archive"] .quiz-option,
+html[data-theme="archive"] .strategy-mode-card,
+html[data-theme="archive"] .round-plan-card,
+html[data-theme="archive"] .flow-card,
+html[data-theme="archive"] .score-record-card,
+html[data-theme="archive"] .material-details {
+  border-color: #d8bd91;
+  background: linear-gradient(135deg, #fffaf2, #f4ead8);
+  color: var(--ink);
+  box-shadow: 0 8px 24px rgba(80, 50, 20, 0.07);
+}
+
+html[data-theme="archive"] .question-prompt-strip p,
+html[data-theme="archive"] .question-prompt-strip strong,
+html[data-theme="archive"] .question-intro-strip p,
+html[data-theme="archive"] .task-hero h3,
+html[data-theme="archive"] .task-hero p,
+html[data-theme="archive"] .task-card h4,
+html[data-theme="archive"] .task-card p,
+html[data-theme="archive"] .material-details summary,
+html[data-theme="archive"] .strategy-mode-card h4,
+html[data-theme="archive"] .strategy-mode-card p,
+html[data-theme="archive"] .round-plan-card h4,
+html[data-theme="archive"] .round-plan-card p,
+html[data-theme="archive"] .flow-card h4,
+html[data-theme="archive"] .flow-card p,
+html[data-theme="archive"] .score-record-card h4,
+html[data-theme="archive"] .score-record-card p {
+  color: var(--ink);
+}
+
+html[data-theme="archive"] input:not([type="checkbox"]):not([type="radio"]),
+html[data-theme="archive"] textarea,
+html[data-theme="archive"] select {
+  border-color: #d3bc98;
+  border-radius: 3px;
+  background: #fffdf8;
+  color: var(--ink);
+  box-shadow: inset 0 1px 3px rgba(80, 50, 20, 0.035);
+}
+
+html[data-theme="archive"] input:focus,
+html[data-theme="archive"] textarea:focus,
+html[data-theme="archive"] select:focus {
+  border-color: #9b7135;
+  outline-color: rgba(181, 139, 74, 0.24);
+  box-shadow: 0 0 0 3px rgba(181, 139, 74, 0.15);
+}
+
+html[data-theme="archive"] table {
+  border-color: var(--line);
+  background: #fffdf8;
+}
+
+html[data-theme="archive"] th {
+  border-color: var(--line);
+  background: #eee3d0;
+  color: var(--ink);
+}
+
+html[data-theme="archive"] td {
+  border-color: #e4d3b7;
+}
+
+html[data-theme="archive"] .memory-table th:first-child,
+html[data-theme="archive"] .memory-table td:first-child,
+html[data-theme="archive"] .strategy-material-recommendation td:first-child {
+  color: var(--ink);
+}
+
+html[data-theme="archive"] .btn:not(.danger):not(.theme-option) {
+  border-color: #b58b4a;
+  border-radius: 3px;
+  background: #9b7135;
+  color: #fffaf2;
+  box-shadow: 0 3px 10px rgba(80, 50, 20, 0.11);
+}
+
+html[data-theme="archive"] .btn.secondary:not(.theme-option),
+html[data-theme="archive"] .btn.ghost:not(.theme-option) {
+  border-color: #c9aa78;
+  background: #fffaf2;
+  color: #65471f;
+}
+
+html[data-theme="archive"] .btn.danger {
+  border-radius: 3px;
+  background: #8e4b42;
+  color: #fffaf2;
+}
+
+html[data-theme="archive"] .theme-switch {
+  border-color: #d1b584;
+  border-radius: 4px;
+  background: #f4ead8;
+  box-shadow: none;
+}
+
+html[data-theme="archive"] button.theme-option {
+  border-radius: 2px;
+  color: #746554;
+}
+
+html[data-theme="archive"] button.theme-option[aria-pressed="true"] {
+  border-color: #9b7135;
+  background: #9b7135;
+  color: #fffaf2;
+}
+
+body,
+.topbar,
+.panel,
+.progress-step,
+.theme-switch,
+.btn,
+input,
+textarea,
+select,
+table,
+th,
+td {
+  transition:
+    background-color 0.4s ease,
+    border-color 0.4s ease,
+    color 0.35s ease,
+    box-shadow 0.4s ease;
+}
+
+@media (max-width: 900px) {
+  .theme-switch {
+    min-height: 34px;
+  }
+}
+
+@media (max-width: 640px) {
+  .main,
+  .single-step-layout,
+  .step-layout,
+  .analysis-layout,
+  .panel,
+  .panel-body,
+  .memory-table-wrap {
+    min-width: 0;
+    max-width: 100%;
+  }
+
+  .panel-body > *,
+  .reading-list > *,
+  .reading-card,
+  .practice-entry,
+  .headband-image-container,
+  .headband-image-container picture,
+  .headband-image-container img,
+  .panel-body svg {
+    min-width: 0;
+    max-width: 100%;
+  }
+
+  .brand-title {
+    display: block;
+    width: 100%;
+  }
+
+  .brand-title .identity-pill {
+    display: block;
+    max-width: 100%;
+    white-space: normal;
+    overflow-wrap: anywhere;
+  }
+
+  .theme-switch {
+    width: 100%;
+    justify-content: stretch;
+  }
+
+  button.theme-option {
+    flex: 1 1 0;
+  }
+
+  html[data-theme="archive"] .progress-step:not(:last-child)::after {
+    display: none;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  body,
+  .topbar,
+  .panel,
+  .progress-step,
+  .theme-switch,
+  .btn,
+  input,
+  textarea,
+  select,
+  table,
+  th,
+  td {
+    transition: none;
+  }
+}

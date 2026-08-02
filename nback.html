@@ -3,7 +3,7 @@
 <head>
   <meta charset="utf-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1" />
-  <title>N-back 科学探究活动</title>
+  <title>实验二：探秘神奇的 N-back</title>
   <style>
     :root {
       --bg: #f6f8fb;
@@ -1345,6 +1345,8 @@
     }
 
   </style>
+  <link rel="stylesheet" href="assets/experiment-theme.css">
+  <script src="assets/experiment-theme.js"></script>
   <link rel="stylesheet" href="assets/ai-assistant.css">
   <link rel="stylesheet" href="assets/voice-assistant.css">
   <link rel="stylesheet" href="assets/memory-partner.css">
@@ -1355,10 +1357,14 @@
       <div class="topbar-inner">
         <div class="brand-row">
           <div class="brand-title">
-            <h1>科学探究活动：探秘神奇的 N-back</h1>
+            <h1>实验二：探秘神奇的 N-back</h1>
             <span id="identityPill" class="identity-pill"></span>
           </div>
           <div class="top-actions">
+            <div class="theme-switch" role="group" aria-label="主题模式">
+              <button class="theme-option" type="button" data-theme-option="science" aria-label="切换到科技模式" aria-pressed="true">科技模式</button>
+              <button class="theme-option" type="button" data-theme-option="archive" aria-label="切换到档案模式" aria-pressed="false">档案模式</button>
+            </div>
             <button class="btn secondary" id="devModeBtn" type="button">开发者模式</button>
             <button class="btn secondary" id="homeBtn" type="button">回到首页</button>
             <button class="btn danger" id="resetBtn" type="button">重新开始</button>

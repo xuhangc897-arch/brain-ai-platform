@@ -16,10 +16,6 @@
   }
 
   function getDisplayText(student) {
-    if (isGuestStudent(student)) {
-      return "游客模式 | 实验记录仅保存在本地，不会上传后台";
-    }
-
     const name = student && student.name ? student.name : "同学";
     const studentId = student && student.studentId ? student.studentId : "未登记学号";
     const group = student && student.group ? student.group : "未登记小组";
@@ -27,6 +23,12 @@
   }
 
   function renderStudentInfo(student) {
+    if (isGuestStudent(student)) {
+      const authPill = document.getElementById("authStudentPill");
+      if (authPill) authPill.remove();
+      return;
+    }
+
     const text = getDisplayText(student);
     const welcomeUser = document.getElementById("welcomeUser");
 
