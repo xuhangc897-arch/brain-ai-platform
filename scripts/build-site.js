@@ -23,6 +23,22 @@ const rootFiles = [
   "cloudbase.js"
 ];
 const directories = ["assets", "admin"];
+const excludedDeployFiles = new Set([
+  "assets/new-frontpage/logo.png",
+  "assets/new-frontpage/成果展示.png",
+  "assets/new-frontpage/导航图.png",
+  "assets/new-frontpage/导航图背景.png",
+  "assets/new-frontpage/第二页面静图.png",
+  "assets/new-frontpage/第二页面视频.mp4",
+  "assets/new-frontpage/实验一.png",
+  "assets/new-frontpage/实验二.png",
+  "assets/new-frontpage/实验三.png",
+  "assets/new-frontpage/实验四.png",
+  "assets/new-frontpage/首页静图.png",
+  "assets/new-frontpage/首页视频.mp4",
+  "assets/new-frontpage/资格审查.png",
+  "assets/new-frontpage/导航图-web.webp"
+]);
 
 function assertOutputPath() {
   if (path.dirname(output) !== root || path.basename(output) !== "dist") {
@@ -47,6 +63,7 @@ function copyDirectory(relativeDirectory) {
     if (entry.isDirectory()) {
       copyDirectory(relativePath);
     } else if (entry.isFile()) {
+      if (excludedDeployFiles.has(relativePath.replaceAll(path.sep, "/"))) continue;
       copyFile(relativePath);
     }
   }
