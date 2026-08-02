@@ -3,36 +3,67 @@
 <head>
   <meta charset="utf-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1" />
-  <title>学生登录 - 记忆侦探平台</title>
+  <meta name="theme-color" content="#0a0908" />
+  <title>侦探社登录 - 记忆侦探社</title>
   <style>
     :root {
-      --bg: #eef4ff;
-      --panel: rgba(255, 255, 255, 0.86);
-      --ink: #142033;
-      --muted: #667085;
-      --line: rgba(111, 133, 170, 0.22);
-      --primary: #4f7cff;
-      --primary-dark: #315fe4;
-      --danger: #d92d20;
-      --shadow: 0 24px 70px rgba(52, 79, 135, 0.16);
-      font-family: "Microsoft YaHei", "PingFang SC", "Segoe UI", Arial, sans-serif;
+      --gold: #d4af6a;
+      --gold-bright: #edcf8c;
+      --gold-dim: rgba(212, 175, 106, 0.48);
+      --paper: #ead7ad;
+      --ink: #0c0a08;
+      --panel: rgba(15, 12, 8, 0.88);
+      --muted: rgba(230, 215, 184, 0.62);
+      --danger: #f0a38f;
+      --serif: "Noto Serif SC", "Source Han Serif SC", "Songti SC", "STSong", "SimSun", serif;
+      --latin: "Cinzel", "Cormorant Garamond", "Times New Roman", serif;
+      color-scheme: dark;
+      font-family: var(--serif);
     }
 
     * {
       box-sizing: border-box;
     }
 
+    html,
     body {
+      width: 100%;
+      min-height: 100%;
       margin: 0;
+    }
+
+    body {
+      position: relative;
       min-height: 100vh;
-      color: var(--ink);
+      min-height: 100svh;
+      overflow-x: hidden;
+      color: #f1e2c4;
+      background: #080706 url("assets/new-frontpage/首页静图.png") center / cover no-repeat fixed;
+      animation: background-reveal 900ms ease-out both;
+    }
+
+    body::before,
+    body::after {
+      position: fixed;
+      inset: 0;
+      pointer-events: none;
+      content: "";
+    }
+
+    body::before {
+      z-index: 0;
       background:
-        radial-gradient(circle at 12% 10%, rgba(127, 209, 174, 0.35), transparent 32%),
-        radial-gradient(circle at 88% 8%, rgba(79, 124, 255, 0.26), transparent 34%),
-        linear-gradient(135deg, #f8fbff 0%, var(--bg) 45%, #f5fbff 100%);
-      display: grid;
-      place-items: center;
-      padding: 24px;
+        linear-gradient(90deg, rgba(0, 0, 0, 0.78), rgba(0, 0, 0, 0.42) 47%, rgba(0, 0, 0, 0.66)),
+        linear-gradient(180deg, rgba(0, 0, 0, 0.24), transparent 42%, rgba(0, 0, 0, 0.66));
+    }
+
+    body::after {
+      z-index: 1;
+      opacity: 0.13;
+      background-image:
+        repeating-radial-gradient(circle at 0 0, transparent 0, rgba(255, 232, 180, 0.18) 1px, transparent 2px, transparent 5px);
+      background-size: 7px 7px;
+      mix-blend-mode: soft-light;
     }
 
     button,
@@ -40,75 +71,274 @@
       font: inherit;
     }
 
-    .login-card {
-      width: min(420px, 100%);
-      padding: 32px;
-      border: 1px solid var(--line);
-      border-radius: 24px;
-      background: var(--panel);
-      box-shadow: var(--shadow);
-      backdrop-filter: blur(18px);
-      -webkit-backdrop-filter: blur(18px);
+    button {
+      border: 0;
     }
 
-    .login-card h1 {
-      margin: 0 0 8px;
-      font-size: 28px;
+    .archive-brand {
+      position: fixed;
+      top: clamp(24px, 4vw, 54px);
+      left: clamp(24px, 5vw, 76px);
+      z-index: 4;
+      margin: 0;
+      color: var(--gold);
+      font-size: clamp(24px, 2.6vw, 38px);
+      font-weight: 600;
+      letter-spacing: 0.24em;
       line-height: 1.2;
+      text-shadow: 0 0 15px rgba(212, 175, 106, 0.3), 0 5px 24px rgba(0, 0, 0, 0.82);
     }
 
-    .login-card p {
-      margin: 0 0 24px;
+    .archive-brand small {
+      display: block;
+      margin-top: 10px;
+      color: rgba(218, 187, 128, 0.65);
+      font-family: var(--latin);
+      font-size: 10px;
+      font-weight: 400;
+      letter-spacing: 0.42em;
+    }
+
+    .archive-layout {
+      position: relative;
+      z-index: 2;
+      display: grid;
+      grid-template-columns: minmax(220px, 1fr) minmax(400px, 460px) minmax(220px, 1fr);
+      align-items: center;
+      gap: clamp(28px, 4vw, 72px);
+      width: min(1540px, 100%);
+      min-height: 100vh;
+      min-height: 100svh;
+      margin: 0 auto;
+      padding: 118px clamp(28px, 5vw, 76px) 106px;
+    }
+
+    .archive-brief {
+      align-self: end;
+      max-width: 310px;
+      margin-bottom: 58px;
+      color: rgba(231, 213, 176, 0.67);
+      text-shadow: 0 2px 16px rgba(0, 0, 0, 0.8);
+      animation: fade-rise 900ms ease-out 180ms both;
+    }
+
+    .archive-brief::before {
+      display: block;
+      width: 68px;
+      height: 1px;
+      margin-bottom: 18px;
+      background: var(--gold-dim);
+      content: "";
+    }
+
+    .archive-brief .label {
+      margin: 0 0 13px;
+      color: var(--gold);
+      font-family: var(--latin);
+      font-size: 10px;
+      letter-spacing: 0.34em;
+      text-transform: uppercase;
+    }
+
+    .archive-brief h2 {
+      margin: 0 0 17px;
+      color: #ead5ab;
+      font-size: clamp(22px, 2vw, 30px);
+      font-weight: 500;
+      line-height: 1.5;
+      letter-spacing: 0.12em;
+    }
+
+    .archive-brief p {
+      margin: 0;
+      font-size: 13px;
+      line-height: 1.9;
+      letter-spacing: 0.08em;
+    }
+
+    .login-card-shell {
+      grid-column: 2;
+      width: 100%;
+      padding: 1px;
+      background: linear-gradient(145deg, rgba(238, 207, 140, 0.9), rgba(117, 84, 43, 0.5) 44%, rgba(228, 190, 111, 0.76));
+      clip-path: polygon(16px 0, calc(100% - 16px) 0, 100% 16px, 100% calc(100% - 16px), calc(100% - 16px) 100%, 16px 100%, 0 calc(100% - 16px), 0 16px);
+      filter: drop-shadow(0 22px 55px rgba(0, 0, 0, 0.52));
+      animation: card-arrival 850ms cubic-bezier(0.22, 1, 0.36, 1) 120ms both;
+    }
+
+    .login-card {
+      position: relative;
+      min-height: 590px;
+      padding: 43px 42px 34px;
+      overflow: hidden;
+      background:
+        linear-gradient(135deg, rgba(255, 231, 180, 0.035), transparent 38%),
+        var(--panel);
+      -webkit-backdrop-filter: blur(12px);
+      backdrop-filter: blur(12px);
+      clip-path: inherit;
+    }
+
+    .login-card::before,
+    .login-card::after {
+      position: absolute;
+      width: 46px;
+      height: 46px;
+      border-color: rgba(226, 192, 123, 0.36);
+      pointer-events: none;
+      content: "";
+    }
+
+    .login-card::before {
+      top: 13px;
+      left: 13px;
+      border-top: 1px solid;
+      border-left: 1px solid;
+    }
+
+    .login-card::after {
+      right: 13px;
+      bottom: 13px;
+      border-right: 1px solid;
+      border-bottom: 1px solid;
+    }
+
+    .login-heading {
+      position: relative;
+      z-index: 1;
+      text-align: center;
+    }
+
+    .agency-label {
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      gap: 12px;
+      margin: 0 0 18px;
+      color: rgba(226, 192, 123, 0.8);
+      font-family: var(--latin);
+      font-size: 10px;
+      letter-spacing: 0.34em;
+    }
+
+    .agency-label::before,
+    .agency-label::after {
+      width: 44px;
+      height: 1px;
+      background: var(--gold-dim);
+      content: "";
+    }
+
+    .login-heading h1 {
+      margin: 0;
+      color: #f0ddb7;
+      font-size: clamp(30px, 3vw, 40px);
+      font-weight: 500;
+      letter-spacing: 0.16em;
+      text-shadow: 0 3px 20px rgba(0, 0, 0, 0.72);
+    }
+
+    .login-heading > p {
+      margin: 12px 0 30px;
       color: var(--muted);
-      line-height: 1.6;
+      font-size: 13px;
+      letter-spacing: 0.08em;
     }
 
     .field {
-      margin-bottom: 16px;
+      margin-bottom: 18px;
     }
 
     .field label {
       display: block;
-      margin-bottom: 7px;
-      color: #344054;
-      font-size: 14px;
-      font-weight: 700;
+      margin-bottom: 8px;
+      color: rgba(234, 213, 170, 0.78);
+      font-size: 12px;
+      letter-spacing: 0.18em;
+    }
+
+    .input-frame {
+      position: relative;
+      display: flex;
+      align-items: center;
+    }
+
+    .field-icon {
+      position: absolute;
+      left: 14px;
+      z-index: 1;
+      width: 18px;
+      height: 18px;
+      color: rgba(220, 184, 113, 0.66);
+      pointer-events: none;
     }
 
     .field input {
       width: 100%;
-      height: 46px;
-      padding: 0 14px;
-      border: 1px solid rgba(111, 133, 170, 0.28);
-      border-radius: 14px;
+      height: 50px;
+      padding: 0 46px 0 44px;
+      border: 1px solid rgba(212, 175, 106, 0.42);
+      border-radius: 2px;
       outline: none;
-      background: rgba(255, 255, 255, 0.92);
-      color: var(--ink);
-      transition: border-color 160ms ease, box-shadow 160ms ease;
+      color: #f4e2be;
+      background: rgba(0, 0, 0, 0.36);
+      caret-color: var(--gold-bright);
+      transition: border-color 180ms ease, box-shadow 180ms ease, background 180ms ease;
+    }
+
+    .field input::placeholder {
+      color: rgba(226, 211, 181, 0.32);
     }
 
     .field input:focus {
-      border-color: rgba(79, 124, 255, 0.72);
-      box-shadow: 0 0 0 4px rgba(79, 124, 255, 0.12);
+      border-color: rgba(232, 198, 128, 0.8);
+      background: rgba(0, 0, 0, 0.48);
+      box-shadow: 0 0 0 3px rgba(201, 169, 106, 0.09), 0 0 24px rgba(201, 169, 106, 0.1);
+    }
+
+    .password-toggle {
+      position: absolute;
+      right: 8px;
+      display: grid;
+      width: 34px;
+      height: 34px;
+      place-items: center;
+      color: rgba(226, 207, 168, 0.5);
+      background: transparent;
+      cursor: pointer;
+    }
+
+    .password-toggle:hover {
+      color: var(--gold-bright);
+    }
+
+    .password-toggle svg {
+      width: 18px;
+      height: 18px;
+    }
+
+    .submit-btn,
+    .guest-btn {
+      width: 100%;
+      cursor: pointer;
+      letter-spacing: 0.14em;
+      transition: transform 180ms ease, box-shadow 180ms ease, background 180ms ease, border-color 180ms ease;
     }
 
     .submit-btn {
-      width: 100%;
-      min-height: 46px;
-      border: 0;
-      border-radius: 999px;
-      background: linear-gradient(135deg, var(--primary), #6aa1ff);
-      color: #fff;
-      cursor: pointer;
-      font-weight: 800;
-      box-shadow: 0 14px 24px rgba(79, 124, 255, 0.22);
-      transition: transform 160ms ease, box-shadow 160ms ease, filter 160ms ease;
+      min-height: 50px;
+      margin-top: 6px;
+      border: 1px solid #e0bd76;
+      border-radius: 3px;
+      color: #21160d;
+      background: linear-gradient(180deg, #ddbd77, #bd9352);
+      box-shadow: 0 0 25px rgba(201, 169, 106, 0.28), inset 0 1px rgba(255, 245, 210, 0.58);
+      font-weight: 700;
     }
 
     .submit-btn:hover:not(:disabled) {
-      transform: translateY(-1px);
-      box-shadow: 0 18px 30px rgba(79, 124, 255, 0.28);
-      filter: saturate(1.04);
+      transform: translateY(-3px);
+      box-shadow: 0 0 40px rgba(201, 169, 106, 0.58), inset 0 1px rgba(255, 245, 210, 0.7);
     }
 
     .submit-btn:disabled {
@@ -117,86 +347,305 @@
     }
 
     .guest-entry {
-      margin-top: 14px;
-      padding-top: 14px;
-      border-top: 1px solid var(--line);
+      margin-top: 16px;
+      padding-top: 16px;
+      border-top: 1px solid rgba(212, 175, 106, 0.2);
       text-align: center;
     }
 
     .guest-btn {
-      width: 100%;
       min-height: 42px;
-      border: 1px solid rgba(79, 124, 255, 0.24);
-      border-radius: 999px;
-      background: rgba(255, 255, 255, 0.72);
-      color: var(--primary-dark);
-      cursor: pointer;
-      font-weight: 800;
-      transition: transform 160ms ease, box-shadow 160ms ease, border-color 160ms ease;
+      border: 1px solid rgba(212, 175, 106, 0.38);
+      border-radius: 2px;
+      color: rgba(238, 218, 178, 0.82);
+      background: rgba(23, 17, 11, 0.46);
     }
 
     .guest-btn:hover {
-      transform: translateY(-1px);
-      border-color: rgba(79, 124, 255, 0.46);
-      box-shadow: 0 12px 24px rgba(79, 124, 255, 0.14);
+      border-color: rgba(230, 196, 128, 0.72);
+      background: rgba(58, 42, 25, 0.52);
+      transform: translateY(-2px);
+      box-shadow: 0 10px 26px rgba(0, 0, 0, 0.24);
     }
 
     .guest-note {
-      margin: 10px 0 0;
-      color: var(--muted);
-      font-size: 12px;
-      line-height: 1.5;
+      margin: 9px 0 0;
+      color: rgba(222, 206, 173, 0.43);
+      font-size: 11px;
+      line-height: 1.6;
     }
 
     .message {
-      min-height: 22px;
-      margin: 14px 0 0;
+      min-height: 20px;
+      margin: 12px 0 0;
       color: var(--danger);
       text-align: center;
-      font-size: 13px;
-      font-weight: 700;
+      font-size: 12px;
+      font-weight: 600;
+      letter-spacing: 0.05em;
+    }
+
+    .card-file-meta {
+      display: flex;
+      align-items: flex-end;
+      justify-content: space-between;
+      gap: 16px;
+      margin-top: 18px;
+      color: rgba(215, 190, 141, 0.42);
+      font-family: var(--latin);
+      font-size: 8px;
+      line-height: 1.7;
+      letter-spacing: 0.22em;
+    }
+
+    .archive-seal {
+      display: grid;
+      width: 74px;
+      height: 74px;
+      flex: 0 0 auto;
+      border: 1px solid rgba(194, 141, 76, 0.34);
+      border-radius: 50%;
+      place-items: center;
+      color: rgba(200, 150, 86, 0.42);
+      font-family: var(--latin);
+      font-size: 8px;
+      line-height: 1.35;
+      letter-spacing: 0.1em;
+      text-align: center;
+      transform: rotate(-10deg);
+    }
+
+    .archive-footer {
+      position: fixed;
+      right: clamp(24px, 5vw, 76px);
+      bottom: clamp(22px, 4vw, 48px);
+      left: clamp(24px, 5vw, 76px);
+      z-index: 3;
+      display: flex;
+      align-items: flex-end;
+      justify-content: space-between;
+      gap: 30px;
+      color: rgba(220, 199, 157, 0.48);
+      font-size: 10px;
+      line-height: 1.7;
+      letter-spacing: 0.18em;
+      text-shadow: 0 2px 15px #000;
+    }
+
+    .archive-footer strong {
+      display: block;
+      color: rgba(224, 191, 125, 0.68);
+      font-family: var(--latin);
+      font-weight: 400;
+      letter-spacing: 0.28em;
+    }
+
+    .archive-tip {
+      max-width: 220px;
+      text-align: right;
+    }
+
+    button:focus-visible,
+    input:focus-visible {
+      outline: 2px solid var(--gold-bright);
+      outline-offset: 3px;
+    }
+
+    @keyframes background-reveal {
+      from { opacity: 0; }
+      to { opacity: 1; }
+    }
+
+    @keyframes fade-rise {
+      from { opacity: 0; transform: translateY(18px); }
+      to { opacity: 1; transform: translateY(0); }
+    }
+
+    @keyframes card-arrival {
+      from { opacity: 0; transform: translateY(30px); filter: drop-shadow(0 0 0 rgba(201, 169, 106, 0)); }
+      to { opacity: 1; transform: translateY(0); filter: drop-shadow(0 22px 55px rgba(0, 0, 0, 0.52)); }
+    }
+
+    @media (max-width: 980px) {
+      .archive-layout {
+        grid-template-columns: 1fr minmax(380px, 460px) 1fr;
+        padding-top: 110px;
+      }
+
+      .archive-brief {
+        display: none;
+      }
+    }
+
+    @media (max-width: 640px) {
+      body {
+        background-position: 58% center;
+      }
+
+      .archive-brand {
+        top: 20px;
+        left: 20px;
+        font-size: 21px;
+        letter-spacing: 0.2em;
+      }
+
+      .archive-brand small {
+        margin-top: 6px;
+        font-size: 7px;
+        letter-spacing: 0.28em;
+      }
+
+      .archive-layout {
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        min-height: 100svh;
+        padding: 92px 14px 22px;
+      }
+
+      .login-card-shell {
+        width: min(100%, 430px);
+      }
+
+      .login-card {
+        min-height: 0;
+        padding: 34px 24px 25px;
+      }
+
+      .login-heading > p {
+        margin-bottom: 23px;
+      }
+
+      .archive-footer {
+        display: none;
+      }
+    }
+
+    @media (max-height: 720px) and (min-width: 641px) {
+      .archive-layout {
+        padding-top: 90px;
+        padding-bottom: 70px;
+      }
+
+      .login-card {
+        min-height: 0;
+        padding-top: 34px;
+        padding-bottom: 25px;
+      }
+
+      .login-heading > p {
+        margin-bottom: 20px;
+      }
+
+      .card-file-meta {
+        margin-top: 10px;
+      }
+
+      .archive-seal {
+        width: 58px;
+        height: 58px;
+      }
+    }
+
+    @media (prefers-reduced-motion: reduce) {
+      *,
+      *::before,
+      *::after {
+        scroll-behavior: auto !important;
+        animation-duration: 0.01ms !important;
+        animation-iteration-count: 1 !important;
+        transition-duration: 0.01ms !important;
+      }
     }
   </style>
 </head>
 <body>
-  <main class="login-card" aria-labelledby="loginTitle">
-    <h1 id="loginTitle">学生登录</h1>
-    <p>请输入学生账号和密码。</p>
+  <p class="archive-brand">
+    记忆侦探社
+    <small>MEMORY DETECTIVE AGENCY</small>
+  </p>
 
-    <form id="loginForm">
-      <div class="field">
-        <label for="account">账号</label>
-        <input id="account" name="account" type="text" autocomplete="username" required />
-      </div>
+  <div class="archive-layout">
+    <aside class="archive-brief" aria-label="档案说明">
+      <p class="label">Restricted archive</p>
+      <h2>进入记忆现场，<br />寻找被忽略的线索。</h2>
+      <p>这里记录着关于注意、遗忘与记忆的秘密。完成身份核验，开启属于你的调查档案。</p>
+    </aside>
 
-      <div class="field">
-        <label for="password">密码</label>
-        <input id="password" name="password" type="password" autocomplete="current-password" required />
-      </div>
+    <div class="login-card-shell">
+      <main class="login-card" aria-labelledby="loginTitle">
+        <header class="login-heading">
+          <p class="agency-label">AGENCY LOGIN</p>
+          <h1 id="loginTitle">登录侦探社</h1>
+          <p>请出示账号凭证，完成侦探资格核验。</p>
+        </header>
 
-      <button class="submit-btn" id="submitBtn" type="submit">登录</button>
-      <p class="message" id="message" role="alert"></p>
-    </form>
+        <form id="loginForm">
+          <div class="field">
+            <label for="account">侦探账号 / 学号</label>
+            <div class="input-frame">
+              <svg class="field-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" aria-hidden="true">
+                <circle cx="12" cy="8" r="3.4"></circle>
+                <path d="M5.5 19c.7-3.3 3-5 6.5-5s5.8 1.7 6.5 5"></path>
+                <path d="M3.5 4.5h3m11 0h3M3.5 19.5h3m11 0h3"></path>
+              </svg>
+              <input id="account" name="account" type="text" autocomplete="username" placeholder="请输入账号 / 学号" required />
+            </div>
+          </div>
 
-    <div class="guest-entry" aria-label="游客入口">
-      <button class="guest-btn" id="guestBtn" type="button">游客体验</button>
-      <p class="guest-note">游客模式可完成实验并生成报告，但实验记录不会上传后台。</p>
+          <div class="field">
+            <label for="password">档案密码</label>
+            <div class="input-frame">
+              <svg class="field-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" aria-hidden="true">
+                <rect x="5" y="10" width="14" height="10" rx="1"></rect>
+                <path d="M8 10V7a4 4 0 0 1 8 0v3M12 14v3"></path>
+              </svg>
+              <input id="password" name="password" type="password" autocomplete="current-password" placeholder="请输入密码" required />
+              <button class="password-toggle" id="passwordToggle" type="button" aria-label="显示密码" aria-pressed="false">
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" aria-hidden="true">
+                  <path d="M2.5 12s3.5-5.5 9.5-5.5 9.5 5.5 9.5 5.5-3.5 5.5-9.5 5.5S2.5 12 2.5 12Z"></path>
+                  <circle cx="12" cy="12" r="2.5"></circle>
+                </svg>
+              </button>
+            </div>
+          </div>
+
+          <button class="submit-btn" id="submitBtn" type="submit">开启侦探社</button>
+          <p class="message" id="message" role="alert"></p>
+        </form>
+
+        <div class="guest-entry" aria-label="游客入口">
+          <button class="guest-btn" id="guestBtn" type="button">以游客身份查阅档案</button>
+          <p class="guest-note">游客可以完成实验并生成报告，但实验记录不会上传后台。</p>
+        </div>
+
+        <footer class="card-file-meta">
+          <span>MEMORY CASE FILE<br />ARCHIVE NO.001</span>
+          <span class="archive-seal">MEMORY<br />DETECTIVE<br />ARCHIVE</span>
+        </footer>
+      </main>
     </div>
-  </main>
+  </div>
+
+  <footer class="archive-footer" aria-label="档案提示">
+    <div>
+      <strong>MEMORY CASE FILE</strong>
+      ARCHIVE NO.001 · ACCESS CONTROLLED
+    </div>
+    <div class="archive-tip">
+      <strong>侦探小贴士</strong>
+      每一次观察，都是破解记忆谜题的线索。
+    </div>
+  </footer>
 
   <script src="assets/experiment-registry.js"></script>
   <script src="assets/platform-core.js"></script>
   <script>
-    /*
-     * 登录页脚本只负责登录相关交互：
-     * 1. 页面打开时先检查是否已经登录；
-     * 2. 已登录则直接进入首页；
-     * 3. 未登录则等待学生输入账号密码并调用 studentLogin HTTP 云函数。
-     */
     const STUDENT_LOGIN_URL = window.BrainPlatform.config.endpoints.studentLogin;
     const loginForm = document.getElementById("loginForm");
     const accountInput = document.getElementById("account");
     const passwordInput = document.getElementById("password");
+    const passwordToggle = document.getElementById("passwordToggle");
     const submitBtn = document.getElementById("submitBtn");
     const guestBtn = document.getElementById("guestBtn");
     const message = document.getElementById("message");
@@ -217,10 +666,6 @@
       return error?.code || error?.errCode || error?.errorCode || error?.category || "";
     }
 
-    /*
-     * 如果浏览器里已经有学生会话，说明学生无需重复登录，
-     * 直接进入 index.html，减少重复操作。
-     */
     try {
       const existingSession = window.BrainPlatform.identity.readStudentSession();
       if (existingSession && !existingSession.isGuest && !existingSession.sessionToken) {
@@ -231,6 +676,14 @@
     } catch (event) {
       window.BrainPlatform.identity.clearStudentSession();
     }
+
+    passwordToggle.addEventListener("click", () => {
+      const showPassword = passwordInput.type === "password";
+      passwordInput.type = showPassword ? "text" : "password";
+      passwordToggle.setAttribute("aria-pressed", String(showPassword));
+      passwordToggle.setAttribute("aria-label", showPassword ? "隐藏密码" : "显示密码");
+      passwordInput.focus();
+    });
 
     guestBtn.addEventListener("click", () => {
       window.BrainPlatform.identity.writeStudentSession(GUEST_SESSION);
@@ -248,12 +701,8 @@
         return;
       }
 
-      /*
-       * 登录过程中禁用按钮，避免学生连续点击导致重复请求。
-       * 不论成功或失败，都会在 finally 中恢复按钮状态。
-       */
       submitBtn.disabled = true;
-      submitBtn.textContent = "登录中...";
+      submitBtn.textContent = "档案核验中…";
       message.textContent = "";
 
       try {
@@ -289,7 +738,7 @@
         message.textContent = getErrorMessage(error) || "登录失败";
       } finally {
         submitBtn.disabled = false;
-        submitBtn.textContent = "登录";
+        submitBtn.textContent = "开启侦探社";
       }
     });
   </script>
