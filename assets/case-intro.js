@@ -206,7 +206,7 @@
       const route = String(config?.route || "");
       const story = stories.get(caseId);
 
-      if (!story || !route || hasSeen(caseId)) {
+      if (!story || !route) {
         if (route) navigate(route);
         return false;
       }
@@ -223,7 +223,7 @@
       live.textContent = "";
       startButton.disabled = true;
       startButton.textContent = "档案解密中…";
-      skipButton.hidden = false;
+      skipButton.hidden = !hasSeen(caseId);
       setPose(story.dialog[0]?.pose);
 
       backdropWasInert = Boolean(backdropRoot?.inert);
