@@ -7,6 +7,7 @@
   <meta name="description" content="进入记忆侦探社，开启关于记忆的科学调查。" />
   <title>记忆侦探社</title>
   <link rel="preload" as="image" type="image/webp" href="assets/new-frontpage/首页静图-web.webp" fetchpriority="high" />
+  <link rel="stylesheet" href="assets/case-intro.css" />
   <style>
     :root {
       --paper: #ead3a1;
@@ -823,90 +824,6 @@
       background: rgba(43, 29, 17, 0.66);
     }
 
-    .case-dialog {
-      width: min(520px, calc(100% - 34px));
-      padding: 0;
-      overflow: hidden;
-      border: 1px solid rgba(255, 221, 153, 0.5);
-      border-radius: 24px;
-      color: #f8e8c6;
-      background: rgba(22, 17, 12, 0.96);
-      box-shadow: 0 34px 90px rgba(0, 0, 0, 0.72), inset 0 1px rgba(255, 255, 255, 0.12);
-      -webkit-backdrop-filter: blur(22px);
-      backdrop-filter: blur(22px);
-    }
-
-    .case-dialog::backdrop {
-      background: rgba(2, 3, 4, 0.72);
-      -webkit-backdrop-filter: blur(5px);
-      backdrop-filter: blur(5px);
-    }
-
-    .case-dialog-inner {
-      padding: clamp(26px, 5vw, 42px);
-      text-align: center;
-    }
-
-    .dialog-kicker {
-      margin: 0 0 12px;
-      color: rgba(231, 177, 93, 0.68);
-      font-family: Georgia, "Times New Roman", serif;
-      font-size: 10px;
-      letter-spacing: 0.24em;
-      text-transform: uppercase;
-    }
-
-    .case-dialog h2 {
-      margin: 0;
-      color: #fff0cf;
-      font-family: var(--serif);
-      font-size: clamp(24px, 4vw, 34px);
-      line-height: 1.35;
-      letter-spacing: 0.05em;
-    }
-
-    .case-dialog p:not(.dialog-kicker) {
-      margin: 14px 0 0;
-      color: rgba(255, 234, 194, 0.62);
-      font-size: 13px;
-      line-height: 1.7;
-    }
-
-    .dialog-actions {
-      display: grid;
-      grid-template-columns: 1fr 1fr;
-      gap: 12px;
-      margin-top: 28px;
-    }
-
-    .dialog-button {
-      min-height: 48px;
-      padding: 0 18px;
-      border: 1px solid rgba(255, 225, 169, 0.22);
-      border-radius: 999px;
-      color: rgba(255, 238, 204, 0.78);
-      background: rgba(255, 255, 255, 0.04);
-      cursor: pointer;
-      transition: transform 180ms ease, background 180ms ease, border-color 180ms ease;
-    }
-
-    .dialog-button--confirm {
-      border-color: rgba(242, 184, 96, 0.72);
-      color: #21160b;
-      background: #dfaa5d;
-      font-weight: 700;
-    }
-
-    .dialog-button:hover {
-      border-color: rgba(255, 225, 169, 0.56);
-      background: rgba(255, 255, 255, 0.1);
-      transform: translateY(-1px);
-    }
-
-    .dialog-button--confirm:hover {
-      background: #f0bf77;
-    }
-
     .intro-animate {
       opacity: 0;
       transform: translateY(22px);
@@ -1137,8 +1054,7 @@
       .advance-button,
       .case-card,
       .case-card::after,
-      .case-carousel-button,
-      .dialog-button {
+      .case-carousel-button {
         transition: none;
       }
 
@@ -1238,27 +1154,27 @@
         <output class="case-position" id="casePosition" aria-live="polite">01 / 06</output>
       </header>
       <div class="case-deck" aria-label="案件列表">
-        <button class="case-card" type="button" data-case-label="侦探资格审查" data-case-route="pretest.html">
+        <button class="case-card" type="button" data-case-id="screening" data-case-label="侦探资格审查" data-case-route="pretest.html">
           <img src="assets/new-frontpage/资格审查-web.webp" alt="侦探资格审查案件封面" loading="lazy" decoding="async" />
           <span class="case-card-label"><span>PRELUDE</span><strong>资格审查</strong></span>
         </button>
-        <button class="case-card" type="button" data-case-label="CASE 01：记忆容量调查" data-case-route="memory.html">
+        <button class="case-card" type="button" data-case-id="memory" data-case-label="CASE 01：记忆容量调查" data-case-route="memory.html">
           <img src="assets/new-frontpage/实验一-web.webp" alt="CASE 01 记忆容量调查案件封面" loading="lazy" decoding="async" />
           <span class="case-card-label"><span>CASE 01</span><strong>记忆容量调查</strong></span>
         </button>
-        <button class="case-card" type="button" data-case-label="CASE 02：工作记忆追踪" data-case-route="nback.html">
+        <button class="case-card" type="button" data-case-id="nback" data-case-label="CASE 02：工作记忆追踪" data-case-route="nback.html">
           <img src="assets/new-frontpage/实验二-web.webp" alt="CASE 02 工作记忆追踪案件封面" loading="lazy" decoding="async" />
           <span class="case-card-label"><span>CASE 02</span><strong>工作记忆追踪</strong></span>
         </button>
-        <button class="case-card" type="button" data-case-label="CASE 03：遗忘元凶调查" data-case-route="interference.html">
+        <button class="case-card" type="button" data-case-id="interference" data-case-label="CASE 03：遗忘元凶调查" data-case-route="interference.html">
           <img src="assets/new-frontpage/实验三-web.webp" alt="CASE 03 遗忘元凶调查案件封面" loading="lazy" decoding="async" />
           <span class="case-card-label"><span>CASE 03</span><strong>遗忘元凶调查</strong></span>
         </button>
-        <button class="case-card" type="button" data-case-label="CASE 04：记忆策略破解" data-case-route="strategies.html">
+        <button class="case-card" type="button" data-case-id="strategies" data-case-label="CASE 04：记忆策略破解" data-case-route="strategies.html">
           <img src="assets/new-frontpage/实验四-web.webp" alt="CASE 04 记忆策略破解案件封面" loading="lazy" decoding="async" />
           <span class="case-card-label"><span>CASE 04</span><strong>记忆策略破解</strong></span>
         </button>
-        <button class="case-card" type="button" data-case-label="CASE 05：调查成果展示" data-case-route="poster.html">
+        <button class="case-card" type="button" data-case-id="poster" data-case-label="CASE 05：调查成果展示" data-case-route="poster.html">
           <img src="assets/new-frontpage/成果展示-web.webp" alt="CASE 05 调查成果展示案件封面" loading="lazy" decoding="async" />
           <span class="case-card-label"><span>CASE 05</span><strong>调查成果展示</strong></span>
         </button>
@@ -1271,21 +1187,11 @@
     <p class="sr-only" id="sceneStatus" aria-live="polite">当前位于记忆侦探社入口。</p>
   </main>
 
-  <dialog class="case-dialog" id="caseDialog" aria-labelledby="caseDialogTitle">
-    <div class="case-dialog-inner">
-      <p class="dialog-kicker">Confirm assignment</p>
-      <h2 id="caseDialogTitle">确定进入这个案件？</h2>
-      <p>确认后将离开案件导航，进入对应的调查页面。</p>
-      <div class="dialog-actions">
-        <button class="dialog-button" type="button" id="cancelCaseButton">暂不进入</button>
-        <button class="dialog-button dialog-button--confirm" type="button" id="confirmCaseButton">确认进入</button>
-      </div>
-    </div>
-  </dialog>
-
   <script src="assets/experiment-registry.js"></script>
   <script src="assets/platform-core.js"></script>
   <script src="auth.js"></script>
+  <script src="assets/case-stories.js"></script>
+  <script src="assets/case-intro.js"></script>
   <script>
     (() => {
       "use strict";
@@ -1327,10 +1233,6 @@
       ];
       const sceneStatus = document.getElementById("sceneStatus");
       const replayButton = document.getElementById("replayButton");
-      const caseDialog = document.getElementById("caseDialog");
-      const caseDialogTitle = document.getElementById("caseDialogTitle");
-      const cancelCaseButton = document.getElementById("cancelCaseButton");
-      const confirmCaseButton = document.getElementById("confirmCaseButton");
       const caseDeck = document.querySelector(".case-deck");
       const caseCards = Array.from(document.querySelectorAll("[data-case-route]"));
       const prevCaseButton = document.getElementById("prevCaseButton");
@@ -1338,9 +1240,22 @@
       const casePosition = document.getElementById("casePosition");
       const reduceMotion = window.matchMedia("(prefers-reduced-motion: reduce)");
       const sceneNames = ["记忆侦探社入口", "案件卷宗", "案件导航"];
+      const caseIntro = window.CaseIntro.create({
+        platform,
+        stories: window.MemoryCaseStories,
+        backdropRoot: document.getElementById("experience"),
+        onNavigate(route) {
+          window.location.href = route;
+        },
+        onOpen(story) {
+          sceneStatus.textContent = `正在阅读${story.caseNumber}：${story.title}的案件前情提要。`;
+        },
+        onClose() {
+          sceneStatus.textContent = "已返回案件导航。";
+        }
+      });
       let activeScene = 0;
       let transitionLocked = false;
-      let pendingCaseRoute = "";
       let activeCaseIndex = 0;
       let pointerStartX = null;
       let carouselDragged = false;
@@ -1434,10 +1349,12 @@
         caseCards[activeCaseIndex].focus({ preventScroll: true });
       }
 
-      function openCaseDialog(card) {
-        pendingCaseRoute = card.dataset.caseRoute || "";
-        caseDialogTitle.textContent = `确定进入${card.dataset.caseLabel || "这个案件"}？`;
-        caseDialog.showModal();
+      function openCaseIntro(card) {
+        caseIntro.open({
+          caseId: card.dataset.caseId,
+          route: card.dataset.caseRoute,
+          returnFocus: card
+        });
       }
 
       scenes.slice(0, 2).forEach((scene) => {
@@ -1469,7 +1386,7 @@
             return;
           }
 
-          openCaseDialog(card);
+          openCaseIntro(card);
         });
       });
 
@@ -1495,28 +1412,8 @@
         pointerStartX = null;
       });
 
-      cancelCaseButton.addEventListener("click", () => {
-        pendingCaseRoute = "";
-        caseDialog.close();
-      });
-
-      confirmCaseButton.addEventListener("click", () => {
-        if (pendingCaseRoute) window.location.href = pendingCaseRoute;
-      });
-
-      caseDialog.addEventListener("click", (event) => {
-        if (event.target === caseDialog) {
-          pendingCaseRoute = "";
-          caseDialog.close();
-        }
-      });
-
-      caseDialog.addEventListener("cancel", () => {
-        pendingCaseRoute = "";
-      });
-
       document.addEventListener("keydown", (event) => {
-        if (caseDialog.open) return;
+        if (caseIntro.isOpen()) return;
 
         if (activeScene === 2 && event.key === "ArrowLeft") {
           event.preventDefault();
