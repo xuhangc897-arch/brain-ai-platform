@@ -221,6 +221,67 @@
       outline-offset: 3px;
     }
 
+    .teacher-menu {
+      position: relative;
+    }
+
+    .teacher-menu-button {
+      display: inline-flex;
+      align-items: center;
+      gap: 7px;
+      color: rgba(255, 239, 204, 0.82);
+      border-color: rgba(216, 184, 120, 0.3);
+      background: rgba(9, 8, 7, 0.48);
+    }
+
+    .teacher-menu-button[aria-expanded="true"] {
+      border-color: rgba(216, 184, 120, 0.62);
+      color: #fff0c7;
+      background: rgba(40, 28, 17, 0.7);
+    }
+
+    .teacher-menu-caret {
+      font-size: 10px;
+      transition: transform 180ms ease;
+    }
+
+    .teacher-menu-button[aria-expanded="true"] .teacher-menu-caret {
+      transform: rotate(180deg);
+    }
+
+    .teacher-menu-panel {
+      position: absolute;
+      top: calc(100% + 8px);
+      right: 0;
+      display: grid;
+      min-width: 170px;
+      padding: 6px;
+      border: 1px solid rgba(216, 184, 120, 0.36);
+      background: rgba(9, 8, 7, 0.92);
+      box-shadow: inset 0 1px rgba(255, 255, 255, 0.07), 0 12px 32px rgba(0, 0, 0, 0.46);
+      -webkit-backdrop-filter: blur(12px);
+      backdrop-filter: blur(12px);
+    }
+
+    .teacher-menu-panel[hidden] {
+      display: none;
+    }
+
+    .teacher-menu-link {
+      padding: 10px 12px;
+      color: rgba(255, 239, 204, 0.78);
+      text-decoration: none;
+      white-space: nowrap;
+      transition: color 160ms ease, background 160ms ease;
+    }
+
+    .teacher-menu-link:hover,
+    .teacher-menu-link:focus-visible {
+      color: #fff0c7;
+      background: rgba(216, 184, 120, 0.14);
+      outline: none;
+    }
+
     .scene-index {
       display: flex;
       align-items: center;
@@ -868,7 +929,10 @@
 
       .auth-hud {
         top: 18px;
+        left: 16px;
         right: 16px;
+        justify-content: flex-end;
+        flex-wrap: wrap;
         gap: 6px;
         font-size: 10px;
       }
@@ -885,6 +949,10 @@
       .auth-logout {
         min-height: 30px;
         padding: 0 9px;
+      }
+
+      .teacher-menu-panel {
+        min-width: 154px;
       }
 
       .experience {
@@ -1074,6 +1142,15 @@
   <main class="experience" id="experience">
     <div class="auth-hud top-actions" aria-label="登录状态">
       <span class="auth-status" id="welcomeUser">身份核验中</span>
+      <div class="teacher-menu" id="teacherMenu">
+        <button class="auth-logout teacher-menu-button" id="teacherMenuButton" type="button" aria-expanded="false" aria-haspopup="true" aria-controls="teacherMenuPanel">
+          教师端 <span class="teacher-menu-caret" aria-hidden="true">⌄</span>
+        </button>
+        <nav class="teacher-menu-panel" id="teacherMenuPanel" aria-label="教师端功能" hidden>
+          <a class="teacher-menu-link" href="admin/initStudents.html">学生名单导入</a>
+          <a class="teacher-menu-link" href="admin/dashboard.html">后台数据管理</a>
+        </nav>
+      </div>
       <button class="auth-logout" id="logoutBtn" type="button">退出</button>
       <button class="replay-button" id="replayButton" type="button" hidden>重新查看引导</button>
     </div>
@@ -1233,6 +1310,9 @@
       ];
       const sceneStatus = document.getElementById("sceneStatus");
       const replayButton = document.getElementById("replayButton");
+      const teacherMenu = document.getElementById("teacherMenu");
+      const teacherMenuButton = document.getElementById("teacherMenuButton");
+      const teacherMenuPanel = document.getElementById("teacherMenuPanel");
       const caseDeck = document.querySelector(".case-deck");
       const caseCards = Array.from(document.querySelectorAll("[data-case-route]"));
       const prevCaseButton = document.getElementById("prevCaseButton");
@@ -1309,6 +1389,11 @@
         if (activeScene < scenes.length - 1) showScene(activeScene + 1);
       }
 
+      function setTeacherMenuOpen(open) {
+        teacherMenuButton.setAttribute("aria-expanded", String(open));
+        teacherMenuPanel.hidden = !open;
+      }
+
       function getCircularOffset(index) {
         let offset = index - activeCaseIndex;
         const half = caseCards.length / 2;
@@ -1368,6 +1453,16 @@
         button.addEventListener("click", advance);
       });
 
+      teacherMenuButton.addEventListener("click", () => {
+        setTeacherMenuOpen(teacherMenuPanel.hidden);
+      });
+
+      document.addEventListener("click", (event) => {
+        if (!teacherMenuPanel.hidden && !teacherMenu.contains(event.target)) {
+          setTeacherMenuOpen(false);
+        }
+      });
+
       replayButton.addEventListener("click", () => {
         if (videos[0]) videos[0].currentTime = 0;
         showScene(0);
@@ -1413,6 +1508,13 @@
       });
 
       document.addEventListener("keydown", (event) => {
+        if (event.key === "Escape" && !teacherMenuPanel.hidden) {
+          event.preventDefault();
+          setTeacherMenuOpen(false);
+          teacherMenuButton.focus();
+          return;
+        }
+
         if (caseIntro.isOpen()) return;
 
         if (activeScene === 2 && event.key === "ArrowLeft") {

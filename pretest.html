@@ -331,7 +331,6 @@
           <button class="theme-option" type="button" data-theme-option="science" aria-label="切换到科技模式" aria-pressed="true">科技模式</button>
           <button class="theme-option" type="button" data-theme-option="archive" aria-label="切换到档案模式" aria-pressed="false">档案模式</button>
         </div>
-        <button class="btn secondary" type="button" id="exportBtn">导出 Excel</button>
         <button class="btn secondary" type="button" id="homeBtn">返回首页</button>
       </div>
     </div>
@@ -347,9 +346,6 @@
         <div class="identity-grid">
           <label>学生姓名
             <input id="studentName" type="text" autocomplete="off" readonly>
-          </label>
-          <label>学生年龄
-            <input id="studentAge" type="number" min="1" max="99" autocomplete="off">
           </label>
           <label>班级
             <input id="className" type="text" autocomplete="off" readonly>
@@ -435,7 +431,6 @@
 
     const inputs = {
       studentName: document.getElementById("studentName"),
-      studentAge: document.getElementById("studentAge"),
       className: document.getElementById("className"),
       studentId: document.getElementById("studentId"),
       groupId: document.getElementById("groupId")
@@ -547,11 +542,7 @@
       Object.assign(state, getStudentIdentityFields());
       if (state.groupName) state.groupId = state.groupName;
       Object.keys(inputs).forEach((key) => {
-        if (key === "studentAge") {
-          state[key] = inputs[key].value.trim();
-        } else {
-          inputs[key].value = state[key] || "";
-        }
+        inputs[key].value = state[key] || "";
       });
       localStorage.setItem(CONTEXT_KEY, JSON.stringify({
         studentName: state.studentName,
@@ -610,7 +601,6 @@
       document.getElementById("knowledgePrevBtn").addEventListener("click", () => changeKnowledgePage(-1));
       document.getElementById("knowledgeNextBtn").addEventListener("click", () => changeKnowledgePage(1));
       document.getElementById("knowledgeSubmitBtn").addEventListener("click", submitKnowledgePretest);
-      document.getElementById("exportBtn").addEventListener("click", exportExcel);
     }
 
     function getKnowledgeQuestion(questionId) {

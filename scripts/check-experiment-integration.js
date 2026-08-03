@@ -102,6 +102,8 @@ for (const page of [
 }
 
 const pretestPage = read("pretest.html");
+assert(!pretestPage.includes('id="studentAge"'), "pretest.html 不应显示学生年龄输入框");
+assert(!pretestPage.includes('id="exportBtn"'), "pretest.html 不应显示导出 Excel 按钮");
 for (const assistantAsset of [
   "assets/ai-assistant.css",
   "assets/voice-assistant.css",

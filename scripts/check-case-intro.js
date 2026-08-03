@@ -65,6 +65,13 @@ expectedCases.forEach(([id, route, title, buttonText], indexPosition) => {
   "caseIntro.isOpen()"
 ].forEach((contract) => assert(index.includes(contract), `首页缺少剧情接入契约：${contract}`));
 
+[
+  ['href="admin/initStudents.html"', "学生名单导入"],
+  ['href="admin/dashboard.html"', "后台数据管理"],
+  ['id="teacherMenuButton"', "教师端菜单按钮"],
+  ['id="teacherMenuPanel"', "教师端菜单面板"]
+].forEach(([contract, label]) => assert(index.includes(contract), `首页缺少${label}：${contract}`));
+
 assert(!index.includes("caseDialog"), "旧案件确认弹窗仍然存在。");
 assert(introSource.includes('scopedKey(SEEN_STORAGE_KEY)'), "剧情观看记录必须使用用户作用域存储。");
 assert(introSource.includes("markSeen(activeStory.id)"), "点击开始调查时必须记录已观看案件。");
