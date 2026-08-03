@@ -21,6 +21,7 @@ const LEVEL_LABELS = Object.freeze({
 const app = cloudbase.init({ env: cloudbase.SYMBOL_CURRENT_ENV });
 const db = app.database();
 const records = db.collection("experimentRecords");
+const submissions = db.collection("experiment_submissions");
 const memories = db.collection("student_memories");
 const diagnoses = db.collection("learning_diagnoses");
 const students = db.collection("students");
@@ -75,6 +76,15 @@ function recordData(record) {
 }
 
 function fullState(record) {
+  if (record && record.experimentResults && typeof record.experimentResults === "object") {
+    const quiz = record.knowledgeQuiz || {};
+    const attempts = Array.isArray(quiz.attempts) ? quiz.attempts : [];
+    return Object.assign({}, record.experimentResults, {
+      fields: record.answers || {},
+      surveys: { postMeta: record.surveys && record.surveys.meta || {}, cognitiveLoad: record.surveys && record.surveys.cognitiveLoad || {}, inquiryParticipation: record.surveys && record.surveys.inquiryParticipation || {} },
+      knowledgeQuiz: Object.assign({}, quiz, { history: attempts, submitted: attempts.length > 0, score: quiz.finalScore })
+    });
+  }
   const data = recordData(record);
   return data.fullState && typeof data.fullState === "object" ? data.fullState : {};
 }
@@ -101,6 +111,8 @@ async function readDocument(collection, id) {
 }
 
 async function latestSubmission(studentId, experimentId) {
+  const current = await submissions.where({ studentId, experimentId }).orderBy("uploadedAt", "desc").limit(1).get();
+  if (Array.isArray(current.data) && current.data[0]) return current.data[0];
   const result = await records
     .where({ studentId, module: experimentId, recordType: "submission" })
     .orderBy("uploadedAt", "desc")

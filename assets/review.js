@@ -12,8 +12,25 @@
   const params = new URLSearchParams(window.location.search);
   const requestedActivityType = params.get("activityType") || "memory";
   const activityType = integration.resolveReportActivity(requestedActivityType, "memory").id;
-  renderReviewPage(buildReviewData(activityType));
-  if (activityType === "strategies") appendLearningDiagnosis();
+  loadReview().catch(() => {
+    root.innerHTML = '<section class="loading-card"><h2>正式报告读取失败</h2><p>请检查网络连接后刷新页面。</p></section>';
+  });
+
+  async function loadReview() {
+    const session = readStudentSession();
+    if (session.isGuest) {
+      renderReviewPage(buildReviewData(activityType, null, null, true));
+      return;
+    }
+    const submissionId = params.get("submissionId") || "";
+    const result = await window.BrainExperimentSubmission.getLatest(activityType, submissionId);
+    if (!result?.ok || !result.state) {
+      root.innerHTML = '<section class="loading-card"><h2>暂时无法生成正式报告</h2><p>没有找到已确认的正式提交，请返回实验页面重新提交案件。</p></section>';
+      return;
+    }
+    renderReviewPage(buildReviewData(activityType, result.state, result.submission));
+    if (activityType === "strategies") appendLearningDiagnosis();
+  }
 
   async function appendLearningDiagnosis() {
     const sheet = root && root.querySelector(".report-sheet");
@@ -72,7 +89,7 @@
       : "<p>暂时没有足够记录。</p>";
   }
 
-  function buildReviewData(activityType) {
+  function buildReviewData(activityType, suppliedState, submission, guestPreview = false) {
     const activity = integration.resolveReportActivity(activityType, "memory");
     const meta = {
       caseNo: activity.caseNo,
@@ -81,7 +98,7 @@
       type: activity.reportType
     };
     const storageKey = window.BrainPlatform.storage.migrateScopedJson(activity.storageKey);
-    const state = readState(storageKey);
+    const state = suppliedState || readState(storageKey);
     const studentSession = readStudentSession();
     const fields = state.fields || {};
     const generatedAt = new Date().toLocaleString();
@@ -92,6 +109,8 @@
       fields,
       meta,
       generatedAt,
+      submission,
+      guestPreview,
       identity: {
         studentName: state.studentName || studentSession.name,
         studentAge: state.studentAge,
@@ -361,6 +380,7 @@
   function renderReportShell(data, resultLabel, resultHtml) {
     return `
       <article class="report-sheet">
+        ${data.guestPreview ? '<div class="info-card"><strong>游客体验报告：此报告来自本地状态，不属于正式研究数据。</strong></div>' : ""}
         ${renderHeader(data)}
         <section>
           <h2 class="section-label">档案信息</h2>
@@ -494,8 +514,9 @@
   }
 
   function normalizeKnowledgeQuiz(quiz) {
-    const history = Array.isArray(quiz.history)
-      ? quiz.history.map((record, index) => normalizeKnowledgeQuizRecord(record, index))
+    const sourceAttempts = Array.isArray(quiz.attempts) ? quiz.attempts : quiz.history;
+    const history = Array.isArray(sourceAttempts)
+      ? sourceAttempts.map((record, index) => normalizeKnowledgeQuizRecord(record, index))
       : [];
     if (!history.length && (quiz.submitted || quiz.submittedAt)) {
       history.push(normalizeKnowledgeQuizRecord({
@@ -526,7 +547,7 @@
     const score = number(record.score || (totalCount ? Math.round((correctCount / totalCount) * 100) : 0));
     return {
       attemptNumber: number(record.attemptNumber || index + 1),
-      submittedAt: record.submittedAt || "",
+      submittedAt: record.timestamp || record.submittedAt || "",
       score,
       correctCount,
       totalCount,

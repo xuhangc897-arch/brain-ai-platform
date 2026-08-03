@@ -72,9 +72,6 @@ window.uploadExperimentRecords = (payload) => {
   calls.push({ type: "upload", payload });
   return payload;
 };
-window.submitAiChatRecord = (moduleId, action) => {
-  calls.push({ type: "ai", moduleId, action });
-};
 window.open = (url, target) => {
   calls.push({ type: "open", url, target });
 };
@@ -113,13 +110,13 @@ assert.strictEqual(
   `memory|submission|S001|generateReport|${record.createdAt}`
 );
 
-window.BrainExperimentBridge.finishReport("memory", "generateReport");
+window.BrainExperimentBridge.finishReport("memory", "submission-1");
 assert.deepStrictEqual(
   calls.slice(1).map((call) => call.type),
-  ["ai", "open"]
+  ["open"]
 );
-assert.strictEqual(calls[2].url, "review.html?activityType=memory");
-assert.strictEqual(calls[2].target, "_blank");
+assert.strictEqual(calls[1].url, "review.html?activityType=memory&submissionId=submission-1");
+assert.strictEqual(calls[1].target, "_blank");
 
 const rootPages = [
   "index.html",

@@ -33,8 +33,6 @@
           <p class="ai-subtitle">只给提示，不代写答案</p>
         </div>
         <div class="ai-head-actions" aria-label="AI 对话记录操作">
-          <button class="ai-tool-btn" type="button" data-ai-export>导出记录</button>
-          <button class="ai-tool-btn danger" type="button" data-ai-clear>清空记录</button>
           <button class="ai-close" type="button" aria-label="关闭 AI 助手">×</button>
         </div>
       </header>
@@ -52,8 +50,6 @@
   const form = root.querySelector(".ai-form");
   const input = root.querySelector(".ai-input");
   const send = root.querySelector(".ai-send");
-  const exportButton = root.querySelector("[data-ai-export]");
-  const clearButton = root.querySelector("[data-ai-clear]");
   const panel = root.querySelector(".ai-panel");
   const head = root.querySelector(".ai-head");
 
@@ -289,7 +285,7 @@
     }
   }
 
-  function buildLog(context, answer) {
+  function buildLog(context, answer, failed = false) {
     return {
       timestamp: new Date().toISOString(),
       studentName: context.studentName,
@@ -302,14 +298,86 @@
       currentStep: context.currentStep,
       path: context.path,
       question: context.question,
-      answer
+      answer,
+      experimentId: integration.resolveSourceModule("", context.path),
+      failed
     };
   }
 
-  function saveChatLog(context, answer) {
+  function saveChatLog(context, answer, failed = false) {
     const logs = readLogs();
-    logs.push(buildLog(context, answer));
+    logs.push(buildLog(context, answer, failed));
     saveLogs(logs);
+  }
+
+  function aiOutboxKey() {
+    return platform.storage.scopedKey(platform.config.storageKeys.aiChatOutbox);
+  }
+
+  function readAiOutbox() {
+    const value = readJson(aiOutboxKey(), { entries: [] });
+    return value && Array.isArray(value.entries) ? value.entries : [];
+  }
+
+  function writeAiOutbox(entries) {
+    localStorage.setItem(aiOutboxKey(), JSON.stringify({ schemaVersion: 1, updatedAt: new Date().toISOString(), entries: entries.slice(-200) }));
+  }
+
+  function buildAiChatRecord(context, answer) {
+    const timestamp = new Date().toISOString();
+    const experimentId = integration.resolveSourceModule("", context.path);
+    return {
+      schemaVersion: 1,
+      clientRecordId: ["ai", context.studentId || "", experimentId || "unknown", timestamp].join("|"),
+      studentId: context.studentId || "",
+      experimentId,
+      page: context.path || location.pathname,
+      step: context.currentStep || "",
+      question: context.question,
+      answer,
+      timestamp
+    };
+  }
+
+  async function sendAiChatRecord(record) {
+    const session = platform.identity.readStudentSession() || {};
+    if (session.isGuest) return { ok: true, guest: true };
+    if (!session.sessionToken) return { ok: false, code: "UNAUTHORIZED", retryable: true };
+    try {
+      const response = await fetch(platform.config.endpoints.saveAiChatRecord, {
+        method: "POST",
+        headers: { "Content-Type": "application/json", Authorization: `Bearer ${session.sessionToken}` },
+        body: JSON.stringify({ schemaVersion: 1, record })
+      });
+      const result = await response.json().catch(() => ({}));
+      if (result.code === "UNAUTHORIZED") result.retryable = true;
+      return Object.assign({ ok: response.ok && Boolean(result.ok) }, result);
+    } catch (error) {
+      return { ok: false, code: "NETWORK_ERROR", retryable: true };
+    }
+  }
+
+  async function flushAiChatOutbox() {
+    const entries = readAiOutbox();
+    const remaining = [];
+    for (const record of entries) {
+      const result = await sendAiChatRecord(record);
+      if (!result.ok && result.code !== "DUPLICATE" && result.retryable !== false) remaining.push(record);
+    }
+    writeAiOutbox(remaining);
+    return { ok: remaining.length === 0, queued: remaining.length };
+  }
+
+  async function uploadAiChatRecord(context, answer) {
+    const record = buildAiChatRecord(context, answer);
+    const entries = readAiOutbox();
+    if (!entries.some((item) => item.clientRecordId === record.clientRecordId)) entries.push(record);
+    writeAiOutbox(entries);
+    const result = await sendAiChatRecord(record);
+    if (result.ok || result.code === "DUPLICATE" || result.retryable === false) {
+      writeAiOutbox(readAiOutbox().filter((item) => item.clientRecordId !== record.clientRecordId));
+    }
+    return result;
   }
 
   function getCurrentPageLogs() {
@@ -326,45 +394,6 @@
       experimentName: log.experimentName || getExperimentName(),
       currentStep: log.currentStep || getCurrentStep()
     }));
-  }
-
-  function buildAiChatSubmission(sourceModule, submitAction) {
-    const identity = readIdentity();
-    const logs = getCurrentPageLogs();
-    if (!logs.length) return null;
-    const submittedAt = new Date().toISOString();
-    const resolvedSourceModule = integration.resolveSourceModule(sourceModule, location.pathname);
-    return {
-      submitAction,
-      sourceModule: resolvedSourceModule,
-      studentId: identity.studentId || "",
-      studentName: identity.studentName || "",
-      className: identity.className || "",
-      groupName: identity.groupId || "",
-      pageTitle: document.title || "",
-      experimentName: getExperimentName(),
-      path: location.pathname,
-      logs,
-      logCount: logs.length,
-      createdAt: submittedAt,
-      clientRecordId: `aiChat|${resolvedSourceModule || "unknown"}|${identity.studentId || ""}|${submitAction || "submit"}|${submittedAt}`
-    };
-  }
-
-  function submitAiChatRecord(sourceModule, submitAction = "generateReport") {
-    if (typeof window.uploadExperimentRecords !== "function") {
-      console.warn("[AI Assistant] uploadExperimentRecords is not available; AI chat was not uploaded.");
-      return Promise.resolve({ ok: false, skipped: true, message: "uploadExperimentRecords unavailable" });
-    }
-    const record = buildAiChatSubmission(sourceModule, submitAction);
-    if (!record) {
-      return Promise.resolve({ ok: true, skipped: true, message: "no AI chat logs" });
-    }
-    return window.uploadExperimentRecords({
-      module: "aiChat",
-      recordType: "submission",
-      records: [record]
-    });
   }
 
   function makeAssistantError(reason) {
@@ -427,58 +456,8 @@
     return answer;
   }
 
-  function csvCell(value) {
-    const text = String(value ?? "").replace(/\r?\n/g, " ");
-    return `"${text.replace(/"/g, '""')}"`;
-  }
-
-  function exportLogs() {
-    const logs = readLogs();
-    if (!logs.length) {
-      appendMessage("ai", "当前还没有可导出的 AI 对话记录。");
-      return;
-    }
-
-    const headers = ["时间", "学生姓名", "学生年龄", "学生编号", "班级", "小组编号", "页面", "实验", "阶段", "学生问题", "AI回答"];
-    const rows = logs.map((log) => [
-      log.timestamp,
-      log.studentName,
-      log.studentAge,
-      log.studentId,
-      log.className,
-      log.groupId,
-      log.pageTitle || log.path,
-      log.experimentName,
-      log.currentStep,
-      log.question,
-      log.answer
-    ]);
-
-    const csv = [headers, ...rows].map((row) => row.map(csvCell).join(",")).join("\r\n");
-    const blob = new Blob(["\ufeff", csv], { type: "text/csv;charset=utf-8" });
-    const url = URL.createObjectURL(blob);
-    const identity = readIdentity();
-    const stamp = new Date().toISOString().replace(/[:.]/g, "-").slice(0, 19);
-    const filename = `ai_chat_logs_${identity.studentId || "unknown"}_${stamp}.csv`;
-    const link = document.createElement("a");
-    link.href = url;
-    link.download = filename;
-    document.body.appendChild(link);
-    link.click();
-    document.body.removeChild(link);
-    URL.revokeObjectURL(url);
-  }
-
-  function clearLogs() {
-    if (!confirm("确定要清空 AI 对话记录吗？此操作不可恢复。")) return;
-    localStorage.removeItem(LOG_KEY);
-    renderHistory();
-  }
-
   toggle.addEventListener("click", () => setOpen(true));
   close.addEventListener("click", () => setOpen(false));
-  exportButton.addEventListener("click", exportLogs);
-  clearButton.addEventListener("click", clearLogs);
 
   form.addEventListener("submit", async (event) => {
     event.preventDefault();
@@ -496,11 +475,12 @@
       const answer = await askAssistant(context);
       loading.textContent = answer;
       saveChatLog(context, answer);
+      uploadAiChatRecord(context, answer).catch(() => {});
     } catch (error) {
       const reason = error && error.message ? error.message : "网络请求失败。";
       const message = makeAssistantError(reason);
       loading.textContent = message;
-      saveChatLog(context, `错误：${message}`);
+      saveChatLog(context, `错误：${message}`, true);
     } finally {
       input.disabled = false;
       send.disabled = false;
@@ -516,10 +496,11 @@
     window.BrainAIChat = {
       readLogs,
       getCurrentPageLogs,
-      buildAiChatSubmission,
-      submitAiChatRecord
+      buildAiChatRecord,
+      uploadAiChatRecord,
+      flushAiChatOutbox
     };
-    window.submitAiChatRecord = submitAiChatRecord;
+    flushAiChatOutbox().catch(() => {});
   }
 
   if (document.readyState === "loading") {
@@ -527,4 +508,5 @@
   } else {
     initAssistant();
   }
+  window.addEventListener("online", () => flushAiChatOutbox().catch(() => {}));
 })();

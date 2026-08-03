@@ -21,6 +21,8 @@
       studentLogin: `${HTTP_BASE}/studentLogin`,
       createStudents: `${HTTP_BASE}/createStudents`,
       saveExperimentRecord: `${HTTP_BASE}/saveExperimentRecord`,
+      saveExperimentSubmission: `${HTTP_BASE}/saveExperimentSubmission`,
+      getLatestExperimentSubmission: `${HTTP_BASE}/getLatestExperimentSubmission`,
       saveLearningRecord: `${HTTP_BASE}/saveLearningRecord`,
       saveAgentIntervention: `${HTTP_BASE}/saveAgentIntervention`,
       checkTaskRelevance: `${HTTP_BASE}/checkTaskRelevance`,
@@ -29,11 +31,14 @@
       generateLearningDiagnosis: `${HTTP_BASE}/generateLearningDiagnosis`,
       getLearningDiagnosis: `${HTTP_BASE}/getLearningDiagnosis`,
       getExperimentRecords: `${HTTP_BASE}/getExperimentRecords`,
+      saveAiChatRecord: `${HTTP_BASE}/saveAiChatRecord`,
       aiChat: "https://1441391469-6rhud8ln4o.ap-shanghai.tencentscf.com"
     }),
     storageKeys: Object.freeze({
       studentSession: "studentSession",
       uploadOutbox: "experiment-upload-outbox-v1",
+      submissionOutbox: "experiment-submission-outbox-v1",
+      aiChatOutbox: "ai-chat-outbox-v1",
       learningBehaviorOutbox: "learning-behavior-outbox-v1",
       agentInterventionOutbox: "agent-intervention-outbox-v1",
       typingSupportState: "typing-support-state-v1",

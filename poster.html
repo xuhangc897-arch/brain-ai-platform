@@ -656,6 +656,7 @@
   <script src="assets/experiment-bridge.js"></script>
   <script src="assets/experiment-page-runtime.js"></script>
   <script src="assets/experiment-integration.js"></script>
+  <script src="assets/experiment-submission.js"></script>
   <script>
     checkLogin();
   </script>
@@ -1419,16 +1420,19 @@
       }
     }
 
-    function generateReviewReport(activityType) {
+    async function generateReviewReport(activityType) {
+      const button = document.getElementById("reviewReportBtn");
+      if (button) button.disabled = true;
       saveState();
-      submitPosterRecord("generateReport");
-      window.BrainExperimentBridge.finishReport(activityType, "generateReport");
+      const result = await submitPosterRecord();
+      if (result?.ok) window.BrainExperimentBridge.finishReport(activityType, result.submissionId || "");
+      else alert(result?.queued ? "正式提交尚未上传成功，请保持联网后重试。" : "正式提交失败，请稍后重试。");
+      if (button) button.disabled = false;
     }
-    function submitPosterRecord(submitAction) {
-      return window.BrainExperimentBridge.submitState({
+    function submitPosterRecord() {
+      return window.BrainExperimentBridge.submitExperimentState({
         moduleId: "poster",
-        state,
-        submitAction
+        state
       });
     }
 

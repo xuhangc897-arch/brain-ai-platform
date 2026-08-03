@@ -1,4 +1,6 @@
-# 实验记录数据库模型 v2
+# 实验记录数据库模型 v2（历史兼容）
+
+> 当前正式提交模型已经升级到 `experiment_submissions`，见 `docs/DATA_ARCHITECTURE_V3.md`。本文仅描述保留的 `experimentRecords` 历史兼容结构。
 
 阶段 3 在现有 `experimentRecords` 集合内采用 v2 文档，不新建集合、不迁移历史记录。这样可以保留教师后台查询和导出，同时逐步建立清晰的数据所有者、活动、时间和载荷边界。
 
