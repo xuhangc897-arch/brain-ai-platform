@@ -25,6 +25,31 @@
       "runtime": "Nodejs16.13"
     },
     {
+      "name": "saveExperimentSubmission",
+      "timeout": 60,
+      "runtime": "Nodejs20.19"
+    },
+    {
+      "name": "getLatestExperimentSubmission",
+      "timeout": 60,
+      "runtime": "Nodejs20.19"
+    },
+    {
+      "name": "getExperimentSubmissionsAdmin",
+      "timeout": 60,
+      "runtime": "Nodejs20.19"
+    },
+    {
+      "name": "saveAiChatRecord",
+      "timeout": 60,
+      "runtime": "Nodejs20.19"
+    },
+    {
+      "name": "getAiChatRecordsAdmin",
+      "timeout": 60,
+      "runtime": "Nodejs20.19"
+    },
+    {
       "name": "saveLearningRecord",
       "timeout": 60,
       "runtime": "Nodejs16.13"

@@ -50,14 +50,32 @@
       throw new Error(`模块不支持生成报告：${moduleId}`);
     }
 
-    if (typeof global.submitAiChatRecord === "function") {
-      global.submitAiChatRecord(entry.id, submitAction || "generateReport");
+    const submissionId = String(submitAction || "");
+    const separator = reportUrl.includes("?") ? "&" : "?";
+    const target = submissionId
+      ? `${reportUrl}${separator}submissionId=${encodeURIComponent(submissionId)}`
+      : reportUrl;
+    return global.open(target, "_blank");
+  }
+
+  function submitExperimentState(options) {
+    const moduleId = String(options && options.moduleId || "");
+    requireModule(moduleId);
+    if (typeof options.beforeSnapshot === "function") options.beforeSnapshot();
+    if (!global.BrainExperimentSubmission) {
+      return Promise.resolve({ ok: false, code: "SUBMISSION_CLIENT_UNAVAILABLE", queued: false });
     }
-    return global.open(reportUrl, "_blank");
+    return global.BrainExperimentSubmission.submit({
+      experimentId: moduleId,
+      state: options.state,
+      submissionId: options.submissionId,
+      submissionTime: options.submissionTime
+    });
   }
 
   global.BrainExperimentBridge = Object.freeze({
     submitState,
+    submitExperimentState,
     finishReport
   });
 })(window);

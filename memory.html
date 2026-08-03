@@ -1069,6 +1069,7 @@
   <script src="assets/experiment-bridge.js"></script>
   <script src="assets/experiment-page-runtime.js"></script>
   <script src="assets/experiment-integration.js"></script>
+  <script src="assets/experiment-submission.js"></script>
   <script>
     checkLogin();
   </script>
@@ -1140,18 +1141,19 @@
     };
 
     function createDefaultSurveys() {
-      return { postMeta: {}, cognitiveLoad: {}, inquiryParticipation: {} };
+      return { current: { postMeta: {}, cognitiveLoad: {}, inquiryParticipation: {} } };
     }
     function mergeSurveys(incoming = {}) {
       const merged = createDefaultSurveys();
-      Object.keys(merged).forEach((key) => {
-        merged[key] = Object.assign({}, merged[key], incoming[key] || {});
+      const source = incoming.current || incoming;
+      Object.keys(merged.current).forEach((key) => {
+        merged.current[key] = Object.assign({}, merged.current[key], source[key] || {});
       });
       return merged;
     }
 
     function createDefaultKnowledgeQuiz() {
-      return { answers: {}, submitted: false, correctCount: 0, score: 0, submittedAt: '', wrongQuestions: [], history: [] };
+      return { answers: {}, submitted: false, correctCount: 0, score: 0, submittedAt: '', wrongQuestions: [], history: [], attempts: [], firstScore: null, bestScore: null, finalScore: null };
     }
 
     function normalizeKnowledgeQuizRecord(record = {}, index = 0) {
@@ -1173,8 +1175,9 @@
     function mergeKnowledgeQuiz(incoming = {}) {
       const merged = createDefaultKnowledgeQuiz();
       merged.answers = Object.assign({}, incoming.answers || {});
-      const history = Array.isArray(incoming.history)
-        ? incoming.history.map((record, index) => normalizeKnowledgeQuizRecord(record, index))
+      const sourceAttempts = Array.isArray(incoming.attempts) ? incoming.attempts : incoming.history;
+      const history = Array.isArray(sourceAttempts)
+        ? sourceAttempts.map((record, index) => normalizeKnowledgeQuizRecord(record, index))
         : [];
       if (!history.length && (incoming.submitted || incoming.submittedAt)) {
         history.push(normalizeKnowledgeQuizRecord({
@@ -1188,6 +1191,10 @@
         }, 0));
       }
       merged.history = history;
+      merged.attempts = history;
+      merged.firstScore = history.length ? history[0].score : null;
+      merged.bestScore = history.length ? Math.max(...history.map((record) => record.score)) : null;
+      merged.finalScore = history.length ? history[history.length - 1].score : null;
       const last = history[history.length - 1];
       merged.submitted = Boolean(last);
       merged.correctCount = last ? last.correctCount : Number(incoming.correctCount || 0);
@@ -1598,7 +1605,7 @@
 
     function renderSurveyForm(surveyKey, defKey) {
       const def = SURVEY_DEFS[defKey];
-      const answers = state.surveys?.[surveyKey] || {};
+      const answers = state.surveys?.current?.[surveyKey] || {};
       return '<section class="survey-card">' +
         '<div class="survey-card-head"><h4>' + def.title + '</h4><p class="survey-card-note">' + def.note + '</p></div>' +
         '<div class="survey-items">' +
@@ -1762,7 +1769,7 @@
           const surveyKey = input.dataset.survey;
           const questionKey = input.dataset.question;
           state.surveys = mergeSurveys(state.surveys);
-          state.surveys[surveyKey][questionKey] = Number(input.value);
+          state.surveys.current[surveyKey][questionKey] = Number(input.value);
           saveState();
           renderApp();
         });
@@ -1771,7 +1778,7 @@
 
     function summarizeSurvey(surveyKey, defKey) {
       const def = SURVEY_DEFS[defKey];
-      const answers = state.surveys?.[surveyKey] || {};
+      const answers = state.surveys?.current?.[surveyKey] || {};
       const values = def.items.map((_, index) => Number(answers['q' + (index + 1)] || 0)).filter(Boolean);
       const total = values.reduce((sum, value) => sum + value, 0);
       return { answered: values.length, total, average: values.length ? Number((total / values.length).toFixed(2)) : 0, complete: values.length === def.items.length };
@@ -1785,7 +1792,7 @@
     function getSurveySheets() {
       const makeSheet = (title, surveyKey, defKey) => {
         const def = SURVEY_DEFS[defKey];
-        const answers = state.surveys?.[surveyKey] || {};
+        const answers = state.surveys?.current?.[surveyKey] || {};
         const summary = summarizeSurvey(surveyKey, defKey);
         return [title, [
           ["题号", "题目", "得分"],
@@ -2377,19 +2384,22 @@
       if (reviewReport) reviewReport.addEventListener("click", () => generateReviewReport("memory"));
     }
 
-    function generateReviewReport(activityType) {
+    async function generateReviewReport(activityType) {
+      const button = document.getElementById("reviewReportBtn");
+      if (button) button.disabled = true;
       window.LearningBehaviorTracker?.markStageSubmitted(steps[state.currentStep].id);
-      window.LearningBehaviorTracker?.flush();
+      await Promise.resolve(window.LearningBehaviorTracker?.flush());
       saveState();
-      submitMemoryRecord("generateReport");
-      window.BrainExperimentBridge.finishReport(activityType, "generateReport");
+      const result = await submitMemoryRecord();
+      if (result?.ok) window.BrainExperimentBridge.finishReport(activityType, result.submissionId || "");
+      else alert(result?.queued ? "正式提交尚未上传成功，请保持联网后重试。" : "正式提交失败，请稍后重试。");
+      if (button) button.disabled = false;
     }
 
-    function submitMemoryRecord(submitAction) {
-      return window.BrainExperimentBridge.submitState({
+    function submitMemoryRecord() {
+      return window.BrainExperimentBridge.submitExperimentState({
         moduleId: "memory",
         state,
-        submitAction,
         beforeSnapshot: syncThinkingFields
       });
     }

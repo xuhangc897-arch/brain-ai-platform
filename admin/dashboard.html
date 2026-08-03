@@ -469,8 +469,13 @@
     }
 
     async function fetchRecords(payload) {
+      const functionName = payload.module === "aiChat"
+        ? "getAiChatRecordsAdmin"
+        : payload.recordType === "submission"
+          ? "getExperimentSubmissionsAdmin"
+          : "getExperimentRecords";
       const response = await window.app.callFunction({
-        name: "getExperimentRecords",
+        name: functionName,
         data: payload
       });
       const result = response && (response.result || response);
@@ -1791,9 +1796,12 @@
         } catch (error) {
           console.warn("读取逐次实验记录失败，将使用最新状态快照中的历史记录。", getErrorSummary(error));
         }
-        const detailSheets = latestStateRecords.flatMap((record) => (
-          stateSheetDispatcher.dispatch(record.module, record)
-        ));
+        const detailSheets = latestStateRecords.flatMap((record) => {
+          const recordSheets = stateSheetDispatcher.dispatch(record.module, record);
+          return record.sourceCollection === "experiment_submissions"
+            ? recordSheets.filter(([name]) => !String(name).includes("localStorage原始数据"))
+            : recordSheets;
+        });
         const strategyAttemptHistory = collectStrategyAttemptHistory(latestStateRecords, cloudAttemptRecords);
         const attemptSheets = strategyAttemptHistory.length ? [buildStrategyAttemptHistorySheet(strategyAttemptHistory)] : [];
         sheets = [buildOverviewSheet(latestStateRecords), ...detailSheets, ...attemptSheets];
