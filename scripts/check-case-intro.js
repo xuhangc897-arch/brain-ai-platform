@@ -66,8 +66,10 @@ expectedCases.forEach(([id, route, title, buttonText], indexPosition) => {
 ].forEach((contract) => assert(index.includes(contract), `首页缺少剧情接入契约：${contract}`));
 
 assert(!index.includes("caseDialog"), "旧案件确认弹窗仍然存在。");
-assert(introSource.includes('scopedKey(SEEN_STORAGE_KEY)'), "首次观看记录必须使用用户作用域存储。");
+assert(introSource.includes('scopedKey(SEEN_STORAGE_KEY)'), "剧情观看记录必须使用用户作用域存储。");
 assert(introSource.includes("markSeen(activeStory.id)"), "点击开始调查时必须记录已观看案件。");
+assert(introSource.includes("skipButton.hidden = !hasSeen(caseId)"), "首次进入必须隐藏跳过按钮，第二次起才能显示。");
+assert(!introSource.includes("!route || hasSeen(caseId)"), "已观看案件仍应再次进入剧情场景。");
 assert(introSource.includes("return Object.freeze({ open, close, isOpen, hasSeen })"), "CaseIntro 控制器公共接口不完整。");
 
-console.log("Six case intro stories, card mappings, routes and first-view contracts passed.");
+console.log("Six case intro stories, card mappings, routes and replay contracts passed.");
