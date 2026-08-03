@@ -92,7 +92,6 @@ function assertOrder(relativePath, first, second) {
 assertOrder("review.html", "assets/experiment-integration.js", "assets/review.js");
 assertOrder("admin/dashboard.html", "../assets/experiment-integration.js", "../cloudbase.js");
 for (const page of [
-  "pretest.html",
   "memory.html",
   "nback.html",
   "interference.html",
@@ -100,6 +99,18 @@ for (const page of [
   "poster.html"
 ]) {
   assertOrder(page, "assets/experiment-integration.js", "assets/ai-assistant.js");
+}
+
+const pretestPage = read("pretest.html");
+for (const assistantAsset of [
+  "assets/ai-assistant.css",
+  "assets/voice-assistant.css",
+  "assets/ai-assistant.js",
+  "assets/voice-recorder.js",
+  "assets/asr-client.js",
+  "assets/voice-assistant.js"
+]) {
+  assert(!pretestPage.includes(assistantAsset), `pretest.html 不应加载 ${assistantAsset}`);
 }
 
 assert(read("assets/review.js").includes("integration.resolveReportActivity"));
