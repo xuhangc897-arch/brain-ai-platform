@@ -444,6 +444,89 @@ td {
 
   button.theme-option {
     flex: 1 1 0;
+    min-height: 44px;
+  }
+
+  .top-actions > .btn {
+    min-height: 44px;
+  }
+
+  .experiment-page .topbar {
+    position: static;
+  }
+
+  .experiment-page .topbar-inner {
+    padding-left: 6px;
+    padding-right: 6px;
+    padding-top: 10px;
+    padding-bottom: 10px;
+  }
+
+  .experiment-page .brand-row {
+    gap: 8px;
+    margin-bottom: 8px;
+  }
+
+  .experiment-page .brand-title h1 {
+    font-size: 18px;
+  }
+
+  .experiment-page .identity-pill {
+    font-size: 12px;
+    white-space: normal;
+  }
+
+  .experiment-page .top-actions {
+    display: grid;
+    width: 100%;
+    grid-template-columns: repeat(4, minmax(0, 1fr));
+    gap: 6px;
+  }
+
+  .experiment-page .top-actions .theme-switch {
+    grid-column: 1 / -1;
+  }
+
+  .experiment-page .top-actions > .btn {
+    width: 100%;
+    min-width: 0;
+    padding: 0 4px;
+    font-size: 12px;
+    white-space: normal;
+  }
+
+  .experiment-page .progress {
+    display: grid;
+    grid-template-columns: repeat(8, minmax(0, 1fr));
+    gap: 1px;
+    overflow-x: visible;
+    padding-bottom: 0;
+  }
+
+  .experiment-page .progress-step {
+    position: relative;
+    min-width: 0;
+    min-height: 44px;
+    padding: 6px 2px;
+    justify-content: center;
+  }
+
+  .experiment-page .progress-step strong {
+    width: 28px;
+    height: 28px;
+    flex-basis: 28px;
+  }
+
+  .experiment-page .progress-step span {
+    position: absolute;
+    width: 1px;
+    height: 1px;
+    padding: 0;
+    margin: -1px;
+    overflow: hidden;
+    clip: rect(0, 0, 0, 0);
+    clip-path: inset(50%);
+    white-space: nowrap;
   }
 
   html[data-theme="archive"] .progress-step:not(:last-child)::after {

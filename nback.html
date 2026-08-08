@@ -1247,7 +1247,22 @@
       }
 
       .memory-table {
-        min-width: 440px;
+        width: 100%;
+        min-width: 0;
+        table-layout: fixed;
+        font-size: 12px;
+      }
+
+      .memory-table th,
+      .memory-table td {
+        padding: 8px;
+        overflow-wrap: anywhere;
+      }
+
+      .memory-table th:first-child,
+      .memory-table td:first-child {
+        width: 64px;
+        white-space: normal;
       }
 
       .practice-settings,
@@ -1351,7 +1366,7 @@
   <link rel="stylesheet" href="assets/voice-assistant.css">
   <link rel="stylesheet" href="assets/memory-partner.css">
 </head>
-<body>
+<body class="experiment-page">
   <div class="app-shell">
     <header id="topbar" class="topbar">
       <div class="topbar-inner">
