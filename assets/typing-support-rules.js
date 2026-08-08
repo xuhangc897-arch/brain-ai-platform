@@ -2,19 +2,19 @@
   "use strict";
 
   const TYPING_SUPPORT_RULES = Object.freeze({
-    minObservationMs: 60000,
-    longPauseMs: 30000,
-    lowCharacterThreshold: 15,
-    deleteOperationThreshold: 5,
-    largeDeleteThreshold: 2,
-    refocusThreshold: 3,
-    refocusCharacterThreshold: 5,
+    minObservationMs: 30000,
+    longStayCharacterThreshold: 10,
+    longPauseMs: 20000,
+    lowCharacterThreshold: 20,
+    deleteOperationThreshold: 3,
+    largeDeleteThreshold: 1,
+    refocusThreshold: 2,
+    refocusCharacterThreshold: 10,
     recentActivityWindowMs: 45000,
     steadyInputMaxGapMs: 15000,
     steadyInputMinGrowth: 5,
     steadyInputMinEvents: 3,
-    maxSuggestionsPerTask: 1,
-    cooldownMs: 300000
+    cooldownMs: 180000
   });
 
   function hasSteadyRecentInput(metrics, now, rules) {
@@ -46,14 +46,14 @@
     }
 
     const reasons = [];
-    if (metrics.effectiveCharacterCount === 0) reasons.push("no_effective_text");
-
-    const ongoingLongPause = metrics.currentPauseMs >= rules.longPauseMs ? 1 : 0;
-    if ((Number(metrics.longPauseCount) || 0) + ongoingLongPause >= 2) {
+    if (metrics.observedDurationMs >= rules.minObservationMs &&
+        metrics.effectiveCharacterCount < rules.longStayCharacterThreshold) {
+      reasons.push("no_effective_text");
+    }
+    if (Math.max(Number(metrics.longestPauseMs) || 0, Number(metrics.currentPauseMs) || 0) >= rules.longPauseMs) {
       reasons.push("repeated_long_pauses");
     }
-    if (metrics.deleteCount >= rules.deleteOperationThreshold &&
-        metrics.deleteCount >= metrics.effectiveCharacterCount) {
+    if (metrics.deleteCount >= rules.deleteOperationThreshold) {
       reasons.push("deletion_pressure");
     }
     if (metrics.largeDeleteCount >= rules.largeDeleteThreshold) {

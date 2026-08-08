@@ -3,7 +3,7 @@
 
   const SCHEMA_VERSION = 1;
   const INTERVENTION_TYPE = "suggest_voice_input";
-  const MESSAGE = "看起来你在输入时遇到了一点困难。需要试试语音输入吗？你可以先把想法说出来，再修改转换后的文字。";
+  const MESSAGE = "如果打字有困难的话，可以让语音转文字助手来帮你！";
   const OUTBOX_LIMIT = 100;
   const OUTBOX_TTL_MS = 7 * 24 * 60 * 60 * 1000;
   const LOCAL_STATE_LIMIT = 500;
@@ -41,6 +41,23 @@
       target.dataset.stageId,
       target.dataset.taskId
     ].join("|");
+  }
+
+  function normalizeText(value) {
+    return String(value == null ? "" : value).normalize("NFC").replace(/\s+/gu, " ").trim();
+  }
+
+  function textFingerprint(value) {
+    let hash = 2166136261;
+    for (const character of Array.from(normalizeText(value))) {
+      hash ^= character.codePointAt(0);
+      hash = Math.imul(hash, 16777619);
+    }
+    return (hash >>> 0).toString(16).padStart(8, "0");
+  }
+
+  function stateSignature(target, triggerReasons) {
+    return `${textFingerprint(target.value)}|${triggerReasons.slice().sort().join(",")}`;
   }
 
   function pageId() {
@@ -236,6 +253,9 @@
 
   function showSuggestion(target, metrics, result, studentId, now) {
     const key = taskKey(target, studentId);
+    const signature = stateSignature(target, result.triggerReasons);
+    const previous = findLocalEntry(key);
+    if (previous?.lastStateSignature === signature) return false;
     const intervention = buildIntervention(target, metrics, result.triggerReasons, studentId, now);
     const shown = global.VirtualAgent.showVoiceSuggestion({
       target,
@@ -245,12 +265,13 @@
     if (!shown) return false;
 
     activeSuggestionKey = key;
-    upsertLocalEntry({
+    upsertLocalEntry(Object.assign({}, previous, {
       key,
       shownAt: now,
+      lastStateSignature: signature,
       response: "shown",
       intervention
-    });
+    }));
     if (global.AGENT_DEBUG === true) {
       console.debug("[TypingSupport] Voice suggestion shown.", {
         experimentId: intervention.experimentId,
@@ -271,9 +292,7 @@
     if (!currentIdentity) return;
     const metrics = global.LearningBehaviorTracker.getTaskMetrics(activeTarget);
     if (!metrics || metrics.taskStatus === "submitted") return;
-    const key = taskKey(activeTarget, currentIdentity.studentId);
     const now = Date.now();
-    if (findLocalEntry(key)) return;
     if (!isInCooldown(currentIdentity.studentId, now) && !global.VirtualAgent.isBusy()) {
       const result = global.TypingSupportRules.evaluate(metrics, now);
       if (result.shouldSuggest) {
@@ -379,4 +398,10 @@
   }
 
   global.TypingSupport = Object.freeze({ init, flush });
+  global.__TypingSupportTestHooks = Object.freeze({
+    message: MESSAGE,
+    normalizeText,
+    textFingerprint,
+    stateSignature
+  });
 })(window);

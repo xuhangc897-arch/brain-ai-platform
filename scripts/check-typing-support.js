@@ -12,11 +12,12 @@ sandbox.window = sandbox;
 vm.runInNewContext(rulesSource, sandbox, { filename: "typing-support-rules.js" });
 const rules = sandbox.TypingSupportRules;
 const now = 1_000_000;
+assert.strictEqual(rules.values.cooldownMs, 180000);
 
 function metrics(overrides) {
   return Object.assign({
-    observedDurationMs: 60000,
-    effectiveCharacterCount: 5,
+    observedDurationMs: 30000,
+    effectiveCharacterCount: 15,
     pauseCount: 0,
     longPauseCount: 0,
     currentPauseMs: 0,
@@ -33,37 +34,27 @@ function metrics(overrides) {
 assert.strictEqual(
   rules.evaluate(metrics({ effectiveCharacterCount: 0 }), now).shouldSuggest,
   true,
-  "60 seconds without effective text must suggest support"
-);
-assert.strictEqual(
-  rules.evaluate(metrics({ longPauseCount: 1 }), now).shouldSuggest,
-  false,
-  "one completed long pause must not trigger"
-);
-assert.strictEqual(
-  rules.evaluate(metrics({ currentPauseMs: 30000 }), now).shouldSuggest,
-  false,
-  "one ongoing long pause must not trigger"
+  "30 seconds without effective text must suggest support"
 );
 assert(
-  rules.evaluate(metrics({ longPauseCount: 1, currentPauseMs: 30000 }), now)
+  rules.evaluate(metrics({ currentPauseMs: 20000 }), now)
     .triggerReasons.includes("repeated_long_pauses")
 );
 assert(
-  rules.evaluate(metrics({ deleteCount: 6, effectiveCharacterCount: 5 }), now)
+  rules.evaluate(metrics({ deleteCount: 3 }), now)
     .triggerReasons.includes("deletion_pressure")
 );
 assert(
-  rules.evaluate(metrics({ largeDeleteCount: 2 }), now)
+  rules.evaluate(metrics({ largeDeleteCount: 1 }), now)
     .triggerReasons.includes("multiple_large_deletions")
 );
 assert(
-  rules.evaluate(metrics({ focusCount: 3, effectiveCharacterCount: 4 }), now)
+  rules.evaluate(metrics({ focusCount: 2, effectiveCharacterCount: 9 }), now)
     .triggerReasons.includes("repeated_focus_without_progress")
 );
 assert.strictEqual(
   rules.evaluate(metrics({
-    deleteCount: 6,
+    deleteCount: 3,
     positiveGrowthEvents: [
       { at: now - 12000, growth: 2 },
       { at: now - 7000, growth: 2 },
@@ -74,12 +65,12 @@ assert.strictEqual(
   "steady recent input must suppress a suggestion"
 );
 assert.strictEqual(
-  rules.evaluate(metrics({ effectiveCharacterCount: 15, deleteCount: 20 }), now).shouldSuggest,
+  rules.evaluate(metrics({ effectiveCharacterCount: 20, deleteCount: 20 }), now).shouldSuggest,
   false,
   "complete text must not trigger"
 );
 assert.strictEqual(
-  rules.evaluate(metrics({ observedDurationMs: 59999, effectiveCharacterCount: 0 }), now).shouldSuggest,
+  rules.evaluate(metrics({ observedDurationMs: 29999, effectiveCharacterCount: 0 }), now).shouldSuggest,
   false,
   "minimum observation time must be enforced"
 );
@@ -152,6 +143,7 @@ function createControllerHarness(options) {
       this.disabled = false;
       this.readOnly = false;
       this.isConnected = true;
+      this.value = "";
     }
     matches(selector) {
       return selector.includes('data-voice-suggestion="true"');
@@ -267,6 +259,7 @@ function createControllerHarness(options) {
       suggestion = null;
       current.onResponse(response);
     },
+    get suggestionMessage() { return suggestion && suggestion.message; },
     get suggestionCount() { return suggestionCount; },
     get openedVoiceTarget() { return openedVoiceTarget; }
   };
@@ -276,6 +269,24 @@ function createControllerHarness(options) {
   const accepted = createControllerHarness({ experimentId: "memory" });
   accepted.focus();
   assert.strictEqual(accepted.suggestionCount, 1);
+  assert.strictEqual(
+    accepted.suggestionMessage,
+    "如果打字有困难的话，可以让语音转文字助手来帮你！"
+  );
+  const voiceHooks = accepted.context.__TypingSupportTestHooks;
+  const initialSignature = voiceHooks.stateSignature(accepted.target, ["no_effective_text"]);
+  assert.strictEqual(
+    initialSignature,
+    voiceHooks.stateSignature(accepted.target, ["no_effective_text"]),
+    "the same text and difficulty types must produce the same state"
+  );
+  accepted.target.value = "新想法";
+  assert.notStrictEqual(
+    initialSignature,
+    voiceHooks.stateSignature(accepted.target, ["no_effective_text"]),
+    "changed text must produce a new state"
+  );
+  accepted.target.value = "";
   accepted.respond("accepted");
   assert.strictEqual(accepted.openedVoiceTarget, accepted.target);
   let localEntries = JSON.parse(accepted.storage.get("typing-support-state-v1"));
