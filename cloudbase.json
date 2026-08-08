@@ -15,6 +15,16 @@
       "runtime": "Nodejs16.13"
     },
     {
+      "name": "getStudentsAdmin",
+      "timeout": 60,
+      "runtime": "Nodejs20.19"
+    },
+    {
+      "name": "deleteStudentAdmin",
+      "timeout": 60,
+      "runtime": "Nodejs20.19"
+    },
+    {
       "name": "studentLogin",
       "timeout": 60,
       "runtime": "Nodejs16.13"
@@ -36,6 +46,16 @@
     },
     {
       "name": "getExperimentSubmissionsAdmin",
+      "timeout": 60,
+      "runtime": "Nodejs20.19"
+    },
+    {
+      "name": "createExperimentRecordAdmin",
+      "timeout": 60,
+      "runtime": "Nodejs20.19"
+    },
+    {
+      "name": "deleteExperimentRecordAdmin",
       "timeout": 60,
       "runtime": "Nodejs20.19"
     },

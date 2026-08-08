@@ -136,7 +136,6 @@ for (const page of ["admin/dashboard.html", "admin/initStudents.html"]) {
   assertOrder(page, "../assets/experiment-registry.js", "../assets/platform-core.js");
 }
 for (const page of [
-  "pretest.html",
   "memory.html",
   "nback.html",
   "interference.html",

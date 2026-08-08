@@ -13,6 +13,11 @@ for (const page of experimentPages) {
   assert.match(source, /async function generateReviewReport/, `${page} must await submission before report`);
   assert.match(source, /surveys\.current/, `${page} must store the current survey state explicitly`);
   assert.match(source, /attempts: \[\], firstScore: null, bestScore: null, finalScore: null/, `${page} must retain normalized quiz summaries`);
+  assert.doesNotMatch(source, /id=["']submitKnowledgeQuizBtn["']/, `${page} must not render a separate knowledge quiz submit button`);
+  assert.doesNotMatch(source, /function submitKnowledgeQuiz\s*\(/, `${page} must finalize the quiz only with the formal submission`);
+  assert.match(source, /function finalizeKnowledgeQuizOnce\s*\(/, `${page} must finalize the quiz once`);
+  assert.doesNotMatch(source, /renderKnowledgeQuizHistory\(summary\)/, `${page} must not render quiz scores or submission history`);
+  assert.doesNotMatch(source, /function getKnowledgeQuizSheet\s*\(/, `${page} must not expose quiz scores through the student export`);
 }
 assert.match(read("poster.html"), /submitExperimentState\(/);
 assert.doesNotMatch(read("strategies.html"), /uploadStrategyAttempt|recordType:\s*["']experiment["']/);
@@ -30,8 +35,19 @@ assert.match(assistant, /saveChatLog\(context, `错误：\$\{message\}`, true\)/
 const review = read("assets/review.js");
 assert.match(review, /BrainExperimentSubmission\.getLatest/);
 assert.match(review, /if \(session\.isGuest\)/);
-assert.match(review, /quiz\.attempts/);
+assert.doesNotMatch(review, /renderKnowledgeQuizReport\(data\)/);
+assert.doesNotMatch(review, /knowledgeQuiz|知识验证|提交成绩|提交次数/);
 assert.doesNotMatch(review, /ai_chat_records|learning_records|agent_interventions/);
+
+const screening = read("pretest.html");
+assert.match(screening, /experiment-submission\.js/);
+assert.match(screening, /submitExperimentState\(/);
+assert.doesNotMatch(screening, /uploadExperimentRecords|BrainExperimentBridge\.submitState\(/);
+
+const dashboard = read("admin/dashboard.html");
+assert.match(dashboard, /isAiChatExport\s*\?\s*exportSourceRecords\s*:\s*getLatestStateRecords/);
+assert.match(dashboard, /exportAll:\s*true/);
+assert.match(read("cloudfunctions/getAiChatRecordsAdmin/index.js"), /async function readAll[\s\S]*exportAll \? filtered/);
 
 for (const file of [
   "cloudfunctions/generateExperimentMemory/index.js",

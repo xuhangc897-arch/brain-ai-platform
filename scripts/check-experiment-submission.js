@@ -13,7 +13,7 @@ const context = {
   fetch: async () => ({ ok: true, json: async () => ({ ok: true, code: "STORED" }) }),
   localStorage: { getItem: (key) => store.get(key) || null, setItem: (key, value) => store.set(key, value) },
   addEventListener() {},
-  BrainExperimentRegistry: { get: (id) => ({ id, label: "Memory", kind: "experiment" }) },
+  BrainExperimentRegistry: { get: (id) => ({ id, label: id === "screening" ? "Screening" : "Memory", kind: id === "screening" ? "screening" : "experiment" }) },
   BrainExperimentIntegration: { resolveSourceModule: (_source, pathName) => pathName.includes("memory") ? "memory" : "" },
   BrainAIChat: { readLogs: () => [{ path: "/memory.html", failed: false }, { path: "/memory.html", failed: true }] },
   BrainPlatform: {
@@ -38,13 +38,21 @@ const built = context.BrainExperimentSubmission.build({ experimentId: "memory", 
 assert.strictEqual(built.answers.question, "Q");
 assert.strictEqual(built.experimentResults.records[0].raw, true);
 assert.strictEqual(built.experimentResults.attemptHistory[0].runId, "r1");
-assert.strictEqual(built.knowledgeQuiz.attempts.length, 2);
+assert.strictEqual(built.knowledgeQuiz.attempts.length, 1);
 assert.strictEqual(built.knowledgeQuiz.firstScore, 80);
-assert.strictEqual(built.knowledgeQuiz.bestScore, 100);
-assert.strictEqual(built.knowledgeQuiz.finalScore, 100);
+assert.strictEqual(built.knowledgeQuiz.bestScore, 80);
+assert.strictEqual(built.knowledgeQuiz.finalScore, 80);
 assert.strictEqual(built.surveys.meta.q1, 4);
 assert.strictEqual(built.reflections.reflection_individual, "R");
 assert.strictEqual(built.aiSummary.usageCount, 1);
+
+const screening = context.BrainExperimentSubmission.build({
+  experimentId: "screening",
+  state: { studentId: "s-1", answers: { q1: 4 }, knowledgePretest: { submitted: true } },
+  submissionTime: "2026-08-03T02:30:00.000Z"
+});
+assert.strictEqual(screening.answers.q1, 4);
+assert.strictEqual(screening.experimentResults.knowledgePretest.submitted, true);
 
 context.BrainExperimentSubmission.submit({ experimentId: "memory", state, submissionTime: "2026-08-03T02:00:00.000Z" }).then((result) => {
   assert.strictEqual(result.ok, true);

@@ -6,17 +6,25 @@
   <title>学生账号初始化 - 教师工具</title>
   <style>
     :root {
-      --bg: #f5f8ff;
-      --panel: #fff;
-      --ink: #142033;
-      --muted: #667085;
-      --line: #d8e1f2;
-      --primary: #4f7cff;
-      --primary-dark: #315fe4;
-      --success: #16875f;
-      --warning: #b7791f;
-      --danger: #d92d20;
-      font-family: "Microsoft YaHei", "PingFang SC", "Segoe UI", Arial, sans-serif;
+      --night: #090b0c;
+      --paper: #dfc58f;
+      --paper-light: #f3dfae;
+      --paper-dark: #b98f54;
+      --ink: #2d2118;
+      --muted: #665646;
+      --line: rgba(91, 62, 35, 0.34);
+      --leather: #41291b;
+      --leather-dark: #21150f;
+      --gold: #c79345;
+      --gold-light: #f0ce83;
+      --stamp: #7b2d24;
+      --success: #326b45;
+      --warning: #a66d18;
+      --danger: #9b382f;
+      --serif: "Songti SC", "STSong", "SimSun", "Noto Serif CJK SC", serif;
+      --handwriting: "KaiTi", "STKaiti", "FangSong", "STFangsong", serif;
+      --sans: "Microsoft YaHei", "PingFang SC", "Noto Sans CJK SC", sans-serif;
+      font-family: var(--sans);
     }
 
     * {
@@ -24,11 +32,31 @@
     }
 
     body {
+      position: relative;
+      isolation: isolate;
       margin: 0;
       min-height: 100vh;
       color: var(--ink);
-      background: linear-gradient(135deg, #f8fbff 0%, var(--bg) 100%);
-      padding: 32px 18px;
+      background-color: var(--night);
+      background-image:
+        linear-gradient(180deg, rgba(4, 5, 6, 0.48), rgba(4, 5, 6, 0.7)),
+        linear-gradient(90deg, rgba(2, 3, 4, 0.52), transparent 48%, rgba(2, 3, 4, 0.42)),
+        url("../assets/new-frontpage/首页静图-web.webp");
+      background-position: center;
+      background-size: cover;
+      background-attachment: fixed;
+      padding: clamp(22px, 4vw, 52px) 18px;
+    }
+
+    body::before {
+      position: fixed;
+      inset: 0;
+      z-index: -1;
+      background:
+        radial-gradient(circle at 50% 18%, transparent 0 30%, rgba(0, 0, 0, 0.2) 76%, rgba(0, 0, 0, 0.48) 100%),
+        linear-gradient(180deg, rgba(9, 7, 5, 0.06), rgba(9, 7, 5, 0.42));
+      content: "";
+      pointer-events: none;
     }
 
     button,
@@ -41,47 +69,214 @@
       margin: 0 auto;
     }
 
+    .page-header,
+    .management-head,
+    .pagination,
+    .dialog-actions {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 14px;
+    }
+
+    .page-header {
+      align-items: flex-start;
+    }
+
+    .page-header > div {
+      min-width: 0;
+      flex: 1;
+    }
+
     .panel {
-      border: 1px solid var(--line);
-      border-radius: 18px;
-      background: var(--panel);
-      box-shadow: 0 18px 48px rgba(52, 79, 135, 0.12);
-      padding: 28px;
+      position: relative;
+      isolation: isolate;
+      overflow: hidden;
+      border: 1px solid rgba(72, 44, 22, 0.82);
+      border-radius: 5px 9px 6px 4px;
+      background-color: var(--paper);
+      background-image:
+        radial-gradient(circle at 12% 9%, rgba(102, 65, 29, 0.14) 0 2px, transparent 3px),
+        radial-gradient(circle at 86% 31%, rgba(117, 74, 31, 0.09) 0 18px, transparent 42px),
+        radial-gradient(circle at 24% 78%, rgba(104, 62, 25, 0.08) 0 12px, transparent 38px),
+        repeating-linear-gradient(2deg, rgba(83, 53, 28, 0.025) 0 1px, transparent 1px 5px),
+        linear-gradient(115deg, rgba(255, 247, 211, 0.48), transparent 35%, rgba(112, 76, 41, 0.12) 100%);
+      box-shadow:
+        0 3px 0 rgba(90, 55, 27, 0.48),
+        0 8px 0 -3px rgba(216, 182, 121, 0.72),
+        0 28px 70px rgba(0, 0, 0, 0.62),
+        inset 0 0 50px rgba(105, 68, 31, 0.2);
+      padding: clamp(22px, 4vw, 36px);
+    }
+
+    .panel::before {
+      position: absolute;
+      top: 18px;
+      right: 18px;
+      z-index: -1;
+      width: min(310px, 42%);
+      aspect-ratio: 900 / 287;
+      background: url("../assets/new-frontpage/logo-web.webp") center / contain no-repeat;
+      content: "";
+      filter: sepia(1) saturate(0.55) contrast(0.8);
+      opacity: 0.085;
+      pointer-events: none;
+    }
+
+    .panel::after {
+      position: absolute;
+      right: 32px;
+      bottom: 25px;
+      z-index: -1;
+      display: grid;
+      width: 104px;
+      height: 104px;
+      place-items: center;
+      border: 3px double rgba(123, 45, 36, 0.34);
+      border-radius: 50%;
+      color: rgba(123, 45, 36, 0.34);
+      content: "已归档\A MEMORY\A 侦探社";
+      font-family: var(--serif);
+      font-size: 11px;
+      font-weight: 800;
+      line-height: 1.45;
+      text-align: center;
+      white-space: pre;
+      letter-spacing: 0.08em;
+      transform: rotate(-11deg);
+      pointer-events: none;
+    }
+
+    .panel > * {
+      position: relative;
+      z-index: 1;
     }
 
     h1 {
-      margin: 0 0 8px;
-      font-size: 28px;
-      line-height: 1.25;
+      display: flex;
+      flex-wrap: wrap;
+      align-items: flex-end;
+      gap: 7px 16px;
+      margin: 0 0 10px;
+      padding-bottom: 13px;
+      border-bottom: 2px solid rgba(91, 57, 27, 0.68);
+      color: #3f2819;
+      font-family: var(--serif);
+      font-size: clamp(26px, 4vw, 36px);
+      line-height: 1.2;
+      letter-spacing: 0.09em;
+      text-shadow: 0 1px rgba(255, 239, 195, 0.72);
+    }
+
+    h1::before {
+      order: 2;
+      margin-left: auto;
+      color: #8b5b2b;
+      content: "CASE FILE · MD-INIT-01";
+      font: 700 10px/1.4 Georgia, "Times New Roman", serif;
+      letter-spacing: 0.18em;
     }
 
     .intro {
       margin: 0 0 24px;
       color: var(--muted);
-      line-height: 1.7;
+      font-family: var(--handwriting);
+      font-size: 15px;
+      line-height: 1.85;
+      letter-spacing: 0.035em;
     }
 
     .upload-box {
+      position: relative;
       display: grid;
       gap: 14px;
-      padding: 18px;
-      border: 1px dashed #a9bae0;
-      border-radius: 14px;
-      background: #f9fbff;
+      overflow: hidden;
+      padding: 22px;
+      border: 2px solid #8c6339;
+      border-radius: 4px 10px 5px 7px;
+      outline: 1px dashed rgba(78, 48, 24, 0.42);
+      outline-offset: -8px;
+      background:
+        linear-gradient(135deg, transparent 0 18px, rgba(116, 76, 35, 0.1) 19px 20px, transparent 21px),
+        repeating-linear-gradient(0deg, rgba(105, 69, 34, 0.035) 0 1px, transparent 1px 4px),
+        linear-gradient(145deg, #ead39d 0%, #d9bb7c 100%);
+      box-shadow:
+        inset 0 0 24px rgba(94, 59, 27, 0.15),
+        0 8px 18px rgba(74, 46, 23, 0.16);
+    }
+
+    .upload-box::after {
+      position: absolute;
+      top: 9px;
+      right: -29px;
+      width: 108px;
+      padding: 4px 0;
+      background: rgba(82, 51, 28, 0.72);
+      color: #f1d79e;
+      content: "附件 A";
+      font: 700 10px/1.2 var(--serif);
+      text-align: center;
+      letter-spacing: 0.16em;
+      transform: rotate(42deg);
+      pointer-events: none;
     }
 
     .upload-box strong {
-      color: var(--primary-dark);
+      max-width: calc(100% - 36px);
+      color: #4e321e;
+      font-family: var(--serif);
+      line-height: 1.65;
+      letter-spacing: 0.03em;
+    }
+
+    input[type="file"] {
+      width: 100%;
+      color: #584534;
+      font-size: 14px;
+      font-weight: 700;
+    }
+
+    input[type="file"]::file-selector-button {
+      min-height: 38px;
+      margin-right: 12px;
+      padding: 0 16px;
+      border: 1px solid var(--gold);
+      border-radius: 4px;
+      background: linear-gradient(180deg, #5b3a27, var(--leather));
+      box-shadow:
+        0 3px 0 var(--leather-dark),
+        inset 0 1px rgba(255, 230, 170, 0.18);
+      color: #f3dca8;
+      cursor: pointer;
+      font-weight: 800;
+      transition: border-color 180ms ease, box-shadow 180ms ease, transform 180ms ease;
+    }
+
+    input[type="file"]::file-selector-button:hover {
+      border-color: var(--gold-light);
+      box-shadow:
+        0 3px 0 var(--leather-dark),
+        0 0 15px rgba(219, 168, 80, 0.32),
+        inset 0 1px rgba(255, 230, 170, 0.22);
+    }
+
+    input[type="file"]:focus-visible {
+      outline: 2px solid #7d4d23;
+      outline-offset: 4px;
     }
 
     .auth-gate {
       display: none;
       margin-bottom: 18px;
       padding: 16px 18px;
-      border: 1px solid #f1c16d;
-      border-radius: 14px;
-      background: #fff8e8;
-      color: #7a4f01;
+      border: 1px solid #9a672b;
+      border-left: 5px solid #8a4b26;
+      border-radius: 4px;
+      background:
+        repeating-linear-gradient(0deg, transparent 0 27px, rgba(114, 76, 38, 0.09) 28px),
+        #eed79f;
+      box-shadow: 0 5px 14px rgba(78, 48, 24, 0.14);
+      color: #613c18;
     }
 
     .auth-gate.is-visible {
@@ -100,36 +295,112 @@
     }
 
     .actions {
+      position: relative;
       display: flex;
       flex-wrap: wrap;
       gap: 12px;
       align-items: center;
       margin-top: 16px;
+      padding-bottom: 19px;
+      border-bottom: 1px dashed rgba(89, 57, 31, 0.34);
+    }
+
+    .actions::after {
+      position: absolute;
+      right: 0;
+      bottom: 4px;
+      color: rgba(86, 54, 29, 0.6);
+      content: "EVIDENCE REGISTER · 01";
+      font: 700 9px/1 Georgia, "Times New Roman", serif;
+      letter-spacing: 0.16em;
+      pointer-events: none;
     }
 
     .btn {
+      position: relative;
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      gap: 10px;
       min-height: 42px;
-      padding: 0 18px;
-      border: 0;
-      border-radius: 999px;
-      background: linear-gradient(135deg, var(--primary), #6aa1ff);
-      color: #fff;
+      padding: 0 20px;
+      border: 1px solid var(--gold);
+      border-radius: 4px;
+      background: linear-gradient(180deg, #5f3d29, #382317 72%);
+      color: #f5dfa9;
       cursor: pointer;
       font-weight: 800;
-      box-shadow: 0 12px 22px rgba(79, 124, 255, 0.22);
+      letter-spacing: 0.06em;
+      box-shadow:
+        0 4px 0 #1e130d,
+        0 8px 18px rgba(45, 27, 15, 0.24),
+        inset 0 1px rgba(255, 231, 176, 0.18);
+      transition: border-color 180ms ease, box-shadow 180ms ease, transform 180ms ease;
+    }
+
+    #importBtn {
+      min-height: 48px;
+      padding-left: 50px;
+      text-transform: none;
+    }
+
+    #importBtn::before {
+      position: absolute;
+      left: 19px;
+      width: 13px;
+      height: 13px;
+      border: 2px solid var(--gold-light);
+      border-radius: 50%;
+      content: "";
+      box-shadow: 0 0 8px rgba(236, 198, 116, 0.3);
+    }
+
+    #importBtn::after {
+      position: absolute;
+      left: 34px;
+      width: 9px;
+      height: 2px;
+      border-radius: 2px;
+      background: var(--gold-light);
+      content: "";
+      transform: rotate(45deg);
+      transform-origin: left center;
+    }
+
+    .btn:hover:not(:disabled) {
+      border-color: var(--gold-light);
+      box-shadow:
+        0 4px 0 #1e130d,
+        0 0 19px rgba(218, 164, 72, 0.42),
+        inset 0 1px rgba(255, 231, 176, 0.24);
+      transform: translateY(-1px);
+    }
+
+    .btn:active:not(:disabled) {
+      box-shadow:
+        0 2px 0 #1e130d,
+        0 4px 10px rgba(45, 27, 15, 0.24);
+      transform: translateY(2px);
+    }
+
+    .btn:focus-visible {
+      outline: 2px solid #7a461f;
+      outline-offset: 4px;
     }
 
     .btn:disabled {
       cursor: wait;
-      opacity: 0.64;
+      opacity: 0.58;
+      filter: saturate(0.62);
     }
 
     .status {
       min-height: 22px;
-      margin: 16px 0 0;
+      margin: 0;
       color: var(--muted);
       font-size: 14px;
       font-weight: 700;
+      line-height: 1.55;
     }
 
     .summary {
@@ -140,24 +411,45 @@
     }
 
     .stat {
-      border: 1px solid var(--line);
-      border-radius: 14px;
-      padding: 16px;
-      background: #fbfcff;
+      position: relative;
+      overflow: hidden;
+      border: 1px solid rgba(91, 60, 31, 0.5);
+      border-radius: 3px 7px 4px 5px;
+      padding: 17px 18px;
+      background:
+        repeating-linear-gradient(0deg, transparent 0 25px, rgba(89, 57, 30, 0.075) 26px),
+        linear-gradient(145deg, rgba(255, 239, 196, 0.68), rgba(205, 172, 111, 0.58));
+      box-shadow:
+        0 5px 12px rgba(67, 41, 21, 0.14),
+        inset 0 0 18px rgba(104, 67, 31, 0.1);
+    }
+
+    .stat::after {
+      position: absolute;
+      top: 7px;
+      right: 8px;
+      color: rgba(88, 56, 30, 0.32);
+      content: "FILE";
+      font: 700 9px/1 Georgia, "Times New Roman", serif;
+      letter-spacing: 0.14em;
     }
 
     .stat span {
       display: block;
       color: var(--muted);
-      font-size: 13px;
-      font-weight: 700;
+      font-family: var(--serif);
+      font-size: 14px;
+      font-weight: 800;
+      letter-spacing: 0.12em;
     }
 
     .stat strong {
       display: block;
-      margin-top: 4px;
-      font-size: 28px;
+      margin-top: 8px;
+      font-family: Georgia, "Times New Roman", serif;
+      font-size: 32px;
       line-height: 1;
+      text-shadow: 0 1px rgba(255, 244, 210, 0.64);
     }
 
     .success strong {
@@ -175,10 +467,17 @@
     table {
       width: 100%;
       margin-top: 22px;
-      border-collapse: collapse;
+      border: 1px solid rgba(82, 51, 27, 0.62);
+      border-collapse: separate;
+      border-spacing: 0;
       overflow: hidden;
-      border-radius: 12px;
-      background: #fff;
+      border-radius: 4px;
+      background:
+        repeating-linear-gradient(0deg, transparent 0 34px, rgba(96, 62, 31, 0.065) 35px),
+        linear-gradient(145deg, #ebd39d, #d8b979);
+      box-shadow:
+        0 7px 18px rgba(65, 39, 19, 0.16),
+        inset 0 0 22px rgba(91, 56, 25, 0.09);
       font-size: 14px;
     }
 
@@ -186,48 +485,76 @@
     td {
       padding: 10px 12px;
       border-bottom: 1px solid var(--line);
+      border-right: 1px solid rgba(91, 62, 35, 0.14);
       text-align: left;
       vertical-align: top;
     }
 
+    tr:last-child td {
+      border-bottom: 0;
+    }
+
+    th:last-child,
+    td:last-child {
+      border-right: 0;
+    }
+
     th {
-      background: #eef4ff;
-      color: #344054;
+      border-bottom-color: #24160f;
+      background: linear-gradient(180deg, #513522, #352116);
+      color: #f1d8a3;
+      font-family: var(--serif);
       font-weight: 800;
+      letter-spacing: 0.06em;
+      text-shadow: 0 1px #160e09;
+    }
+
+    tbody tr {
+      transition: background-color 150ms ease;
+    }
+
+    tbody tr:hover {
+      background: rgba(255, 241, 200, 0.26);
     }
 
     .tag {
       display: inline-flex;
       min-width: 52px;
       justify-content: center;
-      border-radius: 999px;
-      padding: 2px 8px;
+      border: 1px solid currentColor;
+      border-radius: 2px;
+      padding: 3px 8px 2px;
       font-size: 12px;
       font-weight: 800;
+      letter-spacing: 0.08em;
+      transform: rotate(-1deg);
     }
 
     .tag-success {
-      background: #e8f7f0;
+      background: rgba(220, 236, 212, 0.58);
       color: var(--success);
     }
 
     .tag-skipped {
-      background: #fff4db;
+      background: rgba(248, 224, 163, 0.58);
       color: var(--warning);
     }
 
     .tag-failed {
-      background: #fdecec;
+      background: rgba(242, 205, 192, 0.58);
       color: var(--danger);
     }
 
     .error-details {
       display: none;
       margin-top: 22px;
-      border: 1px solid #f1b8b8;
-      border-radius: 14px;
-      background: #fff8f8;
+      border: 1px solid rgba(123, 45, 36, 0.72);
+      border-radius: 4px;
+      background:
+        repeating-linear-gradient(0deg, transparent 0 25px, rgba(123, 45, 36, 0.07) 26px),
+        #e6c58d;
       overflow: hidden;
+      box-shadow: 0 6px 15px rgba(74, 41, 22, 0.15);
     }
 
     .error-details.is-visible {
@@ -237,9 +564,12 @@
     .error-details h2 {
       margin: 0;
       padding: 12px 16px;
-      border-bottom: 1px solid #f1b8b8;
-      color: var(--danger);
+      border-bottom: 1px solid rgba(123, 45, 36, 0.56);
+      background: rgba(123, 45, 36, 0.09);
+      color: #7f2f27;
+      font-family: var(--serif);
       font-size: 16px;
+      letter-spacing: 0.08em;
     }
 
     .error-details pre {
@@ -247,15 +577,175 @@
       max-height: 320px;
       overflow: auto;
       padding: 16px;
-      color: #7a271a;
+      color: #652b24;
       font: 13px/1.55 Consolas, "SFMono-Regular", Menlo, monospace;
       white-space: pre-wrap;
       word-break: break-word;
     }
 
+    .management-section {
+      margin-top: 28px;
+      padding-top: 22px;
+      border-top: 2px solid rgba(91, 57, 27, 0.62);
+    }
+
+    .management-head h2 {
+      margin: 0;
+      color: #3f2819;
+      font-family: var(--serif);
+      font-size: 22px;
+      letter-spacing: 0.08em;
+    }
+
+    .management-head p {
+      margin: 5px 0 0;
+      color: var(--muted);
+      font-family: var(--handwriting);
+    }
+
+    .student-table-wrap {
+      overflow-x: auto;
+    }
+
+    .student-table-wrap table {
+      min-width: 720px;
+    }
+
+    .danger-btn {
+      border-color: #9b554b;
+      background: linear-gradient(180deg, #713c32, #48231f 72%);
+      color: #f7d5c7;
+    }
+
+    .pagination {
+      margin-top: 12px;
+      justify-content: flex-end;
+    }
+
+    .pagination .btn {
+      min-height: 36px;
+      padding: 0 13px;
+    }
+
+    dialog {
+      width: min(560px, calc(100% - 28px));
+      overflow: hidden;
+      border: 1px solid #684321;
+      border-radius: 5px;
+      padding: 0;
+      color: var(--ink);
+      background:
+        repeating-linear-gradient(0deg, transparent 0 31px, rgba(96, 62, 31, 0.055) 32px),
+        #e4ca91;
+      box-shadow: 0 28px 80px rgba(0, 0, 0, 0.62), inset 0 0 30px rgba(91, 56, 25, 0.1);
+    }
+
+    dialog::backdrop {
+      background: rgba(6, 5, 4, 0.72);
+      backdrop-filter: blur(2px);
+    }
+
+    .dialog-head {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 12px;
+      padding: 16px 18px;
+      border-bottom: 1px solid #24160f;
+      background: linear-gradient(180deg, #513522, #342015);
+      color: #f1d8a3;
+    }
+
+    .dialog-head h2 {
+      margin: 0;
+      font-family: var(--serif);
+      font-size: 19px;
+      letter-spacing: 0.08em;
+    }
+
+    .dialog-body {
+      padding: 18px;
+    }
+
+    .dialog-grid {
+      display: grid;
+      grid-template-columns: repeat(2, minmax(0, 1fr));
+      gap: 13px;
+    }
+
+    .dialog-field {
+      display: grid;
+      gap: 6px;
+      color: #563d2a;
+      font-weight: 800;
+    }
+
+    .dialog-field input {
+      width: 100%;
+      min-height: 42px;
+      border: 1px solid #8b623b;
+      border-radius: 3px;
+      padding: 0 11px;
+      color: #352619;
+      background: rgba(245, 224, 174, 0.82);
+      box-shadow: inset 0 2px 5px rgba(75, 46, 22, 0.16);
+    }
+
+    .dialog-actions {
+      margin-top: 18px;
+      justify-content: flex-end;
+    }
+
+    .dialog-status {
+      min-height: 22px;
+      margin: 12px 0 0;
+      color: #7b3027;
+      font-weight: 800;
+    }
+
+    .warning-copy {
+      padding: 12px 14px;
+      border-left: 5px solid #8b4830;
+      background: rgba(255, 232, 176, 0.64);
+      line-height: 1.7;
+    }
+
     @media (max-width: 720px) {
+      body {
+        background-attachment: scroll;
+        padding: 16px 10px 28px;
+      }
+
       .panel {
-        padding: 20px;
+        padding: 20px 16px;
+      }
+
+      .page-header,
+      .management-head {
+        display: grid;
+      }
+
+      .panel::before {
+        width: 180px;
+        opacity: 0.055;
+      }
+
+      .panel::after {
+        display: none;
+      }
+
+      h1::before {
+        width: 100%;
+        margin-left: 0;
+      }
+
+      .upload-box {
+        padding: 20px 16px;
+      }
+
+      input[type="file"]::file-selector-button {
+        display: block;
+        margin: 0 0 12px;
       }
 
       .summary {
@@ -265,6 +755,29 @@
       table {
         display: block;
         overflow-x: auto;
+        white-space: nowrap;
+      }
+
+      td:last-child {
+        min-width: 220px;
+        white-space: normal;
+      }
+
+      .actions::after {
+        content: "EVIDENCE · 01";
+      }
+
+      .dialog-grid {
+        grid-template-columns: 1fr;
+      }
+    }
+
+    @media (prefers-reduced-motion: reduce) {
+      *,
+      *::before,
+      *::after {
+        scroll-behavior: auto !important;
+        transition-duration: 0.01ms !important;
       }
     }
   </style>
@@ -272,11 +785,16 @@
 <body>
   <main class="page">
     <section class="panel" aria-labelledby="pageTitle">
-      <h1 id="pageTitle">学生账号初始化</h1>
-      <p class="intro">
-        教师上传包含“学号、姓名、班级、小组”的 Excel 后，系统会导入学生资料。
-        学生资料已导入，可使用学号和默认密码登录。
-      </p>
+      <div class="page-header">
+        <div>
+          <h1 id="pageTitle">学生账号初始化</h1>
+          <p class="intro">
+            教师上传包含“学号、姓名、班级、小组”的 Excel 后，系统会导入学生资料。
+            学生资料已导入，可使用学号和默认密码登录。
+          </p>
+        </div>
+        <a class="btn" href="../index.html">返回首页</a>
+      </div>
 
       <div class="auth-gate" id="authGate">
         <p>请先登录后再导入学生账号。</p>
@@ -330,8 +848,61 @@
         <h2 id="errorDetailsTitle">详细错误信息</h2>
         <pre id="errorDetailsContent">暂无错误。</pre>
       </section>
+
+      <section class="management-section" aria-labelledby="studentListTitle">
+        <div class="management-head">
+          <div>
+            <h2 id="studentListTitle">当前学生账号档案</h2>
+            <p>名单仅显示学生资料，不显示账号密码。</p>
+          </div>
+          <button class="btn" id="openAddStudentBtn" type="button">添加账号</button>
+        </div>
+        <p class="status" id="studentListStatus">登录后读取当前学生名单。</p>
+        <div class="student-table-wrap">
+          <table aria-label="当前学生名单">
+            <thead><tr><th>学号</th><th>姓名</th><th>班级</th><th>小组</th><th>创建时间</th><th>操作</th></tr></thead>
+            <tbody id="studentListBody"><tr><td colspan="6">等待读取学生名单。</td></tr></tbody>
+          </table>
+        </div>
+        <div class="pagination">
+          <button class="btn" id="studentPrevBtn" type="button">上一页</button>
+          <span id="studentPageLabel">第 1 页</span>
+          <button class="btn" id="studentNextBtn" type="button">下一页</button>
+        </div>
+      </section>
     </section>
   </main>
+
+  <dialog id="addStudentDialog" aria-labelledby="addStudentTitle">
+    <div class="dialog-head"><h2 id="addStudentTitle">添加学生账号</h2></div>
+    <form class="dialog-body" id="addStudentForm">
+      <div class="dialog-grid">
+        <label class="dialog-field">学号<input id="manualStudentId" required maxlength="100"></label>
+        <label class="dialog-field">姓名<input id="manualStudentName" required maxlength="100"></label>
+        <label class="dialog-field">班级<input id="manualStudentClass" required maxlength="100"></label>
+        <label class="dialog-field">小组<input id="manualStudentGroup" required maxlength="100"></label>
+        <label class="dialog-field">密码（可选）<input id="manualStudentPassword" type="password" maxlength="100" autocomplete="new-password" placeholder="默认使用学号后六位"></label>
+      </div>
+      <p class="dialog-status" id="addStudentStatus" role="alert"></p>
+      <div class="dialog-actions">
+        <button class="btn" id="cancelAddStudentBtn" type="button">取消</button>
+        <button class="btn" id="confirmAddStudentBtn" type="submit">确认添加</button>
+      </div>
+    </form>
+  </dialog>
+
+  <dialog id="deleteStudentDialog" aria-labelledby="deleteStudentTitle">
+    <div class="dialog-head"><h2 id="deleteStudentTitle">删除学生账号</h2></div>
+    <div class="dialog-body">
+      <p id="deleteStudentSummary"></p>
+      <p class="warning-copy">删除后该账号将无法登录；历史实验、AI、学习记忆和诊断数据不会被删除。</p>
+      <p class="dialog-status" id="deleteStudentStatus" role="alert"></p>
+      <div class="dialog-actions">
+        <button class="btn" id="cancelDeleteStudentBtn" type="button">取消</button>
+        <button class="btn danger-btn" id="confirmDeleteStudentBtn" type="button">确认删除账号</button>
+      </div>
+    </div>
+  </dialog>
 
   <script src="https://static.cloudbase.net/cloudbase-js-sdk/3.0.0/cloudbase.full.js"></script>
   <script src="../assets/experiment-registry.js"></script>
@@ -369,6 +940,24 @@
     const authGate = document.getElementById("authGate");
     const errorDetails = document.getElementById("errorDetails");
     const errorDetailsContent = document.getElementById("errorDetailsContent");
+    const studentListBody = document.getElementById("studentListBody");
+    const studentListStatus = document.getElementById("studentListStatus");
+    const studentPrevBtn = document.getElementById("studentPrevBtn");
+    const studentNextBtn = document.getElementById("studentNextBtn");
+    const studentPageLabel = document.getElementById("studentPageLabel");
+    const openAddStudentBtn = document.getElementById("openAddStudentBtn");
+    const addStudentDialog = document.getElementById("addStudentDialog");
+    const addStudentForm = document.getElementById("addStudentForm");
+    const addStudentStatus = document.getElementById("addStudentStatus");
+    const deleteStudentDialog = document.getElementById("deleteStudentDialog");
+    const deleteStudentSummary = document.getElementById("deleteStudentSummary");
+    const deleteStudentStatus = document.getElementById("deleteStudentStatus");
+    const confirmDeleteStudentBtn = document.getElementById("confirmDeleteStudentBtn");
+    const STUDENT_PAGE_SIZE = 100;
+    let studentPageSkip = 0;
+    let currentStudents = [];
+    let studentHasMore = false;
+    let pendingDeleteStudent = null;
 
     /*
      * admin 页面不再自行初始化 CloudBase，也不再自行创建 Auth 实例。
@@ -377,6 +966,7 @@
     let isLoggedIn = false;
 
     importBtn.disabled = true;
+    openAddStudentBtn.disabled = true;
 
     async function getAdminLoginState() {
       const response = await window.app.callFunction({
@@ -401,12 +991,72 @@
       if (isLoggedIn) {
         authGate.classList.remove("is-visible");
         importBtn.disabled = false;
+        openAddStudentBtn.disabled = false;
         setStatus("已登录，请选择 Excel 文件。");
+        await loadStudents();
       } else {
         authGate.classList.add("is-visible");
         importBtn.disabled = true;
+        openAddStudentBtn.disabled = true;
         setStatus("请先登录后再导入学生账号。");
       }
+    }
+
+    function formatDate(value) {
+      if (!value) return "";
+      if (typeof value === "string") return value;
+      if (value.$date) return new Date(value.$date).toLocaleString();
+      if (value.seconds) return new Date(value.seconds * 1000).toLocaleString();
+      return "";
+    }
+
+    function renderStudentList() {
+      if (!currentStudents.length) {
+        studentListBody.innerHTML = '<tr><td colspan="6">当前页没有学生账号。</td></tr>';
+      } else {
+        studentListBody.innerHTML = currentStudents.map((student, index) => `
+          <tr>
+            <td>${escapeHtml(student.studentId)}</td><td>${escapeHtml(student.name)}</td>
+            <td>${escapeHtml(student.class)}</td><td>${escapeHtml(student.group)}</td>
+            <td>${escapeHtml(formatDate(student.createdAt))}</td>
+            <td><button class="btn danger-btn" type="button" data-delete-student="${index}">删除</button></td>
+          </tr>`).join("");
+        studentListBody.querySelectorAll("[data-delete-student]").forEach((button) => {
+          button.addEventListener("click", () => openDeleteStudentDialog(Number(button.dataset.deleteStudent)));
+        });
+      }
+      studentPrevBtn.disabled = studentPageSkip === 0;
+      studentNextBtn.disabled = !studentHasMore;
+      studentPageLabel.textContent = `第 ${Math.floor(studentPageSkip / STUDENT_PAGE_SIZE) + 1} 页`;
+    }
+
+    async function loadStudents() {
+      if (!isLoggedIn) return;
+      studentPrevBtn.disabled = true;
+      studentNextBtn.disabled = true;
+      studentListStatus.textContent = "正在读取学生名单...";
+      try {
+        const response = await window.app.callFunction({ name: "getStudentsAdmin", data: { limit: STUDENT_PAGE_SIZE, skip: studentPageSkip } });
+        const result = response && (response.result || response);
+        if (!result || !result.ok) throw new Error((result && result.message) || "读取学生名单失败。");
+        currentStudents = Array.isArray(result.records) ? result.records : [];
+        studentHasMore = Boolean(result.hasMore);
+        studentListStatus.textContent = `当前页共 ${currentStudents.length} 个学生账号。`;
+        renderStudentList();
+      } catch (error) {
+        currentStudents = [];
+        studentHasMore = false;
+        studentListStatus.textContent = getErrorMessage(error);
+        renderStudentList();
+      }
+    }
+
+    function openDeleteStudentDialog(index) {
+      pendingDeleteStudent = currentStudents[index] || null;
+      if (!pendingDeleteStudent) return;
+      deleteStudentSummary.textContent = `确定删除 ${pendingDeleteStudent.name || "该学生"}（学号：${pendingDeleteStudent.studentId}）的账号吗？`;
+      deleteStudentStatus.textContent = "";
+      deleteStudentDialog.showModal();
     }
 
     function setStatus(message) {
@@ -717,6 +1367,76 @@
       failedCount.textContent = String(results.filter((item) => item.status === "failed").length);
     }
 
+    openAddStudentBtn.addEventListener("click", () => {
+      addStudentForm.reset();
+      addStudentStatus.textContent = "";
+      addStudentDialog.showModal();
+    });
+
+    document.getElementById("cancelAddStudentBtn").addEventListener("click", () => addStudentDialog.close());
+    document.getElementById("cancelDeleteStudentBtn").addEventListener("click", () => deleteStudentDialog.close());
+
+    addStudentForm.addEventListener("submit", async (event) => {
+      event.preventDefault();
+      if (!isLoggedIn) return;
+      const submitButton = document.getElementById("confirmAddStudentBtn");
+      submitButton.disabled = true;
+      addStudentStatus.textContent = "正在添加学生账号...";
+      try {
+        const result = await callCreateStudents([{
+          studentId: normalizeCell(document.getElementById("manualStudentId").value),
+          name: normalizeCell(document.getElementById("manualStudentName").value),
+          class: normalizeCell(document.getElementById("manualStudentClass").value),
+          group: normalizeCell(document.getElementById("manualStudentGroup").value),
+          password: normalizeCell(document.getElementById("manualStudentPassword").value)
+        }]);
+        const item = Array.isArray(result.results) ? result.results[0] : null;
+        if (!item || item.status !== "success") {
+          throw new Error((item && item.reason) || result.message || "添加学生账号失败。");
+        }
+        addStudentDialog.close();
+        studentPageSkip = 0;
+        await loadStudents();
+        studentListStatus.textContent = `学生账号 ${item.studentId} 已添加。`;
+      } catch (error) {
+        addStudentStatus.textContent = getErrorMessage(error);
+      } finally {
+        submitButton.disabled = false;
+      }
+    });
+
+    confirmDeleteStudentBtn.addEventListener("click", async () => {
+      if (!pendingDeleteStudent || !isLoggedIn) return;
+      confirmDeleteStudentBtn.disabled = true;
+      deleteStudentStatus.textContent = "正在删除学生账号...";
+      try {
+        const response = await window.app.callFunction({ name: "deleteStudentAdmin", data: { studentId: pendingDeleteStudent.studentId } });
+        const result = response && (response.result || response);
+        if (!result || !result.ok) throw new Error((result && result.message) || "删除学生账号失败。");
+        const deletedStudentId = pendingDeleteStudent.studentId;
+        deleteStudentDialog.close();
+        pendingDeleteStudent = null;
+        if (currentStudents.length === 1 && studentPageSkip > 0) studentPageSkip = Math.max(0, studentPageSkip - STUDENT_PAGE_SIZE);
+        await loadStudents();
+        studentListStatus.textContent = `学生账号 ${deletedStudentId} 已删除，历史研究数据保持不变。`;
+      } catch (error) {
+        deleteStudentStatus.textContent = getErrorMessage(error);
+      } finally {
+        confirmDeleteStudentBtn.disabled = false;
+      }
+    });
+
+    studentPrevBtn.addEventListener("click", async () => {
+      studentPageSkip = Math.max(0, studentPageSkip - STUDENT_PAGE_SIZE);
+      await loadStudents();
+    });
+
+    studentNextBtn.addEventListener("click", async () => {
+      if (!studentHasMore) return;
+      studentPageSkip += STUDENT_PAGE_SIZE;
+      await loadStudents();
+    });
+
     importBtn.addEventListener("click", async () => {
       if (!isLoggedIn) {
         authGate.classList.add("is-visible");
@@ -803,6 +1523,8 @@
         updateCounts(results);
 
         setStatus(`导入结束：成功 ${cloudImportResult.success} 人，跳过 ${cloudImportResult.skipped} 人，失败 ${cloudImportResult.failed} 人。学生资料已导入，可使用学号和默认密码登录。`);
+        studentPageSkip = 0;
+        await loadStudents();
       } catch (error) {
         showErrorDetails(error, "读取 Excel 或整体导入流程失败");
         const message = getErrorMessage(error);

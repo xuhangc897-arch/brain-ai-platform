@@ -397,9 +397,9 @@
   <script src="assets/knowledge-question-bank.js"></script>
   <script src="assets/platform-core.js"></script>
   <script src="auth.js"></script>
-  <script src="assets/experiment-uploader.js"></script>
   <script src="assets/experiment-bridge.js"></script>
   <script src="assets/experiment-integration.js"></script>
+  <script src="assets/experiment-submission.js"></script>
   <script>
     const currentStudent = checkLogin();
     const CONTEXT_KEY = window.BrainPlatform.storage.migrateScopedJson(
@@ -736,7 +736,7 @@
       status.textContent = state.completed ? "资格审查已完成，结果文件已自动导出，请妥善保存。" : "";
     }
 
-    function completePretest() {
+    async function completePretest() {
       saveIdentity();
       const summary = summarize();
       if (!state.knowledgePretest.submitted && !state.legacyQualification) {
@@ -752,8 +752,12 @@
       state.completed = true;
       state.completedAt = state.completedAt || new Date().toISOString();
       saveState();
-      submitScreeningRecord("completeScreening");
-      exportExcel();
+      const button = document.getElementById("completeBtn");
+      if (button) button.disabled = true;
+      const result = await submitScreeningRecord();
+      if (result?.ok) exportExcel();
+      else alert(result?.queued ? "资格审查尚未上传成功，请保持联网后重试。" : "资格审查提交失败，请稍后重试。");
+      if (button) button.disabled = false;
       renderSummary();
     }
 
@@ -782,15 +786,12 @@
       };
     }
 
-    function submitScreeningRecord(submitAction) {
-      if (typeof window.uploadExperimentRecords !== "function") return;
+    function submitScreeningRecord() {
       const snapshot = buildScreeningSnapshot();
-      const submittedAt = snapshot.completedAt || new Date().toISOString();
-      return window.BrainExperimentBridge.submitState({
+      return window.BrainExperimentBridge.submitExperimentState({
         moduleId: "screening",
-        snapshot,
-        submitAction,
-        submittedAt
+        state: snapshot,
+        submissionTime: snapshot.completedAt || new Date().toISOString()
       });
     }
 

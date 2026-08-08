@@ -88,7 +88,8 @@ for (const experimentId of ["memory", "nback", "interference", "strategies"]) {
   const page = source(`${experimentId}.html`);
   assert(page.includes('assets/knowledge-question-bank.js'));
   assert(page.includes(`getExperimentQuestions("${experimentId}")`));
-  assert(page.includes("mergeKnowledgeQuiz(state.knowledgeQuiz).submitted"));
+  assert(page.includes("isKnowledgeQuizAnswered()"));
+  assert(page.includes("finalizeKnowledgeQuizOnce()"));
   assert(page.includes("assets/student-memory.js"));
   assert(page.includes(`experimentId: "${experimentId}"`));
 }
