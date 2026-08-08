@@ -711,17 +711,22 @@ body.has-virtual-agent .voice-title {
   }
 
   .memory-partner-launcher {
-    min-width: 92px;
-    min-height: 116px;
+    min-width: 56px;
+    min-height: 64px;
+    gap: 0;
   }
 
   .memory-partner-avatar {
-    width: 66px;
-    height: 88px;
+    width: 48px;
+    height: 64px;
   }
 
-  .memory-partner-name {
-    font-size: 11px;
+  .memory-partner-copy {
+    display: none;
+  }
+
+  body.has-virtual-agent .main {
+    padding-bottom: calc(96px + env(safe-area-inset-bottom));
   }
 
   .memory-partner-menu,
@@ -737,7 +742,7 @@ body.has-virtual-agent .voice-title {
   body.has-virtual-agent .ai-panel,
   body.has-virtual-agent .voice-panel {
     right: max(10px, env(safe-area-inset-right));
-    bottom: calc(max(10px, env(safe-area-inset-bottom)) + 108px);
+    bottom: calc(max(10px, env(safe-area-inset-bottom)) + 70px);
   }
 }
 
