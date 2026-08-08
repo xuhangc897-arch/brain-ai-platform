@@ -266,6 +266,698 @@
         grid-template-columns: repeat(2, minmax(0, 1fr));
       }
     }
+
+    /* Memory Detective Agency archive-room visual theme. */
+    :root {
+      --bg: #0a0908;
+      --panel: #dfc58f;
+      --ink: #2d2118;
+      --muted: #675644;
+      --line: rgba(91, 62, 35, 0.36);
+      --primary: #503321;
+      --primary-dark: #2c1b12;
+      --danger: #91362d;
+      --paper: #dfc58f;
+      --paper-light: #f3dfae;
+      --paper-deep: #c5a163;
+      --leather: #432a1b;
+      --leather-dark: #21140d;
+      --gold: #c79345;
+      --gold-light: #f0ce83;
+      --stamp: #7c3027;
+      --serif: "Songti SC", "STSong", "SimSun", "Noto Serif CJK SC", serif;
+      --handwriting: "KaiTi", "STKaiti", "FangSong", "STFangsong", serif;
+      --sans: "Microsoft YaHei", "PingFang SC", "Noto Sans CJK SC", sans-serif;
+      font-family: var(--sans);
+    }
+
+    body {
+      position: relative;
+      isolation: isolate;
+      color: var(--ink);
+      background-color: var(--bg);
+      background-image:
+        linear-gradient(180deg, rgba(4, 5, 6, 0.53), rgba(4, 4, 4, 0.76)),
+        linear-gradient(90deg, rgba(3, 3, 3, 0.56), transparent 48%, rgba(3, 3, 3, 0.48)),
+        url("../assets/new-frontpage/首页静图-web.webp");
+      background-position: center;
+      background-size: cover;
+      background-attachment: fixed;
+      padding: clamp(22px, 4vw, 50px) 18px;
+    }
+
+    body::before {
+      position: fixed;
+      inset: 0;
+      z-index: -1;
+      background:
+        radial-gradient(circle at 50% 15%, transparent 0 24%, rgba(0, 0, 0, 0.18) 70%, rgba(0, 0, 0, 0.48) 100%),
+        linear-gradient(180deg, rgba(16, 10, 6, 0.05), rgba(10, 7, 5, 0.42));
+      content: "";
+      pointer-events: none;
+    }
+
+    .panel {
+      position: relative;
+      isolation: isolate;
+      overflow: hidden;
+      border: 1px solid rgba(73, 45, 23, 0.84);
+      border-radius: 5px 10px 6px 4px;
+      background-color: var(--paper);
+      background-image:
+        linear-gradient(91deg, transparent 49.5%, rgba(102, 67, 32, 0.06) 50%, transparent 50.5%),
+        radial-gradient(circle at 9% 8%, rgba(99, 62, 28, 0.13) 0 2px, transparent 3px),
+        radial-gradient(circle at 90% 32%, rgba(113, 70, 29, 0.09) 0 15px, transparent 44px),
+        radial-gradient(circle at 26% 84%, rgba(106, 63, 26, 0.08) 0 12px, transparent 38px),
+        repeating-linear-gradient(2deg, rgba(83, 53, 28, 0.025) 0 1px, transparent 1px 5px),
+        linear-gradient(118deg, rgba(255, 247, 211, 0.5), transparent 36%, rgba(112, 76, 41, 0.12) 100%);
+      box-shadow:
+        0 3px 0 rgba(89, 54, 27, 0.5),
+        0 8px 0 -3px rgba(215, 181, 119, 0.7),
+        0 30px 75px rgba(0, 0, 0, 0.64),
+        inset 0 0 56px rgba(105, 68, 31, 0.2);
+      padding: clamp(22px, 3.4vw, 38px);
+    }
+
+    .panel::before {
+      position: absolute;
+      top: 20px;
+      right: 22px;
+      z-index: -1;
+      width: min(330px, 35%);
+      aspect-ratio: 900 / 287;
+      background: url("../assets/new-frontpage/logo-web.webp") center / contain no-repeat;
+      content: "";
+      filter: sepia(1) saturate(0.5) contrast(0.8);
+      opacity: 0.075;
+      pointer-events: none;
+    }
+
+    .panel::after {
+      position: absolute;
+      right: 38px;
+      bottom: 26px;
+      z-index: -1;
+      display: grid;
+      width: 112px;
+      height: 112px;
+      place-items: center;
+      border: 3px double rgba(124, 48, 39, 0.3);
+      border-radius: 50%;
+      color: rgba(124, 48, 39, 0.3);
+      content: "数据归档\A VERIFIED\A 侦探社";
+      font-family: var(--serif);
+      font-size: 11px;
+      font-weight: 800;
+      line-height: 1.45;
+      text-align: center;
+      white-space: pre;
+      letter-spacing: 0.08em;
+      transform: rotate(-12deg);
+      pointer-events: none;
+    }
+
+    .panel > * {
+      position: relative;
+      z-index: 1;
+    }
+
+    .header {
+      align-items: center;
+      margin-bottom: 20px;
+      padding-bottom: 17px;
+      border-bottom: 2px solid rgba(91, 57, 27, 0.68);
+    }
+
+    .header > div::before {
+      display: block;
+      margin-bottom: 5px;
+      color: #8c5b2a;
+      content: "CASE FILE：MEMORY DATA ARCHIVE";
+      font: 700 10px/1.4 Georgia, "Times New Roman", serif;
+      letter-spacing: 0.18em;
+    }
+
+    h1 {
+      margin-bottom: 8px;
+      color: #3e2718;
+      font-family: var(--serif);
+      font-size: clamp(28px, 4vw, 38px);
+      letter-spacing: 0.09em;
+      text-shadow: 0 1px rgba(255, 239, 195, 0.72);
+    }
+
+    .intro {
+      color: var(--muted);
+      font-family: var(--handwriting);
+      font-size: 15px;
+      line-height: 1.85;
+      letter-spacing: 0.035em;
+    }
+
+    .auth-gate {
+      border: 1px solid #94622b;
+      border-left: 5px solid #854623;
+      border-radius: 4px;
+      background:
+        repeating-linear-gradient(0deg, transparent 0 27px, rgba(114, 76, 38, 0.09) 28px),
+        #eed79f;
+      box-shadow: 0 5px 14px rgba(78, 48, 24, 0.14);
+      color: #603b18;
+    }
+
+    .record-form {
+      padding: 20px;
+    }
+
+    .record-form-grid {
+      display: grid;
+      grid-template-columns: repeat(2, minmax(0, 1fr));
+      gap: 14px;
+    }
+
+    .record-field {
+      display: grid;
+      gap: 6px;
+      color: #563d2a;
+      font-weight: 800;
+    }
+
+    .record-field.full {
+      grid-column: 1 / -1;
+    }
+
+    .record-field input,
+    .record-field select,
+    .record-field textarea {
+      width: 100%;
+      border: 1px solid #8b623b;
+      border-radius: 3px;
+      padding: 10px 11px;
+      color: #352619;
+      background: rgba(245, 224, 174, 0.84);
+      box-shadow: inset 0 2px 5px rgba(75, 46, 22, 0.16);
+      font: inherit;
+    }
+
+    .record-field input,
+    .record-field select {
+      min-height: 42px;
+    }
+
+    .record-field textarea {
+      min-height: 250px;
+      resize: vertical;
+      font: 13px/1.55 Consolas, "SFMono-Regular", Menlo, monospace;
+    }
+
+    .record-dialog-actions {
+      display: flex;
+      flex-wrap: wrap;
+      justify-content: flex-end;
+      gap: 10px;
+      margin-top: 18px;
+    }
+
+    .record-dialog-status {
+      min-height: 22px;
+      margin: 12px 0 0;
+      color: #7c3027;
+      font-weight: 800;
+    }
+
+    .record-warning {
+      padding: 12px 14px;
+      border-left: 5px solid #8b4830;
+      background: rgba(255, 232, 176, 0.64);
+      line-height: 1.7;
+    }
+
+    .danger-btn,
+    .danger-btn.secondary {
+      border-color: #a75c50;
+      background: linear-gradient(180deg, #743e34, #48231f 72%);
+      color: #f7d5c7;
+    }
+
+    .filters {
+      position: relative;
+      grid-template-columns: repeat(5, minmax(120px, 1fr));
+      gap: 14px 12px;
+      margin: 18px 0;
+      padding: 54px 18px 20px;
+      border: 2px solid #8d6337;
+      border-radius: 4px 9px 5px 7px;
+      outline: 1px dashed rgba(78, 48, 24, 0.38);
+      outline-offset: -8px;
+      background:
+        repeating-linear-gradient(0deg, transparent 0 32px, rgba(103, 67, 33, 0.055) 33px),
+        linear-gradient(145deg, #ead39d 0%, #d9bb7c 100%);
+      box-shadow:
+        inset 0 0 24px rgba(94, 59, 27, 0.14),
+        0 8px 18px rgba(74, 46, 23, 0.15);
+    }
+
+    .filters::before {
+      position: absolute;
+      top: 14px;
+      left: 18px;
+      color: #4b301d;
+      content: "调查条件记录表";
+      font: 800 17px/1.4 var(--serif);
+      letter-spacing: 0.12em;
+    }
+
+    .filters::after {
+      position: absolute;
+      top: 17px;
+      right: 21px;
+      color: rgba(82, 51, 27, 0.52);
+      content: "ARCHIVE QUERY · 01";
+      font: 700 9px/1.4 Georgia, "Times New Roman", serif;
+      letter-spacing: 0.14em;
+    }
+
+    .field label {
+      color: #5b402c;
+      font-family: var(--serif);
+      font-size: 13px;
+      letter-spacing: 0.06em;
+    }
+
+    .field input,
+    .field select {
+      min-height: 42px;
+      border: 1px solid #8b623b;
+      border-radius: 3px;
+      padding: 0 11px;
+      color: #352619;
+      background-color: rgba(245, 224, 174, 0.78);
+      background-image: linear-gradient(180deg, rgba(116, 76, 37, 0.05), transparent 45%);
+      box-shadow:
+        inset 0 2px 5px rgba(75, 46, 22, 0.16),
+        0 1px rgba(255, 244, 211, 0.65);
+      font-family: var(--handwriting);
+      font-weight: 700;
+      outline: 0;
+      transition: border-color 160ms ease, box-shadow 160ms ease;
+    }
+
+    .field input::placeholder {
+      color: rgba(84, 64, 46, 0.62);
+    }
+
+    .field input:focus,
+    .field select:focus {
+      border-color: #6b401f;
+      box-shadow:
+        0 0 0 3px rgba(150, 96, 39, 0.18),
+        inset 0 2px 5px rgba(75, 46, 22, 0.16);
+    }
+
+    .actions {
+      position: relative;
+      gap: 11px;
+      margin-bottom: 14px;
+      padding: 2px 0 21px;
+      border-bottom: 1px dashed rgba(89, 57, 31, 0.38);
+    }
+
+    .actions::after {
+      position: absolute;
+      right: 0;
+      bottom: 5px;
+      color: rgba(86, 54, 29, 0.6);
+      content: "INVESTIGATION TOOLS · AUTHORIZED USE";
+      font: 700 9px/1 Georgia, "Times New Roman", serif;
+      letter-spacing: 0.15em;
+      pointer-events: none;
+    }
+
+    .btn,
+    .btn.secondary {
+      position: relative;
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      gap: 8px;
+      min-height: 42px;
+      padding: 0 17px;
+      border: 1px solid var(--gold);
+      border-radius: 4px;
+      background: linear-gradient(180deg, #5c3a27, var(--leather) 72%);
+      color: #f4dda7;
+      cursor: pointer;
+      font-weight: 800;
+      letter-spacing: 0.045em;
+      text-decoration: none;
+      box-shadow:
+        0 4px 0 var(--leather-dark),
+        0 8px 17px rgba(45, 27, 15, 0.2),
+        inset 0 1px rgba(255, 231, 176, 0.18);
+      transition: border-color 180ms ease, box-shadow 180ms ease, transform 180ms ease;
+    }
+
+    .btn:hover:not(:disabled),
+    .btn.secondary:hover:not(:disabled) {
+      border-color: var(--gold-light);
+      color: #fff0bf;
+      box-shadow:
+        0 4px 0 var(--leather-dark),
+        0 0 18px rgba(218, 164, 72, 0.42),
+        inset 0 1px rgba(255, 231, 176, 0.24);
+      transform: translateY(-1px);
+    }
+
+    .btn:active:not(:disabled) {
+      box-shadow: 0 2px 0 var(--leather-dark), 0 4px 9px rgba(45, 27, 15, 0.22);
+      transform: translateY(2px);
+    }
+
+    .btn:focus-visible {
+      outline: 2px solid #74431e;
+      outline-offset: 4px;
+    }
+
+    .btn:disabled {
+      opacity: 0.56;
+      filter: saturate(0.6);
+    }
+
+    #queryBtn::before {
+      width: 11px;
+      height: 11px;
+      border: 2px solid var(--gold-light);
+      border-radius: 50%;
+      content: "";
+    }
+
+    #queryBtn::after {
+      width: 7px;
+      height: 2px;
+      margin-left: -11px;
+      background: var(--gold-light);
+      content: "";
+      transform: translate(7px, 7px) rotate(45deg);
+    }
+
+    #memoryBtn::before {
+      content: "⌁";
+      font: 800 19px/1 Georgia, serif;
+    }
+
+    #diagnosisBtn::before {
+      content: "▤";
+      font-size: 14px;
+    }
+
+    #resetBtn::before {
+      content: "↺";
+      font-size: 17px;
+    }
+
+    #exportBtn::before {
+      content: "▱";
+      font-size: 18px;
+    }
+
+    #addRecordBtn::before {
+      content: "+";
+      font: 800 18px/1 Georgia, serif;
+    }
+
+    .header > .btn::before {
+      content: "↩";
+      font-size: 16px;
+    }
+
+    .status {
+      min-height: 25px;
+      margin: 0 0 9px;
+      color: var(--muted);
+      font-family: var(--handwriting);
+      font-size: 14px;
+      line-height: 1.65;
+    }
+
+    .history-option {
+      min-height: 42px;
+      padding: 0 11px;
+      border: 1px dashed rgba(93, 61, 32, 0.45);
+      border-radius: 3px;
+      color: #5f4938;
+      background: rgba(239, 214, 159, 0.52);
+      font-family: var(--handwriting);
+    }
+
+    .history-option input {
+      width: 16px;
+      height: 16px;
+      accent-color: #6a4023;
+    }
+
+    .table-wrap {
+      position: relative;
+      min-height: 220px;
+      overflow: auto;
+      border: 1px solid rgba(82, 51, 27, 0.68);
+      border-radius: 4px;
+      background:
+        radial-gradient(circle at 88% 70%, rgba(73, 49, 30, 0.055) 0 48px, transparent 49px),
+        repeating-linear-gradient(0deg, transparent 0 35px, rgba(96, 62, 31, 0.065) 36px),
+        linear-gradient(145deg, #ead29a, #d4b472);
+      box-shadow:
+        0 7px 18px rgba(65, 39, 19, 0.16),
+        inset 0 0 24px rgba(91, 56, 25, 0.1);
+    }
+
+    .table-wrap::before {
+      position: absolute;
+      top: 0;
+      left: 0;
+      z-index: 3;
+      display: flex;
+      width: 100%;
+      min-width: 100%;
+      height: 43px;
+      align-items: center;
+      padding: 0 15px;
+      border-bottom: 1px solid #24160f;
+      background: linear-gradient(180deg, #513522, #342015);
+      color: #f1d8a3;
+      content: "调查结果档案区域  ·  INVESTIGATION RECORDS";
+      font: 800 13px/1 var(--serif);
+      letter-spacing: 0.08em;
+      text-shadow: 0 1px #160e09;
+      pointer-events: none;
+    }
+
+    table {
+      margin-top: 43px;
+      border-collapse: separate;
+      border-spacing: 0;
+      background: transparent;
+    }
+
+    th,
+    td {
+      border-right: 1px solid rgba(91, 62, 35, 0.14);
+      border-bottom-color: rgba(91, 62, 35, 0.3);
+    }
+
+    th:last-child,
+    td:last-child {
+      border-right: 0;
+    }
+
+    th {
+      border-bottom-color: #291910;
+      background: #624027;
+      color: #f1d8a3;
+      font-family: var(--serif);
+      letter-spacing: 0.045em;
+      text-shadow: 0 1px #160e09;
+    }
+
+    tbody tr {
+      background: rgba(242, 218, 165, 0.2);
+      transition: background-color 150ms ease;
+    }
+
+    tbody tr:nth-child(even) {
+      background: rgba(204, 165, 100, 0.17);
+    }
+
+    tbody tr:hover {
+      background: rgba(255, 240, 194, 0.38);
+    }
+
+    td .btn,
+    td .btn.secondary {
+      min-height: 32px;
+      padding: 0 11px;
+      box-shadow: 0 2px 0 var(--leather-dark), inset 0 1px rgba(255, 231, 176, 0.16);
+      font-size: 12px;
+    }
+
+    .empty {
+      position: relative;
+      display: grid;
+      min-height: 220px;
+      margin-top: 43px;
+      padding: 57px 20px 30px;
+      place-content: center;
+      color: transparent;
+      font-size: 0;
+      text-align: center;
+    }
+
+    .empty::before {
+      display: block;
+      color: #503624;
+      content: "暂无调查记录";
+      font: 800 20px/1.5 var(--serif);
+      letter-spacing: 0.1em;
+    }
+
+    .empty::after {
+      display: block;
+      margin-top: 10px;
+      color: #76614c;
+      content: "⌕  等待侦探提交实验档案……";
+      font: 700 14px/1.7 var(--handwriting);
+      letter-spacing: 0.05em;
+    }
+
+    dialog {
+      overflow: hidden;
+      border: 1px solid #674321;
+      border-radius: 5px;
+      color: var(--ink);
+      background:
+        repeating-linear-gradient(0deg, transparent 0 31px, rgba(96, 62, 31, 0.055) 32px),
+        #e4ca91;
+      box-shadow: 0 28px 80px rgba(0, 0, 0, 0.62), inset 0 0 30px rgba(91, 56, 25, 0.1);
+    }
+
+    dialog::backdrop {
+      background: rgba(6, 5, 4, 0.72);
+      backdrop-filter: blur(2px);
+    }
+
+    .dialog-head {
+      border-bottom-color: #24160f;
+      background: linear-gradient(180deg, #513522, #342015);
+      color: #f1d8a3;
+    }
+
+    .dialog-head h2 {
+      font-family: var(--serif);
+      letter-spacing: 0.08em;
+    }
+
+    .detail-content {
+      background: transparent;
+      color: #39291d;
+    }
+
+    .detail-content h3 {
+      color: #56371f;
+      font-family: var(--serif);
+    }
+
+    .diagnosis-disclaimer {
+      border: 1px solid #a46e2b;
+      border-left: 5px solid #8a4a26;
+      border-radius: 3px;
+      background: rgba(244, 218, 159, 0.8);
+      color: #603b18;
+    }
+
+    @media (max-width: 860px) {
+      body {
+        background-attachment: scroll;
+        padding: 16px 10px 28px;
+      }
+
+      .panel {
+        padding: 21px 16px;
+      }
+
+      .panel::before {
+        width: 190px;
+        opacity: 0.05;
+      }
+
+      .panel::after {
+        display: none;
+      }
+
+      .header {
+        gap: 15px;
+      }
+
+      .header > .btn {
+        width: fit-content;
+      }
+
+      .filters {
+        grid-template-columns: repeat(2, minmax(0, 1fr));
+      }
+
+      .record-form-grid {
+        grid-template-columns: 1fr;
+      }
+
+      .record-field.full {
+        grid-column: auto;
+      }
+    }
+
+    @media (max-width: 560px) {
+      .filters {
+        grid-template-columns: 1fr;
+        padding: 54px 15px 18px;
+      }
+
+      .filters::after {
+        display: none;
+      }
+
+      .actions {
+        align-items: stretch;
+      }
+
+      .actions .btn {
+        flex: 1 1 calc(50% - 6px);
+      }
+
+      .history-option {
+        flex: 1 0 100%;
+      }
+
+      .actions::after {
+        content: "INVESTIGATION TOOLS";
+      }
+
+      .table-wrap::before {
+        content: "调查结果档案 · RECORDS";
+        font-size: 12px;
+      }
+
+      dialog {
+        width: calc(100% - 20px);
+      }
+    }
+
+    @media (prefers-reduced-motion: reduce) {
+      *,
+      *::before,
+      *::after {
+        scroll-behavior: auto !important;
+        transition-duration: 0.01ms !important;
+      }
+    }
   </style>
 </head>
 <body>
@@ -332,6 +1024,7 @@
         <label class="history-option"><input id="diagnosisHistory" type="checkbox">诊断全部历史版本</label>
         <button class="btn secondary" id="resetBtn" type="button">清空筛选</button>
         <button class="btn secondary" id="exportBtn" type="button">导出 Excel</button>
+        <button class="btn secondary" id="addRecordBtn" type="button">添加实验记录</button>
       </div>
 
       <p class="status" id="status">正在检查登录状态...</p>
@@ -350,6 +1043,36 @@
     <div class="detail-content" id="detailContent"></div>
   </dialog>
 
+  <dialog id="addRecordDialog" aria-labelledby="addRecordTitle">
+    <div class="dialog-head"><h2 id="addRecordTitle">添加正式实验记录</h2></div>
+    <form class="record-form" id="addRecordForm">
+      <div class="record-form-grid">
+        <label class="record-field">学生学号<input id="recordStudentId" required maxlength="100"></label>
+        <label class="record-field">实验模块<select id="recordExperimentId" required></select></label>
+        <label class="record-field full">提交时间<input id="recordSubmissionTime" type="datetime-local" required></label>
+        <label class="record-field full">统一实验明细 JSON<textarea id="recordDataJson" required spellcheck="false"></textarea></label>
+      </div>
+      <p class="record-dialog-status" id="addRecordStatus" role="alert"></p>
+      <div class="record-dialog-actions">
+        <button class="btn secondary" id="cancelAddRecordBtn" type="button">取消</button>
+        <button class="btn" id="confirmAddRecordBtn" type="submit">确认添加</button>
+      </div>
+    </form>
+  </dialog>
+
+  <dialog id="deleteRecordDialog" aria-labelledby="deleteRecordTitle">
+    <div class="dialog-head"><h2 id="deleteRecordTitle">删除实验记录</h2></div>
+    <div class="record-form">
+      <p id="deleteRecordSummary"></p>
+      <p class="record-warning">仅删除选中的正式提交源记录；已经生成的学习记忆和学习诊断不会被级联删除。</p>
+      <p class="record-dialog-status" id="deleteRecordStatus" role="alert"></p>
+      <div class="record-dialog-actions">
+        <button class="btn secondary" id="cancelDeleteRecordBtn" type="button">取消</button>
+        <button class="btn danger-btn" id="confirmDeleteRecordBtn" type="button">确认删除记录</button>
+      </div>
+    </div>
+  </dialog>
+
   <script src="https://static.cloudbase.net/cloudbase-js-sdk/3.0.0/cloudbase.full.js"></script>
   <script src="../assets/experiment-registry.js"></script>
   <script src="../assets/platform-core.js"></script>
@@ -365,6 +1088,9 @@
     experimentRegistry.experiments.forEach((entry) => {
       document.getElementById("sourceModuleFilter").add(new Option(entry.label, entry.id));
     });
+    experimentRegistry.entries.filter((entry) => ["experiment", "screening"].includes(entry.kind)).forEach((entry) => {
+      document.getElementById("recordExperimentId").add(new Option(entry.label, entry.id));
+    });
 
     const authGate = document.getElementById("authGate");
     const statusEl = document.getElementById("status");
@@ -375,9 +1101,17 @@
     const diagnosisHistory = document.getElementById("diagnosisHistory");
     const resetBtn = document.getElementById("resetBtn");
     const exportBtn = document.getElementById("exportBtn");
+    const addRecordBtn = document.getElementById("addRecordBtn");
     const detailDialog = document.getElementById("detailDialog");
     const detailContent = document.getElementById("detailContent");
     const closeDialogBtn = document.getElementById("closeDialogBtn");
+    const addRecordDialog = document.getElementById("addRecordDialog");
+    const addRecordForm = document.getElementById("addRecordForm");
+    const addRecordStatus = document.getElementById("addRecordStatus");
+    const deleteRecordDialog = document.getElementById("deleteRecordDialog");
+    const deleteRecordSummary = document.getElementById("deleteRecordSummary");
+    const deleteRecordStatus = document.getElementById("deleteRecordStatus");
+    const confirmDeleteRecordBtn = document.getElementById("confirmDeleteRecordBtn");
     const filters = {
       module: document.getElementById("moduleFilter"),
       studentId: document.getElementById("studentIdFilter"),
@@ -397,6 +1131,14 @@
     const TEMPORARY_DASHBOARD_LOGIN_BYPASS = false;
     let isLoggedIn = false;
     let records = [];
+    let pendingDeleteRecord = null;
+    let currentRecordView = "submissions";
+    const DEFAULT_RECORD_DATA = Object.freeze({
+      answers: {}, experimentResults: {}, knowledgeQuiz: { attempts: [] },
+      surveys: {}, reflections: {}, aiSummary: { usageCount: 0 }
+    });
+
+    addRecordBtn.disabled = true;
 
     function escapeHtml(value) {
       return String(value ?? "")
@@ -430,6 +1172,7 @@
     async function checkAdminLogin() {
       if (TEMPORARY_DASHBOARD_LOGIN_BYPASS) {
         isLoggedIn = true;
+        addRecordBtn.disabled = false;
         authGate.classList.remove("is-visible");
         setStatus("临时免登录维护模式：正在读取实验记录...");
         await loadRecords();
@@ -445,10 +1188,12 @@
 
       if (isLoggedIn) {
         authGate.classList.remove("is-visible");
+        addRecordBtn.disabled = false;
         setStatus("已登录，可以查询实验记录。");
         await loadRecords();
       } else {
         authGate.classList.add("is-visible");
+        addRecordBtn.disabled = true;
         setStatus("请先登录后再查看实验记录。");
       }
     }
@@ -497,6 +1242,7 @@
       }
 
       queryBtn.disabled = true;
+      currentRecordView = "submissions";
       setStatus("正在读取实验记录...");
 
       try {
@@ -605,7 +1351,10 @@
                   <td>${escapeHtml(getModuleLabel(record.module))}</td>
                   <td>${escapeHtml(getSubmitActionLabel(data.submitAction))}</td>
                   <td>${escapeHtml(detailCount)}</td>
-                  <td><button class="btn secondary" type="button" data-detail="${index}">详情</button></td>
+                  <td>
+                    <button class="btn secondary" type="button" data-detail="${index}">详情</button>
+                    ${canManageSubmission(record) ? `<button class="btn danger-btn" type="button" data-delete-record="${index}">删除</button>` : ""}
+                  </td>
                 </tr>
               `;
             }).join("")}
@@ -616,6 +1365,24 @@
       tableWrap.querySelectorAll("[data-detail]").forEach((button) => {
         button.addEventListener("click", () => showDetail(Number(button.dataset.detail)));
       });
+      tableWrap.querySelectorAll("[data-delete-record]").forEach((button) => {
+        button.addEventListener("click", () => openDeleteRecordDialog(Number(button.dataset.deleteRecord)));
+      });
+    }
+
+    function canManageSubmission(record) {
+      return currentRecordView === "submissions" &&
+        ["experiment_submissions", "experimentRecords"].includes(record && record.sourceCollection) &&
+        Boolean(record && record.recordId) && record.module !== "aiChat";
+    }
+
+    function openDeleteRecordDialog(index) {
+      const record = records[index];
+      if (!canManageSubmission(record)) return;
+      pendingDeleteRecord = record;
+      deleteRecordSummary.textContent = `确定删除 ${record.studentName || record.studentId || "该学生"} 的“${getModuleLabel(record.module)}”正式提交（${formatDate(record.uploadedAt || record.createdAt)}）吗？`;
+      deleteRecordStatus.textContent = "";
+      deleteRecordDialog.showModal();
     }
 
     function formatDate(value) {
@@ -638,6 +1405,7 @@
 
     async function loadMemoryRecords() {
       if (!isLoggedIn) return;
+      currentRecordView = "memories";
       memoryBtn.disabled = true;
       setStatus("正在读取结构化学习记忆...");
       try {
@@ -688,6 +1456,7 @@
 
     async function loadDiagnosisRecords() {
       if (!isLoggedIn) return;
+      currentRecordView = "diagnoses";
       diagnosisBtn.disabled = true;
       setStatus("正在读取学习诊断...");
       try {
@@ -1789,12 +2558,20 @@
 
       let sheets = [];
       try {
-        const latestStateRecords = getLatestStateRecords(records);
+        const isAiChatExport = filters.module.value.trim() === "aiChat";
+        const exportSourceRecords = isAiChatExport
+          ? await fetchRecords(Object.assign({}, buildQueryPayload("submission"), { exportAll: true, skip: 0 }))
+          : records;
+        const latestStateRecords = isAiChatExport
+          ? exportSourceRecords
+          : getLatestStateRecords(exportSourceRecords);
         let cloudAttemptRecords = [];
-        try {
-          cloudAttemptRecords = await fetchRecords(Object.assign({}, buildQueryPayload("experiment"), { limit: 500 }));
-        } catch (error) {
-          console.warn("读取逐次实验记录失败，将使用最新状态快照中的历史记录。", getErrorSummary(error));
+        if (!isAiChatExport) {
+          try {
+            cloudAttemptRecords = await fetchRecords(Object.assign({}, buildQueryPayload("experiment"), { limit: 500 }));
+          } catch (error) {
+            console.warn("读取逐次实验记录失败，将使用最新状态快照中的历史记录。", getErrorSummary(error));
+          }
         }
         const detailSheets = latestStateRecords.flatMap((record) => {
           const recordSheets = stateSheetDispatcher.dispatch(record.module, record);
@@ -1834,6 +2611,101 @@
       URL.revokeObjectURL(url);
       setStatus(`已导出 ${sheets.length} 个数据表。`);
     }
+
+    function localDateTimeValue(date = new Date()) {
+      const local = new Date(date.getTime() - date.getTimezoneOffset() * 60000);
+      return local.toISOString().slice(0, 16);
+    }
+
+    function isPlainObject(value) {
+      return Boolean(value) && typeof value === "object" && !Array.isArray(value);
+    }
+
+    function validateRecordData(data) {
+      const keys = ["answers", "experimentResults", "knowledgeQuiz", "surveys", "reflections", "aiSummary"];
+      if (!isPlainObject(data) || !keys.every((key) => isPlainObject(data[key]))) {
+        throw new Error("JSON 必须包含 answers、experimentResults、knowledgeQuiz、surveys、reflections、aiSummary 六个对象。");
+      }
+      if (!Array.isArray(data.knowledgeQuiz.attempts) || data.knowledgeQuiz.attempts.length > 1) {
+        throw new Error("knowledgeQuiz.attempts 必须是最多包含一项的数组。");
+      }
+      return data;
+    }
+
+    addRecordBtn.addEventListener("click", () => {
+      document.getElementById("recordStudentId").value = filters.studentId.value.trim();
+      const selectedModule = filters.module.value.trim();
+      const moduleSelect = document.getElementById("recordExperimentId");
+      if (Array.from(moduleSelect.options).some((option) => option.value === selectedModule)) moduleSelect.value = selectedModule;
+      document.getElementById("recordSubmissionTime").value = localDateTimeValue();
+      document.getElementById("recordDataJson").value = JSON.stringify(DEFAULT_RECORD_DATA, null, 2);
+      addRecordStatus.textContent = "";
+      addRecordDialog.showModal();
+    });
+
+    document.getElementById("cancelAddRecordBtn").addEventListener("click", () => addRecordDialog.close());
+    document.getElementById("cancelDeleteRecordBtn").addEventListener("click", () => deleteRecordDialog.close());
+
+    addRecordForm.addEventListener("submit", async (event) => {
+      event.preventDefault();
+      if (!isLoggedIn) return;
+      const submitButton = document.getElementById("confirmAddRecordBtn");
+      submitButton.disabled = true;
+      addRecordStatus.textContent = "正在新增正式实验记录...";
+      try {
+        let data;
+        try {
+          data = JSON.parse(document.getElementById("recordDataJson").value);
+        } catch (error) {
+          throw new Error("实验明细不是有效的 JSON。");
+        }
+        validateRecordData(data);
+        const studentId = document.getElementById("recordStudentId").value.trim();
+        const experimentId = document.getElementById("recordExperimentId").value.trim();
+        const submissionTimeValue = document.getElementById("recordSubmissionTime").value;
+        const submissionTime = new Date(submissionTimeValue);
+        if (!submissionTimeValue || Number.isNaN(submissionTime.getTime())) throw new Error("提交时间无效。");
+        const response = await window.app.callFunction({
+          name: "createExperimentRecordAdmin",
+          data: { studentId, experimentId, submissionTime: submissionTime.toISOString(), data }
+        });
+        const result = response && (response.result || response);
+        if (!result || !result.ok) throw new Error((result && result.message) || "新增实验记录失败。");
+        addRecordDialog.close();
+        filters.studentId.value = studentId;
+        filters.module.value = experimentId;
+        filters.dateFrom.value = "";
+        filters.dateTo.value = "";
+        await loadRecords();
+        setStatus("实验记录已新增，并已按该学生和实验重新查询。");
+      } catch (error) {
+        addRecordStatus.textContent = error && error.message ? error.message : "新增实验记录失败。";
+      } finally {
+        submitButton.disabled = false;
+      }
+    });
+
+    confirmDeleteRecordBtn.addEventListener("click", async () => {
+      if (!pendingDeleteRecord || !canManageSubmission(pendingDeleteRecord) || !isLoggedIn) return;
+      confirmDeleteRecordBtn.disabled = true;
+      deleteRecordStatus.textContent = "正在删除实验记录...";
+      try {
+        const response = await window.app.callFunction({
+          name: "deleteExperimentRecordAdmin",
+          data: { sourceCollection: pendingDeleteRecord.sourceCollection, recordId: pendingDeleteRecord.recordId }
+        });
+        const result = response && (response.result || response);
+        if (!result || !result.ok) throw new Error((result && result.message) || "删除实验记录失败。");
+        deleteRecordDialog.close();
+        pendingDeleteRecord = null;
+        await loadRecords();
+        setStatus("实验记录已删除；既有学习记忆和诊断保持不变。");
+      } catch (error) {
+        deleteRecordStatus.textContent = error && error.message ? error.message : "删除实验记录失败。";
+      } finally {
+        confirmDeleteRecordBtn.disabled = false;
+      }
+    });
 
     queryBtn.addEventListener("click", loadRecords);
     memoryBtn.addEventListener("click", loadMemoryRecords);

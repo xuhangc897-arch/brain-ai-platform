@@ -3,7 +3,7 @@
 ## 数据边界
 
 - localStorage：仅保存学生当前未提交状态、页面进度和可靠上传队列，不作为正式研究数据来源。
-- `experiment_submissions`：保存四个实验和海报的正式成果，每次主动提交形成不可变记录。
+- `experiment_submissions`：保存资格审查、四个实验和海报的正式成果，每次主动提交形成不可变记录。
 - `learning_records`、`ai_chat_records`、`agent_interventions`：分别保存学习行为、有效 AI 问答和智能支架过程。
 - `experimentRecords`：只作为历史兼容集合保留；新实验正式提交和新 AI 问答不再写入该集合。
 
@@ -12,6 +12,8 @@
 学生端通过 `submitExperimentSubmission()` 构建统一结构并先写入独立 outbox。只有 `saveExperimentSubmission` 确认写入或确认重复后，页面才携带 `submissionId` 打开报告。正式学生的报告通过 `getLatestExperimentSubmission` 读取已确认提交；游客报告是明确标识的本地预览。
 
 教师端通过 `getExperimentSubmissionsAdmin` 合并新正式提交和历史 `experimentRecords` submission，通过 `getAiChatRecordsAdmin` 合并新单条 AI 记录和历史批量 AI logs。
+
+教师数据管理继续只通过云函数访问受保护集合：`getStudentsAdmin` 返回不含密码的分页学生名单，`deleteStudentAdmin` 只删除学生账号文档并保留历史研究数据；`createExperimentRecordAdmin` 以统一正式提交结构新增教师审计记录，`deleteExperimentRecordAdmin` 只允许删除 `experiment_submissions` 或历史 `experimentRecords` 中的正式 submission。删除正式提交不会级联删除已经生成的学习记忆或学习诊断。
 
 ## CloudBase 部署要求
 
@@ -25,4 +27,4 @@
 - `experiment_submissions`：`studentId + experimentId + uploadedAt`、`submissionId`
 - `ai_chat_records`：`studentId + experimentId + uploadedAt`、`clientRecordId`
 
-部署顺序：先创建集合、权限和索引，再部署 `cloudbase.json` 中新增的五个云函数，最后部署静态站点。部署后使用正式测试学生和教师账号验证提交、最新报告、AI 单条记录及后台导出。
+部署顺序：先创建集合、权限和索引，再部署 `cloudbase.json` 中列出的云函数，最后部署静态站点。部署后使用正式测试学生和教师账号验证提交、最新报告、AI 单条记录、学生账号管理、正式实验记录管理及后台导出。

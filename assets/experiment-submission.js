@@ -38,7 +38,7 @@
   function normalizeKnowledgeQuiz(source) {
     const quiz = source && typeof source === "object" ? source : {};
     let attempts = Array.isArray(quiz.attempts) ? quiz.attempts : quiz.history;
-    attempts = Array.isArray(attempts) ? attempts.map(normalizeQuizAttempt) : [];
+    attempts = Array.isArray(attempts) ? attempts.slice(0, 1).map(normalizeQuizAttempt) : [];
     if (!attempts.length && (quiz.submitted || quiz.submittedAt)) {
       attempts.push(normalizeQuizAttempt(quiz, 0));
     }
@@ -96,7 +96,7 @@
   function buildExperimentSubmission(options) {
     const experimentId = text(options && options.experimentId);
     const experiment = registry && registry.get(experimentId);
-    if (!experiment || experiment.kind !== "experiment") throw new Error("Invalid experimentId.");
+    if (!experiment || !["experiment", "screening"].includes(experiment.kind)) throw new Error("Invalid experimentId.");
     const state = options && options.state && typeof options.state === "object" ? options.state : {};
     const session = platform.identity.readStudentSession() || {};
     const submissionTime = iso(options && options.submissionTime);
@@ -113,7 +113,7 @@
       experimentId,
       experimentName: experiment.label,
       submissionTime,
-      answers: clone(state.fields || {}),
+      answers: clone(state.fields || state.answers || {}),
       experimentResults: collectExperimentResults(state),
       knowledgeQuiz: normalizeKnowledgeQuiz(state.knowledgeQuiz),
       surveys: normalizeSurveys(state.surveys),

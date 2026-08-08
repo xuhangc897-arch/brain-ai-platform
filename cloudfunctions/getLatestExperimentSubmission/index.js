@@ -6,7 +6,7 @@ const app = cloudbase.init({ env: cloudbase.SYMBOL_CURRENT_ENV });
 const db = app.database();
 const submissions = db.collection("experiment_submissions");
 const legacyRecords = db.collection("experimentRecords");
-const EXPERIMENT_NAMES = { memory: "记忆容量", nback: "N-back 工作记忆", interference: "长时记忆干扰", strategies: "长时记忆策略", poster: "海报制作" };
+const EXPERIMENT_NAMES = { memory: "记忆容量", nback: "N-back 工作记忆", interference: "长时记忆干扰", strategies: "长时记忆策略", poster: "海报制作", screening: "资格审查" };
 const ID_PATTERN = /^[A-Za-z0-9_.:-]{1,100}$/;
 
 function text(value) { return String(value == null ? "" : value).trim(); }

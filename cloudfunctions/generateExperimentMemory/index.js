@@ -103,6 +103,12 @@ async function latestSubmission(studentId, experimentId) {
 }
 
 async function latestScreening(studentId) {
+  const current = await submissionsCollection
+    .where({ studentId, experimentId: "screening" })
+    .orderBy("uploadedAt", "desc")
+    .limit(1)
+    .get();
+  if (Array.isArray(current.data) && current.data[0]) return current.data[0];
   const result = await recordsCollection
     .where({ studentId, module: "screening", recordType: "submission" })
     .orderBy("uploadedAt", "desc")

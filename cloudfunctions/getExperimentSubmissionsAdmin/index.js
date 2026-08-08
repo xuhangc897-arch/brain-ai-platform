@@ -15,7 +15,13 @@ function timeValue(value) { if (!value) return 0; if (typeof value === "string")
 function asDashboardRecord(item) {
   const quiz = item.knowledgeQuiz || {}; const attempts = Array.isArray(quiz.attempts) ? quiz.attempts : []; const last = attempts[attempts.length - 1] || {};
   const state = Object.assign({}, item.experimentResults || {}, { studentId: item.studentId, studentName: item.studentName || "", className: item.className || "", groupName: item.groupName || "", fields: item.answers || {}, surveys: { postMeta: item.surveys && item.surveys.meta || {}, cognitiveLoad: item.surveys && item.surveys.cognitiveLoad || {}, inquiryParticipation: item.surveys && item.surveys.inquiryParticipation || {} }, knowledgeQuiz: Object.assign({}, quiz, { history: attempts.map((entry) => Object.assign({}, entry, { submittedAt: entry.timestamp || entry.submittedAt || "" })), submitted: attempts.length > 0, answers: last.answers || {}, score: quiz.finalScore, correctCount: last.correctCount || 0, submittedAt: last.timestamp || last.submittedAt || "", wrongQuestions: last.wrongQuestions || [] }) });
-  return { schemaVersion: item.schemaVersion || 1, recordId: item._id || item.submissionId, module: item.experimentId, recordType: "submission", studentId: item.studentId, studentName: item.studentName || "", className: item.className || "", groupName: item.groupName || "", data: Object.assign({}, item, { fullState: state }), payload: Object.assign({}, item, { fullState: state }), clientRecordId: item.clientRecordId || item.submissionId, createdAt: item.submissionTime, uploadedAt: item.uploadedAt, sourceCollection: "experiment_submissions" };
+  return { schemaVersion: item.schemaVersion || 1, recordId: item._id || item.recordId || item.submissionId, module: item.experimentId, recordType: "submission", studentId: item.studentId, studentName: item.studentName || "", className: item.className || "", groupName: item.groupName || "", data: Object.assign({}, item, { fullState: state }), payload: Object.assign({}, item, { fullState: state }), clientRecordId: item.clientRecordId || item.submissionId, createdAt: item.submissionTime, uploadedAt: item.uploadedAt, sourceCollection: "experiment_submissions" };
+}
+function asLegacyDashboardRecord(item) {
+  return Object.assign({}, item, {
+    recordId: item._id || item.recordId || "",
+    sourceCollection: "experimentRecords"
+  });
 }
 
 exports.main = async (event) => {
@@ -29,7 +35,7 @@ exports.main = async (event) => {
     submissions.where(newCondition).orderBy("uploadedAt", "desc").limit(limit).get(),
     legacyRecords.where(legacyCondition).orderBy("uploadedAt", "desc").limit(limit).get()
   ]);
-  const records = (Array.isArray(newResult.data) ? newResult.data.map(asDashboardRecord) : []).concat(Array.isArray(legacyResult.data) ? legacyResult.data : []);
+  const records = (Array.isArray(newResult.data) ? newResult.data.map(asDashboardRecord) : []).concat(Array.isArray(legacyResult.data) ? legacyResult.data.map(asLegacyDashboardRecord) : []);
   records.sort((left, right) => timeValue(right.uploadedAt || right.createdAt) - timeValue(left.uploadedAt || left.createdAt));
   const from = text(input.dateFrom) ? Date.parse(`${text(input.dateFrom)}T00:00:00+08:00`) : 0;
   const to = text(input.dateTo) ? Date.parse(`${text(input.dateTo)}T23:59:59.999+08:00`) : Number.MAX_SAFE_INTEGER;
@@ -37,4 +43,4 @@ exports.main = async (event) => {
   return { ok: true, records: records.filter((record) => { const value = timeValue(record.uploadedAt || record.createdAt); return value >= from && value <= to; }).slice(skip, skip + limit) };
 };
 
-exports.__test = { asDashboardRecord, timeValue };
+exports.__test = { asDashboardRecord, asLegacyDashboardRecord, timeValue };
