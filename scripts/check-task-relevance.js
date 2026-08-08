@@ -88,23 +88,36 @@ vm.runInNewContext(controllerSource, controllerSandbox, { filename: "task-releva
 const controllerHooks = controllerSandbox.__TaskRelevanceTestHooks;
 assert.strictEqual(controllerHooks.normalizeText("  学习\n 任务  "), "学习 任务");
 assert.strictEqual(controllerHooks.editSize("学习任务", "学习实验任务"), 2);
-assert.strictEqual(controllerHooks.constants.OFF_TOPIC_CONFIDENCE, 0.85);
-assert.strictEqual(controllerHooks.constants.PARTIAL_CONFIDENCE, 0.70);
-assert.strictEqual(controllerHooks.constants.MAX_PROMPTS_PER_TASK, 2);
+assert.strictEqual(controllerHooks.constants.OFF_TOPIC_CONFIDENCE, 0.75);
+assert.strictEqual(controllerHooks.constants.DIRECTION_CONFIDENCE, 0.70);
+assert.strictEqual(controllerHooks.constants.PROMPT_COOLDOWN_MS, 60000);
 assert.strictEqual(controllerHooks.constants.MIN_BLUR_EDIT_SIZE, 3);
 assert.strictEqual(
   controllerHooks.promptForResult({
-    status: "off_topic", confidence: 0.84, supportHint: ""
+    status: "off_topic", confidence: 0.74, supportHint: ""
   }),
   null,
   "low-confidence off-topic results must not prompt"
 );
 assert.strictEqual(
   controllerHooks.promptForResult({
-    status: "partially_relevant", confidence: 0.69, supportHint: "补充实验数据"
+    status: "incomplete", confidence: 0.69, supportHint: ""
   }),
   null,
-  "low-confidence partial results must not prompt"
+  "low-confidence incomplete results must not prompt"
+);
+assert.strictEqual(
+  controllerHooks.promptForResult({ status: "off_topic", confidence: 0.75, supportHint: "" }).kind,
+  "off_topic"
+);
+assert.strictEqual(
+  controllerHooks.promptForResult({ status: "vague", confidence: 0.70, supportHint: "" }).kind,
+  "vague"
+);
+assert.strictEqual(
+  controllerHooks.promptForResult({ status: "partially_relevant", confidence: 0.70, supportHint: "旧提示" }).category,
+  "direction",
+  "historical partial results must remain readable"
 );
 assert.strictEqual(
   controllerHooks.promptForResult({
@@ -119,6 +132,16 @@ assert.strictEqual(
   }).kind,
   "insufficient"
 );
+const directionPrompt = controllerHooks.promptForResult({
+  status: "incomplete", confidence: 0.70, supportHint: ""
+});
+assert(!controllerHooks.tieredMessage(directionPrompt, 1).includes("助手可以帮你整理"));
+assert(controllerHooks.tieredMessage(directionPrompt, 2).includes("助手可以帮你整理"));
+assert(controllerHooks.tieredMessage(directionPrompt, 3).includes("①观察到了什么"));
+const contentPrompt = controllerHooks.promptForResult({
+  status: "cognitive_difficulty", confidence: 1, supportHint: ""
+});
+assert(controllerHooks.tieredMessage(contentPrompt, 2).includes("实验现象"));
 
 const documents = new Map();
 const students = [{ studentId: "S001", name: "测试学生", class: "七年级", group: "一组" }];
@@ -213,7 +236,7 @@ function payload(overrides) {
   );
   assert.strictEqual(
     relevanceFunction.__test.localScreen("不知道", memoryQuestion).status,
-    "insufficient"
+    "cognitive_difficulty"
   );
   assert.strictEqual(
     relevanceFunction.__test.localScreen("哈哈哈哈哈哈哈哈哈哈哈哈", memoryQuestion).reasonCode,
@@ -224,16 +247,24 @@ function payload(overrides) {
     null,
     "local rules must not require configured keywords"
   );
+  assert.strictEqual(relevanceFunction.__test.localScreen("一二三四五", memoryQuestion).status, "insufficient");
+  assert.strictEqual(relevanceFunction.__test.localScreen("一二三四五六", memoryQuestion), null);
+  assert.strictEqual(relevanceFunction.__test.localScreen("abcdef7", memoryQuestion).status, "insufficient");
+  assert.strictEqual(relevanceFunction.__test.localScreen("abcdef78", memoryQuestion), null);
+  assert.strictEqual(relevanceFunction.__test.localScreen("一二三abcde", memoryQuestion).status, "insufficient");
+  assert.strictEqual(relevanceFunction.__test.localScreen("一二三abcdef78", memoryQuestion), null);
 
   for (const status of [
-    "relevant", "partially_relevant", "off_topic",
-    "insufficient", "inappropriate", "uncertain"
+    "relevant", "incomplete", "vague", "off_topic",
+    "insufficient", "cognitive_difficulty", "inappropriate", "uncertain"
   ]) {
     const reasonCode = {
       relevant: "addresses_task",
-      partially_relevant: "partially_addresses_task",
+      incomplete: "incomplete_response",
+      vague: "vague_response",
       off_topic: "unrelated_content",
       insufficient: "too_little_content",
+      cognitive_difficulty: "expressed_difficulty",
       inappropriate: "inappropriate_content",
       uncertain: "uncertain"
     }[status];
@@ -242,7 +273,7 @@ function payload(overrides) {
       confidence: 0.8,
       reasonCode,
       briefReason: "测试",
-      supportHint: status === "partially_relevant" ? "可补充一项实验现象" : ""
+      supportHint: ""
     });
     assert(validated, `${status} must be accepted`);
   }
@@ -337,7 +368,13 @@ function payload(overrides) {
   assert.strictEqual(documents.get(firstId).promptCount, 2);
   const thirdText = "我准备比较每一种数字长度下的回忆成绩，再说明短时记忆容量的变化";
   const thirdCheck = await relevanceFunction.main(payload({ inputText: thirdText }));
-  assert.strictEqual(thirdCheck.promptEligible, false, "a task must not prompt more than twice");
+  assert.strictEqual(thirdCheck.promptEligible, true, "a task may prompt again for changed text");
+  await relevanceFunction.main(payload({
+    inputText: thirdText,
+    prompted: true,
+    trigger: "prompt_shown"
+  }));
+  assert.strictEqual(documents.get(firstId).promptCount, 3);
 
   const submitted = await relevanceFunction.main({
     schemaVersion: 1,

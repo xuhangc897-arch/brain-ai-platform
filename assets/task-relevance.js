@@ -2,15 +2,20 @@
   "use strict";
 
   const SCHEMA_VERSION = 1;
-  const OFF_TOPIC_CONFIDENCE = 0.85;
-  const PARTIAL_CONFIDENCE = 0.70;
-  const MAX_PROMPTS_PER_TASK = 2;
+  const OFF_TOPIC_CONFIDENCE = 0.75;
+  const DIRECTION_CONFIDENCE = 0.70;
+  const PROMPT_COOLDOWN_MS = 60000;
   const MIN_BLUR_EDIT_SIZE = 3;
   const OUTBOX_LIMIT = 100;
   const OUTBOX_TTL_MS = 7 * 24 * 60 * 60 * 1000;
   const LOCAL_STATE_LIMIT = 500;
-  const OFF_TOPIC_MESSAGE = "这段内容好像与当前任务的关系不大。请再阅读一次任务要求，并结合刚才的实验材料或实验结果重新思考。";
+  const OFF_TOPIC_MESSAGE = "侦探提醒：你的线索可能和当前案件关系不大，可以再看看任务要求。";
+  const DIRECTION_MESSAGE = "你的想法已经找到方向，可以再补充一些实验现象或原因。";
   const INSUFFICIENT_MESSAGE = "这段内容可能还比较少，暂时无法判断它与任务的关系。你可以再阅读一次任务要求，补充与实验材料、过程或结果有关的内容。";
+  const COGNITIVE_DIFFICULTY_MESSAGE = "侦探发现你暂时没有找到线索。";
+  const DIRECTION_LEVEL_TWO = "如果不知道如何表达，可以先说出你的想法，助手可以帮你整理。";
+  const CONTENT_LEVEL_TWO = "可以先从一个实验现象、可能原因或你的猜想开始。";
+  const LEVEL_THREE = "可以尝试从三个方面思考：①观察到了什么；②为什么会这样；③实验结果说明什么。";
   let initialized = false;
   let experimentId = "";
   let outboxSequence = 0;
@@ -124,7 +129,14 @@
 
   function updateLocalEntry(key, updates) {
     const items = readLocalState();
-    const previous = items.find((item) => item.key === key) || { key, checkedHashes: [], promptedHashes: [], promptCount: 0 };
+    const previous = items.find((item) => item.key === key) || {
+      key,
+      checkedHashes: [],
+      promptedHashes: [],
+      promptCount: 0,
+      promptCountsByCategory: {},
+      lastPromptAtByCategory: {}
+    };
     const next = Object.assign({}, previous, updates);
     const filtered = items.filter((item) => item.key !== key);
     filtered.push(next);
@@ -255,17 +267,32 @@
   function promptForResult(result) {
     if (!result) return null;
     if (result.status === "off_topic" && result.confidence >= OFF_TOPIC_CONFIDENCE) {
-      return { kind: "off_topic", title: "再看看当前任务", message: OFF_TOPIC_MESSAGE };
+      return { kind: "off_topic", category: "direction", title: "再看看当前任务", message: OFF_TOPIC_MESSAGE };
     }
-    if (result.status === "partially_relevant" &&
-        result.confidence >= PARTIAL_CONFIDENCE &&
-        normalizeText(result.supportHint)) {
-      return { kind: "partially_relevant", title: "可以再补充一点", message: result.supportHint };
+    if (["incomplete", "vague", "partially_relevant"].includes(result.status) &&
+        result.confidence >= DIRECTION_CONFIDENCE) {
+      return { kind: result.status, category: "direction", title: "可以再补充一点", message: DIRECTION_MESSAGE };
     }
     if (result.status === "insufficient") {
-      return { kind: "insufficient", title: "内容还可以更具体", message: INSUFFICIENT_MESSAGE };
+      return { kind: "insufficient", category: "content", title: "内容还可以更具体", message: INSUFFICIENT_MESSAGE };
+    }
+    if (result.status === "cognitive_difficulty") {
+      return {
+        kind: "cognitive_difficulty",
+        category: "content",
+        title: "我们一起找线索",
+        message: COGNITIVE_DIFFICULTY_MESSAGE
+      };
     }
     return null;
+  }
+
+  function tieredMessage(prompt, promptNumber) {
+    if (promptNumber <= 1) return prompt.message;
+    const support = promptNumber === 2
+      ? (prompt.category === "direction" ? DIRECTION_LEVEL_TWO : CONTENT_LEVEL_TWO)
+      : LEVEL_THREE;
+    return `${prompt.message} ${support}`;
   }
 
   function saveInteraction(target, hash, interaction) {
@@ -288,26 +315,35 @@
 
   function showPrompt(target, hash, result, config, key) {
     const local = findLocalEntry(key) || {};
-    if ((local.promptCount || 0) >= MAX_PROMPTS_PER_TASK ||
-        (local.promptedHashes || []).includes(hash) ||
-        global.VirtualAgent.isBusy()) {
+    if ((local.promptedHashes || []).includes(hash) || global.VirtualAgent.isBusy()) {
       return false;
     }
     const prompt = promptForResult(result);
     if (!prompt) return false;
+    const now = Date.now();
+    const lastPromptAt = Number(local.lastPromptAtByCategory?.[prompt.category] || 0);
+    if (now - lastPromptAt < PROMPT_COOLDOWN_MS) return false;
+    const promptCountsByCategory = Object.assign({}, local.promptCountsByCategory);
+    const promptNumber = Number(promptCountsByCategory[prompt.category] || 0) + 1;
     const shown = global.VirtualAgent.showRelevanceSuggestion({
       target,
       title: prompt.title,
-      message: prompt.message,
+      message: tieredMessage(prompt, promptNumber),
       taskTitle: config.taskTitle,
       taskInstruction: config.taskInstruction,
       onResponse: (response) => handlePromptResponse(target, hash, response)
     });
     if (!shown) return false;
 
-    const promptedHashes = Array.from(new Set([...(local.promptedHashes || []), hash])).slice(-10);
+    const promptedHashes = Array.from(new Set([...(local.promptedHashes || []), hash]));
+    promptCountsByCategory[prompt.category] = promptNumber;
+    const lastPromptAtByCategory = Object.assign({}, local.lastPromptAtByCategory, {
+      [prompt.category]: now
+    });
     updateLocalEntry(key, {
-      promptCount: Math.min(MAX_PROMPTS_PER_TASK, Number(local.promptCount || 0) + 1),
+      promptCount: Number(local.promptCount || 0) + 1,
+      promptCountsByCategory,
+      lastPromptAtByCategory,
       promptedHashes
     });
     activePrompt = { target, hash };
@@ -363,7 +399,6 @@
     });
     try {
       const response = await request(payload, false);
-      rememberHash(key, response.textHash || hash);
       lastCheckedText.set(key, normalized);
       if (global.AGENT_DEBUG === true) {
         console.debug("[TaskRelevance] Check completed.", {
@@ -379,9 +414,11 @@
       const unchanged = target.isConnected &&
         normalizeText(target.value) === normalized &&
         target.dataset.stageId === config.stageId;
+      let shown = false;
       if (unchanged && response.promptEligible !== false) {
-        showPrompt(target, response.textHash || hash, response.result, config, key);
+        shown = showPrompt(target, response.textHash || hash, response.result, config, key);
       }
+      if (shown || response.promptEligible === false || !unchanged) rememberHash(key, response.textHash || hash);
       return response;
     } catch (error) {
       console.warn("[TaskRelevance] Check unavailable; student work can continue.");
@@ -482,10 +519,11 @@
     unicodeLength,
     editSize,
     promptForResult,
+    tieredMessage,
     constants: Object.freeze({
       OFF_TOPIC_CONFIDENCE,
-      PARTIAL_CONFIDENCE,
-      MAX_PROMPTS_PER_TASK,
+      DIRECTION_CONFIDENCE,
+      PROMPT_COOLDOWN_MS,
       MIN_BLUR_EDIT_SIZE,
       OUTBOX_LIMIT
     })

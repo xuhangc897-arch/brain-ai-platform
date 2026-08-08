@@ -10,7 +10,7 @@
 
 - 浏览器配置：`assets/task-relevance-config.js`
 - 服务端权威配置：`cloudfunctions/checkTaskRelevance/task-config.js`
-- 静态检查会比较两份配置的实验、阶段、任务、原始任务文本、主题、参考概念和最低长度，防止漂移。
+- 静态检查会比较两份配置的实验、阶段、任务、原始任务文本、主题、参考概念和中英文最低长度，防止漂移。
 - 页面加载 `assets/task-relevance.js` 后调用：
 
 ```javascript
@@ -31,14 +31,15 @@ TaskRelevance.init({ experimentId });
 { action: "submit", studentId, experimentId, stageId, taskId, finalText, trigger, pageId }
 ```
 
-`interaction` 仅接受 `view_task`、`return_modify`、`keep` 和 `closed`。输入文本最长 2,000 个 Unicode 字符。服务端先执行空文本、最低长度、重复字符、无效短语和乱码初筛；通过后才调用 DeepSeek `deepseek-v4-flash`，密钥环境变量为 `OPENAI_API_KEY`。
+`interaction` 仅接受 `view_task`、`return_modify`、`keep` 和 `closed`。输入文本最长 2,000 个 Unicode 字符。服务端先去除空白和中英文标点，再执行空文本、中英文最低长度、重复字符、认知困难表达和乱码初筛；通过后才调用 DeepSeek `deepseek-v4-flash`，密钥环境变量为 `OPENAI_API_KEY`。中文达到 6 个汉字或英文数字达到 8 个字符即可通过长度初筛；混合文本满足任一标准即可。
 
 AI 输出严格校验为：
 
 ```javascript
 {
-  status: "relevant" | "partially_relevant" | "off_topic" |
-          "insufficient" | "inappropriate" | "uncertain",
+  status: "relevant" | "incomplete" | "vague" | "off_topic" |
+          "insufficient" | "cognitive_difficulty" |
+          "inappropriate" | "uncertain",
   confidence: 0.0,
   reasonCode: "...",
   briefReason: "...",
@@ -46,7 +47,11 @@ AI 输出严格校验为：
 }
 ```
 
-非法 JSON、未知字段或枚举、越界置信度和超长文本均降级为 `uncertain`。偏题提示阈值为 `0.85`，部分相关支架阈值为 `0.70`；每项任务最多提示两次。
+非法 JSON、未知字段或枚举、越界置信度和超长文本均降级为 `uncertain`。AI 只在明显无关时返回 `off_topic`；方向正确但缺少解释、依据或实验联系时返回 `incomplete`，表达过于笼统时返回 `vague`。偏题提示阈值为 `0.75`，方向不足支架阈值为 `0.70`。历史 `partially_relevant` 记录继续按方向不足兼容读取。
+
+“不知道”“不会”“不清楚”“不懂”“没想法”“不知道怎么写”和“不会写”进入 `cognitive_difficulty` 支架，不按无效回答处理。重复字符、空内容和未达到长度标准的其他文本仍返回 `insufficient`。
+
+方向提示和内容支架分别按任务计算：相同文本不重复提示，两次同类提示至少间隔 60 秒，不限制总次数。第一次只显示温和类别提醒，第二次追加表达方法，第三次及以后追加“观察—原因—实验结果”的三步思考框架。
 
 ## 数据与部署
 

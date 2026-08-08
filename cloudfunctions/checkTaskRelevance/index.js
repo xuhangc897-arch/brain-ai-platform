@@ -12,7 +12,7 @@ const INTERVENTION_TYPE = "task_relevance";
 const MAX_TEXT_LENGTH = 2000;
 const MAX_CHECKS = 5;
 const MAX_SEEN_HASHES = 50;
-const MAX_PROMPTS = 2;
+const MAX_PROMPT_HASHES = 50;
 const DEEPSEEK_HOST = "api.deepseek.com";
 const DEEPSEEK_PATH = "/chat/completions";
 const MODEL = "deepseek-v4-flash";
@@ -22,24 +22,27 @@ const ACTIONS = new Set(["check", "interaction", "submit"]);
 const INTERACTIONS = new Set(["view_task", "return_modify", "keep", "closed"]);
 const TRIGGERS = new Set(["blur", "stage_complete", "stage_submit", "final_report", "prompt_shown"]);
 const STATUSES = new Set([
-  "relevant", "partially_relevant", "off_topic",
-  "insufficient", "inappropriate", "uncertain"
+  "relevant", "incomplete", "vague", "off_topic", "insufficient",
+  "cognitive_difficulty", "inappropriate", "uncertain"
 ]);
 const REASON_CODES = new Set([
-  "addresses_task", "partially_addresses_task", "unrelated_content",
+  "addresses_task", "incomplete_response", "vague_response", "unrelated_content",
   "too_little_content", "inappropriate_content", "uncertain",
-  "empty_text", "below_minimum_length", "repeated_text", "invalid_text"
+  "empty_text", "below_minimum_length", "repeated_text", "invalid_text",
+  "expressed_difficulty"
 ]);
 const AI_REASON_BY_STATUS = Object.freeze({
   relevant: "addresses_task",
-  partially_relevant: "partially_addresses_task",
+  incomplete: "incomplete_response",
+  vague: "vague_response",
   off_topic: "unrelated_content",
   insufficient: "too_little_content",
+  cognitive_difficulty: "expressed_difficulty",
   inappropriate: "inappropriate_content",
   uncertain: "uncertain"
 });
-const INVALID_TEXTS = new Set([
-  "不会", "不知道", "不懂", "随便", "没想法", "无", "没有", "不知道怎么写", "不会写"
+const COGNITIVE_DIFFICULTY_TEXTS = new Set([
+  "不会", "不知道", "不清楚", "不懂", "没想法", "不知道怎么写", "不会写"
 ]);
 const taskMap = new Map(taskConfigs.map((task) => [`${task.experimentId}:${task.taskId}`, task]));
 
@@ -196,18 +199,20 @@ function localScreen(inputText, task) {
   if (!compact) {
     return structuredResult("insufficient", 1, "empty_text", "尚未填写有效内容", "");
   }
-  if (unicodeLength(compact) < task.minimumLength) {
-    return structuredResult("insufficient", 1, "below_minimum_length", "内容还不足以进行相关性判断", "");
+  if (COGNITIVE_DIFFICULTY_TEXTS.has(compact.toLowerCase())) {
+    return structuredResult("cognitive_difficulty", 1, "expressed_difficulty", "学生明确表达暂时没有思路", "");
   }
   if (/^(.{1,3})\1{2,}$/u.test(compact)) {
     return structuredResult("insufficient", 1, "repeated_text", "内容主要由重复字符组成", "");
   }
-  const invalidCandidate = compact.toLowerCase();
-  if (INVALID_TEXTS.has(invalidCandidate)) {
-    return structuredResult("insufficient", 1, "invalid_text", "内容暂时没有表达与任务有关的想法", "");
+  const chineseCount = Array.from(compact).filter((character) => /\p{Script=Han}/u.test(character)).length;
+  const latinNumericCount = Array.from(compact).filter((character) => /[\p{Script=Latin}\p{N}]/u.test(character)).length;
+  if (chineseCount < task.minimumChineseCharacters &&
+      latinNumericCount < task.minimumLatinNumericCharacters) {
+    return structuredResult("insufficient", 1, "below_minimum_length", "内容还不足以进行相关性判断", "");
   }
   const meaningful = Array.from(compact).filter((character) => /[\p{L}\p{N}]/u.test(character)).length;
-  if (unicodeLength(compact) >= task.minimumLength && meaningful / unicodeLength(compact) < 0.35) {
+  if (meaningful / unicodeLength(compact) < 0.35) {
     return structuredResult("insufficient", 1, "invalid_text", "内容包含较多无法识别的符号", "");
   }
   return null;
@@ -228,7 +233,6 @@ function validateAiResult(value) {
   if (!Number.isFinite(confidence) || confidence < 0 || confidence > 1) return null;
   if (typeof value.briefReason !== "string" || unicodeLength(value.briefReason) > 120) return null;
   if (typeof value.supportHint !== "string" || unicodeLength(value.supportHint) > 200) return null;
-  if (value.status === "partially_relevant" && !clean(value.supportHint)) return null;
   return structuredResult(
     value.status,
     Math.round(confidence * 100) / 100,
@@ -245,11 +249,13 @@ function buildMessages(task, inputText) {
     "不要给出标准答案，不要改写或替换学生回答。",
     "没有出现参考概念不等于偏题；必须根据整体语义判断。",
     "只有内容与任务明显无关时才返回 off_topic。拿不准时返回 uncertain。",
-    "partially_relevant 的 supportHint 只能提出一个启发方向，不能泄露答案。",
+    "方向正确但缺少关键解释、依据或实验联系时返回 incomplete。",
+    "内容过于笼统、无法体现具体思考时返回 vague。",
+    "incomplete 和 vague 的 supportHint 只能提出一个启发方向，不能泄露答案。",
     "只返回一个严格 JSON 对象，不要使用 Markdown 或附加文字。",
     '字段固定为 status、confidence、reasonCode、briefReason、supportHint。',
-    'status 只能是 relevant、partially_relevant、off_topic、insufficient、inappropriate、uncertain。',
-    "reasonCode 只能是 addresses_task、partially_addresses_task、unrelated_content、too_little_content、inappropriate_content、uncertain。"
+    'status 只能是 relevant、incomplete、vague、off_topic、inappropriate、uncertain。',
+    "reasonCode 只能是 addresses_task、incomplete_response、vague_response、unrelated_content、inappropriate_content、uncertain。"
   ].join("\n");
   const user = JSON.stringify({
     experiment: task.activityTopic,
@@ -377,8 +383,8 @@ function buildDocument(payload, task, student, existing, id, checkData) {
     promptedText: clean(existing?.promptedText),
     modifiedText: clean(existing?.modifiedText),
     finalSubmittedText: clean(existing?.finalSubmittedText),
-    promptCount: Math.min(MAX_PROMPTS, Number(existing?.promptCount || 0)),
-    promptedHashes: Array.isArray(existing?.promptedHashes) ? existing.promptedHashes.slice(-MAX_PROMPTS) : [],
+    promptCount: Math.max(0, Number(existing?.promptCount) || 0),
+    promptedHashes: Array.isArray(existing?.promptedHashes) ? existing.promptedHashes.slice(-MAX_PROMPT_HASHES) : [],
     taskRequirementViewed: Boolean(existing?.taskRequirementViewed),
     returnedToModify: Boolean(existing?.returnedToModify),
     studentKeptAnswer: Boolean(existing?.studentKeptAnswer),
@@ -391,8 +397,8 @@ function buildDocument(payload, task, student, existing, id, checkData) {
   if (!existing) document.createdAt = now;
 
   if (payload.action === "interaction") {
-    if (!document.promptedHashes.includes(clean(payload.textHash)) && document.promptCount < MAX_PROMPTS) {
-      document.promptedHashes = [...document.promptedHashes, clean(payload.textHash)].slice(-MAX_PROMPTS);
+    if (!document.promptedHashes.includes(clean(payload.textHash))) {
+      document.promptedHashes = [...document.promptedHashes, clean(payload.textHash)].slice(-MAX_PROMPT_HASHES);
       document.promptCount += 1;
       const promptText = [document.modifiedText, document.initialText].find((value) =>
         value && textHash(normalizeText(value)) === clean(payload.textHash)
@@ -432,11 +438,10 @@ function buildDocument(payload, task, student, existing, id, checkData) {
     if (document.modifiedAfterPrompt) document.recheckedAfterModification = true;
   }
   if (payload.action === "check" && payload.prompted === true &&
-      document.promptCount < MAX_PROMPTS &&
       !document.promptedHashes.includes(checkData.hash)) {
     document.promptedText = sourceText;
     document.promptCount += 1;
-    document.promptedHashes = [...document.promptedHashes, checkData.hash].slice(-MAX_PROMPTS);
+    document.promptedHashes = [...document.promptedHashes, checkData.hash].slice(-MAX_PROMPT_HASHES);
   }
   return document;
 }
@@ -475,12 +480,13 @@ async function evaluate(payload, task, existing) {
 }
 
 function promptEligible(checkData, existing) {
-  if (!checkData || Number(existing?.promptCount || 0) >= MAX_PROMPTS) return false;
+  if (!checkData) return false;
   if ((existing?.promptedHashes || []).includes(checkData.hash)) return false;
   const value = checkData.result;
-  return (value.status === "off_topic" && value.confidence >= 0.85) ||
-    (value.status === "partially_relevant" && value.confidence >= 0.70 && Boolean(value.supportHint)) ||
-    value.status === "insufficient";
+  return (value.status === "off_topic" && value.confidence >= 0.75) ||
+    (["incomplete", "vague", "partially_relevant"].includes(value.status) &&
+      value.confidence >= 0.70) ||
+    ["insufficient", "cognitive_difficulty"].includes(value.status);
 }
 
 exports.main = async (event) => {

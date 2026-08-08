@@ -44,5 +44,6 @@ module.exports = [
   taskInstruction: entry[4],
   activityTopic: entry[5],
   referenceConcepts: entry[6],
-  minimumLength: entry[7]
+  minimumChineseCharacters: 6,
+  minimumLatinNumericCharacters: 8
 }));

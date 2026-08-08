@@ -183,7 +183,14 @@
       taskInstruction: "可以思考不同策略适合哪些学习任务，是否会受到材料类型、学习目标、时间长短和个人习惯的影响。",
       activityTopic: "改善长时记忆的策略有哪些", referenceConcepts: ["记忆策略", "学习任务", "材料类型", "学习目标", "个人习惯"], minimumLength: 10
     }
-  ].map(Object.freeze));
+  ].map((task) => {
+    const configured = Object.assign({}, task, {
+      minimumChineseCharacters: 6,
+      minimumLatinNumericCharacters: 8
+    });
+    delete configured.minimumLength;
+    return Object.freeze(configured);
+  }));
 
   const taskMap = new Map(TASKS.map((task) => [`${task.experimentId}:${task.taskId}`, task]));
 
