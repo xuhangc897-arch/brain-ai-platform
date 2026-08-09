@@ -38,6 +38,11 @@
       </header>
       <div class="ai-messages" aria-live="polite"></div>
       <form class="ai-form">
+        <p class="ai-assessment-notice" data-ai-assessment-notice hidden>知识验证和问卷需要独立完成，完成后可继续使用 AI 助手。</p>
+        <div class="ai-voice-row">
+          <button class="ai-voice" type="button" data-ai-voice aria-label="使用语音输入问题">🎙 语音提问</button>
+          <p class="ai-voice-status" data-ai-voice-status role="status" aria-live="polite"></p>
+        </div>
         <input class="ai-input" type="text" maxlength="${MAX_QUESTION_LENGTH}" placeholder="输入你的问题..." autocomplete="off" />
         <button class="ai-send" type="submit">发送</button>
       </form>
@@ -50,8 +55,15 @@
   const form = root.querySelector(".ai-form");
   const input = root.querySelector(".ai-input");
   const send = root.querySelector(".ai-send");
+  const voiceButton = root.querySelector("[data-ai-voice]");
+  const voiceStatus = root.querySelector("[data-ai-voice-status]");
+  const assessmentNotice = root.querySelector("[data-ai-assessment-notice]");
   const panel = root.querySelector(".ai-panel");
   const head = root.querySelector(".ai-head");
+  let voiceSession = null;
+  let voiceState = "idle";
+  let assessmentLocked = false;
+  let requestPending = false;
 
   function installDraggable(options) {
     const { dragRoot, visibleWhenClosed, visibleWhenOpen, handles } = options;
@@ -231,6 +243,10 @@
     return "未识别当前步骤";
   }
 
+  function isAssessmentStep(value) {
+    return /(?:^|\s)posttest(?:\s|$)|侦探小结|知识后测|知识验证|调查问卷/.test(String(value || ""));
+  }
+
   function getExperimentName() {
     const title = document.title.replace(/\s+/g, " ").trim();
     const headerTitle = getText(".brand-title h1") || getText("h1") || getText(".ai-page-title");
@@ -246,6 +262,91 @@
       currentStep: getCurrentStep(),
       path: location.pathname
     };
+  }
+
+  function updateControls() {
+    const voiceBusy = ["preparing", "recording", "finalizing"].includes(voiceState);
+    const voiceAvailable = Boolean(window.VoiceAssistant?.createSession);
+    input.disabled = assessmentLocked || requestPending;
+    send.disabled = assessmentLocked || requestPending || voiceBusy;
+    voiceButton.disabled = assessmentLocked || requestPending || !voiceAvailable || ["preparing", "finalizing"].includes(voiceState);
+    voiceButton.textContent = voiceState === "recording" ? "■ 停止录音" : "🎙 语音提问";
+    voiceButton.setAttribute("aria-label", voiceState === "recording" ? "停止语音输入" : "使用语音输入问题");
+  }
+
+  function setAssessmentLock(nextLocked) {
+    assessmentLocked = Boolean(nextLocked);
+    assessmentNotice.hidden = !assessmentLocked;
+    if (assessmentLocked && voiceSession) voiceSession.cancel();
+    updateControls();
+    return assessmentLocked;
+  }
+
+  function syncAssessmentLock(stepId) {
+    return setAssessmentLock(stepId === "posttest" || isAssessmentStep(getCurrentStep()));
+  }
+
+  function appendVoiceQuestion(text) {
+    const nextText = String(text || "").trim();
+    if (!nextText) return;
+    const joined = input.value.trim() ? `${input.value.trim()} ${nextText}` : nextText;
+    input.value = joined.slice(0, MAX_QUESTION_LENGTH);
+    input.dispatchEvent(new Event("input", { bubbles: true }));
+    if (joined.length > MAX_QUESTION_LENGTH) {
+      voiceStatus.textContent = `语音内容已达到 ${MAX_QUESTION_LENGTH} 字上限，请检查后发送。`;
+    }
+  }
+
+  function ensureVoiceSession() {
+    if (voiceSession) return voiceSession;
+    if (!window.VoiceAssistant?.createSession) return null;
+    voiceSession = window.VoiceAssistant.createSession({
+      onStateChange(nextState) {
+        voiceState = nextState;
+        if (nextState === "preparing") {
+          voiceStatus.textContent = "正在准备麦克风，请稍候，暂时不要说话。";
+        } else if (nextState === "recording") {
+          voiceStatus.textContent = "可以说话了，说完请点击“停止录音”。";
+        } else if (nextState === "finalizing") {
+          voiceStatus.textContent = "正在生成文字，请稍候。";
+        } else if (nextState === "completed") {
+          voiceStatus.textContent = input.value.trim()
+            ? "语音已转成文字，请检查后再发送。"
+            : "没有识别到文字，请重新录音。";
+        } else if (nextState === "idle") {
+          voiceStatus.textContent = "";
+        }
+        updateControls();
+      },
+      onPartial(text) {
+        if (text) voiceStatus.textContent = `正在识别：${text}`;
+      },
+      onFinal(text) {
+        appendVoiceQuestion(text);
+      },
+      onError(message, error) {
+        console.warn("[AI Assistant] voice input failed:", {
+          name: error?.name || "Error"
+        });
+        voiceStatus.textContent = message || "语音识别失败，请稍后重试。";
+      }
+    });
+    return voiceSession;
+  }
+
+  async function toggleVoiceInput() {
+    if (syncAssessmentLock()) return;
+    const session = ensureVoiceSession();
+    if (!session || !session.isSupported()) {
+      voiceStatus.textContent = "当前浏览器不支持语音识别助手。";
+      updateControls();
+      return;
+    }
+    if (session.getState() === "recording") {
+      session.stop();
+      return;
+    }
+    await session.start();
   }
 
   function appendMessage(role, text) {
@@ -281,7 +382,13 @@
     dragControls.clamp();
     if (open) {
       renderHistory();
-      setTimeout(() => input.focus(), 80);
+      syncAssessmentLock();
+      setTimeout(() => {
+        if (!assessmentLocked) input.focus();
+      }, 80);
+    } else if (voiceSession) {
+      if (voiceSession.getState() === "recording") voiceSession.stop();
+      if (voiceSession.getState() === "preparing") voiceSession.cancel();
     }
   }
 
@@ -458,17 +565,31 @@
 
   toggle.addEventListener("click", () => setOpen(true));
   close.addEventListener("click", () => setOpen(false));
+  voiceButton.addEventListener("click", toggleVoiceInput);
+  input.addEventListener("focus", () => syncAssessmentLock());
+
+  document.addEventListener("virtual-agent:ai-opened", (event) => {
+    syncAssessmentLock(event.detail?.stageId || "");
+  });
+
+  document.addEventListener("visibilitychange", () => {
+    if (document.visibilityState === "hidden") voiceSession?.cancel();
+  });
+  window.addEventListener("pagehide", () => voiceSession?.destroy());
+  window.addEventListener("beforeunload", () => voiceSession?.destroy());
 
   form.addEventListener("submit", async (event) => {
     event.preventDefault();
+    if (syncAssessmentLock()) return;
+    if (["preparing", "recording", "finalizing"].includes(voiceState)) return;
     const question = input.value.trim();
     if (!question) return;
 
     const context = getContext(question);
     appendMessage("user", question);
     input.value = "";
-    input.disabled = true;
-    send.disabled = true;
+    requestPending = true;
+    updateControls();
     const loading = appendMessage("ai", "我正在思考，先试着回到材料里找一个线索...");
 
     try {
@@ -482,9 +603,9 @@
       loading.textContent = message;
       saveChatLog(context, `错误：${message}`, true);
     } finally {
-      input.disabled = false;
-      send.disabled = false;
-      input.focus();
+      requestPending = false;
+      syncAssessmentLock();
+      if (!assessmentLocked) input.focus();
       messages.scrollTop = messages.scrollHeight;
     }
   });
@@ -493,6 +614,7 @@
     if (document.querySelector(".ai-assistant")) return;
     document.body.appendChild(root);
     renderHistory();
+    updateControls();
     window.BrainAIChat = {
       readLogs,
       getCurrentPageLogs,

@@ -171,10 +171,7 @@
       </section>
       <section class="memory-partner-menu" id="memoryPartnerMenu" role="dialog" aria-modal="false" aria-labelledby="memoryPartnerMenuTitle" aria-hidden="true">
         <header class="memory-partner-menu-head">
-          <div>
-            <p class="memory-partner-menu-kicker">秘密档案馆 · 学习工具</p>
-            <h2 class="memory-partner-menu-title" id="memoryPartnerMenuTitle">需要我怎么帮助你？</h2>
-          </div>
+          <h2 class="memory-partner-menu-title" id="memoryPartnerMenuTitle">需要我怎么帮助你？</h2>
           <button class="memory-partner-menu-close" type="button" aria-label="关闭${PARTNER_NAME}功能面板">×</button>
         </header>
         <div class="memory-partner-view is-active" data-partner-view="menu">
@@ -182,42 +179,30 @@
             <span class="memory-partner-action-icon" aria-hidden="true">AI</span>
             <span class="memory-partner-action-copy">
               <strong>AI 学习助手</strong>
-              <small>梳理思路、理解概念，不代写答案</small>
             </span>
           </button>
           <button class="memory-partner-action" type="button" data-partner-mode="voice"${voiceAssistant ? "" : " disabled"}>
             <span class="memory-partner-action-icon" aria-hidden="true">🎙</span>
             <span class="memory-partner-action-copy">
               <strong>语音转文字</strong>
-              <small>先选择输入框，再把转写内容写进去</small>
             </span>
           </button>
           <button class="memory-partner-action" type="button" data-partner-mode="task">
             <span class="memory-partner-action-icon" aria-hidden="true">⌖</span>
             <span class="memory-partner-action-copy">
               <strong>查看当前任务</strong>
-              <small>查看当前探究环节和任务说明</small>
-            </span>
-          </button>
-          <button class="memory-partner-action" type="button" data-partner-mode="progress">
-            <span class="memory-partner-action-icon" aria-hidden="true">✓</span>
-            <span class="memory-partner-action-copy">
-              <strong>查看学习进度</strong>
-              <small>查看已完成和待完成的步骤</small>
             </span>
           </button>
           <button class="memory-partner-action" type="button" data-partner-mode="memory">
             <span class="memory-partner-action-icon" aria-hidden="true">档</span>
             <span class="memory-partner-action-copy">
               <strong>我的学习记录</strong>
-              <small>查看已完成实验、做得好的地方和下一次建议</small>
             </span>
           </button>
           <button class="memory-partner-action" type="button" data-partner-mode="diagnosis" hidden>
             <span class="memory-partner-action-icon" aria-hidden="true">诊</span>
             <span class="memory-partner-action-copy">
               <strong>我的学习诊断</strong>
-              <small data-diagnosis-menu-copy>完成四次实验后查看综合诊断</small>
             </span>
           </button>
         </div>
@@ -233,7 +218,7 @@
         </span>
         <span class="memory-partner-copy">
           <span class="memory-partner-name">${PARTNER_NAME}</span>
-          <span class="memory-partner-status" role="status" aria-live="polite">AI 学习助手 · 语音转文字 · 当前任务 · 学习进度</span>
+          <span class="memory-partner-status" role="status" aria-live="polite">AI 学习助手 · 语音转文字 · 当前任务</span>
         </span>
       </button>
     `;
@@ -265,7 +250,6 @@
     const diagnosisReadyView = root.querySelector(".memory-partner-diagnosis-ready-view");
     const diagnosisReadyLater = root.querySelector(".memory-partner-diagnosis-ready-later");
     const diagnosisMenuButton = root.querySelector('[data-partner-mode="diagnosis"]');
-    const diagnosisMenuCopy = root.querySelector("[data-diagnosis-menu-copy]");
     const menuView = root.querySelector('[data-partner-view="menu"]');
     const detailView = root.querySelector('[data-partner-view="detail"]');
     const detail = root.querySelector("[data-partner-detail]");
@@ -515,9 +499,6 @@
       const eligible = Boolean(diagnosisMenuState?.eligible);
       diagnosisMenuButton.hidden = !eligible;
       if (!eligible) return false;
-      if (diagnosisMenuState.available) diagnosisMenuCopy.textContent = "查看四次实验后的综合学习诊断";
-      else if (diagnosisMenuState.generationReady) diagnosisMenuCopy.textContent = "诊断正在整理，可稍后重试";
-      else diagnosisMenuCopy.textContent = "正在核对四次实验的学习记忆";
       return true;
     }
 
@@ -548,7 +529,7 @@
     function closeAllAssistants() {
       closeAssistant(aiAssistant, aiClose);
       closeAssistant(voiceAssistant, voiceClose);
-      status.textContent = "AI 学习助手 · 语音转文字 · 当前任务 · 学习进度";
+      status.textContent = "AI 学习助手 · 语音转文字 · 当前任务";
     }
 
     function renderTask() {
@@ -567,39 +548,6 @@
       `;
       showDetail();
       status.textContent = `当前任务：${currentStep?.title || "暂未识别"}`;
-    }
-
-    function renderProgress() {
-      const learningState = readLearningState(config);
-      const total = learningState.steps.length;
-      const completed = clamp(learningState.maxUnlockedStep, 0, total);
-      const currentStep = learningState.steps[learningState.currentStepIndex];
-      const unfinished = learningState.steps.slice(completed);
-      detail.innerHTML = `
-        <div class="memory-partner-detail-heading">
-          <span class="memory-partner-detail-label">学习进度</span>
-          <h3>${escapeHtml(learningState.experimentName)}</h3>
-        </div>
-        <div class="memory-partner-progress-summary">
-          <strong>${completed}<span> / ${total}</span></strong>
-          <span>个步骤已完成</span>
-        </div>
-        <dl class="memory-partner-task">
-          <div><dt>当前步骤</dt><dd>${escapeHtml(currentStep?.title || "暂未识别")}</dd></div>
-        </dl>
-        <div class="memory-partner-unfinished">
-          <h4>尚未完成</h4>
-          ${unfinished.length
-            ? `<ol>${unfinished.map((step, index) => `
-                <li${completed + index === learningState.currentStepIndex ? ' aria-current="step"' : ""}>
-                  <span>${completed + index + 1}</span>${escapeHtml(step.title)}
-                </li>
-              `).join("")}</ol>`
-            : "<p>当前实验步骤已全部完成。</p>"}
-        </div>
-      `;
-      showDetail();
-      status.textContent = `学习进度：已完成 ${completed} / ${total}`;
     }
 
     async function renderStudentMemory() {
@@ -699,7 +647,6 @@
         return;
       }
       if (mode === "task") renderTask();
-      if (mode === "progress") renderProgress();
       if (mode === "memory") renderStudentMemory();
       if (mode === "diagnosis") renderDiagnosis();
     }
@@ -775,7 +722,7 @@
 
     [aiClose, voiceClose].filter(Boolean).forEach((button) => {
       button.addEventListener("click", () => {
-        status.textContent = "AI 学习助手 · 语音转文字 · 当前任务 · 学习进度";
+        status.textContent = "AI 学习助手 · 语音转文字 · 当前任务";
       });
     });
 
@@ -875,10 +822,6 @@
       openTask: () => {
         setMenuOpen(true, { focus: false });
         renderTask();
-      },
-      openProgress: () => {
-        setMenuOpen(true, { focus: false });
-        renderProgress();
       },
       close: () => {
         resolveSuggestion("ignored", false);

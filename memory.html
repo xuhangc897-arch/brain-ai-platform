@@ -339,6 +339,541 @@
       margin-bottom: 0;
     }
 
+    .question-flow {
+      min-height: max(390px, calc(100dvh - 350px));
+      display: flex;
+      flex-direction: column;
+      gap: 14px;
+    }
+
+    .main.is-paged-step {
+      padding-top: 18px;
+      padding-bottom: 0;
+    }
+
+    .question-page-head {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 16px;
+      padding-bottom: 10px;
+      border-bottom: 1px solid #eef2f7;
+    }
+
+    .question-page-head h3 {
+      margin: 0;
+      color: #172033;
+      font-size: 18px;
+    }
+
+    .question-page-progress {
+      flex: 0 0 auto;
+      color: var(--primary-dark);
+      font-size: 14px;
+      font-weight: 900;
+    }
+
+    .question-page-content {
+      flex: 1;
+      min-height: 0;
+      animation: question-page-fade-in 150ms ease both;
+    }
+
+    .question-page-content.is-leaving {
+      pointer-events: none;
+      animation: question-page-fade-out 150ms ease both;
+    }
+
+    .question-page-material {
+      display: grid;
+      align-items: center;
+      width: min(920px, 100%);
+      height: 100%;
+      margin: 0 auto;
+    }
+
+    .question-page-material .reading-card {
+      padding: 22px;
+    }
+
+    .question-page-material .reading-card h4 {
+      font-size: 18px;
+    }
+
+    .question-page-material .reading-card p {
+      font-size: 15px;
+      line-height: 1.85;
+    }
+
+    .question-page-cases .case-list {
+      grid-template-columns: repeat(2, minmax(0, 1fr));
+      gap: 8px 12px;
+      margin-top: 0;
+    }
+
+    .question-page-cases .template-card {
+      grid-column: 1 / -1;
+      padding: 11px 14px;
+    }
+
+    .question-page-cases .template-card h4 {
+      margin-bottom: 4px;
+    }
+
+    .question-page-cases .template-card p,
+    .question-page-cases .case-body p {
+      margin: 4px 0;
+    }
+
+    .question-page-cases .case-card summary {
+      padding: 9px 12px;
+    }
+
+    .question-page-cases .case-body {
+      padding: 0 12px 10px;
+      font-size: 13px;
+    }
+
+    .question-page-form .inquiry-helper {
+      margin-top: 0;
+    }
+
+    .question-page-form .helper-card {
+      padding: 12px 14px;
+    }
+
+    .question-page-form .field {
+      margin: 14px 0 0;
+    }
+
+    .question-page-form .thinking-layer {
+      grid-template-columns: repeat(2, minmax(0, 1fr));
+    }
+
+    .question-page-form textarea,
+    .question-page-form .thinking-group textarea {
+      min-height: 104px;
+    }
+
+    .question-page-actions {
+      display: flex;
+      justify-content: space-between;
+      gap: 12px;
+      min-height: 42px;
+      margin-top: auto;
+    }
+
+    .question-page-actions.is-first {
+      justify-content: flex-end;
+    }
+
+    .question-page-actions .btn {
+      min-width: 112px;
+    }
+
+    .step-page-content > .panel,
+    .step-page-content > .single-step-layout,
+    .step-page-content > .reflection-layout {
+      height: 100%;
+    }
+
+    .step-page-content > .single-step-layout,
+    .step-page-content > .reflection-layout {
+      align-content: center;
+    }
+
+    .step-page-content .panel-body {
+      padding: 16px 18px;
+    }
+
+    .step-page-content .panel-head {
+      padding: 14px 18px 10px;
+    }
+
+    .step-page-content .field:last-child,
+    .step-page-content .paired-field:last-child {
+      margin-bottom: 0;
+    }
+
+    .step-page-form .thinking-layer,
+    .reflection-page .thinking-layer {
+      grid-template-columns: repeat(2, minmax(0, 1fr));
+    }
+
+    .step-page-form textarea,
+    .step-page-form .thinking-group textarea,
+    .reflection-page textarea,
+    .reflection-page .thinking-group textarea {
+      min-height: 112px;
+    }
+
+    .method-page .method-card,
+    .headband-page .reading-card {
+      width: min(980px, 100%);
+      margin: 0 auto;
+    }
+
+    .method-page .method-card {
+      padding: 22px;
+    }
+
+    .method-page .method-grid {
+      display: grid;
+      grid-template-columns: repeat(2, minmax(0, 1fr));
+      gap: 16px;
+      width: min(1080px, 100%);
+      height: 100%;
+      margin: 0 auto;
+      align-items: center;
+    }
+
+    .question-sentence {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      min-height: 52px;
+      padding: 8px 12px;
+      border: 1px solid var(--line);
+      border-radius: 8px;
+      background: #fff;
+      font-weight: 800;
+    }
+
+    .question-sentence input {
+      flex: 1;
+      min-width: 0;
+      border-width: 0 0 2px;
+      border-radius: 0;
+      padding: 7px 4px;
+      background: transparent;
+    }
+
+    .evidence-overview {
+      display: grid;
+      place-items: center;
+      min-height: 230px;
+      border: 1px dashed var(--line);
+      border-radius: 8px;
+      padding: 24px;
+      text-align: center;
+      background: var(--bg);
+    }
+
+    .evidence-overview h4,
+    .run-result-card h4 { margin: 0 0 8px; }
+
+    .evidence-overview p { margin: 4px 0; color: var(--muted); }
+
+    .readonly-value {
+      min-height: 42px;
+      display: flex;
+      align-items: center;
+      padding: 9px 11px;
+      border: 1px solid var(--line);
+      border-radius: 8px;
+      background: var(--bg);
+      font-weight: 800;
+    }
+
+    .run-results-grid {
+      display: grid;
+      grid-template-columns: repeat(3, minmax(0, 1fr));
+      gap: 12px;
+      height: 100%;
+    }
+
+    .run-result-card {
+      min-width: 0;
+      padding: 14px;
+      border: 1px solid var(--line);
+      border-radius: 8px;
+      background: var(--panel);
+    }
+
+    .run-result-meta {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 6px;
+      margin-bottom: 10px;
+      color: var(--muted);
+      font-size: 12px;
+    }
+
+    .trial-sequence-list {
+      display: grid;
+      gap: 6px;
+      margin: 0;
+      padding: 0;
+      list-style: none;
+    }
+
+    .trial-sequence-list li {
+      display: grid;
+      grid-template-columns: 42px minmax(0, 1fr) auto;
+      gap: 8px;
+      align-items: center;
+      padding: 7px 8px;
+      border-radius: 6px;
+      background: var(--bg);
+      font-size: 12px;
+    }
+
+    .trial-sequence-list .trial-answer {
+      overflow: hidden;
+      text-overflow: ellipsis;
+      white-space: nowrap;
+    }
+
+    .run-result-status {
+      margin: 10px 0 0;
+      font-weight: 900;
+    }
+
+    .run-result-status.is-failed { color: var(--red); }
+
+    .retry-start-button { margin-top: 10px; }
+
+    .headband-guide-trigger {
+      margin-top: 14px;
+    }
+
+    .headband-modal {
+      position: fixed;
+      inset: 0;
+      z-index: 80;
+      display: none;
+      place-items: center;
+      padding: 28px;
+      background: rgba(8, 17, 31, 0.72);
+    }
+
+    .headband-modal.is-visible {
+      display: grid;
+    }
+
+    .headband-modal-card {
+      position: relative;
+      width: min(920px, 92vw);
+      max-height: 88vh;
+      overflow: hidden;
+      border: 1px solid var(--line);
+      border-radius: 10px;
+      padding: 18px;
+      background: var(--panel);
+      box-shadow: 0 28px 90px rgba(0, 0, 0, 0.3);
+    }
+
+    .headband-modal-card img {
+      display: block;
+      width: 100%;
+      max-height: calc(88vh - 36px);
+      object-fit: contain;
+    }
+
+    .headband-modal-close {
+      position: absolute;
+      top: 10px;
+      right: 10px;
+      z-index: 1;
+      width: 38px;
+      min-width: 38px;
+      height: 38px;
+      padding: 0;
+      border-radius: 50%;
+    }
+
+    .evidence-page .stage {
+      min-height: 250px;
+    }
+
+    .evidence-page .game-log {
+      max-height: 160px;
+    }
+
+    .survey-page .survey-shell,
+    .quiz-page .quiz-section {
+      gap: 10px;
+    }
+
+    .survey-page .survey-intro,
+    .quiz-page .survey-intro {
+      padding: 12px 16px;
+    }
+
+    .survey-page .survey-card-head {
+      padding: 10px 14px;
+    }
+
+    .survey-page .survey-item {
+      padding: 8px 12px;
+    }
+
+    .survey-page .survey-item p {
+      margin-bottom: 8px;
+    }
+
+    .survey-page .survey-option-card {
+      min-height: 50px;
+      padding: 7px 6px;
+    }
+
+    .survey-page .survey-score {
+      font-size: 17px;
+    }
+
+    .survey-page .survey-label {
+      margin-top: 4px;
+      font-size: 11px;
+    }
+
+    .quiz-page .quiz-card {
+      width: min(900px, 100%);
+      margin: 0 auto;
+      padding: 14px 16px;
+    }
+
+    .quiz-page .quiz-options {
+      grid-template-columns: repeat(2, minmax(0, 1fr));
+    }
+
+    .posttest-summary-page {
+      display: grid;
+      align-content: center;
+      gap: 18px;
+      height: 100%;
+    }
+
+    .team-result-page .team-result-card > .panel-head {
+      display: none;
+    }
+
+    .team-result-page .team-result-card > .panel-body {
+      padding: 10px 14px;
+    }
+
+    .team-result-page .team-result-card th,
+    .team-result-page .team-result-card td {
+      padding: 4px 7px;
+    }
+
+    .team-result-page .team-result-card table input {
+      min-height: 34px;
+      padding: 6px 8px;
+    }
+
+    .team-result-page .team-result-card .actions {
+      margin-top: 8px;
+    }
+
+    .team-result-page .group-average-card {
+      margin-top: 8px;
+      padding: 8px 12px;
+    }
+
+    .team-result-page .group-average-card h4,
+    .team-result-page .group-average-card p {
+      margin: 0;
+    }
+
+    html[data-theme="archive"] body.experiment-page .question-page-head,
+    html[data-theme="archive"] body.experiment-page .question-page-progress,
+    html[data-theme="archive"] body.experiment-page .question-page-head h3,
+    html[data-theme="archive"] body.experiment-page .plan-order-title,
+    html[data-theme="archive"] body.experiment-page .method-card h4,
+    html[data-theme="archive"] body.experiment-page .mini-stat b,
+    html[data-theme="archive"] body.experiment-page .quiz-result,
+    html[data-theme="archive"] body.experiment-page .quiz-card h4,
+    html[data-theme="archive"] body.experiment-page .quiz-card p,
+    html[data-theme="archive"] body.experiment-page .survey-intro h3,
+    html[data-theme="archive"] body.experiment-page .survey-summary strong {
+      color: var(--ink);
+    }
+
+    html[data-theme="archive"] body.experiment-page .question-page-head {
+      border-bottom-color: rgba(181, 139, 74, 0.38);
+    }
+
+    html[data-theme="archive"] body.experiment-page .method-card,
+    html[data-theme="archive"] body.experiment-page .formula-card,
+    html[data-theme="archive"] body.experiment-page .group-average-card,
+    html[data-theme="archive"] body.experiment-page .mini-stat,
+    html[data-theme="archive"] body.experiment-page .stage,
+    html[data-theme="archive"] body.experiment-page .game-log,
+    html[data-theme="archive"] body.experiment-page .headband-modal-card,
+    html[data-theme="archive"] body.experiment-page .quiz-card {
+      border-color: var(--line);
+      background: #fffaf2;
+      color: var(--ink);
+      box-shadow: 0 8px 24px rgba(80, 50, 20, 0.07);
+    }
+
+    html[data-theme="archive"] body.experiment-page .method-card p,
+    html[data-theme="archive"] body.experiment-page .mini-stat span,
+    html[data-theme="archive"] body.experiment-page .survey-intro p,
+    html[data-theme="archive"] body.experiment-page .survey-card-note,
+    html[data-theme="archive"] body.experiment-page .survey-summary span {
+      color: var(--muted);
+    }
+
+    html[data-theme="archive"] body.experiment-page .bar-track {
+      background: #e8dcc8;
+    }
+
+    html[data-theme="archive"] body.experiment-page .bar-fill {
+      background: linear-gradient(90deg, #9b7135, #5f765e);
+    }
+
+    html[data-theme="archive"] body.experiment-page .memory-stimulus {
+      border-color: #c9aa78;
+      background: #f4ead8;
+      color: #65471f;
+    }
+
+    html[data-theme="archive"] body.experiment-page .quiz-option.is-selected,
+    html[data-theme="archive"] body.experiment-page .quiz-option:has(input:checked) {
+      border-color: #9b7135;
+      background: #f1e3ca;
+      color: #65471f;
+    }
+
+    html[data-theme="archive"] body.experiment-page .survey-option.is-selected .survey-option-card,
+    html[data-theme="archive"] body.experiment-page .survey-option input:checked + .survey-option-card {
+      border-color: #9b7135;
+      background: linear-gradient(135deg, #9b7135, #7d5927);
+      color: #fffaf2;
+      box-shadow: 0 10px 22px rgba(80, 50, 20, 0.16);
+    }
+
+    html[data-theme="archive"] body.experiment-page .survey-option.is-selected .survey-score,
+    html[data-theme="archive"] body.experiment-page .survey-option.is-selected .survey-label,
+    html[data-theme="archive"] body.experiment-page .survey-option input:checked + .survey-option-card .survey-score,
+    html[data-theme="archive"] body.experiment-page .survey-option input:checked + .survey-option-card .survey-label {
+      color: #fffaf2;
+    }
+
+    @keyframes question-page-fade-in {
+      from { opacity: 0; }
+      to { opacity: 1; }
+    }
+
+    @keyframes question-page-fade-out {
+      from { opacity: 1; }
+      to { opacity: 0; }
+    }
+
+    @media (prefers-reduced-motion: reduce) {
+      .question-page-content,
+      .question-page-content.is-leaving {
+        animation: none;
+      }
+    }
+
+    @media (min-width: 981px) and (max-width: 1500px) {
+      .question-page-actions {
+        padding-right: 112px;
+      }
+    }
+
     .headband-image-container {
       margin: 24px 0;
       text-align: center;
@@ -615,7 +1150,10 @@
       align-items: stretch;
     }
 
+    .measurement-focus-shell { display: none; }
+
     body.is-focus-mode .memory-game {
+      display: grid;
       min-height: 100vh;
       grid-template-columns: 1fr;
       gap: 0;
@@ -914,6 +1452,19 @@
 
       .summary-grid {
         grid-template-columns: repeat(2, 1fr);
+      }
+
+      .question-page-cases .case-list,
+      .question-page-form .thinking-layer,
+      .step-page-form .thinking-layer,
+      .reflection-page .thinking-layer,
+      .quiz-page .quiz-options {
+        grid-template-columns: 1fr;
+      }
+
+      .method-page .method-grid,
+      .run-results-grid {
+        grid-template-columns: 1fr;
       }
     }
 
@@ -1283,6 +1834,9 @@
     let state = loadState();
     let game = null;
     let showTimer = null;
+    let currentQuestionPage = 0;
+    const stepPageIndexes = Object.create(null);
+    let stepPageTransitioning = false;
 
     const progress = document.getElementById("progress");
     const main = document.getElementById("main");
@@ -1408,6 +1962,24 @@
     function renderGroupTextarea(field, placeholder = "请写下你与小组成员讨论后达成的一致结果") {
       return `<textarea data-field="${field}" placeholder="${escapeHtml(placeholder)}">${escapeHtml(state.fields[field])}</textarea>`;
     }
+    const QUESTION_PREFIX = "短时记忆的容量";
+    function getQuestionSuffix(value) {
+      const text = String(value || "").trim();
+      if (!text) return "";
+      const withoutPunctuation = text.replace(/[？?]+$/, "").trim();
+      return withoutPunctuation.startsWith(QUESTION_PREFIX)
+        ? withoutPunctuation.slice(QUESTION_PREFIX.length).trim()
+        : withoutPunctuation;
+    }
+    function buildQuestionValue(suffix) {
+      const text = String(suffix || "").trim().replace(/[？?]+$/, "").trim();
+      return text ? `${QUESTION_PREFIX}${text}？` : "";
+    }
+    function renderQuestionSentence(field, label) {
+      const suffix = getQuestionSuffix(state.fields[field]);
+      state.fields[field] = buildQuestionValue(suffix);
+      return `<label class="question-sentence"><span>${QUESTION_PREFIX}</span><input type="text" data-question-suffix="${field}" data-agent-track="true" data-experiment-id="memory" data-stage-id="question" data-task-id="${field}" aria-label="${escapeHtml(label)}后半句" value="${escapeHtml(suffix)}" placeholder="大约是多少个信息单位"><span>？</span></label>`;
+    }
     function renderGroupInput(field, placeholder = "") {
       return `<input type="number" min="0" max="12" step="0.1" data-field="${field}" value="${escapeHtml(state.fields[field])}" placeholder="${escapeHtml(placeholder)}" />`;
     }
@@ -1506,12 +2078,12 @@
       if (isDeveloperMode()) return true;
       if (!isSurveyStepComplete(stepId)) return false;
       const fields = state.fields || {};
-      if (stepId === "question") return hasText(fields.question);
+      if (stepId === "question") return hasText(getQuestionSuffix(fields.question)) && hasText(getQuestionSuffix(fields.question_group));
       if (stepId === "hypothesis") return hasText(fields.hypothesis);
       if (stepId === "plan") {
         return fields.planOrderConfirmed === true && hasText(fields.method) && hasText(fields.material) && hasText(fields.startLength) && hasText(fields.trialsPerParticipant);
       }
-      if (stepId === "evidence") return Array.isArray(state.records) && state.records.length > 0;
+      if (stepId === "evidence") return getSuccessfulRunGroups().length > 0;
       if (stepId === "analysis") return Array.isArray(state.records) && state.records.length > 0 && (hasText(fields.brainFinding) || hasText(fields.teammate1Result) || hasText(fields.teammate2Result));
       if (stepId === "conclusion") return hasText(fields.conclusionCapacity) && hasText(fields.finalConclusion);
       if (stepId === "reflection") return hasText(fields.designImprove) && hasText(fields.teamwork) && hasText(fields.inquiryReflection);
@@ -1537,6 +2109,7 @@
 
     function renderStep() {
       const step = steps[state.currentStep];
+      main.classList.add("is-paged-step");
       main.innerHTML = `
         <section class="panel">
           <div class="panel-head">
@@ -1545,23 +2118,12 @@
           </div>
           <div class="panel-body">
             ${getStepHtml(step.id)}
-            ${renderNavigation()}
           </div>
         </section>
       `;
       applyLearningBehaviorMetadata();
       bindInputs();
       bindStepEvents(step.id);
-    }
-
-    function renderNavigation() {
-      const nextButton = state.currentStep === steps.length - 1 ? "" : '<button class="btn" type="button" id="nextStep">下一步</button>';
-      return `
-        <div class="actions">
-          <button class="btn secondary" type="button" id="prevStep" ${state.currentStep === 0 ? "disabled" : ""}>上一步</button>
-          ${nextButton}
-        </div>
-      `;
     }
 
     function getStepHtml(stepId) {
@@ -1577,31 +2139,48 @@
         posttest: renderPosttestStep};
       return map[stepId]();
     }
-    function renderPosttestStep() { return renderSurveyPage("posttest"); }
+    function renderPosttestStep() { return renderSurveyPage(); }
 
-    function renderSurveyPage(kind) {
-      return '<div class="survey-shell">' +
-        renderKnowledgeQuiz() +
-        '<div class="survey-intro"><h3>📝 学习收获调查</h3><p>请根据刚刚完成的科学探究活动，选择最符合你真实情况的选项。</p></div>' +
-        renderSurveyForm("postMeta", "meta") +
-        renderSurveyForm("cognitiveLoad", "load") +
-        renderSurveyForm("inquiryParticipation", "inquiry") +
-        renderSurveySummaryCards() +
-        renderPosttestExportArea() +
-      '</div>';
+    function renderSurveyPage() {
+      const pages = KNOWLEDGE_QUIZ.items.map((_, index) => ({
+        title: `案件知识验证：第 ${index + 1} 题`,
+        className: "quiz-page",
+        content: () => renderKnowledgeQuizItem(index)
+      }));
+      [
+        ["postMeta", "meta"],
+        ["cognitiveLoad", "load"],
+        ["inquiryParticipation", "inquiry"]
+      ].forEach(([surveyKey, defKey]) => {
+        const def = SURVEY_DEFS[defKey];
+        for (let startIndex = 0; startIndex < def.items.length; startIndex += 3) {
+          const endIndex = Math.min(startIndex + 3, def.items.length);
+          pages.push({
+            title: `${def.title}：第 ${startIndex + 1}–${endIndex} 题`,
+            className: "survey-page",
+            content: () => `<div class="survey-shell">${renderSurveyForm(surveyKey, defKey, startIndex, 3)}</div>`
+          });
+        }
+      });
+      pages.push({
+        title: "完成侦探小结",
+        className: "posttest-summary-page",
+        content: () => `${renderSurveySummaryCards()}<div class="survey-intro"><h3>完成案件调查</h3><p>确认知识验证和三份问卷均已完成后，生成记忆侦探报告。</p></div>${renderPosttestExportArea()}`
+      });
+      return renderPagedStep("posttest", pages);
     }
 
     function renderPosttestExportArea() {
       return '<div class="actions" style="justify-content:flex-end;"><button class="btn secondary" type="button" id="reviewReportBtn">生成记忆侦探报告</button></div>';
     }
 
-    function renderSurveyForm(surveyKey, defKey) {
+    function renderSurveyForm(surveyKey, defKey, startIndex = 0, pageSize = 3) {
       const def = SURVEY_DEFS[defKey];
       const answers = state.surveys?.current?.[surveyKey] || {};
       return '<section class="survey-card">' +
-        '<div class="survey-card-head"><h4>' + def.title + '</h4><p class="survey-card-note">' + def.note + '</p></div>' +
         '<div class="survey-items">' +
-          def.items.map((item, index) => {
+          def.items.slice(startIndex, startIndex + pageSize).map((item, offset) => {
+            const index = startIndex + offset;
             const itemKey = 'q' + (index + 1);
             return '<div class="survey-item"><p>' + (index + 1) + '. ' + escapeHtml(item) + '</p>' +
               '<div class="survey-scale" role="radiogroup" aria-label="' + escapeHtml(item) + '">' +
@@ -1627,26 +2206,6 @@
         '<div><strong>' + inquiry.answered + ' / ' + SURVEY_DEFS.inquiry.items.length + '</strong><span>探究参与完成进度</span></div>' +
       '</div>';
     }
-    function renderKnowledgeQuiz() {
-      const quiz = mergeKnowledgeQuiz(state.knowledgeQuiz);
-      const result = quiz.submitted
-        ? '<div class="quiz-result"><div>案件知识验证已完成，答案已锁定。</div></div>'
-        : '<div class="quiz-result"><div>请完成全部题目，生成报告时将统一提交。</div></div>';
-      return '<section class="quiz-section">' +
-        '<div class="survey-intro"><h3>🕵️ 案件知识验证</h3><p>请根据本次案件调查中获得的证据，完成下面的知识验证。</p></div>' +
-        KNOWLEDGE_QUIZ.items.map((item, index) => {
-          const itemKey = 'q' + (index + 1);
-          const selected = quiz.answers[itemKey] || '';
-          return '<article class="quiz-card"><h4>第' + (index + 1) + '题</h4><p>' + escapeHtml(item.question) + '</p>' +
-            '<div class="quiz-options">' + Object.keys(item.options).map((key) => {
-              const checked = selected === key;
-              return '<label class="quiz-option ' + (checked ? 'is-selected' : '') + '"><input type="radio" name="knowledge-' + itemKey + '" data-quiz-question="' + itemKey + '" value="' + key + '" ' + (checked ? 'checked' : '') + (quiz.submitted ? ' disabled' : '') + '><span>' + key + '　' + escapeHtml(item.options[key]) + '</span></label>';
-            }).join('') + '</div></article>';
-        }).join('') +
-        result +
-      '</section>';
-    }
-
     function bindKnowledgeQuizInputs() {
       main.querySelectorAll('[data-quiz-question]').forEach((input) => {
         input.addEventListener('change', () => {
@@ -1782,53 +2341,176 @@
       '</div>';
     }
 
+    function renderKnowledgeQuizItem(index) {
+      const quiz = mergeKnowledgeQuiz(state.knowledgeQuiz);
+      const item = KNOWLEDGE_QUIZ.items[index];
+      const itemKey = 'q' + (index + 1);
+      const selected = quiz.answers[itemKey] || '';
+      return '<section class="quiz-section">' +
+        '<div class="survey-intro"><h3>🕵️ 案件知识验证</h3><p>每页完成一道题目，答案将在生成报告时统一提交。</p></div>' +
+        '<article class="quiz-card"><h4>第' + (index + 1) + '题</h4><p>' + escapeHtml(item.question) + '</p>' +
+          '<div class="quiz-options">' + Object.keys(item.options).map((key) => {
+            const checked = selected === key;
+            return '<label class="quiz-option ' + (checked ? 'is-selected' : '') + '"><input type="radio" name="knowledge-' + itemKey + '" data-quiz-question="' + itemKey + '" value="' + key + '" ' + (checked ? 'checked' : '') + (quiz.submitted ? ' disabled' : '') + '><span>' + key + '　' + escapeHtml(item.options[key]) + '</span></label>';
+          }).join('') + '</div></article>' +
+      '</section>';
+    }
+
+    const QUESTION_PAGES = [
+      {
+        title: "材料一：什么是短时记忆？",
+        className: "question-page-material",
+        content: () => `
+          <article class="reading-card">
+            <h4>材料一：什么是短时记忆？</h4>
+            <p>短时记忆是感觉记忆和长时记忆之间的缓冲器，负责暂时储存信息。经“注意”后的信息，会在短时记忆中得到登记和保存，时间大概在1分钟左右。短时记忆的容量并不是无限的，它就像一个有大小限制的容器，只能容纳一定数量的信息单位。当我们尝试同时记住多个不同的信息时，会发现随着信息数量的增加，记住所有信息变得越来越困难。比如，当第一次听到别人的电话号码时，我们很难完全正确地进行复述。这就表明短时记忆一次能够处理和保持的信息数量是有一定范围的，不会无限制地容纳过多的信息单位。</p>
+          </article>
+        `
+      },
+      {
+        title: "材料二：科学家如何探究短时记忆容量？",
+        className: "question-page-material",
+        content: () => `
+          <article class="reading-card">
+            <h4>材料二：科学家们是如何探究短时记忆的容量的？</h4>
+            <p>为了探究短时记忆的容量大约是多少个信息单位，科学家们进行了大量的实验研究，其中心理学家乔治·米勒（George Miller）的实验具有重要意义。米勒设计了一系列实验，他让参与实验的人记忆不同类型的信息序列，比如数字、字母、词语等。在实验过程中，科学家们逐渐增加信息序列的长度，观察参与者能够准确记住的信息单位数量。他们发现，当信息序列较短时，参与者能够比较轻松地记住；而当信息序列超过一定长度后，参与者的记忆准确率就会明显下降。米勒的研究结果表明，人的短时记忆容量大约为 7±2 个信息单位，也就是说，多数人在短时间内通常能够保持约 5 到 9 个信息单位。</p>
+          </article>
+        `
+      },
+      {
+        title: "科学探究案例",
+        className: "question-page-cases",
+        content: () => renderInquiryCases()
+      },
+      {
+        title: "提出研究问题",
+        className: "question-page-form",
+        content: () => `${renderInquiryScaffold("question")}${renderPairedField("研究问题", renderQuestionSentence("question", "个人研究问题"), renderQuestionSentence("question_group", "小组研究问题"))}`
+      }
+    ];
+
     function renderQuestionStep() {
+      return renderPagedStep("question", QUESTION_PAGES);
+    }
+
+    function getStepPageIndex(stepId) {
+      return stepId === "question" ? currentQuestionPage : Number(stepPageIndexes[stepId] || 0);
+    }
+
+    function setStepPageIndex(stepId, pageIndex) {
+      if (stepId === "question") currentQuestionPage = pageIndex;
+      else stepPageIndexes[stepId] = pageIndex;
+    }
+
+    function getStepPageCount(stepId) {
+      const fixedCounts = {
+        question: 4,
+        hypothesis: 1,
+        plan: 5,
+        evidence: 1 + Math.ceil(getEvidenceRunGroups().length / 3),
+        analysis: 3,
+        conclusion: 2,
+        reflection: 3
+      };
+      if (stepId !== "posttest") return fixedCounts[stepId] || 1;
+      const metaPages = Math.ceil(SURVEY_DEFS.meta.items.length / 3);
+      const loadPages = Math.ceil(SURVEY_DEFS.load.items.length / 3);
+      const inquiryPages = Math.ceil(SURVEY_DEFS.inquiry.items.length / 3);
+      return KNOWLEDGE_QUIZ.items.length + metaPages + loadPages + inquiryPages + 1;
+    }
+
+    function renderPagedStep(stepId, pages) {
+      const pageCount = pages.length;
+      const pageIndex = Math.min(Math.max(getStepPageIndex(stepId), 0), pageCount - 1);
+      setStepPageIndex(stepId, pageIndex);
+      const page = pages[pageIndex];
+      const isFirstExperimentPage = state.currentStep === 0 && pageIndex === 0;
+      const isFinalExperimentPage = state.currentStep === steps.length - 1 && pageIndex === pageCount - 1;
       return `
-        <div class="step-layout">
-          <div class="panel">
-            <div class="panel-head">
-              <h3>阅读材料</h3>
-              <p>提取与短时记忆容量有关的信息。</p>
-            </div>
-            <div class="panel-body reading-list">
-              <article class="reading-card">
-                <h4>材料一：什么是短时记忆？</h4>
-                <p>短时记忆是感觉记忆和长时记忆之间的缓冲器，负责暂时储存信息。经“注意”后的信息，会在短时记忆中得到登记和保存，时间大概在1分钟左右。短时记忆的容量并不是无限的，它就像一个有大小限制的容器，只能容纳一定数量的信息单位。当我们尝试同时记住多个不同的信息时，会发现随着信息数量的增加，记住所有信息变得越来越困难。比如，当第一次听到别人的电话号码时，我们很难完全正确地进行复述。这就表明短时记忆一次能够处理和保持的信息数量是有一定范围的，不会无限制地容纳过多的信息单位。</p>
-              </article>
-              <article class="reading-card">
-                <h4>材料二：科学家们是如何探究短时记忆的容量的？</h4>
-                <p>为了探究短时记忆的容量大约是多少个信息单位，科学家们进行了大量的实验研究，其中心理学家乔治·米勒（George Miller）的实验具有重要意义。米勒设计了一系列实验，他让参与实验的人记忆不同类型的信息序列，比如数字、字母、词语等。在实验过程中，科学家们逐渐增加信息序列的长度，观察参与者能够准确记住的信息单位数量。他们发现，当信息序列较短时，参与者能够比较轻松地记住；而当信息序列超过一定长度后，参与者的记忆准确率就会明显下降。米勒的研究结果表明，人的短时记忆容量大约为 7±2 个信息单位，也就是说，多数人在短时间内通常能够保持约 5 到 9 个信息单位。</p>
-              </article>
-            </div>
+        <div class="question-flow step-page-flow" data-paged-step="${escapeHtml(stepId)}" data-page-count="${pageCount}">
+          <div class="question-page-head">
+            <h3>${page.title}</h3>
+            <span class="question-page-progress" aria-live="polite">${steps[state.currentStep].title} ${pageIndex + 1}/${pageCount}</span>
           </div>
-          <div class="panel">
-            <div class="panel-head"><h3>提出研究问题</h3></div>
-            <div class="panel-body">
-              ${renderInquiryCases()}${renderInquiryScaffold("question")}${renderPairedField("研究问题", `<textarea data-field="question" placeholder="写下你自己真正想探究的问题">${escapeHtml(state.fields.question)}</textarea>`, renderGroupTextarea("question_group"))}
-            </div>
+          <div class="question-page-content step-page-content ${page.className || ""}">
+            ${page.content()}
+          </div>
+          <div class="question-page-actions ${isFirstExperimentPage ? "is-first" : ""}">
+            ${isFirstExperimentPage ? "" : '<button class="btn secondary" type="button" id="stepPrevPage">上一页</button>'}
+            ${isFinalExperimentPage ? "" : '<button class="btn" type="button" id="stepNextPage">下一页</button>'}
           </div>
         </div>
       `;
     }
 
+    function changeStepPage(stepId, targetPage, pageCount) {
+      const currentPage = getStepPageIndex(stepId);
+      const target = Math.min(Math.max(targetPage, 0), pageCount - 1);
+      if (target === currentPage || stepPageTransitioning) return;
+      const content = main.querySelector(".question-page-content");
+      const reduceMotion = window.matchMedia?.("(prefers-reduced-motion: reduce)").matches;
+      const finish = () => {
+        setStepPageIndex(stepId, target);
+        stepPageTransitioning = false;
+        renderStep();
+      };
+      if (!content || reduceMotion) {
+        finish();
+        return;
+      }
+      stepPageTransitioning = true;
+      content.classList.add("is-leaving");
+      window.setTimeout(finish, 150);
+    }
+
+    function bindPagedStepEvents(stepId) {
+      const pageCount = getStepPageCount(stepId);
+      const pageIndex = getStepPageIndex(stepId);
+      const previous = document.getElementById("stepPrevPage");
+      const next = document.getElementById("stepNextPage");
+      if (previous) {
+        previous.addEventListener("click", () => {
+          if (pageIndex > 0) {
+            changeStepPage(stepId, pageIndex - 1, pageCount);
+            return;
+          }
+          const previousStep = state.currentStep - 1;
+          if (previousStep < 0) return;
+          const previousStepId = steps[previousStep].id;
+          setStepPageIndex(previousStepId, getStepPageCount(previousStepId) - 1);
+          goToStep(previousStep);
+        });
+      }
+      if (next) {
+        next.addEventListener("click", () => {
+          if (pageIndex < pageCount - 1) changeStepPage(stepId, pageIndex + 1, pageCount);
+          else goNextStep();
+        });
+      }
+    }
+
+    function bindQuestionCasePairs() {
+      const cases = Array.from(main.querySelectorAll(".question-page-cases details"));
+      cases.forEach((details, index) => {
+        const summary = details.querySelector("summary");
+        if (!summary) return;
+        summary.addEventListener("click", (event) => {
+          event.preventDefault();
+          const pairStart = Math.floor(index / 2) * 2;
+          const shouldOpen = !details.open;
+          cases.forEach((item, itemIndex) => {
+            item.open = shouldOpen && itemIndex >= pairStart && itemIndex < pairStart + 2;
+          });
+        });
+      });
+    }
+
     function renderHypothesisStep() {
-      return `
-        <div class="step-layout">
-          <div class="panel">
-            <div class="panel-head"><h3>研究假设小助手</h3></div>
-            <div class="panel-body">
-              ${renderInquiryScaffold("hypothesis")}
-              ${renderInquiryCases()}
-            </div>
-          </div>
-          <div class="panel">
-            <div class="panel-head"><h3>研究假设</h3></div>
-            <div class="panel-body">
-              ${renderPairedField("研究假设", `<textarea data-field="hypothesis" placeholder="请填写你自己的研究假设">${escapeHtml(state.fields.hypothesis)}</textarea>`, renderGroupTextarea("hypothesis_group"))}
-            </div>
-          </div>
-        </div>
-      `;
+      return renderPagedStep("hypothesis", [{
+        title: "提出研究假设",
+        className: "step-page-form hypothesis-page",
+        content: () => `${renderInquiryScaffold("hypothesis")}${renderPairedField("研究假设", `<textarea data-field="hypothesis" placeholder="请填写你自己的研究假设">${escapeHtml(state.fields.hypothesis)}</textarea>`, renderGroupTextarea("hypothesis_group"))}`
+      }]);
     }
 
     function getPlanOrder() {
@@ -1855,130 +2537,127 @@
 
     function renderPlanStep() {
       const planFeedback = state.fields.planOrderFeedback ? `<div class="plan-order-feedback" id="planOrderFeedback">${escapeHtml(state.fields.planOrderFeedback)}</div>` : '<div class="plan-order-feedback" id="planOrderFeedback"></div>';
-      const measurementClass = state.fields.planOrderConfirmed === true ? "plan-settings-panel" : "plan-settings-panel is-hidden";
-      return `
-        <div class="single-step-layout">
-          <div class="panel">
-            <div class="panel-head">
-              <h3>实验材料与测量方法</h3>
-              <p>以下内容用于帮助小组制定实验计划。</p>
-            </div>
-            <div class="panel-body reading-list">
-              <article class="reading-card">
-                <h4>材料三：头环的介绍</h4>
-                <p>头环是我们用来测量参与者在进行顺背法或倒背法任务时大脑前额叶（主要负责记忆和工作的大脑区域）活动水平的工具。在开展实验时，只要把它戴在头上，它就能通过监测大脑血氧浓度的变化等来收集信息，并在电脑上生成一幅3D的脑激活图。这张图可以直观呈现被激活脑区的位置、范围和强度，它会用颜色告诉你，在实验过程中大脑中哪些地方被激活，图中用暖色调（红-黄）表示大脑区域激活强度高，即正在非常努力地工作；用冷色调（蓝）表示激活程度低或变化不大。当我们测试短时记忆容量时，参与者需要复述一串串长度逐渐增加的数字或者字母。头环会实时捕捉参与者大脑前额叶的活动变化。因此，通过观察脑激活图上前额叶区域的颜色如何随着数字串变长而变化，再结合参与者复述的准确性，我们就能科学地推断出：参与者的大脑短时记忆容量大约是多少个信息单位了！</p>
-                <div class="headband-image-container">
-                  <picture>
-                    <source srcset="assets/headband-guide.webp" type="image/webp">
-                    <img src="assets/headband-guide.png" alt="头环工作原理示意图" class="headband-guide-image" width="1536" height="1024" loading="lazy" decoding="async">
-                  </picture>
-                </div>
-              </article>
-              <article class="method-card">
-                <h4>测量短时记忆容量的方法</h4>
-                <p><strong>顺背法：</strong></p>
-                <p>以数字为例，你面前的屏幕会按照固定的速度显示一串数字（例如：5-8-3-1-7）。显示结束后，你需要立刻按顺序在屏幕上打出这些数字。测试从短序列开始（比如3位），如果你连续两次都能完全正确复述，就增加1位数字（比如4位），再测试。这样不断增加序列长度，直到在某个长度上连续两次都复述错误为止。你最后能完全正确复述的最长序列长度，就是你的数字记忆广度，也就是短时记忆的容量。（注意：序列长度一般从3位开始，到10位左右。）以此类推，实验材料还可以换成字母、汉字、图形等等。</p>
-                <p><strong>倒背法：</strong></p>
-                <p>和顺背法类似，屏幕上会按固定速度出现一串数字（如：2-9-4-6），你看完后需要立刻按完全相反的顺序把数字打在屏幕出来（针对上述例子，正确复述是：6-4-9-2）。同样从短序列开始（如3位），参与者连续两次正确则加长1位，直到连续两次失败。参与者最后能完全正确倒着复述出来的最长序列长度，就是他的倒背广度，也就是参与者短时记忆的容量。以此类推，实验材料还可以换成字母、汉字、图形等等。</p>
-              </article>
-            </div>
-          </div>
-          <div class="panel">
-            <div class="panel-head">
-              <h3>实验计划流程图</h3>
-              <p>按照流程完成分工、测量、记录、分析与结论。</p>
-            </div>
-            <div class="panel-body">
-              <p class="plan-order-title">请将实验计划步骤拖动到正确顺序</p>
-              <div class="plan-flow" id="planFlow" aria-label="实验计划步骤排序">
-                ${renderPlanFlowCards()}
-              </div>
-              <div class="plan-order-actions">
-                ${planFeedback}
-                <button class="btn" type="button" id="confirmPlanOrder">确认排序</button>
+      const pages = [
+        {
+          title: "材料三：头环的介绍",
+          className: "headband-page",
+          content: () => `
+            <article class="reading-card">
+              <h4>材料三：头环的介绍</h4>
+              <p>头环是我们用来测量参与者在进行顺背法或倒背法任务时大脑前额叶（主要负责记忆和工作的大脑区域）活动水平的工具。在开展实验时，只要把它戴在头上，它就能通过监测大脑血氧浓度的变化等来收集信息，并在电脑上生成一幅3D的脑激活图。这张图可以直观呈现被激活脑区的位置、范围和强度，它会用颜色告诉你，在实验过程中大脑中哪些地方被激活，图中用暖色调（红-黄）表示大脑区域激活强度高，即正在非常努力地工作；用冷色调（蓝）表示激活程度低或变化不大。当我们测试短时记忆容量时，参与者需要复述一串串长度逐渐增加的数字或者字母。头环会实时捕捉参与者大脑前额叶的活动变化。因此，通过观察脑激活图上前额叶区域的颜色如何随着数字串变长而变化，再结合参与者复述的准确性，我们就能科学地推断出：参与者的大脑短时记忆容量大约是多少个信息单位了！</p>
+              <button class="btn secondary headband-guide-trigger" type="button" id="viewHeadbandGuide">点击查看头环工作原理</button>
+            </article>
+            <div class="headband-modal" id="headbandGuideModal" role="dialog" aria-modal="true" aria-label="头环工作原理" tabindex="-1">
+              <div class="headband-modal-card">
+                <button class="btn secondary headband-modal-close" type="button" id="closeHeadbandGuide" aria-label="关闭头环工作原理">×</button>
+                <picture>
+                  <source srcset="assets/headband-guide.webp" type="image/webp">
+                  <img src="assets/headband-guide.png" alt="头环工作原理示意图" width="1536" height="1024" loading="lazy" decoding="async">
+                </picture>
               </div>
             </div>
-          </div>
-          <div class="${measurementClass}" id="measurementSettingsPanel">
-          <div class="panel">
-            <div class="panel-head">
-              <h3>测量方法与实验设置</h3>
-              <p>顺背法按原顺序复述，倒背法按相反顺序复述。</p>
-            </div>
-            <div class="panel-body">
-              <div class="form-grid">
-                <div class="field">
-                  <label for="method">测量方法</label>
-                  <select id="method" data-field="method">
-                    <option value="顺背法" ${selected("method", "顺背法")}>顺背法</option>
-                    <option value="倒背法" ${selected("method", "倒背法")}>倒背法</option>
-                  </select>
-                </div>
-                <div class="field">
-                  <label for="materialType">实验材料类别</label>
-                  <select id="materialType" data-field="materialType">
-                    <option value="number" ${selected("materialType", "number")}>数字</option>
-                    <option value="letter" ${selected("materialType", "letter")}>英文大写字母</option>
-                    <option value="chinese" ${selected("materialType", "chinese")}>汉字</option>
-                    <option value="shape" ${selected("materialType", "shape")}>图形</option>
-                  </select>
-                </div>
-                <div class="field">
-                  <label>起始长度</label>
-                  <input type="number" min="2" max="8" data-field="startLength" value="${escapeHtml(state.fields.startLength)}" />
-                </div>
-                <div class="field">
-                  <label>每个项目呈现间隔（秒）</label>
-                  <input type="number" min="0.5" max="3" step="0.5" data-field="itemInterval" value="${escapeHtml(state.fields.itemInterval)}" />
-                </div>
-                <div class="field">
-                  <label>每位参与者测量次数</label>
-                  <input type="number" min="1" max="5" data-field="trialsPerParticipant" value="${escapeHtml(state.fields.trialsPerParticipant)}" />
-                </div>
-              </div>
-              <div class="field">
-                <label>控制变量</label>
-                <div class="choice-group">
-                  <label class="choice"><input type="checkbox" data-field="controlContent" ${state.fields.controlContent ? "checked" : ""}>记忆的具体内容由网页随机生成并保持呈现速度一致</label>
-                </div>
-                <input type="text" data-field="controlOther" value="${escapeHtml(state.fields.controlOther)}" placeholder="其他控制变量" />
-              </div>
-            </div>
-          </div>
-          </div>
-        </div>
-      `;
+          `
+        },
+        {
+          title: "测量方法：顺背法与倒背法",
+          className: "method-page",
+          content: () => `<div class="method-grid"><article class="method-card"><h4>顺背法</h4><p>以数字为例，你面前的屏幕会按照固定的速度显示一串数字（例如：5-8-3-1-7）。显示结束后，你需要立刻按顺序在屏幕上打出这些数字。测试从短序列开始（比如3位），如果你连续两次都能完全正确复述，就增加1位数字（比如4位），再测试。这样不断增加序列长度，直到在某个长度上连续两次都复述错误为止。你最后能完全正确复述的最长序列长度，就是你的数字记忆广度，也就是短时记忆的容量。（注意：序列长度一般从3位开始，到10位左右。）以此类推，实验材料还可以换成字母、汉字、图形等等。</p></article><article class="method-card"><h4>倒背法</h4><p>和顺背法类似，屏幕上会按固定速度出现一串数字（如：2-9-4-6），你看完后需要立刻按完全相反的顺序把数字打在屏幕出来（针对上述例子，正确复述是：6-4-9-2）。同样从短序列开始（如3位），参与者连续两次正确则加长1位，直到连续两次失败。参与者最后能完全正确倒着复述出来的最长序列长度，就是他的倒背广度，也就是参与者短时记忆的容量。以此类推，实验材料还可以换成字母、汉字、图形等等。</p></article></div>`
+        },
+        {
+          title: "实验计划流程图",
+          className: "plan-order-page",
+          content: () => `
+            <p class="plan-order-title">请将实验计划步骤拖动到正确顺序</p>
+            <div class="plan-flow" id="planFlow" aria-label="实验计划步骤排序">${renderPlanFlowCards()}</div>
+            <div class="plan-order-actions">${planFeedback}<button class="btn" type="button" id="confirmPlanOrder">确认排序</button></div>
+          `
+        },
+        {
+          title: "实验设置：测量方案",
+          className: "plan-settings-page",
+          content: () => `
+            <div class="reading-card"><p>顺背法按原顺序复述，倒背法按相反顺序复述。</p><div class="form-grid">
+              <div class="field"><label for="method">测量方法</label><select id="method" data-field="method"><option value="顺背法" ${selected("method", "顺背法")}>顺背法</option><option value="倒背法" ${selected("method", "倒背法")}>倒背法</option></select></div>
+              <div class="field"><label for="materialType">实验材料类别</label><select id="materialType" data-field="materialType"><option value="number" ${selected("materialType", "number")}>数字</option><option value="letter" ${selected("materialType", "letter")}>英文大写字母</option><option value="chinese" ${selected("materialType", "chinese")}>汉字</option><option value="shape" ${selected("materialType", "shape")}>图形</option></select></div>
+              <div class="field"><label>起始长度</label><input type="number" min="2" max="8" data-field="startLength" value="${escapeHtml(state.fields.startLength)}" /></div>
+            </div></div>
+          `
+        },
+        {
+          title: "实验设置：次数与控制变量",
+          className: "plan-settings-page",
+          content: () => `
+            <div class="reading-card"><div class="form-grid">
+              <div class="field"><label>每个项目呈现间隔（秒）</label><input type="number" min="0.5" max="3" step="0.5" data-field="itemInterval" value="${escapeHtml(state.fields.itemInterval)}" /></div>
+              <div class="field"><label>每位参与者测量次数</label><input type="number" min="1" max="5" data-field="trialsPerParticipant" value="${escapeHtml(state.fields.trialsPerParticipant)}" /></div>
+            </div><div class="field"><label>控制变量</label><div class="choice-group"><label class="choice"><input type="checkbox" data-field="controlContent" ${state.fields.controlContent ? "checked" : ""}>记忆的具体内容由网页随机生成并保持呈现速度一致</label></div><input type="text" data-field="controlOther" value="${escapeHtml(state.fields.controlOther)}" placeholder="其他控制变量" /></div></div>
+          `
+        }
+      ];
+      return renderPagedStep("plan", pages);
     }
 
-    function renderEvidenceStep() {
+    function getEvidenceRunGroups() {
+      const groups = new Map();
+      (state.records || []).forEach((record, index) => {
+        const key = record.runId || `legacy:${record.subject}|${record.runNumber}`;
+        if (!groups.has(key)) groups.set(key, { key, firstIndex: index, records: [] });
+        groups.get(key).records.push(record);
+      });
+      return Array.from(groups.values()).sort((a, b) => a.firstIndex - b.firstIndex);
+    }
+
+    function getRunFinalCapacity(group) {
+      return Number(group.records[group.records.length - 1]?.finalCapacity || 0);
+    }
+
+    function isSuccessfulRunGroup(group) {
+      return group.records.some((record) => record.capacityStatus === "measured") || getRunFinalCapacity(group) > 0;
+    }
+
+    function getSuccessfulRunGroups(subject = "") {
+      return getEvidenceRunGroups().filter((group) => {
+        const first = group.records[0] || {};
+        return isSuccessfulRunGroup(group) && (!subject || first.subject === subject);
+      });
+    }
+
+    function getNextRunNumber(subject) {
+      const completed = getSuccessfulRunGroups(subject);
+      return completed.length + 1;
+    }
+
+    function getLatestBelowStartRun(subject) {
+      const latest = getEvidenceRunGroups().slice().reverse().find((group) => (group.records[0] || {}).subject === subject);
+      return latest && latest.records.some((record) => record.capacityStatus === "below_start") ? latest : null;
+    }
+
+    function renderEvidenceContent() {
+      const subject = state.fields.participantId || state.studentId;
+      const runNumber = getNextRunNumber(subject);
+      const plannedRuns = clampNumber(state.fields.trialsPerParticipant, 1, 5, 3);
+      const runLabel = runNumber > plannedRuns ? `追加第 ${runNumber} 次测量` : `开始第 ${runNumber} 次测量`;
       return `
-        <div class="panel">
-          <div class="panel-head">
-            <h3>短时记忆容量网页任务</h3>
-            <p>从短序列开始，连续两次正确则加长，连续两次错误则结束本次测量。</p>
-          </div>
-          <div class="panel-body">
+        <div class="evidence-shell">
             <div class="toolbar memory-toolbar">
               <div class="field">
                 <label for="subject">参与者编号</label>
                 <input id="subject" type="text" value="${escapeHtml(state.fields.participantId || state.studentId)}" placeholder="请输入参与者编号">
               </div>
               <div class="field">
-                <label for="runNumber">第几次测量</label>
-                <select id="runNumber">${Array.from({ length: Number(state.fields.trialsPerParticipant) || 3 }, (_, index) => `<option value="${index + 1}">第 ${index + 1} 次</option>`).join("")}</select>
+                <label>测量序号</label>
+                <div class="readonly-value" id="automaticRunLabel">${escapeHtml(runLabel)}</div>
               </div>
               <div class="field material-inline-field">
-                <label for="runMaterialType">实验材料类别</label>
-                <select id="runMaterialType" data-field="materialType">
-                  <option value="number" ${selected("materialType", "number")}>数字</option>
-                  <option value="letter" ${selected("materialType", "letter")}>英文大写字母</option>
-                  <option value="chinese" ${selected("materialType", "chinese")}>汉字</option>
-                  <option value="shape" ${selected("materialType", "shape")}>图形</option>
-                </select>
+                <label>实验材料类别</label>
+                <div class="readonly-value">${escapeHtml(getMaterialTypeLabel(state.fields.materialType))}</div>
               </div>
-              <button class="btn" type="button" id="startRunBtn">开始测量</button>
+              <button class="btn" type="button" id="startRunBtn">${escapeHtml(runLabel)}</button>
             </div>
-            <div class="memory-game">
+            <div class="evidence-overview">
+              <div><h4>测量设置已从“制定计划”同步</h4><p>${escapeHtml(state.fields.method)} · ${escapeHtml(getMaterialTypeLabel(state.fields.materialType))} · 从 ${escapeHtml(state.fields.startLength)} 个信息单位开始</p><p>点击开始后进入低干扰专注界面，结束后可在后续页面查看本轮全部试次结果。</p></div>
+            </div>
+            <div class="memory-game measurement-focus-shell">
               <div class="stage">
                 <div class="stage-meta">
                   <span id="gameStatus">请选择参与者并开始测量</span>
@@ -2023,9 +2702,50 @@
                 <button class="btn secondary" type="button" id="cancelStartRunBtn">取消</button>
               </div>
             </div>
-          </div>
         </div>
       `;
+    }
+
+    function renderRunResultCard(group) {
+      const records = group.records;
+      const first = records[0] || {};
+      const finalCapacity = getRunFinalCapacity(group);
+      const failed = !isSuccessfulRunGroup(group);
+      const byLength = new Map();
+      records.forEach((record) => {
+        if (!byLength.has(record.length)) byLength.set(record.length, []);
+        byLength.get(record.length).push(record);
+      });
+      const trials = Array.from(byLength.entries()).map(([length, items]) => {
+        const outcomes = items.map((record) => record.isCorrect ? "✓" : "✗").join(" ");
+        const details = items.map((record, index) => `试次${index + 1}：${record.expected || ""} → ${record.answer || "（未作答）"}`).join("；");
+        return `<li title="${escapeHtml(details)}"><b>${escapeHtml(length)} 位</b><span class="trial-answer">${escapeHtml(outcomes)}</span><span>${items.filter((item) => item.isCorrect).length}/${items.length} 正确</span></li>`;
+      }).join("");
+      return `<article class="run-result-card">
+        <h4>${escapeHtml(first.subject || "参与者")} · 第 ${escapeHtml(first.runNumber || 1)} 次测量</h4>
+        <div class="run-result-meta"><span>${escapeHtml(first.method || state.fields.method)}</span><span>${escapeHtml(getMaterialTypeLabel(first.materialType || first.material))}</span><span>起始 ${escapeHtml(first.startLength || records[0]?.length || "--")} 位</span><span>共 ${records.length} 个试次</span></div>
+        <ul class="trial-sequence-list">${trials}</ul>
+        <p class="run-result-status ${failed ? "is-failed" : ""}">${failed ? "低于起始长度，未测得精确容量" : `有效容量：${finalCapacity}`}</p>
+        ${failed ? '<button class="btn secondary retry-start-button" type="button" data-return-start-length>返回修改起始长度</button>' : ""}
+      </article>`;
+    }
+
+    function renderEvidenceStep() {
+      const groups = getEvidenceRunGroups();
+      const pages = [{
+        title: "短时记忆容量网页任务",
+        className: "evidence-page",
+        content: renderEvidenceContent
+      }];
+      for (let index = 0; index < groups.length; index += 3) {
+        const pageGroups = groups.slice(index, index + 3);
+        pages.push({
+          title: `测量结果 ${Math.floor(index / 3) + 1}/${Math.ceil(groups.length / 3)}`,
+          className: "evidence-page evidence-results-page",
+          content: () => `<div class="run-results-grid">${pageGroups.map(renderRunResultCard).join("")}</div>`
+        });
+      }
+      return renderPagedStep("evidence", pages);
     }
 
     function getPersonalShortTermMemory(summary) {
@@ -2159,83 +2879,74 @@
         `;
       }).join("") : `<div class="empty-state">完成测量后会自动生成容量平均值。</div>`;
       const totalAverage = getOverallAverage(summary);
-      return `
-        <div class="single-step-layout">
-          <div class="panel">
-            <div class="panel-head"><h3>容量平均值</h3></div>
-            <div class="panel-body">
-              ${summary.length ? `
-                <table>
-                  <thead><tr><th>参与者</th><th>各次容量</th><th>平均容量</th><th>有效次数</th></tr></thead>
-                  <tbody>${rows}</tbody>
-                </table>
-              ` : `<div class="empty-state">还没有实验数据。请先完成至少一次测量。</div>`}
-              <div class="reading-card group-average-card">
-                <h4>个人短时记忆容量</h4>
-                <p>当前根据已有数据计算出的平均容量约为：<strong>${totalAverage || "--"}</strong> 个信息单位。</p>
-              </div>
-            </div>
-          </div>
-          <div class="panel">
-            <div class="panel-head"><h3>结果图与脑活动记录</h3></div>
-            <div class="panel-body">
-              <div class="chart">${chart}</div>
-              <textarea data-field="brainFinding" placeholder="请询问在你进行实验时观察头环的同学，并记录头环观察结果：颜色主要是红/黄/蓝中的哪一种？颜色是否随着任务难度或材料长度变化？前额叶区域是否出现更明显的暖色？哪一次任务中颜色变化最明显？">${escapeHtml(state.fields.brainFinding)}</textarea>
-            </div>
-          </div>
-          <div class="formula-card">
-            <h3>短时记忆容量计算公式</h3>
-            <p>计算短时记忆的容量。</p>
-            <div class="formula-box">公式：小组平均长度＝三位同学成绩之和 / 3</div>
-            <p><strong>示例：</strong></p>
-            <p>如果三位参与者三次测试得到的平均短时记忆容量分别为：</p>
-            <p>参与者1：6<br>参与者2：7<br>参与者3：5</p>
-            <p>那么小组平均长度为：</p>
-            <div class="formula-box">（6 + 7 + 5）/ 3 = 6</div>
-            <p>因此，该小组平均长度为 6 个信息单位。</p>
-          </div>
-          ${renderTeamResultTable(summary)}
-        </div>
-      `;
+      return renderPagedStep("analysis", [
+        {
+          title: "容量平均值",
+          content: () => `<div class="single-step-layout"><div class="panel"><div class="panel-head"><h3>容量平均值</h3></div><div class="panel-body">
+            ${summary.length ? `<table><thead><tr><th>参与者</th><th>各次容量</th><th>平均容量</th><th>有效次数</th></tr></thead><tbody>${rows}</tbody></table>` : `<div class="empty-state">还没有实验数据。请先完成至少一次测量。</div>`}
+            <div class="reading-card group-average-card"><h4>个人短时记忆容量</h4><p>当前根据已有数据计算出的平均容量约为：<strong>${totalAverage || "--"}</strong> 个信息单位。</p></div>
+          </div></div></div>`
+        },
+        {
+          title: "结果图与脑活动记录",
+          className: "step-page-form",
+          content: () => `<div class="single-step-layout"><div class="panel"><div class="panel-head"><h3>结果图与脑活动记录</h3></div><div class="panel-body"><div class="chart">${chart}</div><textarea data-field="brainFinding" placeholder="请询问在你进行实验时观察头环的同学，并记录头环观察结果：颜色主要是红/黄/蓝中的哪一种？颜色是否随着任务难度或材料长度变化？前额叶区域是否出现更明显的暖色？哪一次任务中颜色变化最明显？">${escapeHtml(state.fields.brainFinding)}</textarea></div></div></div>`
+        },
+        {
+          title: "三人小组结果记录",
+          className: "team-result-page",
+          content: () => `<div class="single-step-layout">${renderTeamResultTable(summary)}</div>`
+        }
+      ]);
     }
 
     function renderConclusionStep() {
-      return `
-        <div class="single-step-layout">
-          <div class="panel">
-            <div class="panel-head"><h3>得出结论</h3></div>
-            <div class="panel-body">
-              <div class="form-grid">
-                <div class="field"><label>短时记忆容量约为</label><input type="number" min="0" max="12" step="0.1" data-field="conclusionCapacity" value="${escapeHtml(state.fields.conclusionCapacity)}" placeholder="例如：7" /></div>
-                <div class="field"><label>与假设是否一致</label><select data-field="hypothesisRelation">
-                    <option value="一致" ${selected("hypothesisRelation", "一致")}>一致</option>
-                    <option value="不一致" ${selected("hypothesisRelation", "不一致")}>不一致</option>
-                  </select></div>
-                <div class="field"><label>与 7±2 理论是否一致</label><select data-field="millerRelation">
-                    <option value="一致" ${selected("millerRelation", "一致")}>一致</option>
-                    <option value="不一致" ${selected("millerRelation", "不一致")}>不一致</option>
-                  </select></div>
-              </div>
-              ${renderPairedField("最终结论", `<textarea data-field="finalConclusion" placeholder="结合实验数据、假设和米勒理论写出自己的最终结论">${escapeHtml(state.fields.finalConclusion)}</textarea>`, renderGroupTextarea("finalConclusion_group"))}
-            </div>
-          </div>
-        </div>
-      `;
+      return renderPagedStep("conclusion", [
+        {
+          title: "核对实验结果",
+          content: () => `<div class="single-step-layout"><div class="panel"><div class="panel-head"><h3>核对实验结果</h3></div><div class="panel-body"><div class="form-grid">
+            <div class="field"><label>短时记忆容量约为</label><input type="number" min="0" max="12" step="0.1" data-field="conclusionCapacity" value="${escapeHtml(state.fields.conclusionCapacity)}" placeholder="例如：7" /></div>
+            <div class="field"><label>与假设是否一致</label><select data-field="hypothesisRelation"><option value="一致" ${selected("hypothesisRelation", "一致")}>一致</option><option value="不一致" ${selected("hypothesisRelation", "不一致")}>不一致</option></select></div>
+            <div class="field"><label>与 7±2 理论是否一致</label><select data-field="millerRelation"><option value="一致" ${selected("millerRelation", "一致")}>一致</option><option value="不一致" ${selected("millerRelation", "不一致")}>不一致</option></select></div>
+          </div></div></div></div>`
+        },
+        {
+          title: "形成最终结论",
+          className: "step-page-form",
+          content: () => `<div class="single-step-layout"><div class="panel"><div class="panel-head"><h3>形成最终结论</h3></div><div class="panel-body">${renderPairedField("最终结论", `<textarea data-field="finalConclusion" placeholder="结合实验数据、假设和米勒理论写出自己的最终结论">${escapeHtml(state.fields.finalConclusion)}</textarea>`, renderGroupTextarea("finalConclusion_group"))}</div></div></div>`
+        }
+      ]);
     }
 
     function renderReflectionStep() {
-      return `
-        <div class="reflection-layout">
-          <div class="panel">
-            <div class="panel-head"><h3>反思交流</h3></div>
-            <div class="panel-body">
-              ${renderPairedField("实验设计有哪些地方可以进一步完善？", `<textarea data-field="designImprove" placeholder="可以从数字材料的长度设置、呈现方式、记录过程、测试次数、是否容易受到注意力影响等方面思考。">${escapeHtml(state.fields.designImprove)}</textarea>`, renderGroupTextarea("designImprove_group"))}
-              ${renderPairedField("合作过程是否高效？有哪些需要改进？", `<textarea data-field="teamwork" placeholder="可以从分工是否清楚、记录是否及时、讨论是否充分、遇到分歧时如何解决等方面思考。">${escapeHtml(state.fields.teamwork)}</textarea>`, renderGroupTextarea("teamwork_group"))}
-              ${renderPairedField("科学探究各环节中哪些表现较好？哪些还需要提高？", `<textarea data-field="inquiryReflection" placeholder="可以从提出问题、作出假设、制定计划、搜集证据、处理数据、得出结论和表达交流等环节回顾自己的表现。">${escapeHtml(state.fields.inquiryReflection)}</textarea>`, renderGroupTextarea("inquiryReflection_group"))}
-            </div>
-          </div>
-        </div>
-      `;
+      const questions = [
+        {
+          title: "反思实验设计",
+          field: "designImprove",
+          groupField: "designImprove_group",
+          label: "实验设计有哪些地方可以进一步完善？",
+          placeholder: "可以从数字材料的长度设置、呈现方式、记录过程、测试次数、是否容易受到注意力影响等方面思考。"
+        },
+        {
+          title: "反思合作过程",
+          field: "teamwork",
+          groupField: "teamwork_group",
+          label: "合作过程是否高效？有哪些需要改进？",
+          placeholder: "可以从分工是否清楚、记录是否及时、讨论是否充分、遇到分歧时如何解决等方面思考。"
+        },
+        {
+          title: "反思探究表现",
+          field: "inquiryReflection",
+          groupField: "inquiryReflection_group",
+          label: "科学探究各环节中哪些表现较好？哪些还需要提高？",
+          placeholder: "可以从提出问题、作出假设、制定计划、搜集证据、处理数据、得出结论和表达交流等环节回顾自己的表现。"
+        }
+      ];
+      return renderPagedStep("reflection", questions.map((item) => ({
+        title: item.title,
+        className: "reflection-page",
+        content: () => `<div class="reflection-layout"><div class="panel"><div class="panel-head"><h3>${item.title}</h3></div><div class="panel-body">${renderPairedField(item.label, `<textarea data-field="${item.field}" placeholder="${item.placeholder}">${escapeHtml(state.fields[item.field])}</textarea>`, renderGroupTextarea(item.groupField))}</div></div></div>`
+      })));
     }
 
     function selected(field, value) {
@@ -2281,6 +2992,15 @@
           if (element.type !== "checkbox") updateField(element, field);
         });
       });
+      main.querySelectorAll("[data-question-suffix]").forEach((element) => {
+        const field = element.dataset.questionSuffix;
+        const updateQuestion = () => {
+          state.fields[field] = buildQuestionValue(element.value);
+          saveState();
+        };
+        element.addEventListener("input", updateQuestion);
+        element.addEventListener("change", updateQuestion);
+      });
     }
 
     function updateField(element, field) {
@@ -2301,9 +3021,34 @@
       saveState();
     }
 
+    function bindHeadbandModalEvents() {
+      const openButton = document.getElementById("viewHeadbandGuide");
+      const closeButton = document.getElementById("closeHeadbandGuide");
+      const modal = document.getElementById("headbandGuideModal");
+      if (!openButton || !closeButton || !modal) return;
+      const closeModal = () => {
+        modal.classList.remove("is-visible");
+        openButton.focus();
+      };
+      openButton.addEventListener("click", () => {
+        modal.classList.add("is-visible");
+        modal.focus();
+      });
+      closeButton.addEventListener("click", closeModal);
+      modal.addEventListener("click", (event) => {
+        if (event.target === modal) closeModal();
+      });
+      modal.addEventListener("keydown", (event) => {
+        if (event.key === "Escape") closeModal();
+      });
+    }
+
     function bindStepEvents(stepId) {
       bindSurveyInputs();
       bindKnowledgeQuizInputs();
+      bindPagedStepEvents(stepId);
+      if (stepId === "question") bindQuestionCasePairs();
+      if (stepId === "plan") bindHeadbandModalEvents();
       const prev = document.getElementById("prevStep");
       const next = document.getElementById("nextStep");
       if (prev) {
@@ -2419,14 +3164,37 @@
     }
 
     function bindGameEvents() {
-      document.getElementById("startRunBtn").addEventListener("click", showFocusPrep);
-      document.getElementById("confirmStartRunBtn").addEventListener("click", startRun);
-      document.getElementById("cancelStartRunBtn").addEventListener("click", hideFocusPrep);
-      document.getElementById("submitAnswerBtn").addEventListener("click", submitAnswer);
-      document.getElementById("answerInput").addEventListener("keydown", (event) => {
+      const startButton = document.getElementById("startRunBtn");
+      if (!startButton) {
+        main.querySelectorAll("[data-return-start-length]").forEach((button) => button.addEventListener("click", returnToStartLengthPlan));
+        return;
+      }
+      startButton.addEventListener("click", showFocusPrep);
+      document.getElementById("confirmStartRunBtn")?.addEventListener("click", startRun);
+      document.getElementById("cancelStartRunBtn")?.addEventListener("click", hideFocusPrep);
+      document.getElementById("submitAnswerBtn")?.addEventListener("click", submitAnswer);
+      document.getElementById("answerInput")?.addEventListener("keydown", (event) => {
         if (event.key === "Enter") submitAnswer();
       });
+      const subjectInput = document.getElementById("subject");
+      subjectInput?.addEventListener("input", updateAutomaticRunLabel);
       updateGameUi();
+    }
+
+    function updateAutomaticRunLabel() {
+      const subject = document.getElementById("subject")?.value.trim() || state.fields.participantId || state.studentId;
+      const runNumber = getNextRunNumber(subject);
+      const plannedRuns = clampNumber(state.fields.trialsPerParticipant, 1, 5, 3);
+      const label = runNumber > plannedRuns ? `追加第 ${runNumber} 次测量` : `开始第 ${runNumber} 次测量`;
+      const runLabel = document.getElementById("automaticRunLabel");
+      const startButton = document.getElementById("startRunBtn");
+      if (runLabel) runLabel.textContent = label;
+      if (startButton) startButton.textContent = label;
+    }
+
+    function returnToStartLengthPlan() {
+      setStepPageIndex("plan", 3);
+      goToStep(2);
     }
 
     function showFocusPrep() {
@@ -2443,17 +3211,22 @@
       const startLength = clampNumber(state.fields.startLength, 2, 8, 3);
       const maxLength = clampNumber(state.fields.maxLength || 12, startLength, 12, 12);
       const subject = document.getElementById("subject").value.trim() || state.fields.participantId || state.studentId;
-      const materialType = document.getElementById("runMaterialType")?.value || state.fields.materialType || "number";
+      const unresolvedFailure = getLatestBelowStartRun(subject);
+      const failedStartLength = Number(unresolvedFailure?.records[0]?.startLength || unresolvedFailure?.records[0]?.length || 0);
+      if (failedStartLength && startLength >= failedStartLength) {
+        alert(`上一次从 ${failedStartLength} 位开始未测得精确容量，请先把起始长度调低后再测量。`);
+        return;
+      }
+      const materialType = state.fields.materialType || "number";
       state.fields.participantId = subject;
-      syncMaterialFields(materialType);
       saveState();
       game = {
         id: crypto.randomUUID ? crypto.randomUUID() : String(Date.now()),
         subject,
-        runNumber: Number(document.getElementById("runNumber").value),
+        runNumber: getNextRunNumber(subject),
         method: state.fields.method,
-        materialType: state.fields.materialType,
-        material: state.fields.material,
+        materialType,
+        material: getMaterialTypeLabel(materialType),
         itemInterval: clampNumber(state.fields.itemInterval, 0.5, 3, 1),
         startLength,
         maxLength,
@@ -2592,16 +3365,25 @@
 
     function finishRun() {
       if (!game) return;
-      const finalCapacity = game.lastCapacity || Math.max(0, game.currentLength - 1);
-      game.localRecords = game.localRecords.map((record) => ({ ...record, finalCapacity }));
+      const finalCapacity = game.lastCapacity;
+      const capacityStatus = finalCapacity > 0 ? "measured" : "below_start";
+      game.localRecords = game.localRecords.map((record) => ({
+        ...record,
+        finalCapacity,
+        capacityStatus,
+        startLength: game.startLength
+      }));
       state.records.push(...game.localRecords);
       saveState();
       const finished = game;
       game = null;
       clearShowTimer();
       exitFocusMode();
-      updateGameUi();
-      alert(`${finished.subject} 第 ${finished.runNumber} 次测量完成，容量为 ${finalCapacity}。`);
+      setStepPageIndex("evidence", getStepPageCount("evidence") - 1);
+      renderApp();
+      alert(finalCapacity > 0
+        ? `${finished.subject} 第 ${finished.runNumber} 次测量完成，容量为 ${finalCapacity}。`
+        : `${finished.subject} 第 ${finished.runNumber} 次测量低于起始长度，未测得精确容量。请降低起始长度后重测。`);
     }
 
     async function enterFocusMode() {
@@ -2682,14 +3464,11 @@
     }
 
     function summarizeRecords() {
-      const byRun = new Map();
-      state.records.forEach((record) => {
-        const key = `${record.subject}|${record.runNumber}`;
-        byRun.set(key, record.finalCapacity ?? record.capacityAfterTrial ?? 0);
-      });
       const bySubject = new Map();
-      byRun.forEach((capacity, key) => {
-        const subject = key.split("|")[0];
+      getSuccessfulRunGroups().forEach((group) => {
+        const subject = group.records[0]?.subject || "";
+        const capacity = getRunFinalCapacity(group);
+        if (!(capacity > 0)) return;
         if (!bySubject.has(subject)) bySubject.set(subject, []);
         bySubject.get(subject).push(Number(capacity));
       });

@@ -17,6 +17,10 @@ function clean(value, maxLength = 240) {
   return String(value || "").replace(/\s+/g, " ").trim().slice(0, maxLength);
 }
 
+function isAssessmentStep(value) {
+  return /(?:^|\s)posttest(?:\s|$)|侦探小结|知识后测|知识验证|调查问卷/.test(clean(value).toLowerCase());
+}
+
 function parseBody(req) {
   if (typeof req.body === "string") return JSON.parse(req.body || "{}");
   return req.body || {};
@@ -64,12 +68,20 @@ module.exports = async function handler(req, res) {
     return;
   }
 
+  if (isAssessmentStep(body.currentStep)) {
+    sendJson(res, 403, {
+      code: "ASSESSMENT_LOCKED",
+      error: "知识验证和问卷需要独立完成，完成后可继续使用 AI 助手。"
+    });
+    return;
+  }
+
   if (!process.env.OPENAI_API_KEY) {
     sendJson(res, 500, { error: "OPENAI_API_KEY 未配置。" });
     return;
   }
 
-  const systemPrompt = "你是一个科学探究学习助手。\n你只负责启发、提示和帮助学生梳理思路。\n不要直接给出实验答案。\n回答尽量简洁，控制在100字以内。";
+  const systemPrompt = "你是一个科学探究学习助手。\n你只负责启发、提示和帮助学生梳理思路。\n不要直接给出实验答案。\n不得回答知识后测、知识验证或调查问卷中的题目；遇到这类题目时，应请学生独立完成，不提供答案或选项建议。\n回答尽量简洁，控制在100字以内。";
 
   try {
     const response = await fetch(DEEPSEEK_API_URL, {

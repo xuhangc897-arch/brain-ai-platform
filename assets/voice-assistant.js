@@ -6,6 +6,7 @@
   const DRAG_MARGIN = 12;
   const DRAG_THRESHOLD = 5;
   let activeApi = null;
+  let activeSession = null;
 
   function setStatus(status, message, type) {
     status.textContent = message || "";
@@ -34,6 +35,144 @@
     const current = textarea.value.trim();
     textarea.value = current ? `${current}\n${nextText}` : nextText;
     textarea.scrollTop = textarea.scrollHeight;
+  }
+
+  function createTranscriptionSession(callbacks) {
+    const config = callbacks || {};
+    let state = "idle";
+    let destroyed = false;
+    let operationId = 0;
+
+    function emitState(nextState) {
+      state = nextState;
+      if (!destroyed && typeof config.onStateChange === "function") {
+        config.onStateChange(nextState);
+      }
+    }
+
+    function emitError(message, error) {
+      if (!destroyed && typeof config.onError === "function") {
+        config.onError(message, error);
+      }
+    }
+
+    const recorder = window.VoiceRecorder?.create?.({
+      onTimeChange(time) {
+        if (!destroyed && typeof config.onTimeChange === "function") config.onTimeChange(time);
+      },
+      onError(message, error) {
+        fail(message, error);
+      }
+    }) || null;
+
+    const asrClient = window.AsrClient?.create?.({
+      onStateChange(nextState) {
+        if (nextState === "idle" && state === "recording") {
+          recorder?.stop();
+          finish();
+        } else if (nextState === "idle" && state === "finalizing") {
+          finish();
+        }
+      },
+      onPartial(text) {
+        if (!destroyed && typeof config.onPartial === "function") config.onPartial(text);
+      },
+      onFinal(text) {
+        if (!destroyed && typeof config.onFinal === "function") config.onFinal(text);
+      },
+      onError(message, error) {
+        fail(message || "识别失败，请稍后重试。", error);
+      }
+    }) || null;
+
+    function releaseActiveSession() {
+      if (activeSession === api) activeSession = null;
+    }
+
+    function finish() {
+      releaseActiveSession();
+      emitState("completed");
+    }
+
+    function fail(message, error) {
+      operationId += 1;
+      recorder?.stop();
+      asrClient?.stop();
+      releaseActiveSession();
+      emitState("error");
+      emitError(message || "识别失败，请稍后重试。", error);
+    }
+
+    function cancel() {
+      operationId += 1;
+      const shouldNotify = state !== "idle";
+      state = "idle";
+      recorder?.stop();
+      asrClient?.stop();
+      asrClient?.reset();
+      releaseActiveSession();
+      if (shouldNotify) emitState("idle");
+    }
+
+    async function start() {
+      if (destroyed || ["preparing", "recording", "finalizing"].includes(state)) return false;
+      if (!recorder || !asrClient) {
+        fail("当前浏览器不支持语音识别助手。");
+        return false;
+      }
+
+      if (activeSession && activeSession !== api) activeSession.cancel();
+      activeSession = api;
+      const currentOperation = ++operationId;
+      asrClient.reset();
+      emitState("preparing");
+
+      try {
+        await recorder.prepare();
+        if (destroyed || currentOperation !== operationId) {
+          recorder.stop();
+          asrClient.stop();
+          return false;
+        }
+        await asrClient.connect();
+        if (destroyed || currentOperation !== operationId) {
+          recorder.stop();
+          asrClient.stop();
+          return false;
+        }
+        recorder.start((pcmBuffer) => asrClient.sendAudio(pcmBuffer));
+        emitState("recording");
+        return true;
+      } catch (error) {
+        if (currentOperation === operationId) {
+          fail(error?.message || "识别失败，请稍后重试。", error);
+        }
+        return false;
+      }
+    }
+
+    function stop() {
+      if (state !== "recording") return false;
+      recorder?.stop();
+      emitState("finalizing");
+      asrClient?.stop();
+      return true;
+    }
+
+    function destroy() {
+      cancel();
+      destroyed = true;
+    }
+
+    const api = Object.freeze({
+      start,
+      stop,
+      cancel,
+      destroy,
+      isSupported: () => Boolean(recorder && asrClient && recorder.isSupported()),
+      getState: () => state
+    });
+    return api;
   }
 
   function isWritableTarget(element) {
@@ -186,6 +325,12 @@
           <button class="voice-close" type="button" aria-label="关闭语音助手">×</button>
         </header>
         <div class="voice-body">
+          <ol class="voice-guide" aria-label="语音转文字操作步骤">
+            <li>点击“开始录音”</li>
+            <li>看到“可以说话了”后再开始说</li>
+            <li>说完点击“停止录音”</li>
+            <li>等待转写完成后再复制或写入</li>
+          </ol>
           <div class="voice-recording-status" aria-live="polite">
             <span class="voice-recording-label" data-voice-state>未开始</span>
             <span class="voice-recording-time" data-voice-time>00:00</span>
@@ -201,7 +346,7 @@
             <button class="voice-action primary" type="button" data-voice-start>开始录音</button>
             <button class="voice-action" type="button" data-voice-stop disabled>停止录音</button>
             <button class="voice-action write" type="button" data-voice-write disabled>写入当前输入框</button>
-            <button class="voice-action" type="button" data-voice-copy>复制文字</button>
+            <button class="voice-action" type="button" data-voice-copy disabled>复制文字</button>
             <button class="voice-action" type="button" data-voice-clear>清空内容</button>
           </div>
           <p class="voice-status" role="status" aria-live="polite"></p>
@@ -225,7 +370,6 @@
     const targetName = root.querySelector("[data-voice-target-name]");
     const panel = root.querySelector(".voice-panel");
     const head = root.querySelector(".voice-head");
-    let isRunning = false;
     let lastTarget = null;
 
     const dragControls = installDraggable({
@@ -235,42 +379,67 @@
       handles: [toggle, head]
     });
 
-    const recorder = window.VoiceRecorder && window.VoiceRecorder.create ? window.VoiceRecorder.create({
+    const session = createTranscriptionSession({
       onStateChange(nextState) {
         root.classList.toggle("is-recording", nextState === "recording");
+        if (nextState === "preparing") {
+          stateLabel.textContent = "正在准备，请稍候";
+          setStatus(status, "正在连接麦克风和语音识别，请先不要说话。", "");
+        } else if (nextState === "recording") {
+          stateLabel.textContent = "可以说话了";
+          setStatus(status, "现在可以开始说话，说完请点击“停止录音”。", "success");
+        } else if (nextState === "finalizing") {
+          stateLabel.textContent = "正在生成文字";
+          setStatus(status, "请稍候，转写完成后才能复制或写入。", "");
+        } else if (nextState === "completed") {
+          stateLabel.textContent = "转写完成";
+          partialLabel.textContent = "";
+          setStatus(status, textarea.value.trim()
+            ? "转写完成，请复制文字或写入当前输入框。"
+            : "没有识别到文字，请重新录音。", textarea.value.trim() ? "success" : "warning");
+        } else if (nextState === "idle") {
+          stateLabel.textContent = "未开始";
+          partialLabel.textContent = "";
+        } else if (nextState === "error") {
+          stateLabel.textContent = "识别失败";
+        }
+        updateActions();
       },
       onTimeChange(time) {
         timeLabel.textContent = time.label;
-      },
-      onError(message) {
-        setStatus(status, message, "warning");
-      }
-    }) : null;
-
-    const asrClient = window.AsrClient && window.AsrClient.create ? window.AsrClient.create({
-      onStateChange(nextState) {
-        if (nextState === "open") stateLabel.textContent = "正在识别";
       },
       onPartial(text) {
         partialLabel.textContent = text ? `正在识别：${text}` : "";
       },
       onFinal(text) {
         appendFinalText(textarea, text);
+        updateActions();
       },
       onError(message, error) {
         console.warn("[Voice Assistant] ASR error:", {
           name: (error && error.name) || "Error"
         });
-        stateLabel.textContent = "识别失败";
         setStatus(status, message || "识别失败，请稍后重试。", "warning");
       }
-    }) : null;
+    });
+
+    function updateActions() {
+      const sessionState = session.getState();
+      const busy = ["preparing", "recording", "finalizing"].includes(sessionState);
+      const hasText = Boolean(textarea.value.trim());
+      const hasTarget = isWritableTarget(lastTarget) && lastTarget.isConnected;
+      startButton.disabled = busy || !session.isSupported();
+      stopButton.disabled = sessionState !== "recording";
+      copyButton.disabled = busy || !hasText;
+      writeButton.disabled = busy || !hasText || !hasTarget;
+      clearButton.disabled = busy;
+    }
 
     function updateTargetDisplay() {
       const available = isWritableTarget(lastTarget) && lastTarget.isConnected;
       targetBox.classList.toggle("has-target", available);
       targetName.textContent = available ? getTargetLabel(lastTarget) : "请先点击页面中的输入框";
-      writeButton.disabled = !available;
+      updateActions();
     }
 
     function rememberTarget(event) {
@@ -328,47 +497,13 @@
       setStatus(status, `已写入“${getTargetLabel(lastTarget)}”。`, "success");
     }
 
-    function setRunning(nextRunning) {
-      isRunning = nextRunning;
-      root.classList.toggle("is-recording", nextRunning);
-      startButton.disabled = nextRunning;
-      stopButton.disabled = !nextRunning;
-    }
-
-    function stopAll() {
-      if (recorder) recorder.stop();
-      if (asrClient) asrClient.stop();
-      setRunning(false);
-      stateLabel.textContent = "未开始";
-      partialLabel.textContent = "";
-    }
-
     async function startRecording() {
-      if (isRunning) return;
-      if (!recorder || !asrClient) {
+      if (!session.isSupported()) {
         setStatus(status, "当前浏览器不支持语音识别助手。", "warning");
         return;
       }
-
       setStatus(status, "", "");
-      stateLabel.textContent = "正在录音";
-      setRunning(true);
-
-      try {
-        await recorder.prepare();
-        stateLabel.textContent = "正在识别";
-        await asrClient.connect();
-        recorder.start((pcmBuffer) => {
-          asrClient.sendAudio(pcmBuffer);
-        });
-      } catch (error) {
-        console.warn("[Voice Assistant] start failed:", {
-          name: (error && error.name) || "Error"
-        });
-        stopAll();
-        stateLabel.textContent = "识别失败";
-        setStatus(status, error && error.message ? error.message : "识别失败，请稍后重试。", "warning");
-      }
+      await session.start();
     }
 
     toggle.addEventListener("click", () => {
@@ -379,11 +514,13 @@
     });
 
     close.addEventListener("click", () => {
+      if (session.getState() === "recording") session.stop();
+      if (session.getState() === "preparing") session.cancel();
       root.classList.remove("is-open");
     });
 
     startButton.addEventListener("click", startRecording);
-    stopButton.addEventListener("click", stopAll);
+    stopButton.addEventListener("click", () => session.stop());
     writeButton.addEventListener("click", writeToTarget);
 
     copyButton.addEventListener("click", async () => {
@@ -406,34 +543,36 @@
     clearButton.addEventListener("click", () => {
       textarea.value = "";
       partialLabel.textContent = "";
-      if (asrClient) asrClient.reset();
       setStatus(status, "", "");
+      updateActions();
       textarea.focus();
     });
 
-    window.addEventListener("pagehide", stopAll);
-    window.addEventListener("beforeunload", stopAll);
+    textarea.addEventListener("input", updateActions);
+    window.addEventListener("pagehide", () => session.cancel());
+    window.addEventListener("beforeunload", () => session.cancel());
     document.addEventListener("focusin", rememberTarget);
     document.addEventListener("visibilitychange", () => {
-      if (document.visibilityState === "hidden") stopAll();
+      if (document.visibilityState === "hidden") session.cancel();
     });
 
-    if (!recorder || !asrClient) {
-      startButton.disabled = true;
-      stopButton.disabled = true;
+    if (!session.isSupported()) {
       setStatus(status, "当前浏览器不支持语音识别助手。", "warning");
     }
+    updateActions();
 
     activeApi = Object.freeze({
       setTarget,
-      isOpen: () => root.classList.contains("is-open")
+      isOpen: () => root.classList.contains("is-open"),
+      cancel: () => session.cancel()
     });
     document.body.appendChild(root);
   }
 
   window.VoiceAssistant = Object.freeze({
     setTarget: (target) => Boolean(activeApi && activeApi.setTarget(target)),
-    isOpen: () => Boolean(activeApi && activeApi.isOpen())
+    isOpen: () => Boolean(activeApi && activeApi.isOpen()),
+    createSession: (callbacks) => createTranscriptionSession(callbacks)
   });
 
   if (document.readyState === "loading") {

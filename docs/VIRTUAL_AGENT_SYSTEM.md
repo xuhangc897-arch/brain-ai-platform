@@ -2,18 +2,19 @@
 
 本文对应第七阶段整体联调。范围仅包含稳定性、数据隔离、性能、交互和部署检查，不新增学习功能。
 
-## 1. 组件结构与四个核心功能
+## 1. 组件结构与三个核心工具
 
-统一入口由 `assets/memory-partner.js` 和 `assets/memory-partner.css` 提供，对外使用 `VirtualAgent.init()`，并保留 `MemoryPartner` 兼容接口。四个实验页各初始化一次，共用同一套组件；海报页仅使用基础工具，不参与行为监测、记忆和诊断。
+统一入口由 `assets/memory-partner.js` 和 `assets/memory-partner.css` 提供，对外使用 `VirtualAgent.init()`，并保留 `MemoryPartner` 兼容接口。五个实验页各初始化一次，共用同一套组件；海报页仅使用基础工具，不参与行为监测、记忆和诊断。
 
-虚拟人菜单的四个基础功能是：
+虚拟人菜单的三个基础工具是：
 
 1. AI 学习助手：调用现有 `assets/ai-assistant.js`，不复制模型请求逻辑。
-2. 语音转文字：复用 `voice-recorder.js`、`asr-client.js` 和 `voice-assistant.js`，学生确认后写入当前目标输入框。
+2. 语音转文字：复用 `voice-recorder.js`、`asr-client.js` 和 `voice-assistant.js`；共享转写会话同时服务独立语音面板和 AI 提问框，同一时间只允许一个会话。
 3. 当前任务：只读取页面已有步骤标题和任务说明。
-4. 学习进度：只读取实验页面现有步骤和解锁状态。
 
 扩展入口包括“我的学习记录”和“四次实验后的学习诊断”，是否显示由受保护的后端结果决定。
+
+四个含“侦探小结”的实验在该步骤停用 AI 输入、发送和语音提问。前端在打开和提交前检查步骤，AI 后端在调用模型前再次检查并返回 `ASSESSMENT_LOCKED`，确保知识验证和问卷由学生独立完成。
 
 ## 2. 主要前端模块
 
