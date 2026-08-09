@@ -1347,6 +1347,220 @@
     .case-tag { padding: 5px 9px; border-radius: 999px; background: #eefbf6; color: #0f766e; font-size: 12px; font-weight: 900; }
     @media (max-width: 760px) { .helper-grid { grid-template-columns: 1fr; } .case-card summary { align-items: flex-start; } }
 
+    .step-page-flow {
+      display: grid;
+      grid-template-rows: auto minmax(0, 1fr) auto;
+      gap: 12px;
+      min-height: calc(100vh - 260px);
+    }
+
+    .step-page-head {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 16px;
+      padding-bottom: 10px;
+      border-bottom: 1px solid var(--line);
+    }
+
+    .step-page-head h3 { margin: 0; font-size: 18px; }
+    .step-page-progress { color: var(--primary-dark); font-size: 13px; font-weight: 900; white-space: nowrap; }
+    .step-page-content { min-height: 0; animation: step-page-fade-in 150ms ease both; }
+    .step-page-content.is-leaving { animation: step-page-fade-out 150ms ease both; }
+    .step-page-actions { display: flex; justify-content: space-between; gap: 12px; padding-top: 10px; border-top: 1px solid var(--line); }
+    .step-page-actions.is-first { justify-content: flex-end; }
+    .step-page-actions .btn { min-width: 108px; }
+
+    .page-card {
+      width: min(1040px, 100%);
+      margin: 0 auto;
+      padding: 16px 18px;
+      border: 1px solid var(--line);
+      border-radius: 8px;
+      background: var(--panel);
+    }
+
+    .page-card h4 { margin: 0 0 8px; color: var(--primary-dark); }
+    .page-card p { margin: 0 0 8px; color: #344054; font-size: 14px; }
+    .page-card p:last-child { margin-bottom: 0; }
+    .page-card .memory-table-wrap { margin-top: 10px; }
+    .page-card .thinking-layer { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+    .page-card textarea { min-height: 98px; }
+    .page-form-grid { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 14px; }
+    .page-form-grid .field { margin-bottom: 0; }
+
+    .illustration-trigger { margin-top: 10px; }
+    .image-modal {
+      position: fixed;
+      inset: 0;
+      z-index: 90;
+      display: none;
+      place-items: center;
+      padding: 24px;
+      background: rgba(8, 17, 31, 0.72);
+    }
+    .image-modal.is-visible { display: grid; }
+    .image-modal-card {
+      position: relative;
+      width: min(960px, 94vw);
+      max-height: 90vh;
+      overflow: hidden;
+      border: 1px solid var(--line);
+      border-radius: 8px;
+      background: var(--panel);
+      box-shadow: 0 24px 80px rgba(8, 17, 31, 0.32);
+    }
+    .image-modal-body { display: grid; place-items: center; max-height: 90vh; padding: 42px 18px 18px; overflow: auto; }
+    .image-modal-body img,
+    .image-modal-body svg { display: block; width: 100%; max-height: calc(90vh - 64px); object-fit: contain; }
+    .image-modal-close { position: absolute; top: 8px; right: 8px; z-index: 1; min-width: 42px; padding: 6px 10px; }
+
+    .plan-summary,
+    .run-meta-grid { display: grid; grid-template-columns: repeat(4, minmax(0, 1fr)); gap: 10px; }
+    .plan-summary div,
+    .run-meta-grid div { padding: 10px 12px; border: 1px solid var(--line); border-radius: 8px; background: #f8fbff; }
+    .plan-summary span,
+    .run-meta-grid span { display: block; color: var(--muted); font-size: 12px; font-weight: 700; }
+    .plan-summary b,
+    .run-meta-grid b { display: block; margin-top: 2px; color: var(--ink); overflow-wrap: anywhere; }
+    .evidence-start-grid { display: grid; grid-template-columns: 1.1fr 1fr auto; gap: 14px; align-items: end; margin-top: 14px; }
+    .evidence-start-grid .field { margin: 0; }
+    .run-results-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(300px, 1fr)); gap: 12px; align-items: start; }
+    .run-result-card { padding: 13px; border: 1px solid var(--line); border-radius: 8px; background: #fbfdff; }
+    .run-result-head { display: flex; justify-content: space-between; align-items: center; gap: 12px; margin-bottom: 8px; }
+    .run-result-head h4 { margin: 0; color: var(--ink); }
+    .run-validity { padding: 4px 8px; border-radius: 999px; background: #eefaf6; color: var(--teal); font-size: 12px; font-weight: 900; }
+    .run-validity.is-warning { background: #fff7e8; color: var(--amber); }
+    .run-result-card .run-meta-grid { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+    .run-trials { max-height: 168px; margin-top: 8px; overflow: auto; }
+    .run-trials table { min-width: 640px; font-size: 12px; }
+    .run-trials th, .run-trials td { padding: 6px 8px; }
+    .result-page-tools { display: flex; justify-content: flex-end; margin-bottom: 8px; }
+
+    .case-page .case-list { grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 7px; margin-top: 8px; }
+    .case-page .template-card { grid-column: 1 / -1; padding: 9px 12px; }
+    .case-page .template-card p { margin: 0; }
+    .case-page .case-card summary { min-height: 44px; padding: 8px 10px; font-size: 13px; }
+    .case-page .inquiry-helper { margin-top: 8px; }
+    .case-page .helper-card { padding: 10px 12px; }
+    .question-form-page .page-card { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 10px 14px; }
+    .question-form-page .page-form-grid { grid-column: 1 / -1; }
+    .question-form-page .choice-group { gap: 5px; margin-top: 4px; }
+    .question-form-page .choice { padding: 6px 8px; }
+    .question-form-page .field { margin-bottom: 0; }
+    .question-form-page .thinking-box { padding: 8px; }
+    .question-form-page textarea { min-height: 68px; }
+    .step-page-content > .survey-card .survey-items { grid-template-columns: repeat(3, minmax(0, 1fr)); }
+    .step-page-content > .survey-card .survey-item { padding: 9px; border-right: 1px solid var(--line); }
+    .step-page-content > .survey-card .survey-item p { margin-bottom: 7px; font-size: 12px; line-height: 1.4; }
+    .step-page-content > .survey-card .survey-scale { grid-template-columns: repeat(auto-fit, minmax(46px, 1fr)); gap: 4px; }
+    .step-page-content > .survey-card .survey-option-card { min-height: 46px; padding: 5px 3px; }
+    .step-page-content > .survey-card .survey-score { font-size: 15px; }
+    .step-page-content > .survey-card .survey-label { margin-top: 3px; font-size: 10px; }
+
+    body.is-focus-mode .step-page-head,
+    body.is-focus-mode .step-page-actions,
+    body.is-focus-mode .evidence-prep,
+    body.is-focus-mode .memory-partner-launcher { display: none; }
+    body.is-focus-mode { height: 100vh; overflow: hidden; }
+    body.is-focus-mode .step-page-flow,
+    body.is-focus-mode .step-page-content { min-height: 100vh; }
+    body.is-focus-mode .game-area { display: grid; }
+    body:not(.is-focus-mode) .measurement-focus-shell { display: none; }
+    body.is-focus-mode .measurement-focus-shell { display: block; }
+    body.is-focus-mode .game-log,
+    body.is-focus-mode .stat-grid { display: none; }
+
+    html[data-theme="archive"] body.experiment-page .step-page-progress,
+    html[data-theme="archive"] body.experiment-page .page-card h4 { color: var(--primary-dark); }
+    html[data-theme="archive"] body.experiment-page .page-card,
+    html[data-theme="archive"] body.experiment-page .image-modal-card,
+    html[data-theme="archive"] body.experiment-page .run-result-card,
+    html[data-theme="archive"] body.experiment-page .member-result-row,
+    html[data-theme="archive"] body.experiment-page .plan-summary div,
+    html[data-theme="archive"] body.experiment-page .run-meta-grid div,
+    html[data-theme="archive"] body.experiment-page .practice-card,
+    html[data-theme="archive"] body.experiment-page .practice-settings div,
+    html[data-theme="archive"] body.experiment-page .practice-feedback,
+    html[data-theme="archive"] body.experiment-page .practice-stage,
+    html[data-theme="archive"] body.experiment-page .stimulus-stage,
+    html[data-theme="archive"] body.experiment-page .stimulus,
+    html[data-theme="archive"] body.experiment-page .survey-intro,
+    html[data-theme="archive"] body.experiment-page .survey-card-head,
+    html[data-theme="archive"] body.experiment-page .quiz-card,
+    html[data-theme="archive"] body.experiment-page .quiz-option,
+    html[data-theme="archive"] body.experiment-page .quiz-result { border-color: var(--line); background: #fffaf2; color: var(--ink); box-shadow: var(--shadow); }
+    html[data-theme="archive"] body.experiment-page .page-card p,
+    html[data-theme="archive"] body.experiment-page .quiz-card p,
+    html[data-theme="archive"] body.experiment-page .quiz-card h4 { color: var(--ink); }
+    html[data-theme="archive"] body.experiment-page .survey-option:hover .survey-option-card { border-color: #b58b4a; box-shadow: 0 8px 18px rgba(80, 50, 20, 0.12); }
+    html[data-theme="archive"] body.experiment-page .survey-option.is-selected .survey-option-card,
+    html[data-theme="archive"] body.experiment-page .survey-option input:checked + .survey-option-card { border-color: var(--primary); background: var(--primary); box-shadow: 0 8px 18px rgba(80, 50, 20, 0.16); }
+    html[data-theme="archive"] body.experiment-page .quiz-option.is-selected { border-color: var(--primary); background: var(--primary-soft); color: var(--primary-dark); }
+    html[data-theme="archive"] body.experiment-page input[type="radio"],
+    html[data-theme="archive"] body.experiment-page input[type="checkbox"] { accent-color: var(--teal); }
+    html[data-theme="archive"] body.experiment-page .choice {
+      border-color: #d8bd91;
+      background: #fffaf2;
+      color: var(--ink);
+    }
+    html[data-theme="archive"] body.experiment-page .member-result-row label,
+    html[data-theme="archive"] body.experiment-page .member-result-row .percent-input span { color: var(--ink); }
+    html[data-theme="archive"] body.experiment-page .choice:focus-within {
+      border-color: var(--primary);
+      outline: 2px solid color-mix(in srgb, var(--primary) 28%, transparent);
+      outline-offset: 1px;
+      box-shadow: none;
+    }
+    html[data-theme="archive"] body.experiment-page .member-result-row:focus-within {
+      border-color: var(--primary);
+      background: #fffaf2;
+      box-shadow: 0 0 0 2px color-mix(in srgb, var(--primary) 20%, transparent);
+    }
+    html[data-theme="archive"] body.experiment-page .nback-example-svg rect { stroke: var(--line); }
+    html[data-theme="archive"] body.experiment-page .nback-example-svg text { fill: var(--ink); }
+    html[data-theme="archive"] body.experiment-page .nback-example-svg path,
+    html[data-theme="archive"] body.experiment-page .nback-example-svg circle { stroke: var(--primary-dark); }
+
+    @keyframes step-page-fade-in { from { opacity: 0; } to { opacity: 1; } }
+    @keyframes step-page-fade-out { from { opacity: 1; } to { opacity: 0; } }
+    @media (prefers-reduced-motion: reduce) {
+      .step-page-content,
+      .step-page-content.is-leaving { animation: none; }
+    }
+
+    @media (max-width: 900px) {
+      .step-page-flow { min-height: auto; }
+      .page-card .thinking-layer,
+      .page-form-grid,
+      .plan-summary,
+      .run-meta-grid { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+      .evidence-start-grid { grid-template-columns: 1fr 1fr; }
+      .evidence-start-grid .btn { grid-column: 1 / -1; }
+    }
+
+    @media (min-width: 901px) {
+      .main { padding-top: 12px; padding-bottom: 12px; }
+      .main > .panel > .panel-head { padding: 12px 18px 8px; }
+      .main > .panel > .panel-body { padding: 12px 18px; }
+    }
+
+    @media (max-width: 640px) {
+      .step-page-head { align-items: flex-start; }
+      .page-card { padding: 13px; }
+      .page-card .thinking-layer,
+      .page-form-grid,
+      .plan-summary,
+      .run-meta-grid,
+      .evidence-start-grid { grid-template-columns: 1fr; }
+      .case-page .case-list,
+      .question-form-page .page-card,
+      .step-page-content > .survey-card .survey-items { grid-template-columns: 1fr; }
+      .question-form-page .page-form-grid { grid-column: auto; }
+      .image-modal { padding: 10px; }
+      .step-page-actions .btn { min-width: 96px; }
+    }
+
 
     .progress-step.is-locked {
       opacity: 0.45;
@@ -1643,6 +1857,8 @@
     let trialStartedAt = 0;
     let trialTimeoutId = null;
     let countdownIntervalId = null;
+    const stepPageIndexes = Object.create(null);
+    let stepPageTransitioning = false;
 
     const topbar = document.getElementById("topbar");
     const progress = document.getElementById("progress");
@@ -1914,23 +2130,12 @@
           </div>
           <div class="panel-body">
             ${getStepHtml(step.id)}
-            ${renderNavigation()}
           </div>
         </section>
       `;
       applyLearningBehaviorMetadata();
       bindInputs();
       bindStepEvents(step.id);
-    }
-
-    function renderNavigation() {
-      const nextButton = state.currentStep === steps.length - 1 ? "" : '<button class="btn" type="button" id="nextStep">下一步</button>';
-      return `
-        <div class="actions">
-          <button class="btn secondary" type="button" id="prevStep" ${state.currentStep === 0 ? "disabled" : ""}>上一步</button>
-          ${nextButton}
-        </div>
-      `;
     }
 
     function getStepHtml(stepId) {
@@ -1946,7 +2151,98 @@
         posttest: renderPosttestStep};
       return map[stepId]();
     }
-    function renderPosttestStep() { return renderSurveyPage("posttest"); }
+
+    function getStepPageIndex(stepId) {
+      return Number(stepPageIndexes[stepId] || 0);
+    }
+
+    function setStepPageIndex(stepId, pageIndex) {
+      stepPageIndexes[stepId] = Math.max(0, Number(pageIndex) || 0);
+    }
+
+    function getStepPageCount(stepId) {
+      const fixedCounts = {
+        question: 6,
+        hypothesis: 1,
+        plan: 2,
+        analysis: 3,
+        conclusion: 1,
+        reflection: 2,
+        posttest: KNOWLEDGE_QUIZ.items.length + 4
+      };
+      if (stepId === "evidence") return 1 + Math.ceil(getEvidenceRunGroups().length / 3);
+      return fixedCounts[stepId] || 1;
+    }
+
+    function renderPagedStep(stepId, pages) {
+      const pageCount = pages.length;
+      const pageIndex = Math.min(Math.max(getStepPageIndex(stepId), 0), pageCount - 1);
+      setStepPageIndex(stepId, pageIndex);
+      const page = pages[pageIndex];
+      const pageClass = page.className || (stepId === "question" && pageIndex === 5 ? "question-form-page" : "");
+      const isFirstExperimentPage = state.currentStep === 0 && pageIndex === 0;
+      const isFinalExperimentPage = state.currentStep === steps.length - 1 && pageIndex === pageCount - 1;
+      return `
+        <div class="step-page-flow" data-paged-step="${escapeHtml(stepId)}" data-page-count="${pageCount}">
+          <div class="step-page-head">
+            <h3>${escapeHtml(page.title || steps[state.currentStep].title)}</h3>
+            <span class="step-page-progress" aria-live="polite">${steps[state.currentStep].title} ${pageIndex + 1}/${pageCount}</span>
+          </div>
+          <div class="step-page-content ${pageClass}">${page.content()}</div>
+          <div class="step-page-actions ${isFirstExperimentPage ? "is-first" : ""}">
+            ${isFirstExperimentPage ? "" : '<button class="btn secondary" type="button" id="stepPrevPage">上一页</button>'}
+            ${isFinalExperimentPage ? "" : '<button class="btn" type="button" id="stepNextPage">下一页</button>'}
+          </div>
+        </div>`;
+    }
+
+    function changeStepPage(stepId, targetPage, pageCount) {
+      const currentPage = getStepPageIndex(stepId);
+      const target = Math.min(Math.max(targetPage, 0), pageCount - 1);
+      if (target === currentPage || stepPageTransitioning) return;
+      const content = main.querySelector(".step-page-content");
+      const reduceMotion = window.matchMedia?.("(prefers-reduced-motion: reduce)").matches;
+      const finish = () => {
+        setStepPageIndex(stepId, target);
+        stepPageTransitioning = false;
+        renderStep();
+      };
+      if (!content || reduceMotion) return finish();
+      stepPageTransitioning = true;
+      content.classList.add("is-leaving");
+      window.setTimeout(finish, 150);
+    }
+
+    function bindPagedStepEvents(stepId) {
+      const pageCount = getStepPageCount(stepId);
+      const pageIndex = getStepPageIndex(stepId);
+      document.getElementById("stepPrevPage")?.addEventListener("click", () => {
+        if (pageIndex > 0) return changeStepPage(stepId, pageIndex - 1, pageCount);
+        const previousStep = state.currentStep - 1;
+        if (previousStep < 0) return;
+        const previousStepId = steps[previousStep].id;
+        setStepPageIndex(previousStepId, getStepPageCount(previousStepId) - 1);
+        goToStep(previousStep);
+      });
+      document.getElementById("stepNextPage")?.addEventListener("click", () => {
+        if (pageIndex < pageCount - 1) return changeStepPage(stepId, pageIndex + 1, pageCount);
+        goNextStep();
+      });
+    }
+
+    function renderPosttestStep() {
+      const pages = KNOWLEDGE_QUIZ.items.map((_, index) => ({
+        title: `案件知识验证 第 ${index + 1} 题`,
+        content: () => renderKnowledgeQuizItem(index)
+      }));
+      pages.push(
+        { title: SURVEY_DEFS.meta.title, content: () => renderSurveyForm("postMeta", "meta") },
+        { title: SURVEY_DEFS.load.title, content: () => renderSurveyForm("cognitiveLoad", "load") },
+        { title: SURVEY_DEFS.inquiry.title, content: () => renderSurveyForm("inquiryParticipation", "inquiry") },
+        { title: "完成案件调查", content: () => `<div class="survey-shell"><div class="survey-intro"><h3>完成案件调查</h3><p>确认知识验证和三份问卷均已完成后，生成记忆侦探报告。</p></div>${renderSurveySummaryCards()}${renderPosttestExportArea()}</div>` }
+      );
+      return renderPagedStep("posttest", pages);
+    }
 
     function renderSurveyPage(kind) {
       return '<div class="survey-shell">' +
@@ -1996,6 +2292,24 @@
         '<div><strong>' + inquiry.answered + ' / ' + SURVEY_DEFS.inquiry.items.length + '</strong><span>探究参与完成进度</span></div>' +
       '</div>';
     }
+
+    function renderKnowledgeQuizItem(index) {
+      const quiz = mergeKnowledgeQuiz(state.knowledgeQuiz);
+      const item = KNOWLEDGE_QUIZ.items[index];
+      const itemKey = "q" + (index + 1);
+      const selectedAnswer = quiz.answers[itemKey] || "";
+      return `<section class="quiz-section">
+        <div class="survey-intro"><h3>案件知识验证</h3><p>请根据本次案件调查中获得的证据作答。</p></div>
+        <article class="quiz-card"><h4>第 ${index + 1} 题</h4><p>${escapeHtml(item.question)}</p>
+          <div class="quiz-options">${Object.keys(item.options).map((key) => {
+            const isSelected = selectedAnswer === key;
+            return `<label class="quiz-option ${isSelected ? "is-selected" : ""}"><input type="radio" name="knowledge-${itemKey}" data-quiz-question="${itemKey}" value="${key}" ${isSelected ? "checked" : ""}${quiz.submitted ? " disabled" : ""}><span>${key}　${escapeHtml(item.options[key])}</span></label>`;
+          }).join("")}</div>
+        </article>
+        ${quiz.submitted ? '<div class="quiz-result">案件知识验证已完成，答案已锁定。</div>' : ""}
+      </section>`;
+    }
+
     function renderKnowledgeQuiz() {
       const quiz = mergeKnowledgeQuiz(state.knowledgeQuiz);
       const result = quiz.submitted
@@ -2519,6 +2833,115 @@
       `;
     }
 
+    function renderNbackIllustrationModal(id, title) {
+      return `<div class="image-modal" id="${id}" role="dialog" aria-modal="true" aria-label="${escapeHtml(title)}" tabindex="-1">
+        <div class="image-modal-card">
+          <button class="btn secondary image-modal-close" type="button" data-close-image-modal aria-label="关闭${escapeHtml(title)}">×</button>
+          <div class="image-modal-body">
+            <svg class="nback-example-svg" viewBox="0 0 720 300" role="img" aria-label="2-back 数字活动示意图">
+              <rect x="1" y="1" width="718" height="298" rx="8" fill="#ffffff" stroke="#dbe3ef" />
+              <text x="360" y="38" text-anchor="middle" fill="#172033" font-size="22" font-weight="800">N-back活动举例：2-back数字实验</text>
+              <g fill="#ffffff" stroke="#bfdbfe" stroke-width="2">${[50,150,250,350,450,550].map((x) => `<rect x="${x}" y="104" width="88" height="70" rx="8" />`).join("")}</g>
+              <g fill="#172033" font-size="34" font-weight="900" text-anchor="middle">${[7,5,6,5,8,3].map((value, index) => `<text x="${94 + index * 100}" y="150">${value}</text>`).join("")}</g>
+              <g fill="#0f766e" font-size="18" font-weight="900" text-anchor="middle"><text x="294" y="88">否</text><text x="394" y="88">是</text><text x="494" y="88">否</text><text x="594" y="88">否</text></g>
+              <g fill="none" stroke="#1e3a8a" stroke-width="2.5"><path d="M94 194 C94 222 294 222 294 194"/><path d="M194 216 C194 244 394 244 394 216"/><path d="M294 238 C294 266 494 266 494 238"/><path d="M394 260 C394 288 594 288 594 260"/></g>
+              <g fill="#475467" font-size="14" text-anchor="middle"><text x="194" y="218">6 与前2个数字7比较</text><text x="294" y="244">5 与前2个数字5比较</text><text x="394" y="268">8 与前2个数字6比较</text><text x="494" y="292">3 与前2个数字5比较</text></g>
+            </svg>
+          </div>
+        </div>
+      </div>`;
+    }
+
+    function renderPracticeModal() {
+      return `<div class="practice-modal" id="practiceModal" role="dialog" aria-modal="true" aria-labelledby="practiceTitle">
+        <div class="practice-card">
+          <div class="practice-head"><h3 id="practiceTitle">体验 N-back</h3><p>这是一个练习任务，用来帮助你理解 N-back 的判断方式。体验结果不会进入正式实验数据。</p></div>
+          <div class="practice-body">
+            <div class="practice-settings" aria-label="任务设置"><div><span>N 值</span><b>2-back</b></div><div><span>刺激类型</span><b>数字</b></div><div><span>数字范围</span><b>1-9</b></div><div><span>总试次数</span><b>10 次</b></div></div>
+            <div class="practice-feedback"><span>当前进度</span><b id="practiceProgress">尚未开始</b></div>
+            <div class="practice-stage"><div class="practice-number" id="practiceNumber">?</div></div>
+            <div class="practice-feedback"><span>当前反馈</span><b id="practiceFeedback">点击“开始体验”后开始。</b></div>
+            <div class="practice-response-grid"><button class="response-btn yes-btn" id="practiceYesBtn" type="button" disabled>是</button><button class="response-btn no-btn" id="practiceNoBtn" type="button" disabled>否</button></div>
+            <div class="practice-actions"><button class="btn" id="practiceStartBtn" type="button">开始体验</button><button class="btn secondary" id="practiceRestartBtn" type="button">重新体验</button><button class="btn secondary" id="practiceCloseBtn" type="button">关闭</button></div>
+          </div>
+        </div>
+      </div>`;
+    }
+
+    function renderHeadbandModal() {
+      return `<div class="image-modal" id="headbandGuideModal" role="dialog" aria-modal="true" aria-label="头环工作原理" tabindex="-1">
+        <div class="image-modal-card"><button class="btn secondary image-modal-close" type="button" data-close-image-modal aria-label="关闭头环工作原理">×</button><div class="image-modal-body"><picture><source srcset="assets/headband-guide.webp" type="image/webp"><img src="assets/headband-guide.png" alt="头环工作原理示意图" width="1536" height="1024" loading="lazy" decoding="async"></picture></div></div>
+      </div>`;
+    }
+
+    function renderQuestionStep() {
+      const pages = [
+        { title: "材料一：工作记忆", content: () => `<article class="page-card"><h4>材料一：工作记忆</h4><p>工作记忆是指对信息进行暂时存储和加工的容量有限的记忆系统。工作记忆对信息的加工主要体现在维持和更新这两个方面。</p><p>例如，要完成口算任务2×4×5×6，你首先必须记住2×4等于8；接着还必须记住8×5等于40，这样才能顺利进行下一步的计算，这里需要在工作记忆中维持和更新每一步的计算结果，如8和40。假如工作记忆出了问题，就不可能计算成功。</p><div class="memory-table-wrap"><table class="memory-table" aria-label="工作记忆特点说明"><thead><tr><th>工作记忆特点</th><th>在 N-back 任务中的体现</th></tr></thead><tbody><tr><td>维持</td><td>指个体在工作记忆中持续保存最近呈现的数字信息，以便将其与第 N 个数字进行对比。随着 N 的增加，个体需要在大脑中记忆的数字数量增加，维持信息的时间变长。</td></tr><tr><td>更新</td><td>指个体在每次新数字出现时，动态替换记忆中最旧的数字。随着关卡数的增加，个体需要更新信息的次数增加。</td></tr></tbody></table></div></article>` },
+        { title: "材料二：N-back任务", content: () => `<article class="page-card"><h4>材料二：N-back任务</h4><p>N-back任务是一种常用的工作记忆任务。在N-back任务中，人们需要根据当前的刺激（比如字母、数字、算式或图形及图形的位置）来判断是否与该刺激的第前n个刺激相同。这种任务要求被试者不仅要记住当前刺激，还要持续关注前面的刺激序列，以便做出正确的反应。</p><p>例如，假设n=2，屏幕上显示的数字是：7，5，6，5，8，3...当你看到数字6时，需回想：数字6的前2个数字是什么？是7，所以不一样，按否；下一个数字是5，你继续回想，数字5的前2个数字也是5，一致，按是。</p><button class="btn secondary illustration-trigger" type="button" data-open-image-modal="questionNbackModal">点击查看 N-back 活动示意图</button> <button class="btn illustration-trigger" id="openPracticeBtn" type="button">体验 N-back</button></article>${renderNbackIllustrationModal("questionNbackModal", "N-back活动示意图")}${renderPracticeModal()}` },
+        { title: "材料三：控制变量", content: () => `<article class="page-card"><h4>材料三：控制变量</h4><p>控制变量是指在实验的过程中需要控制那些除了自变量以外的所有影响实验结果的变量，这些变量不是本实验所要研究的变量，所以又称无关变量。只有将自变量以外的所有无关变量控制好，才能弄清实验中的因果关系。</p></article>` },
+        { title: "材料四：头环", content: () => `<article class="page-card"><h4>材料四：头环</h4><p>头环是我们用来测量N-back活动中大脑前额叶活动水平的工具。头环就像一个特殊的“脑力探测器”，只要把头环戴在头上就可以可以收集信息，并且可以在电脑显示屏上生成一幅3D的脑激活图，展示大脑在执行特定任务或接受刺激时，不同脑区神经活动的空间分布状态。这张图可以直观呈现被激活脑区的位置、范围和强度，它会用颜色告诉你，在实验过程中大脑中哪些地方被激活，用红-黄色表示激活强度高，蓝-冷色表示抑制或无变化。也就是说，图中的某个脑区越红说明越活跃，在努力“思考”。假设3-back比2-back需要消耗更多的大脑资源，导致前额叶的激活水平更高，那么头环收集信息生成的结果图中，3-back的结果图中某个区域的颜色应该比2-back的结果图中相应区域的颜色更红，说明在玩更难的3-back游戏时，大脑需要花比玩2-back多得多的“力气”。</p><button class="btn secondary illustration-trigger" type="button" data-open-image-modal="headbandGuideModal">点击查看头环工作原理</button></article>${renderHeadbandModal()}` },
+        { title: "科学探究案例", className: "case-page", content: () => `<div class="page-card">${renderInquiryCases()}${renderInquiryScaffold("question")}</div>` },
+        { title: "提出研究问题", content: () => `<div class="page-card"><div class="page-form-grid"><div class="field"><label>自变量</label><div class="choice-group"><label class="choice"><input type="radio" name="independentVariable" data-field="independentVariable" value="N的大小" ${checked("independentVariable", "N的大小")}>N-back 活动中 N 的大小</label><label class="choice"><input type="radio" name="independentVariable" data-field="independentVariable" value="关卡数量" ${checked("independentVariable", "关卡数量")}>N-back 活动中关卡的数量</label></div></div><div class="field"><label>因变量</label><div class="choice-group"><label class="choice"><input type="checkbox" data-field="dependentMemory" ${state.fields.dependentMemory ? "checked" : ""}>工作记忆表现（N-back 正确率）</label><label class="choice"><input type="checkbox" data-field="dependentBrain" ${state.fields.dependentBrain ? "checked" : ""}>大脑活动水平（前额叶激活水平）</label></div></div></div><div class="field"><label>控制变量</label><div class="choice-group"><label class="choice"><input type="checkbox" data-field="controlContentType" ${state.fields.controlContentType ? "checked" : ""}>N-back 任务中记忆内容的类型</label></div><input type="text" data-field="controlOther" value="${escapeHtml(state.fields.controlOther)}" placeholder="其他控制变量"></div>${renderPairedField("研究问题", `<textarea data-field="researchQuestion" placeholder="写下你自己真正想探究的问题">${escapeHtml(state.fields.researchQuestion)}</textarea>`, renderGroupTextarea("researchQuestion_group"))}</div>` }
+      ];
+      return renderPagedStep("question", pages);
+    }
+
+    function renderHypothesisStep() {
+      return renderPagedStep("hypothesis", [{ title: "提出研究假设", content: () => `<div class="page-card">${renderInquiryScaffold("hypothesis")}${renderPairedField("研究假设", `<textarea data-field="hypothesis" placeholder="请填写你自己的研究假设">${escapeHtml(state.fields.hypothesis)}</textarea>`, renderGroupTextarea("hypothesis_group"))}</div>` }]);
+    }
+
+    function renderPlanStep() {
+      const pages = [
+        { title: "实验设计说明", content: () => `<article class="page-card"><h4>实验设计思考</h4><p>在提出问题和假设之后，我们就要制定研究计划。</p><p>首先请你思考，针对不同的自变量，我们应该如何设计实验呢？</p><p>请以下图示意图为基础，请在纸上分别画出自变量为N的大小和自变量为关卡数量时的实验示意图。</p><p>提醒：在图中，我们采用的实验材料是【数字】，你也可以使用【图形】【汉字】【字母】作为N-back的材料。请在讨论后与你的组员一起确定你们小组的实验材料吧！</p><button class="btn secondary illustration-trigger" type="button" data-open-image-modal="planNbackModal">点击查看 N-back 活动示意图</button></article>${renderNbackIllustrationModal("planNbackModal", "实验设计示意图")}` },
+        { title: "设置实验参数", content: () => `<div class="page-card"><div class="page-form-grid"><div class="field"><label for="materialType">实验材料类别</label><select id="materialType" data-field="materialType"><option value="image" ${selected("materialType", "image")}>图片</option><option value="number" ${selected("materialType", "number")}>数字</option><option value="letter" ${selected("materialType", "letter")}>英文大写字母</option><option value="chinese" ${selected("materialType", "chinese")}>汉字</option></select></div><div class="field"><label for="experimentDesign">实验设计</label><select id="experimentDesign" data-field="experimentDesign"><option value="N的大小" ${selected("experimentDesign", "N的大小")}>自变量为 N 的大小</option><option value="关卡数量" ${selected("experimentDesign", "关卡数量")}>自变量为关卡数量</option></select></div><div class="field"><label for="stimulusInterval">每个刺激作答时间（秒）</label><input id="stimulusInterval" type="number" min="1" max="5" step="0.5" data-field="stimulusInterval" value="${escapeHtml(state.fields.stimulusInterval || 2)}"></div></div><article class="reading-card"><h4>设计提示</h4><p>如果研究 N 的大小，请保持关卡数量相同；如果研究关卡数量，请保持 N 的大小相同。其他条件尽量保持一致。</p></article></div>` }
+      ];
+      return renderPagedStep("plan", pages);
+    }
+
+    function getEvidenceRunGroups() {
+      const groups = [];
+      let current = null;
+      (state.testRuns || []).forEach((record, index) => {
+        const identity = `${record.subject || ""}|${record.conditionLabel || ""}|${record.stimulusType || record.materialType || ""}`;
+        const trialNumber = Number(record.trialNumber || 0);
+        const runKey = record.runId ? `run:${record.runId}` : "";
+        const startLegacyRun = !runKey && (!current || current.runKey || current.identity !== identity || (trialNumber && trialNumber <= Number(current.lastTrialNumber || 0)));
+        if (!current || (runKey && current.key !== runKey) || startLegacyRun) {
+          current = { key: runKey || `legacy:${groups.length}:${index}`, runKey, identity, records: [], lastTrialNumber: 0 };
+          groups.push(current);
+        }
+        current.records.push(record);
+        current.lastTrialNumber = trialNumber || current.lastTrialNumber;
+      });
+      return groups;
+    }
+
+    function getRunSummary(group, index) {
+      const records = group.records;
+      const first = records[0] || {};
+      const answered = records.filter((record) => getRecordType(record) === "answer");
+      const correct = answered.filter((record) => record.isCorrect === true || record.isCorrect === "true").length;
+      const missed = records.filter((record) => getRecordType(record) === "miss").length;
+      return { number: index + 1, first, records, answered: answered.length, correct, missed, accuracy: answered.length ? Math.round(correct / answered.length * 100) : 0, valid: answered.length > 0 };
+    }
+
+    function renderRunResultCard(group, index) {
+      const run = getRunSummary(group, index);
+      const first = run.first;
+      return `<article class="run-result-card"><div class="run-result-head"><h4>第 ${run.number} 次测量 · ${escapeHtml(first.subject || "未命名参与者")}</h4><span class="run-validity ${run.valid ? "" : "is-warning"}">${run.valid ? "测量有效" : "全部应答关卡均漏答"}</span></div><div class="run-meta-grid"><div><span>实验设计</span><b>${escapeHtml(first.mode || state.fields.experimentDesign)}</b></div><div><span>实验材料</span><b>${escapeHtml(first.stimulusType || getMaterialTypeLabel(first.materialType))}</b></div><div><span>实验条件</span><b>${escapeHtml(first.conditionLabel || "--")}</b></div><div><span>作答时间</span><b>${escapeHtml(first.intervalSeconds || state.fields.stimulusInterval)} 秒</b></div><div><span>正确率</span><b>${run.accuracy}%</b></div><div><span>漏答数</span><b>${run.missed}</b></div></div><div class="run-trials"><table><thead><tr><th>关卡</th><th>刺激</th><th>正确答案</th><th>学生答案</th><th>结果</th><th>反应时</th></tr></thead><tbody>${run.records.map((record) => { const type = getRecordType(record); return `<tr><td>${escapeHtml(record.trialNumber)}</td><td>${escapeHtml(record.stimulus)}</td><td>${escapeHtml(record.expected)}</td><td>${escapeHtml(record.response)}</td><td>${type === "observe" ? "观察" : type === "miss" ? "漏答" : record.isCorrect === true || record.isCorrect === "true" ? "正确" : "错误"}</td><td>${record.responseTime ? `${escapeHtml(record.responseTime)}ms` : "--"}</td></tr>`; }).join("")}</tbody></table></div></article>`;
+    }
+
+    function renderEvidenceStep() {
+      const groups = getEvidenceRunGroups();
+      const runNumber = groups.length + 1;
+      const pages = [{ title: "N-back 测量准备", className: "evidence-page", content: () => `<div class="evidence-prep page-card"><h4>开始第 ${runNumber} 次测量</h4><p>前 N 关只观察，不需要判断。测量期间请保持专注，并在规定时间内作答。</p><div class="plan-summary"><div><span>实验设计</span><b>${escapeHtml(state.fields.experimentDesign)}</b></div><div><span>实验材料</span><b>${escapeHtml(getMaterialTypeLabel(state.fields.materialType))}</b></div><div><span>每题作答时间</span><b>${escapeHtml(state.fields.stimulusInterval)} 秒</b></div><div><span>测量序号</span><b>第 ${runNumber} 次</b></div></div><div class="evidence-start-grid"><div class="field"><label for="gameSubject">被测试者编号</label><input id="gameSubject" type="text" value="${escapeHtml(state.fields.participantId || state.studentId)}" placeholder="请输入被测试者编号"></div><div class="field"><label for="gameCondition">本轮实验条件</label><select id="gameCondition"></select></div><button class="btn" type="button" id="startGameBtn">开始测量</button></div></div><div class="measurement-focus-shell"><div class="game-area"><div class="stimulus-stage"><div class="stimulus-meta"><span id="gameStatus">准备开始</span><span id="gameHint">快捷键：Y=是，N=否</span></div><div id="stimulus" class="stimulus">N</div><div class="countdown" aria-hidden="true"><div id="countdownFill" class="countdown-fill"></div></div></div><aside class="game-side"><div class="response-grid"><button class="response-btn yes-btn" type="button" id="yesBtn" disabled>是</button><button class="response-btn no-btn" type="button" id="noBtn" disabled>否</button></div></aside></div></div><div id="focusPrep" class="focus-prep" role="dialog" aria-modal="true"><div class="focus-prep-card"><h3>准备开始 N-back 实验</h3><p>页面将切换到低干扰实验界面，并尝试进入浏览器全屏。若浏览器拒绝全屏，实验仍会正常开始。</p><p>每个刺激出现后请在规定时间内作答：按 Y/点击“是”，按 N/点击“否”。超时未作答会记为漏答。</p><button class="btn" type="button" id="confirmStartGameBtn">进入实验</button><button class="btn secondary" type="button" id="cancelStartGameBtn">取消</button></div></div>` }];
+      for (let offset = 0; offset < groups.length; offset += 3) {
+        const pageGroups = groups.slice(offset, offset + 3);
+        pages.push({ title: `测量结果 ${offset + 1}-${offset + pageGroups.length}`, className: "evidence-results-page", content: () => `<div class="result-page-tools"><button class="btn secondary" type="button" id="newMeasurementBtn">追加测量</button></div><div class="run-results-grid">${pageGroups.map((group, localIndex) => renderRunResultCard(group, offset + localIndex)).join("")}</div>` });
+      }
+      return renderPagedStep("evidence", pages);
+    }
+
     function getPersonalNbackResult(summary) {
       const items = summary || summarizeRuns();
       if (!items.length) return "";
@@ -2700,6 +3123,29 @@
       `;
     }
 
+    function renderAnalysisStep() {
+      const summary = summarizeRuns();
+      const rows = summary.map((item) => `<tr><td>${escapeHtml(item.subject)}</td><td>${escapeHtml(item.conditionLabel)}</td><td>${item.totalAnswered}</td><td>${item.correct}</td><td>${item.accuracy}%</td><td>${item.missed}</td><td>${item.missRate}%</td><td>${item.avgRt ? item.avgRt + "ms" : "--"}</td></tr>`).join("");
+      const chart = summary.length ? summary.map((item) => `<div class="bar-row"><div class="bar-label">${escapeHtml(item.subject)} ${escapeHtml(item.conditionLabel)}</div><div class="bar-track"><div class="bar-fill" style="width:${item.accuracy}%"></div></div><div class="bar-value">${item.accuracy}%</div></div>`).join("") : '<div class="empty-state">完成 N-back 实验后，这里会自动生成正确率柱状图。</div>';
+      return renderPagedStep("analysis", [
+        { title: "实验结果汇总", content: () => `<div class="page-card">${summary.length ? `<div class="run-trials"><table><thead><tr><th>被测试者</th><th>条件</th><th>作答题数</th><th>正确</th><th>正确率</th><th>漏答数</th><th>漏答率</th><th>平均反应时</th></tr></thead><tbody>${rows}</tbody></table></div>` : '<div class="empty-state">还没有实验数据。请先到“搜集证据”步骤完成至少一轮实验。</div>'}</div>` },
+        { title: "正确率与头环观察", content: () => `<div class="page-card"><div class="chart">${chart}</div><div class="field" style="margin-top:14px"><label>头环观察记录</label><textarea data-field="headbandObservation" placeholder="请询问在你进行实验时观察头环的同学，并记录头环观察结果：不同 N-back 难度下头环颜色有什么变化？是否出现红色或黄色区域增多？哪种条件下前额叶区域激活更明显？">${escapeHtml(state.fields.headbandObservation)}</textarea></div></div>` },
+        { title: "小组实验结果记录", content: () => renderTeamResultTable(summary) }
+      ]);
+    }
+
+    function renderConclusionStep() {
+      return renderPagedStep("conclusion", [{ title: "得出结论", content: () => `<div class="page-card">${renderPairedField("假设是否被证实", `<select id="conclusionSupported" data-field="conclusionSupported"><option value="尚未判断" ${selected("conclusionSupported", "尚未判断")}>尚未判断</option><option value="支持" ${selected("conclusionSupported", "支持")}>支持</option><option value="不支持" ${selected("conclusionSupported", "不支持")}>不支持</option><option value="部分支持" ${selected("conclusionSupported", "部分支持")}>部分支持</option></select>`, renderGroupSelect("conclusionSupported_group", ["尚未判断","支持","不支持","部分支持"]))}<article class="reading-card"><h4>提示</h4><p>结论要回到研究问题和实验数据本身，说明数据呈现了什么趋势，以及这个趋势是否符合原先假设。</p></article>${renderPairedField("结论", `<textarea data-field="conclusion" placeholder="根据结果写出你自己的结论">${escapeHtml(state.fields.conclusion)}</textarea>`, renderGroupTextarea("conclusion_group"))}</div>` }]);
+    }
+
+    function renderReflectionStep() {
+      const items = [
+        { title: "改进实验设计", field: "improvement", groupField: "improvement_group", label: "实验设计有什么可以改进？", placeholder: "可以从任务难度设置、练习时间、测试次数、材料呈现速度、参与者状态和注意力控制等方面思考。" },
+        { title: "提高结果说服力", field: "persuasiveness", groupField: "persuasiveness_group", label: "如何提高结果的说服力？", placeholder: "可以从数据是否完整、不同条件是否具有可比性、结果是否稳定、是否需要多次测试或更多参与者等方面思考。" }
+      ];
+      return renderPagedStep("reflection", items.map((item) => ({ title: item.title, content: () => `<div class="page-card">${renderPairedField(item.label, `<textarea data-field="${item.field}" placeholder="${item.placeholder}">${escapeHtml(state.fields[item.field])}</textarea>`, renderGroupTextarea(item.groupField))}</div>` })));
+    }
+
     function checked(field, value) {
       return state.fields[field] === value ? "checked" : "";
     }
@@ -2768,20 +3214,34 @@
     function bindStepEvents(stepId) {
       bindSurveyInputs();
       bindKnowledgeQuizInputs();
-      const prev = document.getElementById("prevStep");
-      const next = document.getElementById("nextStep");
-      if (prev) {
-        prev.addEventListener("click", () => {
-          if (state.currentStep > 0) goToStep(state.currentStep - 1);
-        });
-      }
-      if (next) {
-        next.addEventListener("click", goNextStep);
-      }
+      bindPagedStepEvents(stepId);
+      bindImageModalEvents();
       if (stepId === "evidence") bindGameEvents();
       if (stepId === "question") bindPracticeEvents();
       const reviewReport = document.getElementById("reviewReportBtn");
       if (reviewReport) reviewReport.addEventListener("click", () => generateReviewReport("nback"));
+    }
+
+    function bindImageModalEvents() {
+      main.querySelectorAll("[data-open-image-modal]").forEach((button) => {
+        const modal = document.getElementById(button.dataset.openImageModal);
+        if (!modal) return;
+        const closeModal = () => {
+          modal.classList.remove("is-visible");
+          button.focus();
+        };
+        button.addEventListener("click", () => {
+          modal.classList.add("is-visible");
+          modal.focus();
+        });
+        modal.querySelector("[data-close-image-modal]")?.addEventListener("click", closeModal);
+        modal.addEventListener("click", (event) => {
+          if (event.target === modal) closeModal();
+        });
+        modal.addEventListener("keydown", (event) => {
+          if (event.key === "Escape") closeModal();
+        });
+      });
     }
 
     async function generateReviewReport(activityType) {
@@ -2948,14 +3408,15 @@
     }
 
     function bindGameEvents() {
-      const mode = document.getElementById("gameMode");
       const condition = document.getElementById("gameCondition");
       const start = document.getElementById("startGameBtn");
+      const newMeasurement = document.getElementById("newMeasurementBtn");
+      newMeasurement?.addEventListener("click", () => changeStepPage("evidence", 0, getStepPageCount("evidence")));
+      if (!condition || !start) return;
       const yes = document.getElementById("yesBtn");
       const no = document.getElementById("noBtn");
       const confirmStart = document.getElementById("confirmStartGameBtn");
       const cancelStart = document.getElementById("cancelStartGameBtn");
-      mode.addEventListener("change", populateConditions);
       start.addEventListener("click", showFocusPrep);
       confirmStart.addEventListener("click", startGame);
       cancelStart.addEventListener("click", hideFocusPrep);
@@ -2973,9 +3434,7 @@
     }
 
     function showFocusPrep() {
-      const intervalInput = document.getElementById("stimulusInterval");
-      const seconds = clampInterval(intervalInput.value);
-      intervalInput.value = seconds;
+      const seconds = clampInterval(state.fields.stimulusInterval);
       state.fields.stimulusInterval = seconds;
       saveState();
       document.getElementById("focusPrep").classList.add("is-visible");
@@ -2992,7 +3451,7 @@
     }
 
     function populateConditions() {
-      const mode = document.getElementById("gameMode").value;
+      const mode = state.fields.experimentDesign === "关卡数量" ? "levels" : "nSize";
       const condition = document.getElementById("gameCondition");
       const options = mode === "levels"
         ? [15, 20, 25, 30, 35].map((total) => ({ value: `2-${total}`, label: `N=2，关卡数=${total}` }))
@@ -3004,12 +3463,11 @@
       hideFocusPrep();
       const [nValue, totalValue] = document.getElementById("gameCondition").value.split("-").map(Number);
       const subject = document.getElementById("gameSubject").value.trim() || state.fields.participantId || state.studentId;
-      const mode = document.getElementById("gameMode").value;
-      const materialType = document.getElementById("gameStimulus").value;
-      const intervalSeconds = clampInterval(document.getElementById("stimulusInterval").value);
+      const mode = state.fields.experimentDesign === "关卡数量" ? "levels" : "nSize";
+      const materialType = state.fields.materialType;
+      const intervalSeconds = clampInterval(state.fields.stimulusInterval);
       state.fields.stimulusInterval = intervalSeconds;
       state.fields.participantId = subject;
-      syncMaterialFields(materialType);
       saveState();
       const sequence = generateSequence(nValue, totalValue, state.fields.materialType);
       currentGame = {
@@ -3164,7 +3622,8 @@
       const finished = currentGame;
       currentGame = null;
       exitFocusMode();
-      updateGameUi();
+      setStepPageIndex("evidence", getStepPageCount("evidence") - 1);
+      renderApp();
       alert(`${finished.subject} 的 ${finished.conditionLabel} 已完成并保存。`);
     }
 
@@ -3240,6 +3699,30 @@
           <td>${record.recordType === "observe" ? '<span class="tag">观察</span>' : record.recordType === "miss" ? '<span class="tag bad">漏答</span>' : record.isCorrect ? '<span class="tag ok">正确</span>' : '<span class="tag bad">错误</span>'}</td>
         </tr>
       `).join("") : `<tr><td colspan="4">本轮开始后会显示记录</td></tr>`;
+    }
+
+    function updateGameUi() {
+      const status = document.getElementById("gameStatus");
+      const stimulus = document.getElementById("stimulus");
+      const countdown = document.getElementById("countdownFill");
+      const yes = document.getElementById("yesBtn");
+      const no = document.getElementById("noBtn");
+      if (!status || !stimulus || !yes || !no) return;
+      if (!currentGame) {
+        status.textContent = "准备开始";
+        stimulus.textContent = "N";
+        if (countdown) countdown.style.width = "100%";
+        yes.disabled = true;
+        no.disabled = true;
+        return;
+      }
+      const index = currentGame.currentIndex;
+      const warmup = index < currentGame.n;
+      status.textContent = warmup
+        ? `${currentGame.conditionLabel} · 第 ${index + 1}/${currentGame.totalTrials} 关：只观察，不判断`
+        : `${currentGame.conditionLabel} · 第 ${index + 1}/${currentGame.totalTrials} 关：判断是否与前 ${currentGame.n} 个相同`;
+      yes.disabled = warmup;
+      no.disabled = warmup;
     }
 
     function summarizeRuns() {

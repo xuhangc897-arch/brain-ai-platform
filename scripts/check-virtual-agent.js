@@ -24,13 +24,20 @@ function expect(condition, message) {
 const partnerScript = read("assets/memory-partner.js");
 const partnerStyle = read("assets/memory-partner.css");
 const voiceScript = read("assets/voice-assistant.js");
+const aiScript = read("assets/ai-assistant.js");
 
-["ai", "voice", "task", "progress"].forEach((mode) => {
+["ai", "voice", "task"].forEach((mode) => {
   expect(
     partnerScript.includes(`data-partner-mode="${mode}"`),
     `assets/memory-partner.js: missing ${mode} entry`
   );
 });
+expect(!partnerScript.includes('data-partner-mode="progress"'), "assets/memory-partner.js: obsolete progress entry remains");
+expect(!partnerScript.includes("memory-partner-menu-kicker"), "assets/memory-partner.js: obsolete menu kicker remains");
+expect(!partnerScript.includes("<small"), "assets/memory-partner.js: obsolete action subtitles remain");
+expect(partnerStyle.includes("width: min(280px, calc(100vw - 28px))"), "assets/memory-partner.css: compact 280px menu width missing");
+expect(partnerStyle.includes("width: min(280px, calc(100vw - 20px))"), "assets/memory-partner.css: compact mobile menu width missing");
+expect(partnerStyle.includes("grid-template-columns: minmax(0, 1fr)"), "assets/memory-partner.css: single-column menu contract missing");
 expect(partnerScript.includes("global.VirtualAgent"), "assets/memory-partner.js: missing VirtualAgent API");
 expect(partnerScript.includes("global.MemoryPartner"), "assets/memory-partner.js: missing MemoryPartner compatibility API");
 expect(partnerScript.includes("getLearningState"), "assets/memory-partner.js: missing learning-state adapter");
@@ -48,8 +55,14 @@ expect(
   "assets/memory-partner.css: missing reduced-motion support"
 );
 expect(voiceScript.includes("data-voice-write"), "assets/voice-assistant.js: missing write-back action");
+expect(voiceScript.includes("createTranscriptionSession"), "assets/voice-assistant.js: reusable transcription session missing");
+expect(voiceScript.includes("正在准备，请稍候"), "assets/voice-assistant.js: preparing state missing");
+expect(voiceScript.includes("可以说话了"), "assets/voice-assistant.js: ready-to-speak state missing");
+expect(voiceScript.includes("正在生成文字"), "assets/voice-assistant.js: finalizing state missing");
 expect(voiceScript.includes('new Event("input", { bubbles: true })'), "assets/voice-assistant.js: missing input event");
 expect(voiceScript.includes('new Event("change", { bubbles: true })'), "assets/voice-assistant.js: missing change event");
+expect(aiScript.includes("data-ai-voice"), "assets/ai-assistant.js: inline voice control missing");
+expect(aiScript.includes("ASSESSMENT") || aiScript.includes("assessmentLocked"), "assets/ai-assistant.js: assessment lock missing");
 
 const seenIds = new Set();
 pages.forEach(({ file, id, steps }) => {

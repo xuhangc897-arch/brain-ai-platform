@@ -68,19 +68,10 @@
     .team-result-card input.member-id-input { width: 120px; min-width: 100px; max-width: 140px; }
     .team-result-card .percent-field { display: flex; align-items: center; gap: 6px; }
     .team-result-card .percent-field input { min-width: 80px; }
-    .flow-designer { display: grid; gap: 18px; }
-    .flow-rounds { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 14px; }
-    .flow-round { border: 1px solid #dbeafe; border-radius: 8px; background: #f8fbff; padding: 14px; }
-    .flow-round h4, .flow-card-pool h4 { margin: 0 0 10px; color: #1e3a8a; font-size: 15px; }
-    .flow-dropzone, .flow-pool { display: flex; flex-wrap: wrap; align-items: center; gap: 8px; min-height: 58px; padding: 10px; border: 1px dashed #93c5fd; border-radius: 8px; background: #fff; }
-    .flow-dropzone.is-over { border-color: var(--primary); background: var(--primary-soft); }
-    .flow-empty { color: var(--muted); font-size: 13px; }
-    .flow-card { display: inline-flex; align-items: center; gap: 7px; min-height: 36px; padding: 7px 10px; border: 1px solid #bfdbfe; border-radius: 8px; background: #eff6ff; color: #1e3a8a; font-weight: 800; cursor: grab; user-select: none; }
-    .flow-card:active { cursor: grabbing; }
-    .flow-card button { min-height: 26px; padding: 0 7px; border-radius: 6px; background: #fff; color: var(--primary-dark); border: 1px solid #bfdbfe; font-size: 12px; }
-    .flow-actions { display: flex; flex-wrap: wrap; gap: 8px; margin-top: 8px; }
-    .flow-feedback { margin: 0; color: var(--red); font-weight: 800; }
-    .phase-details.is-hidden { display: none; }
+    .phase-grid { display: grid; grid-template-columns: repeat(4, minmax(0, 1fr)); gap: 12px; }
+    .phase-card { border: 1px solid var(--line); border-radius: 8px; background: var(--panel); padding: 14px; }
+    .phase-card h4 { margin: 0 0 8px; color: var(--primary-dark); }
+    .phase-card p { margin: 0; color: var(--muted); line-height: 1.65; }
     .reflection-layout textarea { min-height: 140px; }
     .reflection-layout textarea::placeholder { color: #98a2b3; opacity: 1; }
     .reflection-layout textarea:focus::placeholder { color: transparent; }
@@ -112,6 +103,21 @@
     .material-details-body .field { margin: 2px 0 0; }
     .headband-image-container { margin: 24px 0; text-align: center; }
     .headband-guide-image { width: 100%; max-width: 1100px; height: auto; border-radius: 16px; box-shadow: 0 8px 24px rgba(15, 23, 42, 0.12); display: block; margin: 0 auto; }
+    .comparison-grid { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 14px; }
+    .comparison-card { border: 1px solid var(--line); border-radius: 8px; background: var(--panel); padding: 14px; }
+    .comparison-card h4 { margin: 0 0 8px; color: var(--primary-dark); }
+    .comparison-card p { margin: 5px 0; line-height: 1.65; }
+    .readonly-value { min-height: 42px; display: flex; align-items: center; padding: 9px 12px; border: 1px solid var(--line); border-radius: 8px; background: #f8fafc; color: var(--ink); font-weight: 800; }
+    .readonly-plan-grid { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 12px; }
+    .evidence-instructions { margin: 14px 0 0; color: var(--muted); line-height: 1.75; }
+    .run-results-grid { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 12px; }
+    .run-result-card { border: 1px solid var(--line); border-radius: 8px; background: var(--panel); padding: 14px; }
+    .run-result-card h4 { margin: 0 0 10px; color: var(--primary-dark); }
+    .run-result-card dl { display: grid; grid-template-columns: auto 1fr; gap: 6px 10px; margin: 0; font-size: 13px; }
+    .run-result-card dt { color: var(--muted); }
+    .run-result-card dd { margin: 0; overflow-wrap: anywhere; }
+    .experiment-game.evidence-game-shell { display: none; }
+    body.is-focus-mode .experiment-game.evidence-game-shell { display: grid; }
     .field { margin-bottom: 18px; }
     label { display: block; margin-bottom: 7px; color: #344054; font-size: 14px; font-weight: 700; }
     input, textarea, select { width: 100%; border: 1px solid var(--line); background: #fff; color: var(--ink); border-radius: 8px; padding: 11px 12px; outline: none; }
@@ -175,10 +181,17 @@
     body.is-focus-mode .main > .panel { min-height: 100vh; border: 0; border-radius: 0; box-shadow: none; background: #08111f; }
     body.is-focus-mode .main > .panel > .panel-head,
     body.is-focus-mode .main > .panel > .panel-body > .actions,
+    body.is-focus-mode .question-page-head,
+    body.is-focus-mode .question-page-actions,
+    body.is-focus-mode .evidence-page > .panel > .panel-head,
+    body.is-focus-mode .readonly-plan-grid,
+    body.is-focus-mode .evidence-instructions,
+    body.is-focus-mode .evidence-page .actions,
     body.is-focus-mode .interference-toolbar,
     body.is-focus-mode .game-log,
     body.is-focus-mode .game-side .stat-grid { display: none; }
     body.is-focus-mode .main > .panel > .panel-body { min-height: 100vh; padding: 0; }
+    body.is-focus-mode .question-flow, body.is-focus-mode .question-page-content, body.is-focus-mode .evidence-page, body.is-focus-mode .evidence-page > .panel, body.is-focus-mode .evidence-page > .panel > .panel-body { min-height: 100vh; margin: 0; padding: 0; border: 0; background: #08111f; }
     body.is-focus-mode .experiment-game { min-height: 100vh; grid-template-columns: 1fr; gap: 0; background: #08111f; }
     body.is-focus-mode .stage { min-height: 100vh; border: 0; border-radius: 0; background: radial-gradient(circle at center, #12213a 0%, #08111f 66%); }
     body.is-focus-mode .stage-meta { top: 30px; left: 36px; right: 36px; color: #dbeafe; font-size: 20px; }
@@ -199,16 +212,114 @@
     .focus-prep-card h3 { margin: 0 0 10px; font-size: 26px; }
     .focus-prep-card p { margin: 0 0 12px; color: #cbd5e1; }
 
+    .question-flow { min-height: max(390px, calc(100dvh - 350px)); display: flex; flex-direction: column; gap: 14px; }
+    .main.is-paged-step { padding-top: 18px; padding-bottom: 0; }
+    body.has-virtual-agent .main.is-paged-step { padding-bottom: 0; }
+    .question-page-head { display: flex; align-items: center; justify-content: space-between; gap: 16px; padding-bottom: 10px; border-bottom: 1px solid var(--line); }
+    .question-page-head h3 { margin: 0; color: var(--ink); font-size: 18px; }
+    .question-page-progress { flex: 0 0 auto; color: var(--primary-dark); font-size: 14px; font-weight: 900; }
+    .question-page-content { flex: 1; min-height: 0; animation: question-page-fade-in 150ms ease both; }
+    .question-page-content.is-leaving { pointer-events: none; animation: question-page-fade-out 150ms ease both; }
+    .question-page-material { display: grid; align-items: center; width: min(980px, 100%); height: 100%; margin: 0 auto; }
+    .question-page-cases .case-list { grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 8px 12px; margin-top: 0; }
+    .question-page-cases .template-card { grid-column: 1 / -1; padding: 11px 14px; }
+    .question-page-cases .case-card summary { padding: 9px 12px; }
+    .question-page-cases .case-body { padding: 0 12px 10px; font-size: 13px; }
+    .question-page-form .thinking-layer, .step-page-form .thinking-layer, .reflection-page .thinking-layer { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+    .question-page-form textarea, .step-page-form textarea, .reflection-page textarea { min-height: 104px; }
+    .question-page-actions { display: flex; justify-content: space-between; gap: 12px; min-height: 42px; margin-top: auto; }
+    .question-page-actions.is-first { justify-content: flex-end; }
+    .question-page-actions .btn { min-width: 112px; }
+    .step-page-content > .panel, .step-page-content > .single-step-layout, .step-page-content > .reflection-layout { height: 100%; }
+    .step-page-content > .single-step-layout, .step-page-content > .reflection-layout { align-content: center; }
+    .step-page-content .panel-body { padding: 16px 18px; }
+    .step-page-content .panel-head { padding: 14px 18px 10px; }
+    .plan-flow-page .phase-card { padding: 10px 12px; }
+    .plan-flow-page .phase-card p { line-height: 1.45; }
+    .plan-flow-page textarea { min-height: 62px; }
+    .plan-flow-page .field { margin-bottom: 0; }
+    .plan-variables-page .panel-head { padding: 10px 14px 6px; }
+    .plan-variables-page .panel-body { padding: 10px 14px; }
+    .plan-variables-page .variable-table textarea { min-height: 42px; height: 44px; }
+    .plan-variables-page .variable-table td { padding: 4px 8px; }
+    .plan-parameters-page .form-grid { grid-template-columns: repeat(4, minmax(0, 1fr)); gap: 10px 12px; }
+    .plan-parameters-page .field { margin-bottom: 2px; }
+
+    .headband-guide-trigger { margin-top: 14px; }
+    .headband-modal { position: fixed; inset: 0; z-index: 80; display: none; place-items: center; padding: 28px; background: rgba(8,17,31,.72); }
+    .headband-modal.is-visible { display: grid; }
+    .headband-modal-card { position: relative; width: min(920px, 92vw); max-height: 88vh; overflow: hidden; border: 1px solid var(--line); border-radius: 10px; padding: 18px; background: var(--panel); box-shadow: 0 28px 90px rgba(0,0,0,.3); }
+    .headband-modal-card img { display: block; width: 100%; max-height: calc(88vh - 36px); object-fit: contain; }
+    .headband-modal-close { position: absolute; top: 10px; right: 10px; z-index: 1; width: 38px; min-width: 38px; height: 38px; padding: 0; }
+
+    @keyframes question-page-fade-in { from { opacity: 0; } to { opacity: 1; } }
+    @keyframes question-page-fade-out { from { opacity: 1; } to { opacity: 0; } }
+    @media (prefers-reduced-motion: reduce) { .question-page-content, .question-page-content.is-leaving { animation: none; } }
+
+    html[data-theme="archive"] body.experiment-page .question-page-head,
+    html[data-theme="archive"] body.experiment-page .question-page-progress,
+    html[data-theme="archive"] body.experiment-page .question-page-head h3,
+    html[data-theme="archive"] body.experiment-page .comparison-card h4,
+    html[data-theme="archive"] body.experiment-page .phase-card h4,
+    html[data-theme="archive"] body.experiment-page .run-result-card h4,
+    html[data-theme="archive"] body.experiment-page .variable-table th:first-child,
+    html[data-theme="archive"] body.experiment-page .variable-table td:first-child,
+    html[data-theme="archive"] body.experiment-page .thinking-label,
+    html[data-theme="archive"] body.experiment-page .task-card,
+    html[data-theme="archive"] body.experiment-page .material-line,
+    html[data-theme="archive"] body.experiment-page .material-chip { color: var(--ink); }
+    html[data-theme="archive"] body.experiment-page .question-page-head { border-bottom-color: rgba(181,139,74,.38); }
+    html[data-theme="archive"] body.experiment-page .question-intro-strip,
+    html[data-theme="archive"] body.experiment-page .thinking-box,
+    html[data-theme="archive"] body.experiment-page .comparison-card,
+    html[data-theme="archive"] body.experiment-page .phase-card,
+    html[data-theme="archive"] body.experiment-page .run-result-card,
+    html[data-theme="archive"] body.experiment-page .readonly-value,
+    html[data-theme="archive"] body.experiment-page .stage,
+    html[data-theme="archive"] body.experiment-page .game-log,
+    html[data-theme="archive"] body.experiment-page .task-card,
+    html[data-theme="archive"] body.experiment-page .material-line,
+    html[data-theme="archive"] body.experiment-page .headband-modal-card { border-color: var(--line); background: #fffaf2; color: var(--ink); box-shadow: 0 8px 24px rgba(80,50,20,.07); }
+    html[data-theme="archive"] body.experiment-page .bar-track { background: #e8dcc8; }
+    html[data-theme="archive"] body.experiment-page .bar-fill { background: linear-gradient(90deg, #9b7135, #5f765e); }
+    html[data-theme="archive"] body.experiment-page .quiz-option.is-selected { border-color: #9b7135; background: #f1e3ca; color: #65471f; }
+    html[data-theme="archive"] body.experiment-page .survey-option.is-selected .survey-option-card,
+    html[data-theme="archive"] body.experiment-page .survey-option input:checked + .survey-option-card { border-color: #9b7135; background: linear-gradient(135deg, #9b7135, #7d5927); color: #fffaf2; box-shadow: 0 10px 22px rgba(80,50,20,.16); }
+
     @media (max-width: 980px) {
       .step-layout, .analysis-layout, .experiment-game { grid-template-columns: 1fr; }
-      .flow-rounds { grid-template-columns: 1fr; }
+      .phase-grid, .readonly-plan-grid, .run-results-grid { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+      .plan-parameters-page .form-grid { grid-template-columns: repeat(2, minmax(0, 1fr)); }
       .progress { grid-template-columns: repeat(8, 132px); }
       .summary-grid { grid-template-columns: repeat(2, 1fr); }
     }
     @media (max-width: 640px) {
       .topbar-inner, .main { padding-left: 14px; padding-right: 14px; }
+      .main.is-paged-step { padding-top: 16px; }
       .brand-row, .actions { align-items: stretch; flex-direction: column; }
-      .top-actions, .form-grid, .summary-grid { grid-template-columns: 1fr; flex-direction: column; }
+      body.experiment-page .top-actions { display: flex; flex-direction: row; flex-wrap: nowrap; justify-content: flex-start; overflow-x: auto; padding-bottom: 2px; }
+      body.experiment-page .top-actions > * { flex: 0 0 auto; }
+      body.experiment-page .top-actions .theme-switch { grid-column: auto; width: auto; }
+      .form-grid, .summary-grid, .comparison-grid, .phase-grid, .readonly-plan-grid, .run-results-grid, .question-page-cases .case-list, .question-page-form .thinking-layer, .step-page-form .thinking-layer, .reflection-page .thinking-layer { grid-template-columns: 1fr; }
+      .plan-material-page .comparison-grid { grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 8px; }
+      .plan-material-page .comparison-card { padding: 10px; }
+      .plan-flow-page .phase-grid { grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 8px; }
+      .evidence-page .readonly-plan-grid { grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 8px; }
+      .evidence-page .field { margin-bottom: 4px; }
+      .evidence-page > .panel > .panel-head { display: none; }
+      .evidence-page > .panel > .panel-body { padding: 10px 12px; }
+      .evidence-page .readonly-value { min-height: 38px; padding: 7px 9px; }
+      .evidence-page .evidence-instructions { margin-top: 8px; line-height: 1.55; }
+      .evidence-page .actions { flex-direction: row; align-items: center; margin-top: 10px; }
+      .plan-flow-page > .single-step-layout > .panel > .panel-head,
+      .plan-parameters-page > .single-step-layout > .panel > .panel-head { display: none; }
+      .question-page-form .thinking-layer { grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 8px; }
+      .step-page-form .thinking-layer, .reflection-page .thinking-layer { grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 8px; }
+      .question-page-form .thinking-box, .step-page-form .thinking-box, .reflection-page .thinking-box { padding: 10px; }
+      .question-page-form textarea, .step-page-form textarea, .reflection-page textarea { min-height: 82px; }
+      .question-page-cases .case-list { grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 6px; }
+      .question-page-head { align-items: flex-start; }
+      .question-page-actions { flex-direction: row; align-items: center; }
       .team-result-card table, .team-result-card thead, .team-result-card tbody, .team-result-card tr, .team-result-card th, .team-result-card td { display: block; width: 100%; }
       .team-result-card thead { display: none; }
       .team-result-card td { border-bottom: 0; }
@@ -344,6 +455,11 @@
     const STORAGE_KEY = pageRuntime.storageKey;
     const DEV_MODE_KEY = "devMode";
     const FLOW_VERSION = "science-eight-step-v2";
+    const FLOW_ANSWERS = {
+      retroactive: { round1: ["记忆", "休息", "测试"], round2: ["记忆", "倒摄干扰", "测试"] },
+      similarity: { round1: ["记忆", "不相似干扰", "测试"], round2: ["记忆", "相似干扰", "测试"] },
+      emotion: { round1: ["记忆", "中性情绪干扰", "测试"], round2: ["记忆", "极性情绪（愉悦/悲伤）干扰", "测试"] }
+    };
     const EXTERNAL_EMOTION_VIDEOS = {
       "中性": "https://brain-ai-video-1441391469.cos.ap-shanghai.myqcloud.com/neutral.mp4",
       "悲伤": "https://brain-ai-video-1441391469.cos.ap-shanghai.myqcloud.com/sad.mp4",
@@ -352,8 +468,8 @@
     const steps = [
       { id: "question", title: "提出问题", minutes: "15分钟", taskDescription: "思考并讨论生活中的长时记忆干扰因素，阅读材料后提出研究问题。" },
       { id: "hypothesis", title: "作出假设", minutes: "5分钟", taskDescription: "写下你自己对实验结果的预测，并与小组讨论形成共识。" },
-      { id: "plan", title: "制定计划", minutes: "20分钟", taskDescription: "根据小组选择的探究因素填写变量，并完成两轮实验流程设计。" },
-      { id: "evidence", title: "搜集证据", minutes: "45分钟", taskDescription: "选择实验轮次和参与者，按照固定材料流程完成长时记忆干扰实验。" },
+      { id: "plan", title: "制定计划", minutes: "20分钟", taskDescription: "阅读实验材料与流程，根据小组选择的探究因素填写变量并设置实验参数。" },
+      { id: "evidence", title: "搜集证据", minutes: "45分钟", taskDescription: "按照制定计划中确定的参数和固定材料流程完成长时记忆干扰实验。" },
       { id: "analysis", title: "处理信息", minutes: "15分钟", taskDescription: "汇总不同干扰条件下的实验数据，并记录头环观察结果。" },
       { id: "conclusion", title: "得出结论", minutes: "5分钟", taskDescription: "回到实验数据，判断研究因素是否造成更强干扰并写出结论。" },
       { id: "reflection", title: "反思交流", minutes: "15分钟", taskDescription: "评价实验设计的优点和改进方向，并思考结论对学习的启发。" },
@@ -484,63 +600,197 @@
       return merged;
     }
 
+    const MATERIAL_VARIANT_COUNT = 6;
+    const MATERIAL_ITEM_COUNTS = { easy: 4, medium: 6, hard: 8 };
+    const DIFFICULTY_OFFSETS = { easy: 0, medium: 4, hard: 8 };
+    const RETROACTIVE_INTERFERENCE_COUNTS = { easy: 4, medium: 8, hard: 12 };
+    const SCORE_RULE = "每个完整回忆正确的项目得1分；正确率=得分/总分×100%";
+
+    function rotateTake(items, start, count) {
+      return Array.from({ length: count }, (_, index) => items[(start + index) % items.length]);
+    }
+
+    function deterministicShuffle(items, seed) {
+      const result = items.slice();
+      let state = seed >>> 0;
+      for (let index = result.length - 1; index > 0; index -= 1) {
+        state = (state * 1664525 + 1013904223) >>> 0;
+        const swapIndex = state % (index + 1);
+        [result[index], result[swapIndex]] = [result[swapIndex], result[index]];
+      }
+      return result;
+    }
+
+    function buildLetterTripletPool() {
+      const letters = ["C", "D", "F", "H", "J", "K", "L", "M", "N", "P", "R", "T", "V", "W", "X", "Y"];
+      const items = [];
+      letters.forEach((first) => letters.forEach((second) => letters.forEach((third) => {
+        if (first !== second && first !== third && second !== third) items.push(`${first}${second}${third}`);
+      })));
+      return deterministicShuffle(items, 314159);
+    }
+
+    function buildNeutralNumberPool() {
+      const items = [];
+      for (let value = 102; value <= 987; value += 1) {
+        const text = String(value);
+        const digits = text.split("").map(Number);
+        if (digits.includes(0)) continue;
+        if (new Set(digits).size !== 3) continue;
+        if (Math.abs(digits[0] - digits[1]) === 1 || Math.abs(digits[1] - digits[2]) === 1) continue;
+        if (digits[1] - digits[0] === digits[2] - digits[1]) continue;
+        items.push(text);
+      }
+      return deterministicShuffle(items, 271828);
+    }
+
+    const LETTER_TRIPLET_POOL = buildLetterTripletPool();
+    const NEUTRAL_NUMBER_POOL = buildNeutralNumberPool();
+    const RETROACTIVE_WORD_POOL = [
+      "太阳", "月亮", "星星", "白云", "天空", "河流", "山坡", "树木", "花朵", "草地", "沙滩", "石头",
+      "厨房", "客厅", "卧室", "阳台", "门口", "楼梯", "操场", "教室", "公园", "商店", "医院", "车站",
+      "广场", "小区", "田野", "森林", "湖水", "海边", "道路", "桥梁", "屋顶", "墙壁", "地板", "大门",
+      "雨伞", "毛巾", "牙刷", "肥皂", "脸盆", "水壶", "雨鞋", "钥匙", "相册", "电话", "电视", "冰箱"
+    ];
+    const SIMILARITY_CATEGORY_BANKS = [
+      { name: "动物", items: ["小猫", "小狗", "兔子", "熊猫", "老虎", "狮子", "大象", "猴子", "狐狸", "斑马", "松鼠", "山羊", "公鸡", "鸭子", "企鹅", "海豚"] },
+      { name: "水果", items: ["苹果", "香蕉", "葡萄", "西瓜", "草莓", "桃子", "梨子", "橘子", "柚子", "芒果", "菠萝", "柠檬", "樱桃", "椰子", "枣子", "石榴"] },
+      { name: "衣物", items: ["上衣", "裤子", "裙子", "帽子", "袜子", "鞋子", "围巾", "手套", "衬衫", "毛衣", "外套", "短裤", "长裤", "雨衣", "皮鞋", "球鞋"] },
+      { name: "食物", items: ["米饭", "面条", "包子", "饺子", "馒头", "鸡蛋", "牛奶", "面包", "蛋糕", "饼干", "豆腐", "白粥", "玉米", "红薯", "青菜", "白菜"] },
+      { name: "文具", items: ["书本", "铅笔", "橡皮", "尺子", "课本", "纸张", "画笔", "书包", "本子", "墨水", "粉笔", "胶水", "剪刀", "圆规", "地图", "画纸"] },
+      { name: "家居", items: ["桌子", "椅子", "沙发", "衣柜", "书柜", "床铺", "台灯", "窗帘", "镜子", "枕头", "被子", "水杯", "饭碗", "勺子", "盘子", "闹钟"] }
+    ];
+
+    function buildRound(round, condition, variants, instruction, interferenceInstruction) {
+      return { round, condition, variants, instruction, interferenceInstruction };
+    }
+
+    function takeDiverseLetterTriplets(start, count) {
+      const selected = [];
+      for (let offset = 0; offset < LETTER_TRIPLET_POOL.length && selected.length < count; offset += 1) {
+        const candidate = LETTER_TRIPLET_POOL[(start + offset) % LETTER_TRIPLET_POOL.length];
+        const candidateLetters = new Set(candidate);
+        const isDiverse = selected.every((item) => {
+          const sharedLetterCount = [...candidateLetters].filter((letter) => item.includes(letter)).length;
+          const samePositionCount = [...candidate].filter((letter, index) => item[index] === letter).length;
+          return sharedLetterCount <= 1 && samePositionCount === 0;
+        });
+        if (isDiverse) selected.push(candidate);
+      }
+      if (selected.length !== count) throw new Error(`无法生成 ${count} 个低相似三字母材料`);
+      return selected;
+    }
+
+    function takeDiverseNumberGroups(start, count) {
+      const selected = [];
+      for (let offset = 0; offset < NEUTRAL_NUMBER_POOL.length && selected.length < count; offset += 1) {
+        const candidate = NEUTRAL_NUMBER_POOL[(start + offset) % NEUTRAL_NUMBER_POOL.length];
+        if (!selected.some((item) => item[0] === candidate[0])) selected.push(candidate);
+      }
+      if (selected.length !== count) throw new Error(`无法生成 ${count} 个中性三位数字组`);
+      return selected;
+    }
+
+    function buildRetroactiveRounds(difficulty) {
+      const itemCount = MATERIAL_ITEM_COUNTS[difficulty];
+      const interferenceCount = RETROACTIVE_INTERFERENCE_COUNTS[difficulty];
+      const difficultyIndex = ["easy", "medium", "hard"].indexOf(difficulty);
+      const memoryBase = difficultyIndex * 600;
+      const restVariants = Array.from({ length: MATERIAL_VARIANT_COUNT }, (_, variantIndex) => ({
+        memory: takeDiverseLetterTriplets(memoryBase + variantIndex * 97, itemCount),
+        interference: []
+      }));
+      const interferenceVariants = Array.from({ length: MATERIAL_VARIANT_COUNT }, (_, variantIndex) => ({
+        memory: takeDiverseLetterTriplets(memoryBase + 240 + variantIndex * 97, itemCount),
+        interference: rotateTake(RETROACTIVE_WORD_POOL, difficultyIndex * 13 + variantIndex * 7, interferenceCount)
+      }));
+      const interferenceInstructions = {
+        easy: "请从上到下循环大声朗读这些词语，直到计时结束。",
+        medium: "请先正序、再倒序循环大声朗读这些词语，直到计时结束。",
+        hard: "请先读奇数位置、再读偶数位置的词语，循环进行直到计时结束。"
+      };
+      return [
+        buildRound(1, "休息条件", restVariants, "请按顺序记忆以下三字母材料。", "请参与者闭上眼睛休息，不要刻意回想，也不要刻意不想。"),
+        buildRound(2, "倒摄干扰条件", interferenceVariants, "请按顺序记忆以下三字母材料。", interferenceInstructions[difficulty])
+      ];
+    }
+
+    function buildSimilarityRounds(difficulty) {
+      const itemCount = MATERIAL_ITEM_COUNTS[difficulty];
+      const start = DIFFICULTY_OFFSETS[difficulty];
+      const lowSimilarityVariants = Array.from({ length: MATERIAL_VARIANT_COUNT }, (_, variantIndex) => {
+        const targetCategory = SIMILARITY_CATEGORY_BANKS[variantIndex];
+        const unrelatedCategory = SIMILARITY_CATEGORY_BANKS[(variantIndex + 3) % MATERIAL_VARIANT_COUNT];
+        return {
+          memory: rotateTake(targetCategory.items, start, itemCount),
+          interference: rotateTake(unrelatedCategory.items, start + itemCount, itemCount)
+        };
+      });
+      const highSimilarityVariants = Array.from({ length: MATERIAL_VARIANT_COUNT }, (_, variantIndex) => {
+        const sharedCategory = SIMILARITY_CATEGORY_BANKS[(variantIndex + 1) % MATERIAL_VARIANT_COUNT];
+        return {
+          memory: rotateTake(sharedCategory.items, start, itemCount),
+          interference: rotateTake(sharedCategory.items, start + itemCount, itemCount)
+        };
+      });
+      return [
+        buildRound(1, "低相似干扰", lowSimilarityVariants, "请按顺序记忆以下词语。", "请从上到下循环大声朗读这些不同类别的词语，直到计时结束。"),
+        buildRound(2, "高相似干扰", highSimilarityVariants, "请按顺序记忆以下词语。", "请从上到下循环大声朗读这些同类别的词语，直到计时结束。")
+      ];
+    }
+
+    function buildEmotionRounds(difficulty) {
+      const itemCount = MATERIAL_ITEM_COUNTS[difficulty];
+      const memoryBase = { easy: 0, medium: 48, hard: 120 }[difficulty];
+      const makeVariants = (roundOffset) => Array.from({ length: MATERIAL_VARIANT_COUNT }, (_, variantIndex) => ({
+        memory: takeDiverseNumberGroups(memoryBase + roundOffset + variantIndex * 31, itemCount),
+        interference: []
+      }));
+      return [
+        buildRound(1, "情绪条件", makeVariants(0), "请按顺序记忆以下三位数字组。", "请先观看所选情绪视频。"),
+        buildRound(2, "情绪条件", makeVariants(itemCount * MATERIAL_VARIANT_COUNT), "请按顺序记忆以下三位数字组。", "请先观看所选情绪视频。")
+      ];
+    }
+
+    function buildDifficultySet(materialType, difficulty, roundBuilder) {
+      return {
+        materialType,
+        fullScore: MATERIAL_ITEM_COUNTS[difficulty],
+        scoreRule: SCORE_RULE,
+        rounds: roundBuilder(difficulty)
+      };
+    }
+
     const MATERIAL_SETS = {
       "倒摄干扰": {
         label: "倒摄干扰",
-        source: "【实验材料一】倒摄干扰 PPT",
+        source: "【实验材料一】倒摄干扰优化材料池",
         difficultyLabels: { easy: "初级", medium: "中级", hard: "高级" },
         sets: {
-          easy: { materialType: "无意义音节", fullScore: 6, scoreRule: "对一个字母得1分；顺序错误得分减半；正确率=得分/总分×100%", rounds: [
-            { round: 1, condition: "休息条件", memory: ["ACZ", "PKR"], interference: [], instruction: "请按顺序记忆以下内容。", interferenceInstruction: "请参与者闭上眼睛休息，不要刻意回想，也不要刻意不想。" },
-            { round: 2, condition: "倒摄干扰条件", memory: ["STU", "VWX"], interference: ["黑板", "粉笔", "书本", "桌子", "椅子", "飞机", "汽车", "公园", "苹果", "花朵"], instruction: "请按顺序记忆以下内容。", interferenceInstruction: "请大声朗读以下干扰材料。" }
-          ]},
-          medium: { materialType: "无意义音节", fullScore: 9, scoreRule: "对一个字母得1分；顺序错误得分减半；正确率=得分/总分×100%", rounds: [
-            { round: 1, condition: "休息条件", memory: ["XUJ", "BQP", "ZLQ"], interference: [], instruction: "请按顺序记忆以下内容。", interferenceInstruction: "请参与者闭上眼睛休息，不要刻意回想，也不要刻意不想。" },
-            { round: 2, condition: "倒摄干扰条件", memory: ["LNM", "WYD", "PQR"], interference: ["黑板", "粉笔", "书本", "桌子", "椅子", "飞机", "汽车", "公园", "苹果", "花朵"], instruction: "请按顺序记忆以下内容。", interferenceInstruction: "请大声朗读以下干扰材料。" }
-          ]},
-          hard: { materialType: "无意义音节", fullScore: 12, scoreRule: "对一个字母得1分；顺序错误得分减半；正确率=得分/总分×100%", rounds: [
-            { round: 1, condition: "休息条件", memory: ["XUAQ", "PZLM", "FKRG"], interference: [], instruction: "请按顺序记忆以下内容。", interferenceInstruction: "请参与者闭上眼睛休息，不要刻意回想，也不要刻意不想。" },
-            { round: 2, condition: "倒摄干扰条件", memory: ["LNMW", "YDPQ", "RBTO"], interference: ["黑板", "粉笔", "书本", "桌子", "椅子", "飞机", "汽车", "公园", "苹果", "花朵"], instruction: "请按顺序记忆以下内容。", interferenceInstruction: "请大声朗读以下干扰材料。" }
-          ]}
+          easy: buildDifficultySet("无意义三字母串", "easy", buildRetroactiveRounds),
+          medium: buildDifficultySet("无意义三字母串", "medium", buildRetroactiveRounds),
+          hard: buildDifficultySet("无意义三字母串", "hard", buildRetroactiveRounds)
         }
       },
       "材料相似性": {
         label: "材料相似性",
-        source: "【实验材料二】相似性 PPT",
+        source: "【实验材料二】语义相似性优化材料池",
         difficultyLabels: { easy: "初级", medium: "中级", hard: "高级" },
         sets: {
-          easy: { materialType: "语段/人物活动配对", fullScore: 6, scoreRule: "人名和活动每个正确得1分；正确率=得分/总分×100%", rounds: [
-            { round: 1, condition: "低相似干扰", memory: ["小明-画画", "小红-书法", "小美-唱歌"], interference: ["邻居奶奶家的大黄狗生了一窝小狗崽。", "我一放学就迫不及待地跑去看望。", "我给小白狗起名为馒头。", "朋友们约定周末来看馒头。"], instruction: "请记忆人物和对应活动。", interferenceInstruction: "请阅读以下故事。" },
-            { round: 2, condition: "高相似干扰", memory: ["小朵-篮球", "小智-排球", "小慧-网球"], interference: ["体育课的气氛格外热闹。", "乒乓球桌前同学正在激烈对战。", "足球场上小慧灵活带球并射门。", "队友们击掌庆祝。"], instruction: "请记忆人物和对应活动。", interferenceInstruction: "请阅读以下相似主题故事。" }
-          ]},
-          medium: { materialType: "单词及中文", fullScore: 12, scoreRule: "每个单词3分：完全正确3分，部分正确2分，首字母或中文正确1分，完全错误0分；正确率=得分/总分×100%", rounds: [
-            { round: 1, condition: "低相似干扰", memory: ["hut 小屋/棚屋", "moan 呻吟", "stint 定量/限额", "flavor 风味/香料"], interference: ["own 拥有", "dry 干的/干燥的", "lend 借出", "chat 聊天", "early 早的", "grass 草/牧草", "bottle 瓶子", "nobody 没有人"], instruction: "请记忆单词和对应中文。", interferenceInstruction: "请读出下面的单词和中文。" },
-            { round: 2, condition: "高相似干扰", memory: ["sew 用针线缝制", "deed 行为/法律契约", "glide 滑行", "blight 植物病害/破坏"], interference: ["dew 露水", "sow 播种", "deem 认为/视为", "deep 深的", "glow 发光/发热", "glare 怒视/强光", "bright 明亮的/聪明的", "brought bring的过去式"], instruction: "请记忆单词和对应中文。", interferenceInstruction: "请读出下面的相似单词和中文。" }
-          ]},
-          hard: { materialType: "数字串", fullScore: 12, scoreRule: "对一个数字得1分；正确率=得分/总分×100%", rounds: [
-            { round: 1, condition: "低相似干扰", memory: ["9809-3726-5146"], interference: ["听弹琴 刘长卿", "泠泠七弦上，静听松风寒。", "古调虽自爱，今人多不弹。"], instruction: "请记忆数字串。", interferenceInstruction: "请朗读一遍以下古诗内容。" },
-            { round: 2, condition: "高相似干扰", memory: ["1370-2794-3686"], interference: ["1394-2370-3666", "2194-7310-6386", "1310-2798-3668"], instruction: "请记忆数字串。", interferenceInstruction: "请朗读一遍以下相似数字材料。" }
-          ]}
+          easy: buildDifficultySet("高频双字具体名词", "easy", buildSimilarityRounds),
+          medium: buildDifficultySet("高频双字具体名词", "medium", buildSimilarityRounds),
+          hard: buildDifficultySet("高频双字具体名词", "hard", buildSimilarityRounds)
         }
       },
       "情绪": {
         label: "情绪",
-        source: "【实验材料三】情绪 PPT + 视频",
+        source: "【实验材料三】中性数字材料池 + 视频",
         difficultyLabels: { easy: "初级", medium: "中级", hard: "高级" },
         videos: EXTERNAL_EMOTION_VIDEOS,
         sets: {
-          easy: { materialType: "单词及中文", fullScore: 12, scoreRule: "每个单词3分：完全正确3分，部分正确2分，首字母或中文正确1分，完全错误0分；正确率=得分/总分×100%", rounds: [
-            { round: 1, condition: "情绪条件", memory: ["hut 小屋/棚屋", "dye 染色/染料", "moan 呻吟", "stint 定量/限额"], interference: [], instruction: "请记忆单词和对应中文。", interferenceInstruction: "请先观看所选情绪视频。" },
-            { round: 2, condition: "情绪条件", memory: ["sew 用针线缝制", "pin 别针/大头针", "deed 行为/法律契约", "glide 滑行"], interference: [], instruction: "请记忆单词和对应中文。", interferenceInstruction: "请先观看所选情绪视频。" }
-          ]},
-          medium: { materialType: "古诗", fullScore: 10, scoreRule: "题目1分，作者1分，诗句每句2分；诗句错1-2字得1分；正确率=得分/总分×100%", rounds: [
-            { round: 1, condition: "情绪条件", memory: ["听弹琴", "刘长卿", "泠泠七弦上，静听松风寒。", "古调虽自爱，今人多不弹。"], interference: [], instruction: "请记忆题目、作者和诗句。", interferenceInstruction: "请先观看所选情绪视频。" },
-            { round: 2, condition: "情绪条件", memory: ["渡汉江", "宋之问", "岭外音书断，经冬复历春。", "近乡情更怯，不敢问来人。"], interference: [], instruction: "请记忆题目、作者和诗句。", interferenceInstruction: "请先观看所选情绪视频。" }
-          ]},
-          hard: { materialType: "无意义音节", fullScore: 12, scoreRule: "对一个字母得1分；顺序错误得分减半；正确率=得分/总分×100%", rounds: [
-            { round: 1, condition: "情绪条件", memory: ["XUAQ", "PZLM", "FKRG"], interference: [], instruction: "请按顺序记忆以下内容。", interferenceInstruction: "请先观看所选情绪视频。" },
-            { round: 2, condition: "情绪条件", memory: ["LNMW", "YDPQ", "RBTO"], interference: [], instruction: "请按顺序记忆以下内容。", interferenceInstruction: "请先观看所选情绪视频。" }
-          ]}
+          easy: buildDifficultySet("中性三位数字组", "easy", buildEmotionRounds),
+          medium: buildDifficultySet("中性三位数字组", "medium", buildEmotionRounds),
+          hard: buildDifficultySet("中性三位数字组", "hard", buildEmotionRounds)
         }
       }
     };
@@ -619,6 +869,8 @@
     let timerId = null;
     let tickId = null;
     let phaseStartedAt = 0;
+    const stepPageIndexes = Object.create(null);
+    let stepPageTransitioning = false;
 
     const progress = document.getElementById("progress");
     const main = document.getElementById("main");
@@ -643,6 +895,7 @@
       merged.fields.otherMemberResults = normalizeOtherMemberResults(merged.fields);
       merged.fields.flowRound1 = normalizeFlowList(merged.fields.flowRound1);
       merged.fields.flowRound2 = normalizeFlowList(merged.fields.flowRound2);
+      syncLegacyFlowFields(merged.fields);
       if (!isEmotionFactor(merged.fields.factor)) merged.fields.emotionCondition = "";
       if (merged.fields.materialFactors === "前摄干扰、倒摄干扰、材料相似性、情绪状态") merged.fields.materialFactors = "";
       if (!merged.fields.questionFactor && merged.fields.question) {
@@ -666,6 +919,14 @@
     }
     function normalizeFlowList(value) {
       return Array.isArray(value) ? value.filter(Boolean).map(String) : [];
+    }
+    function syncLegacyFlowFields(fields = state?.fields) {
+      if (!fields) return;
+      const interferenceFactor = factorToInterferenceValue(fields.factor);
+      const answer = FLOW_ANSWERS[interferenceFactor] || FLOW_ANSWERS.retroactive;
+      fields.interferenceFactor = interferenceFactor;
+      fields.flowRound1 = answer.round1.slice();
+      fields.flowRound2 = answer.round2.slice();
     }
     function createEmptyOtherMemberResult() {
       return { memberId: "", interferenceFactor: "", materialType: "", averageScore: "", averageAccuracy: "" };
@@ -852,10 +1113,6 @@
     }
 
     function goNextStep() {
-      if (!isDeveloperMode() && steps[state.currentStep].id === "plan" && !isFlowCorrect()) {
-        showStepMessage("实验流程还不正确，请根据你选择的干扰因素重新调整顺序。");
-        return;
-      }
       if (!validateStep(steps[state.currentStep].id)) {
         showStepMessage("请先完成本步骤内容。");
         return;
@@ -886,7 +1143,7 @@
       const fields = state.fields || {};
       if (stepId === "question") return hasText(fields.materialFactors) && hasText(fields.questionFactor);
       if (stepId === "hypothesis") return hasText(fields.hypothesis);
-      if (stepId === "plan") return hasText(fields.independentVariablePlan) && hasText(fields.dependentVariablePlan) && hasText(fields.controlVariablePlan) && isFlowCorrect() && hasText(fields.interferenceStagePlan) && hasValidNumber(fields.memorySeconds, 10, 180) && hasValidNumber(fields.restSeconds, 5, 240) && hasValidNumber(fields.interferenceSeconds, 5, 240);
+      if (stepId === "plan") return hasText(fields.independentVariablePlan) && hasText(fields.dependentVariablePlan) && hasText(fields.controlVariablePlan) && hasText(fields.interferenceStagePlan) && hasText(fields.participant) && hasText(fields.factor) && hasText(fields.difficulty) && (!isEmotionFactor(fields.factor) || hasText(fields.emotionCondition)) && hasValidNumber(fields.memorySeconds, 10, 180) && hasValidNumber(fields.restSeconds, 5, 240) && hasValidNumber(fields.interferenceSeconds, 5, 240);
       if (stepId === "evidence") return Array.isArray(state.records) && state.records.length > 0;
       if (stepId === "analysis") return Array.isArray(state.records) && state.records.length > 0 && (hasText(fields.headband) || hasStructuredMemberResult() || hasText(fields.teammate1Result) || hasText(fields.teammate2Result));
       if (stepId === "conclusion") return hasText(fields.conclusion);
@@ -913,52 +1170,63 @@
 
     function renderStep() {
       const step = steps[state.currentStep];
-      main.innerHTML = `<section class="panel"><div class="panel-head"><h2>${step.id === "posttest" ? step.title : `${state.currentStep + 1}. ${step.title}`}</h2><p>建议时长：${step.minutes}</p></div><div class="panel-body">${getStepHtml(step.id)}${renderNavigation()}</div></section>`;
+      main.classList.add("is-paged-step");
+      main.innerHTML = `<section class="panel"><div class="panel-head"><h2>${step.id === "posttest" ? step.title : `${state.currentStep + 1}. ${step.title}`}</h2><p>建议时长：${step.minutes}</p></div><div class="panel-body">${getStepHtml(step.id)}</div></section>`;
       applyLearningBehaviorMetadata();
       bindInputs();
       bindStepEvents(step.id);
     }
-    function renderNavigation() {
-      const nextButton = state.currentStep === steps.length - 1 ? "" : '<button class="btn" type="button" id="nextStep">下一步</button>';
-      return `<div class="actions"><button class="btn secondary" type="button" id="prevStep" ${state.currentStep === 0 ? "disabled" : ""}>上一步</button>${nextButton}</div>`;
-    }
     function getStepHtml(stepId) {
       return {
-        question: renderQuestionStep,
+        question: renderPagedQuestionStep,
         hypothesis: renderHypothesisStep,
-        plan: renderPlanStep,
-        evidence: renderEvidenceStep,
-        analysis: renderAnalysisStep,
-        conclusion: renderConclusionStep,
-        reflection: renderReflectionStep
+        plan: renderPagedPlanStep,
+        evidence: renderPagedEvidenceStep,
+        analysis: renderPagedAnalysisStep,
+        conclusion: renderPagedConclusionStep,
+        reflection: renderPagedReflectionStep
       ,
         posttest: renderPosttestStep}[stepId]();
     }
-    function renderPosttestStep() { return renderSurveyPage("posttest"); }
+    function renderPosttestStep() { return renderSurveyPage(); }
 
-    function renderSurveyPage(kind) {
-      return '<div class="survey-shell">' +
-        renderKnowledgeQuiz() +
-        '<div class="survey-intro"><h3>📝 学习收获调查</h3><p>请根据刚刚完成的科学探究活动，选择最符合你真实情况的选项。</p></div>' +
-        renderSurveyForm("postMeta", "meta") +
-        renderSurveyForm("cognitiveLoad", "load") +
-        renderSurveyForm("inquiryParticipation", "inquiry") +
-        renderSurveySummaryCards() +
-        renderPosttestExportArea() +
-      '</div>';
+    function renderSurveyPage() {
+      const pages = KNOWLEDGE_QUIZ.items.map((_, index) => ({
+        title: `案件知识验证：第 ${index + 1} 题`,
+        className: "quiz-page",
+        content: () => renderKnowledgeQuizItem(index)
+      }));
+      [["postMeta", "meta"], ["cognitiveLoad", "load"], ["inquiryParticipation", "inquiry"]].forEach(([surveyKey, defKey]) => {
+        const def = SURVEY_DEFS[defKey];
+        for (let startIndex = 0; startIndex < def.items.length; startIndex += 3) {
+          const endIndex = Math.min(startIndex + 3, def.items.length);
+          pages.push({
+            title: `${def.title}：第 ${startIndex + 1}–${endIndex} 题`,
+            className: "survey-page",
+            content: () => `<div class="survey-shell">${renderSurveyForm(surveyKey, defKey, startIndex, 3)}</div>`
+          });
+        }
+      });
+      pages.push({
+        title: "完成侦探小结",
+        className: "posttest-summary-page",
+        content: () => `${renderSurveySummaryCards()}<div class="survey-intro"><h3>完成案件调查</h3><p>确认知识验证和三份问卷均已完成后，生成记忆侦探报告。</p></div>${renderPosttestExportArea()}`
+      });
+      return renderPagedStep("posttest", pages);
     }
 
     function renderPosttestExportArea() {
       return '<div class="actions" style="justify-content:flex-end;"><button class="btn secondary" type="button" id="reviewReportBtn">生成记忆侦探报告</button></div>';
     }
 
-    function renderSurveyForm(surveyKey, defKey) {
+    function renderSurveyForm(surveyKey, defKey, startIndex = 0, pageSize = 3) {
       const def = SURVEY_DEFS[defKey];
       const answers = state.surveys?.current?.[surveyKey] || {};
       return '<section class="survey-card">' +
         '<div class="survey-card-head"><h4>' + def.title + '</h4><p class="survey-card-note">' + def.note + '</p></div>' +
         '<div class="survey-items">' +
-          def.items.map((item, index) => {
+          def.items.slice(startIndex, startIndex + pageSize).map((item, offset) => {
+            const index = startIndex + offset;
             const itemKey = 'q' + (index + 1);
             return '<div class="survey-item"><p>' + (index + 1) + '. ' + escapeHtml(item) + '</p>' +
               '<div class="survey-scale" role="radiogroup" aria-label="' + escapeHtml(item) + '">' +
@@ -984,24 +1252,17 @@
         '<div><strong>' + inquiry.answered + ' / ' + SURVEY_DEFS.inquiry.items.length + '</strong><span>探究参与完成进度</span></div>' +
       '</div>';
     }
-    function renderKnowledgeQuiz() {
+    function renderKnowledgeQuizItem(index) {
       const quiz = mergeKnowledgeQuiz(state.knowledgeQuiz);
-      const result = quiz.submitted
-        ? '<div class="quiz-result"><div>案件知识验证已完成，答案已锁定。</div></div>'
-        : '<div class="quiz-result"><div>请完成全部题目，生成报告时将统一提交。</div></div>';
-      return '<section class="quiz-section">' +
-        '<div class="survey-intro"><h3>🕵️ 案件知识验证</h3><p>请根据本次案件调查中获得的证据，完成下面的知识验证。</p></div>' +
-        KNOWLEDGE_QUIZ.items.map((item, index) => {
-          const itemKey = 'q' + (index + 1);
-          const selected = quiz.answers[itemKey] || '';
-          return '<article class="quiz-card"><h4>第' + (index + 1) + '题</h4><p>' + escapeHtml(item.question) + '</p>' +
-            '<div class="quiz-options">' + Object.keys(item.options).map((key) => {
-              const checked = selected === key;
-              return '<label class="quiz-option ' + (checked ? 'is-selected' : '') + '"><input type="radio" name="knowledge-' + itemKey + '" data-quiz-question="' + itemKey + '" value="' + key + '" ' + (checked ? 'checked' : '') + (quiz.submitted ? ' disabled' : '') + '><span>' + key + '　' + escapeHtml(item.options[key]) + '</span></label>';
-            }).join('') + '</div></article>';
-        }).join('') +
-        result +
-      '</section>';
+      const item = KNOWLEDGE_QUIZ.items[index];
+      const itemKey = 'q' + (index + 1);
+      const selectedAnswer = quiz.answers[itemKey] || '';
+      return '<section class="quiz-section"><div class="survey-intro"><h3>🕵️ 案件知识验证</h3><p>请根据本次案件调查中获得的证据作答。</p></div>' +
+        '<article class="quiz-card"><h4>第' + (index + 1) + '题</h4><p>' + escapeHtml(item.question) + '</p><div class="quiz-options">' +
+        Object.keys(item.options).map((key) => {
+          const checked = selectedAnswer === key;
+          return '<label class="quiz-option ' + (checked ? 'is-selected' : '') + '"><input type="radio" name="knowledge-' + itemKey + '" data-quiz-question="' + itemKey + '" value="' + key + '" ' + (checked ? 'checked' : '') + (quiz.submitted ? ' disabled' : '') + '><span>' + key + '　' + escapeHtml(item.options[key]) + '</span></label>';
+        }).join('') + '</div></article></section>';
     }
 
     function bindKnowledgeQuizInputs() {
@@ -1139,6 +1400,84 @@
       '</div>';
     }
 
+    function getStepPageIndex(stepId) {
+      return Number(stepPageIndexes[stepId] || 0);
+    }
+    function setStepPageIndex(stepId, pageIndex) {
+      stepPageIndexes[stepId] = pageIndex;
+    }
+    function getStepPageCount(stepId) {
+      const counts = {
+        question: 7,
+        hypothesis: 1,
+        plan: 7,
+        evidence: 1 + Math.ceil(getEvidenceRunGroups().length / getEvidencePageSize()),
+        analysis: 3,
+        conclusion: 2,
+        reflection: 3
+      };
+      if (stepId !== "posttest") return counts[stepId] || 1;
+      return KNOWLEDGE_QUIZ.items.length + Math.ceil(SURVEY_DEFS.meta.items.length / 3) + Math.ceil(SURVEY_DEFS.load.items.length / 3) + Math.ceil(SURVEY_DEFS.inquiry.items.length / 3) + 1;
+    }
+    function renderPagedStep(stepId, pages) {
+      const pageCount = pages.length;
+      const pageIndex = Math.min(Math.max(getStepPageIndex(stepId), 0), pageCount - 1);
+      setStepPageIndex(stepId, pageIndex);
+      const page = pages[pageIndex];
+      const isFirstExperimentPage = state.currentStep === 0 && pageIndex === 0;
+      const isFinalExperimentPage = state.currentStep === steps.length - 1 && pageIndex === pageCount - 1;
+      return `<div class="question-flow step-page-flow" data-paged-step="${escapeHtml(stepId)}" data-page-count="${pageCount}">
+        <div class="question-page-head"><h3>${page.title}</h3><span class="question-page-progress" aria-live="polite">${steps[state.currentStep].title} ${pageIndex + 1}/${pageCount}</span></div>
+        <div class="question-page-content step-page-content ${page.className || ""}">${page.content()}</div>
+        <div class="question-page-actions ${isFirstExperimentPage ? "is-first" : ""}">${isFirstExperimentPage ? "" : '<button class="btn secondary" type="button" id="stepPrevPage">上一页</button>'}${isFinalExperimentPage ? "" : '<button class="btn" type="button" id="stepNextPage">下一页</button>'}</div>
+      </div>`;
+    }
+    function changeStepPage(stepId, targetPage, pageCount) {
+      const currentPage = getStepPageIndex(stepId);
+      const target = Math.min(Math.max(targetPage, 0), pageCount - 1);
+      if (target === currentPage || stepPageTransitioning) return;
+      const content = main.querySelector(".question-page-content");
+      const reduceMotion = window.matchMedia?.("(prefers-reduced-motion: reduce)").matches;
+      const finish = () => {
+        setStepPageIndex(stepId, target);
+        stepPageTransitioning = false;
+        renderStep();
+      };
+      if (!content || reduceMotion) return finish();
+      stepPageTransitioning = true;
+      content.classList.add("is-leaving");
+      window.setTimeout(finish, 150);
+    }
+    function bindPagedStepEvents(stepId) {
+      const pageCount = getStepPageCount(stepId);
+      const pageIndex = getStepPageIndex(stepId);
+      document.getElementById("stepPrevPage")?.addEventListener("click", () => {
+        if (pageIndex > 0) return changeStepPage(stepId, pageIndex - 1, pageCount);
+        const previousStep = state.currentStep - 1;
+        if (previousStep < 0) return;
+        const previousStepId = steps[previousStep].id;
+        setStepPageIndex(previousStepId, getStepPageCount(previousStepId) - 1);
+        goToStep(previousStep);
+      });
+      document.getElementById("stepNextPage")?.addEventListener("click", () => {
+        if (pageIndex < pageCount - 1) changeStepPage(stepId, pageIndex + 1, pageCount);
+        else goNextStep();
+      });
+    }
+
+    function renderPagedQuestionStep() {
+      const pages = [
+        { title: "生活中的长时记忆干扰", className: "question-page-form", content: () => `<div class="question-intro-strip"><p>你有没有这样的经历：在回忆一篇课文时，开头和结尾记得很清楚，中间部分却比较模糊？长时记忆可能受到了干扰。</p><p>请先独立思考，再与小组讨论生活中可能干扰长时记忆的因素。</p>${renderPairedField("生活中想到的干扰因素", `<textarea data-field="lifeFactors" placeholder="请写下你想到的干扰因素">${escapeHtml(state.fields.lifeFactors)}</textarea>`, renderGroupTextarea("lifeFactors_group"))}</div>` },
+        { title: "阅读材料一：新旧记忆干扰", className: "question-page-material", content: () => `<article class="reading-card"><h4>前摄干扰与倒摄干扰</h4><p>在接受新信息时，大脑还储存着以前学习的信息。旧记忆对新记忆的干扰叫“前摄干扰”，新记忆对旧记忆的干扰叫“倒摄干扰”。</p><p>连续学习多个内容时，旧内容可能妨碍后续学习；学习新环境或新知识后，也可能更难回忆旧环境或旧知识的细节。</p></article>` },
+        { title: "阅读材料二：材料相似性", className: "question-page-material", content: () => `<article class="reading-card"><h4>相似记忆更容易互相干扰</h4><p>回忆信息时，如果大脑中存在许多相似记忆，更容易发生干扰。平常的一顿午餐可能很难回忆，而一次独特的饭菜往往更容易记住。</p><p>请思考：记忆材料和随后出现的材料越相似，回忆成绩可能发生什么变化？</p></article>` },
+        { title: "阅读材料三：情绪状态", className: "question-page-material", content: () => `<article class="reading-card"><h4>情绪也会影响记忆</h4><p>情绪状态会影响注意、编码与提取。过度紧张、悲伤或兴奋时，人可能把更多注意资源用于情绪体验，从而影响对材料的记忆。</p><p>通过比较不同情绪条件下的回忆结果，可以检验情绪状态是否造成长时记忆干扰。</p></article>` },
+        { title: "科学探究案例", className: "question-page-cases", content: () => renderInquiryCases() },
+        { title: "整理材料中的干扰因素", className: "question-page-form", content: () => `${renderInquiryScaffold("question")}${renderPairedField("材料中列出的干扰因素", `<textarea data-field="materialFactors" placeholder="请根据阅读材料自行填写">${escapeHtml(state.fields.materialFactors)}</textarea>`, renderGroupTextarea("materialFactors_group"))}` },
+        { title: "提出研究问题", className: "question-page-form", content: () => `<div class="panel"><div class="panel-head"><h3>确定小组研究问题</h3><p>从刚才整理的干扰因素中选择一个可测量的因素。</p></div><div class="panel-body"><div class="field"><label>研究问题（小组）</label><div class="form-grid"><input type="text" data-field="questionFactor" value="${escapeHtml(state.fields.questionFactor)}" placeholder="请输入干扰因素"><div class="readonly-value">会对长时记忆造成干扰吗？</div></div></div></div></div>` }
+      ];
+      return renderPagedStep("question", pages);
+    }
+
     function renderQuestionStep() {
       return `<div class="single-step-layout">
         <div class="question-intro-strip">
@@ -1170,53 +1509,55 @@
       </div>`;
     }
     function renderHypothesisStep() {
-      return `<div class="single-step-layout"><div class="panel"><div class="panel-head"><h3>研究假设</h3></div><div class="panel-body">${renderPairedField("研究假设", `<textarea data-field="hypothesis" placeholder="写下你自己对结果的预测">${escapeHtml(state.fields.hypothesis)}</textarea>`, renderGroupTextarea("hypothesis_group"))}</div></div><div class="panel"><div class="panel-head"><h3>研究假设小助手</h3></div><div class="panel-body">${renderInquiryScaffold("hypothesis")}${renderInquiryCases()}</div></div></div>`;
+      return renderPagedStep("hypothesis", [{
+        title: "提出研究假设",
+        className: "step-page-form hypothesis-page",
+        content: () => `<div class="single-step-layout"><div class="panel"><div class="panel-head"><h3>研究假设</h3><p>根据研究问题，简要预测改变干扰条件后记忆成绩会怎样变化。</p></div><div class="panel-body">${renderPairedField("研究假设", `<textarea data-field="hypothesis" placeholder="写下你自己对结果的预测">${escapeHtml(state.fields.hypothesis)}</textarea>`, renderGroupTextarea("hypothesis_group"))}</div></div></div>`
+      }]);
     }
-    const FLOW_STEP_CARDS = ["记忆", "休息", "测试", "倒摄干扰", "不相似干扰", "相似干扰", "中性情绪干扰", "极性情绪（愉悦/悲伤）干扰"];
-    const FLOW_ANSWERS = {
-      retroactive: { round1: ["记忆", "休息", "测试"], round2: ["记忆", "倒摄干扰", "测试"] },
-      similarity: { round1: ["记忆", "不相似干扰", "测试"], round2: ["记忆", "相似干扰", "测试"] },
-      emotion: { round1: ["记忆", "中性情绪干扰", "测试"], round2: ["记忆", "极性情绪（愉悦/悲伤）干扰", "测试"] }
-    };
-    function listsEqual(left, right) {
-      return Array.isArray(left) && Array.isArray(right) && left.length === right.length && left.every((item, index) => item === right[index]);
+    function renderPagedPlanStep() {
+      const factorOptions = Object.keys(MATERIAL_SETS).map((factor) => `<option value="${factor}" ${selected("factor", factor)}>${factor}</option>`).join("");
+      const showEmotionCondition = isEmotionFactor(state.fields.factor);
+      const pages = [
+        {
+          title: "实验材料一：倒摄干扰",
+          className: "plan-material-page",
+          content: () => `<div class="reading-card"><p class="material-lead">探究新学习内容是否会干扰旧知识的记忆。两种条件需要保持记忆材料难度与测试方式一致。</p><div class="comparison-grid"><article class="comparison-card"><h4>休息条件</h4><p>1. 学习记忆材料。</p><p>2. 安静休息，不学习新材料。</p><p>3. 回忆并输入目标材料。</p></article><article class="comparison-card"><h4>倒摄干扰条件</h4><p>1. 学习新的记忆材料。</p><p>2. 学习随后呈现的干扰材料。</p><p>3. 回忆并输入原目标材料。</p></article></div><p>如果两种条件得分差别不大，可以检查材料难度和干扰强度是否合适。</p></div>`
+        },
+        {
+          title: "实验材料二：相似性干扰",
+          className: "plan-material-page",
+          content: () => `<div class="reading-card"><p class="material-lead">比较干扰材料与记忆材料相似程度不同时的回忆表现。</p><div class="comparison-grid"><article class="comparison-card"><h4>低相似条件</h4><p>1. 学习记忆材料。</p><p>2. 学习与目标材料相似度较低的干扰材料。</p><p>3. 回忆并输入目标材料。</p></article><article class="comparison-card"><h4>高相似条件</h4><p>1. 学习等难度的新记忆材料。</p><p>2. 学习与目标材料更相似的干扰材料。</p><p>3. 回忆并输入目标材料。</p></article></div><p>每次测试都记录得分、正确率与反应时。</p></div>`
+        },
+        {
+          title: "实验材料三：情绪干扰",
+          className: "plan-material-page",
+          content: () => `<div class="reading-card"><p class="material-lead">通过视频诱发不同情绪状态，比较参与者随后完成记忆任务的效果。</p><div class="comparison-grid"><article class="comparison-card"><h4>中性情绪条件</h4><p>1. 观看中性视频。</p><p>2. 学习记忆材料并休息。</p><p>3. 回忆并输入目标材料。</p></article><article class="comparison-card"><h4>极性情绪条件</h4><p>1. 观看愉悦或悲伤视频。</p><p>2. 学习等难度记忆材料并休息。</p><p>3. 回忆并输入目标材料。</p></article></div><p>除情绪视频外，其他时间与任务条件应保持一致。</p></div>`
+        },
+        {
+          title: "实验材料四：头环使用说明",
+          className: "headband-page",
+          content: () => `<article class="reading-card"><h4>头环工作原理与注意事项</h4><p>头环会在电脑上生成 3D 脑激活图。红—黄色代表脑区活动较强，蓝—冷色代表抑制或变化较弱，可辅助观察不同实验阶段的大脑活动。</p><p>使用时保持额头清洁、电极贴片贴紧；实验过程中保持专注，并记录记忆、干扰和测试阶段的颜色变化。</p><button class="btn secondary headband-guide-trigger" type="button" id="openHeadbandGuide">点击查看头环工作原理图</button></article><div class="headband-modal" id="headbandGuideModal" role="dialog" aria-modal="true" aria-label="头环工作原理" tabindex="-1"><div class="headband-modal-card"><button class="btn secondary headband-modal-close" type="button" id="closeHeadbandGuide" aria-label="关闭头环工作原理图">×</button><picture><source srcset="assets/headband-guide.webp" type="image/webp"><img src="assets/headband-guide.png" alt="头环工作原理示意图" width="1536" height="1024"></picture></div></div>`
+        },
+        {
+          title: "实验流程",
+          className: "plan-flow-page",
+          content: () => `<div class="single-step-layout"><div class="panel"><div class="panel-head"><h3>四个实验阶段</h3><p>正式测量会按固定材料流程推进。</p></div><div class="panel-body"><div class="phase-grid"><article class="phase-card"><h4>记忆阶段</h4><p>安静观察并尽可能记住目标材料。</p></article><article class="phase-card"><h4>休息阶段</h4><p>闭眼安静休息，不刻意复述材料。</p></article><article class="phase-card"><h4>干扰阶段</h4><p>按所选因素完成新材料学习或情绪诱发。</p></article><article class="phase-card"><h4>测试阶段</h4><p>在无提示情况下输入记住的目标材料。</p></article></div><div class="field" style="margin-top:14px"><label>请补充干扰阶段参与者需要做的事情</label><textarea data-field="interferenceStagePlan" placeholder="请写出干扰阶段参与者需要做的事">${escapeHtml(state.fields.interferenceStagePlan)}</textarea></div></div></div></div>`
+        },
+        {
+          title: "变量设计",
+          className: "plan-variables-page",
+          content: () => `<div class="single-step-layout"><div class="panel"><div class="panel-head"><h3>变量设计</h3><p>请根据小组选择的探究因素填写变量。</p></div><div class="panel-body"><div class="variable-table-wrap"><table class="variable-table"><tbody><tr><td>自变量（需要改变的条件）</td><td><textarea data-field="independentVariablePlan">${escapeHtml(state.fields.independentVariablePlan)}</textarea></td></tr><tr><td>因变量（观察和记录的变化）</td><td><textarea data-field="dependentVariablePlan">${escapeHtml(state.fields.dependentVariablePlan)}</textarea></td></tr><tr><td>无关变量（必须保持不变的条件）</td><td><textarea data-field="controlVariablePlan">${escapeHtml(state.fields.controlVariablePlan)}</textarea></td></tr></tbody></table></div></div></div></div>`
+        },
+        {
+          title: "实验计划",
+          className: "plan-parameters-page",
+          content: () => `<div class="single-step-layout"><div class="panel"><div class="panel-head"><h3>实验计划参数</h3><p>这些参数会直接用于搜集证据阶段。</p></div><div class="panel-body"><div class="form-grid"><div class="field"><label>实验类型</label><select data-field="factor">${factorOptions}</select></div><div class="field"><label>参与者编号</label><input type="text" data-field="participant" value="${escapeHtml(state.fields.participant)}" placeholder="请输入参与者编号"></div><div class="field"><label>材料难度</label><select data-field="difficulty"><option value="easy" ${selected("difficulty","easy")}>初级</option><option value="medium" ${selected("difficulty","medium")}>中级</option><option value="hard" ${selected("difficulty","hard")}>高级</option></select></div>${showEmotionCondition ? `<div class="field"><label>情绪视频条件</label><select data-field="emotionCondition"><option value="">请选择情绪视频条件</option><option value="中性" ${selected("emotionCondition","中性")}>中性</option><option value="悲伤" ${selected("emotionCondition","悲伤")}>悲伤</option><option value="愉悦" ${selected("emotionCondition","愉悦")}>愉悦</option></select></div>` : ""}<div class="field"><label>记忆时间（秒）</label><input type="number" min="10" max="180" data-field="memorySeconds" value="${escapeHtml(state.fields.memorySeconds)}"></div><div class="field"><label>休息时间（秒）</label><input type="number" min="5" max="240" data-field="restSeconds" value="${escapeHtml(state.fields.restSeconds)}"></div><div class="field"><label>干扰时间（秒）</label><input type="number" min="5" max="240" data-field="interferenceSeconds" value="${escapeHtml(state.fields.interferenceSeconds)}"></div><div class="field"><label>固定材料条件数</label><div class="readonly-value">2 个对照条件</div></div></div></div></div></div>`
+        }
+      ];
+      return renderPagedStep("plan", pages);
     }
-    function isFlowCorrect() {
-      const factor = state.fields.interferenceFactor;
-      const answer = FLOW_ANSWERS[factor];
-      if (!answer) return false;
-      return listsEqual(state.fields.flowRound1, answer.round1) && listsEqual(state.fields.flowRound2, answer.round2);
-    }
-    function renderFlowZone(roundKey, title) {
-      const items = normalizeFlowList(state.fields[roundKey]);
-      const cards = items.length ? items.map((item, index)=>`<span class="flow-card" draggable="true" data-flow-card="${escapeHtml(item)}" data-source="${roundKey}" data-index="${index}">${escapeHtml(item)}<button type="button" data-flow-remove="${roundKey}" data-index="${index}" aria-label="移回卡片池">×</button></span>`).join("") : `<span class="flow-empty">空白排序条</span>`;
-      return `<div class="flow-round"><h4>${title}</h4><div class="flow-dropzone" data-flow-zone="${roundKey}">${cards}</div><div class="flow-actions"><button class="btn secondary" type="button" data-flow-clear="${roundKey}">清空${title}</button></div></div>`;
-    }
-    function renderFlowPool() {
-      const cards = FLOW_STEP_CARDS.map((item)=>`<span class="flow-card" draggable="true" data-flow-card="${escapeHtml(item)}" data-source="pool">${escapeHtml(item)}<button type="button" data-flow-add="flowRound1" data-card="${escapeHtml(item)}">一轮</button><button type="button" data-flow-add="flowRound2" data-card="${escapeHtml(item)}">二轮</button></span>`).join("");
-      return `<div class="flow-card-pool"><h4>步骤卡片池</h4><div class="flow-pool" data-flow-zone="pool">${cards}</div></div>`;
-    }
-    function renderExperimentFlowCard() {
-      const factor = state.fields.interferenceFactor;
-      const flowReady = isFlowCorrect() || isDeveloperMode();
-      const feedback = !flowReady && (state.fields.flowRound1.length || state.fields.flowRound2.length) ? `<p class="flow-feedback">实验流程还不正确，请根据你选择的干扰因素重新调整顺序。</p>` : "";
-      return `<div class="panel"><div class="panel-head"><h3>实验流程</h3><p>选择干扰因素后，将步骤卡片拖入两轮实验并排序。</p></div><div class="panel-body flow-designer">
-        <div class="field"><label>请选择本次实验的干扰因素</label><select id="interferenceFactorSelect"><option value="">请选择干扰因素</option><option value="retroactive" ${factor === "retroactive" ? "selected" : ""}>倒摄干扰</option><option value="similarity" ${factor === "similarity" ? "selected" : ""}>相似性干扰</option><option value="emotion" ${factor === "emotion" ? "selected" : ""}>情绪状态干扰</option></select></div>
-        <div class="flow-rounds">${renderFlowZone("flowRound1", "第一轮")}${renderFlowZone("flowRound2", "第二轮")}</div>
-        ${renderFlowPool()}
-        ${feedback}
-        <details class="material-details phase-details ${flowReady ? "" : "is-hidden"}" open><summary>四个阶段具体要做的事情</summary><div class="material-details-body">
-          <p>记忆阶段</p>
-          <p>呈现记忆材料，参与者不能发出声音或动笔记录，只能观察并尽可能多地记住内容。</p>
-          <p>休息阶段</p>
-          <p>参与者安静地闭眼休息，既不刻意地想什么，也不刻意地不想什么。</p>
-          <p>干扰阶段（请根据你们选择的干扰因素，补全参与者需要做的事）：</p>
-          <div class="field"><textarea data-field="interferenceStagePlan" placeholder="请写出干扰阶段参与者需要做的事">${escapeHtml(state.fields.interferenceStagePlan)}</textarea></div>
-          <p>测试阶段</p>
-          <p>在没有任何提示的情况下，参与者回忆并尽可能多地在屏幕上写出记忆材料的内容。</p>
-        </div></details>
-      </div></div>`;
-    }
+
     function renderPlanStep() {
       const factorOptions = Object.keys(MATERIAL_SETS).map((factor) => `<option value="${factor}" ${selected("factor", factor)}>${factor}</option>`).join("");
       const showEmotionCondition = isEmotionFactor(state.fields.factor);
@@ -1232,7 +1573,6 @@
             </table>
           </div>
         </div></div>
-        ${renderExperimentFlowCard()}
         <div class="panel"><div class="panel-head"><h3>实验材料</h3></div><div class="panel-body reading-list">
           <details class="material-details" open><summary>实验材料一：倒摄干扰的实验设计（参考）</summary><div class="material-details-body">
             <p>我们可以通过以下方式探究新学习内容是否会干扰旧知识的记忆。参与者需要进行两轮“记忆阶段—休息/干扰阶段—测试阶段”的完整操作。</p>
@@ -1301,6 +1641,52 @@
         </div></div></div>
       </div>`;
     }
+    function getEvidenceRunGroups() {
+      const groups = new Map();
+      (state.records || []).forEach((record, index) => {
+        const key = record.runId || `legacy:${record.participant || ""}:${record.round || index + 1}:${record.createdAt || ""}`;
+        if (!groups.has(key)) groups.set(key, { key, firstIndex: index, records: [] });
+        groups.get(key).records.push(record);
+      });
+      return Array.from(groups.values()).sort((left, right) => left.firstIndex - right.firstIndex);
+    }
+    function getEvidencePageSize() {
+      return window.matchMedia?.("(max-width: 640px)").matches ? 1 : 3;
+    }
+    function getNextEvidenceRound() {
+      const rounds = getSelectedDifficultySet().rounds || [];
+      if (!rounds.length) return 1;
+      const participant = state.fields.participant || state.studentId;
+      const completed = (state.records || []).filter((record) => record.participant === participant && record.factor === state.fields.factor && record.difficulty === state.fields.difficulty).length;
+      return rounds[completed % rounds.length]?.round || rounds[0].round;
+    }
+    function getNextEvidenceRunNumber() {
+      const participant = state.fields.participant || state.studentId;
+      return (state.records || []).filter((record) => record.participant === participant).length + 1;
+    }
+    function renderEvidenceSetup() {
+      const pack = getSelectedMaterialPack();
+      const set = getSelectedDifficultySet();
+      const round = getNextEvidenceRound();
+      const definition = (set.rounds || []).find((item) => Number(item.round) === Number(round)) || (set.rounds || [])[0] || {};
+      return `<div class="panel"><div class="panel-head"><h3>长时记忆干扰材料化实验</h3><p>参数来自制定计划，当前页面仅用于核对和开始测量。</p></div><div class="panel-body"><div class="readonly-plan-grid"><div class="field"><label>参与者</label><div class="readonly-value">${escapeHtml(state.fields.participant || state.studentId)}</div></div><div class="field"><label>自动测量序号</label><div class="readonly-value">第 ${getNextEvidenceRunNumber()} 次</div></div><div class="field"><label>当前固定条件</label><div class="readonly-value">${escapeHtml(definition.condition || `条件 ${round}`)}</div></div><div class="field"><label>实验类型</label><div class="readonly-value">${escapeHtml(state.fields.factor)}</div></div><div class="field"><label>材料与难度</label><div class="readonly-value">${escapeHtml(set.materialType)} · ${escapeHtml(pack.difficultyLabels[state.fields.difficulty] || state.fields.difficulty)}</div></div><div class="field"><label>阶段时间</label><div class="readonly-value">记忆 ${escapeHtml(state.fields.memorySeconds)}s · 休息 ${escapeHtml(state.fields.restSeconds)}s · 干扰 ${escapeHtml(state.fields.interferenceSeconds)}s</div></div>${isEmotionFactor(state.fields.factor) ? `<div class="field"><label>情绪条件</label><div class="readonly-value">${escapeHtml(state.fields.emotionCondition)}</div></div>` : ""}</div><p class="evidence-instructions">开始后进入低干扰全屏界面。按提示完成任务；提交后系统自动保存本次记录。</p><div class="actions"><button class="btn secondary" type="button" id="editPlanBtn">返回制定计划修改</button><button class="btn" type="button" id="startRunBtn">开始测量</button></div><div class="experiment-game evidence-game-shell"><div class="stage"><div class="stage-meta"><span id="phaseStatus">准备开始</span><span id="conditionStatus">${escapeHtml(state.fields.factor)}</span></div><div id="taskCard" class="task-card"><h3>长时记忆干扰实验</h3><p>点击“开始测量”进入固定材料流程。</p></div><div id="answerBox" class="answer-box"><label for="recallInput">尽可能完整写出刚才记忆过的目标材料</label><textarea id="recallInput" placeholder="可用空格、逗号或换行分隔"></textarea><button class="btn" type="button" id="submitRecallBtn" style="width:100%;margin-top:12px;">提交本次结果</button></div><div class="timer"><div id="timerFill" class="timer-fill"></div></div></div><aside class="game-side"><div class="stat-grid"><div class="mini-stat"><span>阶段</span><b id="phaseStat">--</b></div><div class="mini-stat"><span>剩余时间</span><b id="timeStat">--</b></div><div class="mini-stat"><span>得分</span><b id="correctStat">0</b></div><div class="mini-stat"><span>正确率</span><b id="accuracyStat">0%</b></div></div><div class="game-log"><table><thead><tr><th>序号</th><th>条件</th><th>得分</th><th>正确率</th></tr></thead><tbody id="gameLogBody"><tr><td colspan="4">尚未开始本次测量</td></tr></tbody></table></div></aside></div><div id="focusPrep" class="focus-prep" role="dialog" aria-modal="true"><div class="focus-prep-card"><h3>准备开始材料化实验</h3><p>页面将切换到低干扰模式，并尝试进入全屏。</p><p>测试阶段请根据提示输入回忆内容。</p><button class="btn" type="button" id="confirmStartRunBtn">进入实验</button><button class="btn secondary" type="button" id="cancelStartRunBtn">取消</button></div></div></div></div>`;
+    }
+    function renderEvidenceResultCard(group, displayIndex) {
+      const record = group.records[0] || {};
+      const validity = record.score === undefined && record.correctCount === undefined ? "记录不完整" : "有效";
+      return `<article class="run-result-card"><h4>测量 ${displayIndex} · ${escapeHtml(record.condition || "历史记录")}</h4><dl><dt>参与者</dt><dd>${escapeHtml(record.participant || "--")}</dd><dt>实验类型</dt><dd>${escapeHtml(record.factor || "--")}</dd><dt>材料/难度</dt><dd>${escapeHtml(record.materialType || "--")} / ${escapeHtml(record.difficultyLabel || record.difficulty || "--")}</dd><dt>固定条件</dt><dd>${escapeHtml(record.condition || "--")}</dd><dt>时间参数</dt><dd>记忆 ${escapeHtml(record.memorySeconds || "--")}s，休息 ${escapeHtml(record.restSeconds || "--")}s，干扰 ${escapeHtml(record.interferenceSeconds || "--")}s</dd><dt>回忆内容</dt><dd>${escapeHtml(record.recall || "未填写")}</dd><dt>命中内容</dt><dd>${escapeHtml(record.correctItems || "无")}</dd><dt>结果</dt><dd>${escapeHtml(record.score ?? record.correctCount ?? "--")} / ${escapeHtml(record.fullScore || "--")}，${escapeHtml(record.accuracy ?? "--")}%</dd><dt>反应时</dt><dd>${escapeHtml(record.reactionTime || "--")} ms</dd><dt>有效性</dt><dd>${validity}</dd><dt>记录时间</dt><dd>${escapeHtml(record.createdAt || "--")}</dd></dl></article>`;
+    }
+    function renderPagedEvidenceStep() {
+      const groups = getEvidenceRunGroups();
+      const pageSize = getEvidencePageSize();
+      const pages = [{ title: groups.length ? "继续搜集证据" : "开始搜集证据", className: "evidence-page", content: renderEvidenceSetup }];
+      for (let index = 0; index < groups.length; index += pageSize) {
+        const pageGroups = groups.slice(index, index + pageSize);
+        pages.push({ title: `测量结果 ${Math.floor(index / pageSize) + 1}/${Math.ceil(groups.length / pageSize)}`, className: "evidence-results-page", content: () => `<div class="run-results-grid">${pageGroups.map((group, offset) => renderEvidenceResultCard(group, index + offset + 1)).join("")}</div>` });
+      }
+      return renderPagedStep("evidence", pages);
+    }
+
     function renderEvidenceStep() {
       const pack = getSelectedMaterialPack();
       const set = getSelectedDifficultySet();
@@ -1358,6 +1744,31 @@
     function getHeadbandSummarySheet() {
       return ["头环数据摘要", [["项目","内容"],["上传文件名",""],["头环观察记录",state.fields.headband || ""],["记录内头环观察",state.records.map((record)=>record.headband).filter(Boolean).join("；")],["数据摘要",state.fields.headband || ""],["统计结果",""]]];
     }
+    function renderPagedAnalysisStep() {
+      const summary = summarizeRecords();
+      const rows = summary.map((item)=>`<tr><td>${escapeHtml(item.condition)}</td><td>${item.count}</td><td>${item.avgCorrect}</td><td>${item.avgAccuracy}%</td><td>${item.avgRt ? item.avgRt + "ms" : "--"}</td></tr>`).join("");
+      const chart = summary.length ? summary.map((item)=>`<div class="bar-row"><div>${escapeHtml(item.condition)}</div><div class="bar-track"><div class="bar-fill" style="width:${item.avgAccuracy}%"></div></div><div>${item.avgAccuracy}%</div></div>`).join("") : `<div class="empty-state">完成实验后会自动生成条件对比图。</div>`;
+      return renderPagedStep("analysis", [
+        { title: "条件汇总", className: "analysis-summary-page", content: () => `<div class="panel"><div class="panel-body">${summary.length ? `<table><thead><tr><th>条件</th><th>次数</th><th>平均正确数</th><th>平均正确率</th><th>平均反应时</th></tr></thead><tbody>${rows}</tbody></table>` : `<div class="empty-state">还没有实验数据。请先完成至少一次测量。</div>`}</div></div>` },
+        { title: "组员结果记录", className: "analysis-team-page", content: () => renderTeamResultTable(summary) },
+        { title: "结果图表与头环记录", className: "analysis-chart-page", content: () => `<div class="panel"><div class="panel-body"><div class="chart">${chart}</div><div class="field" style="margin-top:18px;"><label>头环观察记录</label><textarea data-field="headband" placeholder="记录不同条件下头环颜色、激活范围和强度的变化">${escapeHtml(state.fields.headband)}</textarea></div></div></div>` }
+      ]);
+    }
+    function renderPagedConclusionStep() {
+      return renderPagedStep("conclusion", [
+        { title: "判断证据是否支持假设", className: "step-page-form", content: () => `<div class="panel"><div class="panel-body">${renderPairedField("结论是否支持假设", `<select data-field="support"><option value="是" ${selected("support","是")}>是</option><option value="否" ${selected("support","否")}>否</option><option value="不确定" ${selected("support","不确定")}>不确定</option></select>`, renderGroupSelect("support_group", ["是","否","不确定"]))}${renderPairedField("结论是否可信", `<select data-field="credibility"><option value="是" ${selected("credibility","是")}>是</option><option value="否" ${selected("credibility","否")}>否</option><option value="不确定" ${selected("credibility","不确定")}>不确定</option></select>`, renderGroupSelect("credibility_group", ["是","否","不确定"]))}</div></div>` },
+        { title: "写出实验结论", className: "step-page-form", content: () => `<div class="panel"><div class="panel-head"><h3>回到实验数据</h3><p>说明哪种条件正确率更低，以及这是否表明该因素造成了更强干扰。</p></div><div class="panel-body">${renderPairedField("结论", `<textarea data-field="conclusion" placeholder="通过实验，我得到以下结论">${escapeHtml(state.fields.conclusion)}</textarea>`, renderGroupTextarea("conclusion_group"))}</div></div>` }
+      ]);
+    }
+    function renderPagedReflectionStep() {
+      const questions = [
+        ["实验设计有什么优点？", "strengths", "strengths_group", "可以从变量控制、材料设置和数据记录方式等方面思考。"],
+        ["还有哪些可以改进？", "improvements", "improvements_group", "可以从干扰条件、时间设置和数据充分性等方面思考。"],
+        ["本实验结论对学习有什么启发？", "learningInsight", "learningInsight_group", "联系复习安排、材料相似性、情绪状态或学习环境。"]
+      ];
+      return renderPagedStep("reflection", questions.map(([title, field, groupField, placeholder]) => ({ title, className: "reflection-page", content: () => `<div class="panel"><div class="panel-body">${renderPairedField(title, `<textarea data-field="${field}" placeholder="${placeholder}">${escapeHtml(state.fields[field])}</textarea>`, renderGroupTextarea(groupField))}</div></div>` })));
+    }
+
     function renderAnalysisStep() {
       const summary = summarizeRecords();
       const rows = summary.map((item)=>`<tr><td>${escapeHtml(item.condition)}</td><td>${item.count}</td><td>${item.avgCorrect}</td><td>${item.avgAccuracy}%</td><td>${item.avgRt ? item.avgRt + "ms" : "--"}</td></tr>`).join("");
@@ -1400,88 +1811,32 @@
       if (field === "factor" && !isEmotionFactor(state.fields.factor)) {
         state.fields.emotionCondition = "";
       }
+      if (field === "factor") syncLegacyFlowFields();
       saveState();
       if (field === "factor") renderApp();
+    }
+    function bindHeadbandModalEvents() {
+      const modal = document.getElementById("headbandGuideModal");
+      const openButton = document.getElementById("openHeadbandGuide");
+      const closeButton = document.getElementById("closeHeadbandGuide");
+      if (!modal || !openButton || !closeButton) return;
+      const closeModal = () => {
+        modal.classList.remove("is-visible");
+        openButton.focus();
+      };
+      openButton.addEventListener("click", () => { modal.classList.add("is-visible"); modal.focus(); });
+      closeButton.addEventListener("click", closeModal);
+      modal.addEventListener("click", (event) => { if (event.target === modal) closeModal(); });
+      modal.addEventListener("keydown", (event) => { if (event.key === "Escape") closeModal(); });
     }
     function bindStepEvents(stepId) {
       bindSurveyInputs();
       bindKnowledgeQuizInputs();
-      const prev = document.getElementById("prevStep");
-      const next = document.getElementById("nextStep");
-      if (prev) prev.addEventListener("click", () => { if (state.currentStep > 0) goToStep(state.currentStep - 1); });
-      if (next) next.addEventListener("click", goNextStep);
-      if (stepId === "plan") bindFlowDesigner();
+      bindPagedStepEvents(stepId);
+      if (stepId === "plan") bindHeadbandModalEvents();
       if (stepId === "evidence") bindGameEvents();
       const reviewReport = document.getElementById("reviewReportBtn");
       if (reviewReport) reviewReport.addEventListener("click", () => generateReviewReport("interference"));
-    }
-    function bindFlowDesigner() {
-      const factorSelect = document.getElementById("interferenceFactorSelect");
-      if (factorSelect) {
-        factorSelect.addEventListener("change", () => {
-          state.fields.interferenceFactor = factorSelect.value;
-          state.fields.flowRound1 = [];
-          state.fields.flowRound2 = [];
-          saveState();
-          renderApp();
-        });
-      }
-      main.querySelectorAll("[data-flow-add]").forEach((button)=>{
-        button.addEventListener("click", () => moveFlowCard(button.dataset.card, "pool", button.dataset.flowAdd));
-      });
-      main.querySelectorAll("[data-flow-remove]").forEach((button)=>{
-        button.addEventListener("click", () => removeFlowCard(button.dataset.flowRemove, Number(button.dataset.index)));
-      });
-      main.querySelectorAll("[data-flow-clear]").forEach((button)=>{
-        button.addEventListener("click", () => {
-          state.fields[button.dataset.flowClear] = [];
-          saveState();
-          renderApp();
-        });
-      });
-      main.querySelectorAll("[data-flow-card]").forEach((card)=>{
-        card.addEventListener("dragstart", (event) => {
-          event.dataTransfer.setData("text/plain", JSON.stringify({ card: card.dataset.flowCard, source: card.dataset.source, index: card.dataset.index || "" }));
-        });
-      });
-      main.querySelectorAll("[data-flow-zone]").forEach((zone)=>{
-        zone.addEventListener("dragover", (event) => {
-          event.preventDefault();
-          zone.classList.add("is-over");
-        });
-        zone.addEventListener("dragleave", () => zone.classList.remove("is-over"));
-        zone.addEventListener("drop", (event) => {
-          event.preventDefault();
-          zone.classList.remove("is-over");
-          let payload = null;
-          try { payload = JSON.parse(event.dataTransfer.getData("text/plain")); } catch (error) {}
-          if (!payload) return;
-          moveFlowCard(payload.card, payload.source, zone.dataset.flowZone, payload.index);
-        });
-      });
-    }
-    function moveFlowCard(card, source, target, sourceIndex) {
-      if (!card || target === "pool") {
-        if (source && source !== "pool") removeFlowCard(source, Number(sourceIndex));
-        return;
-      }
-      if (!["flowRound1", "flowRound2"].includes(target)) return;
-      if (source && source !== "pool") removeFlowCard(source, Number(sourceIndex), false);
-      state.fields.flowRound1 = normalizeFlowList(state.fields.flowRound1);
-      state.fields.flowRound2 = normalizeFlowList(state.fields.flowRound2);
-      state.fields[target].push(card);
-      saveState();
-      renderApp();
-    }
-    function removeFlowCard(roundKey, index, rerender = true) {
-      if (!["flowRound1", "flowRound2"].includes(roundKey)) return;
-      const items = normalizeFlowList(state.fields[roundKey]);
-      if (Number.isInteger(index) && index >= 0) items.splice(index, 1);
-      state.fields[roundKey] = items;
-      if (rerender) {
-        saveState();
-        renderApp();
-      }
     }
     async function generateReviewReport(activityType) {
       if (!isSurveyStepComplete("posttest")) {
@@ -1507,10 +1862,16 @@
       });
     }
     function bindGameEvents() {
-      document.getElementById("startRunBtn").addEventListener("click", showFocusPrep);
-      document.getElementById("confirmStartRunBtn").addEventListener("click", startRun);
-      document.getElementById("cancelStartRunBtn").addEventListener("click", hideFocusPrep);
-      document.getElementById("submitRecallBtn").addEventListener("click", submitRecall);
+      const startButton = document.getElementById("startRunBtn");
+      if (!startButton) return;
+      startButton.addEventListener("click", showFocusPrep);
+      document.getElementById("confirmStartRunBtn")?.addEventListener("click", startRun);
+      document.getElementById("cancelStartRunBtn")?.addEventListener("click", hideFocusPrep);
+      document.getElementById("submitRecallBtn")?.addEventListener("click", submitRecall);
+      document.getElementById("editPlanBtn")?.addEventListener("click", () => {
+        setStepPageIndex("plan", getStepPageCount("plan") - 1);
+        goToStep(steps.findIndex((step) => step.id === "plan"));
+      });
       updateGameUi();
     }
     function showFocusPrep() { document.getElementById("focusPrep").classList.add("is-visible"); }
@@ -1518,15 +1879,12 @@
     function startRun() {
       hideFocusPrep();
       clearTimers();
-      const round = Number(document.getElementById("roundSelect").value);
-      const participant = document.getElementById("participantInput").value.trim() || state.fields.participant || state.studentId;
-      const emotionSelect = document.getElementById("emotionConditionSelect");
-      state.fields.participant = participant;
-      if (emotionSelect) state.fields.emotionCondition = emotionSelect.value;
+      const round = getNextEvidenceRound();
+      const participant = state.fields.participant || state.studentId;
       saveState();
       const pack = getSelectedMaterialPack();
       const set = getSelectedDifficultySet();
-      const roundMaterial = getRoundMaterial(round);
+      const roundMaterial = getRoundMaterial(round, participant);
       const videoCondition = isEmotionFactor(state.fields.factor) ? (state.fields.emotionCondition || "中性") : "";
       session = { id: crypto.randomUUID ? crypto.randomUUID() : String(Date.now()), participant, round, factor: state.fields.factor, materialSource: pack.source, materialType: set.materialType, difficulty: state.fields.difficulty, difficultyLabel: pack.difficultyLabels[state.fields.difficulty] || state.fields.difficulty, condition: isEmotionFactor(state.fields.factor) ? `${videoCondition}情绪` : roundMaterial.condition, videoCondition, videoSrc: videoCondition ? getVideoSrc(videoCondition) : "", memoryItems: roundMaterial.memory, interferenceItems: roundMaterial.interference || [], instruction: roundMaterial.instruction, interferenceInstruction: roundMaterial.interferenceInstruction, scoreRule: set.scoreRule, fullScore: set.fullScore, phase: isEmotionFactor(state.fields.factor) ? "video" : "memory", startedAt: new Date().toISOString(), recallStartedAt: 0 };
       enterFocusMode();
@@ -1539,9 +1897,56 @@
       const pack = getSelectedMaterialPack();
       return pack.sets[state.fields.difficulty] || pack.sets.medium || pack.sets.easy;
     }
-    function getRoundMaterial(roundNumber) {
+    function splitRecordedItems(value) {
+      if (Array.isArray(value)) return value.map(String);
+      return String(value || "").split("；").map((item) => item.trim()).filter(Boolean);
+    }
+    function sameMaterialItems(left, right) {
+      const leftItems = splitRecordedItems(left);
+      const rightItems = splitRecordedItems(right);
+      return leftItems.length === rightItems.length && leftItems.every((item, index) => item === rightItems[index]);
+    }
+    function findVariantIndex(roundDefinition, record) {
+      return roundDefinition.variants.findIndex((variant) =>
+        sameMaterialItems(record.memoryItems, variant.memory) && sameMaterialItems(record.interferenceItems, variant.interference || [])
+      );
+    }
+    function chooseRandom(items) {
+      return items[Math.floor(Math.random() * items.length)];
+    }
+    function selectMaterialVariant(set, roundDefinition, participant) {
+      const matchingRecords = (state.records || []).filter((record) =>
+        String(record.participant || "") === String(participant || "") &&
+        record.factor === state.fields.factor &&
+        record.difficulty === state.fields.difficulty
+      );
+      const currentRoundRecords = matchingRecords.filter((record) => Number(record.round) === Number(roundDefinition.round));
+      const usedIndexes = new Set(currentRoundRecords.map((record) => findVariantIndex(roundDefinition, record)).filter((index) => index >= 0));
+      const oppositeRound = set.rounds.find((item) => Number(item.round) !== Number(roundDefinition.round));
+      const oppositeRecord = matchingRecords.slice().reverse().find((record) => Number(record.round) === Number(oppositeRound?.round));
+      if (oppositeRound && oppositeRecord) {
+        const pairedIndex = findVariantIndex(oppositeRound, oppositeRecord);
+        if (pairedIndex >= 0 && !usedIndexes.has(pairedIndex)) return roundDefinition.variants[pairedIndex];
+      }
+      const unusedIndexes = roundDefinition.variants.map((_, index) => index).filter((index) => !usedIndexes.has(index));
+      if (unusedIndexes.length) return roundDefinition.variants[chooseRandom(unusedIndexes)];
+      const usageCounts = roundDefinition.variants.map((_, index) => currentRoundRecords.filter((record) => findVariantIndex(roundDefinition, record) === index).length);
+      const minimumUsage = Math.min(...usageCounts);
+      const leastUsedIndexes = usageCounts.map((count, index) => count === minimumUsage ? index : -1).filter((index) => index >= 0);
+      return roundDefinition.variants[chooseRandom(leastUsedIndexes)];
+    }
+    function getRoundMaterial(roundNumber, participant) {
       const set = getSelectedDifficultySet();
-      return set.rounds.find((item) => Number(item.round) === Number(roundNumber)) || set.rounds[0];
+      const roundDefinition = set.rounds.find((item) => Number(item.round) === Number(roundNumber)) || set.rounds[0];
+      const variant = selectMaterialVariant(set, roundDefinition, participant);
+      return {
+        round: roundDefinition.round,
+        condition: roundDefinition.condition,
+        memory: variant.memory.slice(),
+        interference: (variant.interference || []).slice(),
+        instruction: roundDefinition.instruction,
+        interferenceInstruction: roundDefinition.interferenceInstruction
+      };
     }
     function getVideoSrc(condition) {
       const pack = getSelectedMaterialPack();
@@ -1550,7 +1955,7 @@
     function renderMaterialItems(items) {
       return `<div class="material-block">${items.map((item)=>`<div class="material-line">${escapeHtml(item)}</div>`).join("")}</div>`;
     }
-    // 固定材料包模式不再随机抽取核心材料。
+    // 从预先审核的平行材料组中抽取，实验流程和记录结构保持不变。
     function runPhase(phase) {
       if (!session) return;
       clearTimers();
@@ -1695,7 +2100,8 @@
       session = null;
       clearTimers();
       exitFocusMode();
-      updateGameUi();
+      setStepPageIndex("evidence", getStepPageCount("evidence") - 1);
+      renderApp();
       alert(`${finished.condition} 已保存，得分 ${score}/${fullScore}，正确率 ${accuracy}%。`);
     }
     function calculateRecallScore(recall, memoryItems, fullScore) {
