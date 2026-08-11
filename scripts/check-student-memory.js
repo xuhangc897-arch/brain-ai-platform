@@ -86,8 +86,9 @@ for (const experimentId of ["memory", "nback", "interference", "strategies"]) {
   assert.strictEqual(bank.scoreAnswers(perfect)[experimentId].score, 100);
 
   const page = source(`${experimentId}.html`);
-  assert(page.includes('assets/knowledge-question-bank.js'));
-  assert(page.includes(`getExperimentQuestions("${experimentId}")`));
+  const postAsset = experimentId === "strategies" ? "knowledge-post-strategy.js" : `knowledge-post-${experimentId}.js`;
+  assert(page.includes(`assets/${postAsset}`));
+  assert(page.includes("assets/knowledge-assessment.js"));
   assert(page.includes("isKnowledgeQuizAnswered()"));
   assert(page.includes("finalizeKnowledgeQuizOnce()"));
   assert(page.includes("assets/student-memory.js"));
@@ -96,8 +97,8 @@ for (const experimentId of ["memory", "nback", "interference", "strategies"]) {
 
 const pretest = source("pretest.html");
 for (const marker of [
-  "knowledgePretestRoot", "questionOrder", "answersByQuestionId",
-  "scoresByExperiment", "legacyQualification", "submitKnowledgePretest"
+  "BrainKnowledgePretestQuestions", "knowledgeDraft", "knowledgeAssessment",
+  "legacyKnowledgePretest", "legacyQualification", "submitKnowledgePretest"
 ]) assert(pretest.includes(marker), `pretest missing ${marker}`);
 
 const platform = source("assets/platform-core.js");
@@ -119,13 +120,15 @@ const generator = loadGenerator().__test;
 const completeState = {
   maxUnlockedStep: 7,
   surveys: {
-    postMeta: Object.fromEntries(Array.from({ length: 6 }, (_, index) => [`q${index + 1}`, 1])),
+    postMeta: { ...Object.fromEntries(Array.from({ length: 5 }, (_, index) => [`q${index + 1}`, 1])), q6: 0 },
     cognitiveLoad: Object.fromEntries(Array.from({ length: 2 }, (_, index) => [`q${index + 1}`, 1])),
     inquiryParticipation: Object.fromEntries(Array.from({ length: 9 }, (_, index) => [`q${index + 1}`, 1]))
   },
-  knowledgeQuiz: { submitted: true }
+  knowledgeQuiz: { submitted: true },
+  knowledgeAssessment: { T1: { score: 80 } }
 };
 assert.strictEqual(generator.completionFacts(completeState).completedTaskCount, 8);
+assert.strictEqual(generator.completionFacts(completeState, "memory").posttestKnowledgeComplete, true);
 assert.strictEqual(generator.completionFacts({ maxUnlockedStep: 3, surveys: {} }).completedTaskCount, 3);
 
 const taskIds = new Set(["question_text", "analysis_text", "reflection_text"]);

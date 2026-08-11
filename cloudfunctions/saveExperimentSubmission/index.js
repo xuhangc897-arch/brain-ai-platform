@@ -38,11 +38,34 @@ function session(event) {
 }
 function recordId(submissionId) { return `submission_${crypto.createHash("sha256").update(submissionId).digest("hex")}`; }
 function object(value) { return value && typeof value === "object" && !Array.isArray(value) ? value : {}; }
+function validKnowledgeAssessment(value) {
+  const timeline = object(value);
+  if (Number(timeline.schemaVersion) !== 2) return false;
+  return ["T0", "T1", "T2", "T3", "T4", "T5"].every((stage) => {
+    const record = timeline[stage];
+    if (record == null) return true;
+    const expectedTotal = stage === "T0" || stage === "T5" ? 20 : 5;
+    return object(record) === record
+      && record.stage === stage
+      && Boolean(text(record.assessmentId))
+      && Boolean(text(record.questionSetVersion))
+      && Boolean(text(record.timestamp))
+      && Array.isArray(record.questionOrder)
+      && record.questionOrder.length === expectedTotal
+      && new Set(record.questionOrder.map(text)).size === expectedTotal
+      && object(record.answers) === record.answers
+      && Number.isFinite(Number(record.score))
+      && Number.isFinite(Number(record.correctCount))
+      && Number(record.totalCount) === expectedTotal
+      && object(record.categoryScores) === record.categoryScores;
+  });
+}
 function validSubmission(value, studentId) {
   const submission = object(value);
   if (text(submission.studentId) !== studentId || !EXPERIMENTS.has(text(submission.experimentId))) return false;
   if (!text(submission.submissionId) || !text(submission.experimentName) || !text(submission.submissionTime)) return false;
   if (!submission.knowledgeQuiz || !Array.isArray(submission.knowledgeQuiz.attempts) || submission.knowledgeQuiz.attempts.length > 1) return false;
+  if (Number(submission.schemaVersion) >= 2 && !validKnowledgeAssessment(submission.knowledgeAssessment)) return false;
   return [submission.answers, submission.experimentResults, submission.surveys, submission.reflections, submission.aiSummary].every((item) => item && typeof item === "object" && !Array.isArray(item));
 }
 
@@ -61,7 +84,7 @@ exports.main = async (event) => {
   } catch (error) { /* A missing document is expected. */ }
   const document = Object.assign({}, incoming, {
     recordId: id,
-    schemaVersion: 1,
+    schemaVersion: Number(incoming.schemaVersion) >= 2 ? 2 : 1,
     studentId: text(auth.studentId),
     studentName: text(student.name),
     className: text(student.class),
@@ -77,4 +100,4 @@ exports.main = async (event) => {
   }
 };
 
-exports.__test = { validSubmission, recordId };
+exports.__test = { validSubmission, validKnowledgeAssessment, recordId };

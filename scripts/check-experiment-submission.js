@@ -16,6 +16,9 @@ const context = {
   BrainExperimentRegistry: { get: (id) => ({ id, label: id === "screening" ? "Screening" : "Memory", kind: id === "screening" ? "screening" : "experiment" }) },
   BrainExperimentIntegration: { resolveSourceModule: (_source, pathName) => pathName.includes("memory") ? "memory" : "" },
   BrainAIChat: { readLogs: () => [{ path: "/memory.html", failed: false }, { path: "/memory.html", failed: true }] },
+  BrainKnowledgeAssessment: {
+    normalizeTimeline: (value) => value || { schemaVersion: 2, T0: null, T1: null, T2: null, T3: null, T4: null, T5: null }
+  },
   BrainPlatform: {
     config: { endpoints: { saveExperimentSubmission: "/save", getLatestExperimentSubmission: "/latest" }, storageKeys: { submissionOutbox: "submission-outbox" } },
     identity: { readStudentSession: () => session },
@@ -35,6 +38,7 @@ const state = {
 };
 
 const built = context.BrainExperimentSubmission.build({ experimentId: "memory", state, submissionTime: "2026-08-03T02:00:00.000Z" });
+assert.strictEqual(built.schemaVersion, 2);
 assert.strictEqual(built.answers.question, "Q");
 assert.strictEqual(built.experimentResults.records[0].raw, true);
 assert.strictEqual(built.experimentResults.attemptHistory[0].runId, "r1");
@@ -45,6 +49,7 @@ assert.strictEqual(built.knowledgeQuiz.finalScore, 80);
 assert.strictEqual(built.surveys.meta.q1, 4);
 assert.strictEqual(built.reflections.reflection_individual, "R");
 assert.strictEqual(built.aiSummary.usageCount, 1);
+assert.strictEqual(built.knowledgeAssessment.schemaVersion, 2);
 
 const screening = context.BrainExperimentSubmission.build({
   experimentId: "screening",

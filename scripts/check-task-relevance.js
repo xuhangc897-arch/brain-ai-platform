@@ -23,7 +23,7 @@ const pageTasks = {
     "conclusion", "improvement", "persuasiveness"
   ],
   "interference.html": [
-    "lifeFactors", "materialFactors", "hypothesis", "interferenceStagePlan",
+    "lifeFactors", "materialFactors", "hypothesis",
     "independentVariablePlan", "dependentVariablePlan", "controlVariablePlan",
     "headband", "conclusion", "strengths", "improvements", "learningInsight"
   ],

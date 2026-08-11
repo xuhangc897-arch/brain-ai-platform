@@ -618,6 +618,17 @@
       box-shadow: none;
     }
 
+    .knowledge-page { display: grid; gap: 16px; }
+    .knowledge-card { padding: 16px; border: 1px solid var(--line); border-radius: 12px; background: var(--panel); }
+    .knowledge-card h4 { margin: 0 0 10px; }
+    .knowledge-card p { margin: 0 0 12px; font-weight: 700; line-height: 1.7; }
+    .knowledge-options { display: grid; gap: 9px; }
+    .knowledge-option { display: flex; gap: 9px; align-items: flex-start; padding: 11px 12px; border: 1px solid var(--line); border-radius: 9px; cursor: pointer; }
+    .knowledge-option input { width: auto; margin-top: 4px; }
+    .knowledge-option.is-selected,
+    .knowledge-option:has(input:checked) { border-color: var(--primary); background: var(--primary-soft); color: var(--primary); }
+    .knowledge-complete { padding: 22px; border: 1px solid var(--line); border-radius: 12px; text-align: center; background: var(--panel); }
+
   </style>
   <link rel="stylesheet" href="assets/experiment-theme.css">
   <script src="assets/experiment-theme.js"></script>
@@ -656,7 +667,10 @@
   <script src="assets/experiment-bridge.js"></script>
   <script src="assets/experiment-page-runtime.js"></script>
   <script src="assets/experiment-integration.js"></script>
+  <script src="assets/knowledge-pretest.js"></script>
+  <script src="assets/knowledge-assessment.js"></script>
   <script src="assets/experiment-submission.js"></script>
+  <script src="assets/learning-diagnosis.js"></script>
   <script>
     checkLogin();
   </script>
@@ -672,8 +686,12 @@
       { id: "share", title: "分享交流", minutes: "10分钟", taskDescription: "指派一位小小讲解员介绍海报，并记录交流中的问题和回答。" },
       { id: "questions", title: "提问交流", minutes: "15分钟", taskDescription: "认真观看其他小组的科学海报，提出问题并记录对方的回答。" },
       { id: "score", title: "海报评分", minutes: "20分钟", taskDescription: "根据海报评分表的四个维度对每组海报评分，并为最优海报点赞。" },
-      { id: "reflection", title: "总结反思", minutes: "10分钟", taskDescription: "总结交流收获、海报改进方向、小组合作情况和探究成果的应用。" }
+      { id: "reflection", title: "总结反思", minutes: "10分钟", taskDescription: "总结交流收获、海报改进方向、小组合作情况和探究成果的应用。" },
+      { id: "posttest", title: "侦探小结", minutes: "15分钟", taskDescription: "完成课程知识后测。" }
     ];
+
+    const knowledgeQuestions = window.BrainKnowledgePretestQuestions;
+    const knowledgeAssessmentApi = window.BrainKnowledgeAssessment;
 
     const indicators = [
       { key: "question", dimension: "科学性", title: "研究问题明确性", rule: "1分：未写出研究问题；2分：写出问题但非疑问句；3分：用疑问句表述但问题不清晰；4分：用疑问句清晰表述问题，问题简洁完整" },
@@ -729,6 +747,8 @@
       ],
       scores: {},
       posterGroups: groupLabels.slice(),
+      knowledgeAssessment: knowledgeAssessmentApi.emptyTimeline(),
+      knowledgeDraftT5: knowledgeAssessmentApi.createDraft("T5", knowledgeQuestions, true),
       savedAt: ""
     };
 
@@ -773,6 +793,8 @@
       merged.questions = Array.isArray(incoming.questions) && incoming.questions.length ? incoming.questions : base.questions;
       merged.scores = Object.assign({}, base.scores, incoming.scores || {});
       merged.posterGroups = Array.isArray(incoming.posterGroups) && incoming.posterGroups.length ? incoming.posterGroups : base.posterGroups.slice();
+      merged.knowledgeAssessment = knowledgeAssessmentApi.mergeTimelines(incoming.knowledgeAssessment, knowledgeAssessmentApi.readTimeline());
+      merged.knowledgeDraftT5 = knowledgeAssessmentApi.normalizeDraft(incoming.knowledgeDraftT5, "T5", knowledgeQuestions, true);
       return merged;
     }
 
@@ -932,6 +954,7 @@
         return allScored && hasText(fields.bestPoster);
       }
       if (stepId === "reflection") return ["reflectionGain", "reflectionImprove", "teamReflection", "nextUse"].every((key) => hasText(fields[key]));
+      if (stepId === "posttest") return Boolean(state.knowledgeAssessment?.T5);
       return true;
     }
 
@@ -976,7 +999,7 @@
         <div class="actions">
           <button class="btn ghost" type="button" id="prevStep" ${state.currentStep === 0 ? "disabled" : ""}>上一步</button>
           ${isFinalStep
-            ? '<button class="btn secondary final-step-action" type="button" id="reviewReportBtn">生成记忆侦探报告</button>'
+            ? `<button class="btn secondary final-step-action" type="button" id="reviewReportBtn" ${state.knowledgeAssessment?.T5 ? "" : "disabled"}>生成记忆侦探报告</button>`
             : '<button class="btn" type="button" id="nextStep">下一步</button>'}
         </div>
       `;
@@ -989,8 +1012,38 @@
         share: renderShareStep,
         questions: renderQuestionsStep,
         score: renderScoreStep,
-        reflection: renderReflectionStep
+        reflection: renderReflectionStep,
+        posttest: renderPosttestStep
       }[stepId]();
+    }
+
+    function renderPosttestStep() {
+      const record = state.knowledgeAssessment?.T5;
+      if (record) {
+        return `<div class="knowledge-complete"><h3>侦探小结已完成</h3><p>作答已提交并锁定，现在可以生成最终报告。</p></div>`;
+      }
+      const draft = state.knowledgeDraftT5;
+      const page = Math.min(1, Math.max(0, Number(draft.currentPage) || 0));
+      const pageIds = draft.questionOrder.slice(page * 10, page * 10 + 10);
+      const cards = pageIds.map((questionId, pageIndex) => {
+        const question = knowledgeAssessmentApi.getQuestion(knowledgeQuestions, questionId);
+        const selectedAnswer = draft.answers[questionId] || "";
+        return `<article class="knowledge-card">
+          <h4>第 ${page * 10 + pageIndex + 1} 题</h4>
+          <p>${escapeHtml(question.question)}</p>
+          <div class="knowledge-options">${Object.entries(question.options).map(([key, value]) => `
+            <label class="knowledge-option ${selectedAnswer === key ? "is-selected" : ""}">
+              <input type="radio" name="posttest-${questionId}" data-knowledge-answer="${questionId}" value="${key}" ${selectedAnswer === key ? "checked" : ""}>
+              <span>${key}　${escapeHtml(value)}</span>
+            </label>`).join("")}</div>
+        </article>`;
+      }).join("");
+      return `<div class="task-hero"><h3>侦探小结 · 知识后测</h3><p>共 20 题，分两页完成。提交后答案将锁定，学生端不显示分数、答案或解析。</p></div>
+        <div class="knowledge-page" style="margin-top:16px;">${cards}</div>
+        <div class="actions">
+          ${page === 1 ? '<button class="btn ghost" type="button" id="posttestPrevPage">上一页题目</button>' : ""}
+          ${page === 0 ? '<button class="btn" type="button" id="posttestNextPage">下一页题目</button>' : '<button class="btn" type="button" id="posttestSubmit">提交侦探小结</button>'}
+        </div>`;
     }
 
     function renderPlanStep() {
@@ -1392,6 +1445,44 @@
       if (next) next.addEventListener("click", goNextStep);
       const reviewReport = document.getElementById("reviewReportBtn");
       if (reviewReport) reviewReport.addEventListener("click", () => generateReviewReport("poster"));
+      main.querySelectorAll("[data-knowledge-answer]").forEach((input) => {
+        input.addEventListener("change", () => {
+          state.knowledgeDraftT5.answers[input.dataset.knowledgeAnswer] = input.value;
+          saveState();
+          renderStep();
+        });
+      });
+      const previousPosttestPage = document.getElementById("posttestPrevPage");
+      if (previousPosttestPage) previousPosttestPage.addEventListener("click", () => {
+        state.knowledgeDraftT5.currentPage = 0;
+        saveState();
+        renderStep();
+      });
+      const nextPosttestPage = document.getElementById("posttestNextPage");
+      if (nextPosttestPage) nextPosttestPage.addEventListener("click", () => {
+        const firstPageComplete = state.knowledgeDraftT5.questionOrder.slice(0, 10).every((id) => state.knowledgeDraftT5.answers[id]);
+        if (!firstPageComplete) {
+          showStepMessage("请先完成本页全部题目。");
+          return;
+        }
+        state.knowledgeDraftT5.currentPage = 1;
+        saveState();
+        renderStep();
+      });
+      const submitPosttest = document.getElementById("posttestSubmit");
+      if (submitPosttest) submitPosttest.addEventListener("click", submitPosttestOnce);
+    }
+
+    function submitPosttestOnce() {
+      const result = knowledgeAssessmentApi.submitStage(state.knowledgeAssessment, "T5", knowledgeQuestions, state.knowledgeDraftT5);
+      if (result.unanswered?.length) {
+        showStepMessage("请先完成全部 20 道题目。");
+        return;
+      }
+      state.knowledgeAssessment = result.timeline;
+      saveState();
+      renderApp();
+      showStepMessage("侦探小结已完成，作答已锁定。");
     }
 
     function savePosterScoreRecord(indicatorKey, groupNumber, value) {
@@ -1421,6 +1512,10 @@
     }
 
     async function generateReviewReport(activityType) {
+      if (!state.knowledgeAssessment?.T5) {
+        showStepMessage("请先完成侦探小结。");
+        return;
+      }
       const button = document.getElementById("reviewReportBtn");
       if (button) button.disabled = true;
       saveState();
@@ -1434,6 +1529,30 @@
         moduleId: "poster",
         state
       });
+    }
+
+    async function hydrateKnowledgeTimeline() {
+      const submissionApi = window.BrainExperimentSubmission;
+      const session = window.BrainPlatform?.identity?.readStudentSession?.() || {};
+      if (!submissionApi?.getLatest || session.isGuest || !session.sessionToken) return;
+      const before = knowledgeAssessmentApi.normalizeTimeline(state.knowledgeAssessment);
+      const sources = [before, knowledgeAssessmentApi.readTimeline()];
+      for (const experimentId of ["screening", "memory", "nback", "interference", "strategies"]) {
+        try {
+          const result = await submissionApi.getLatest(experimentId);
+          if (result?.ok) sources.push(result.submission?.knowledgeAssessment, result.state?.knowledgeAssessment);
+        } catch (error) {
+          // Missing or offline historical stages remain explicitly unavailable.
+        }
+      }
+      const merged = knowledgeAssessmentApi.mergeTimelines(...sources);
+      const beforeIds = knowledgeAssessmentApi.stages.map((stage) => before[stage]?.assessmentId || "").join("|");
+      const afterIds = knowledgeAssessmentApi.stages.map((stage) => merged[stage]?.assessmentId || "").join("|");
+      if (beforeIds !== afterIds) {
+        state.knowledgeAssessment = knowledgeAssessmentApi.writeTimeline(merged);
+        saveState();
+        renderApp();
+      }
     }
 
     function getScore(indicatorKey, groupNumber) {
@@ -1566,6 +1685,8 @@
     });
 
     renderApp();
+    hydrateKnowledgeTimeline();
+    window.LearningDiagnosis?.init({ experimentId: "poster" });
   </script>
   <script src="assets/ai-assistant.js?v=ai-chat-upload-20260708"></script>
   <script>

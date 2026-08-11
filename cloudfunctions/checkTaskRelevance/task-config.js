@@ -19,7 +19,6 @@ module.exports = [
   ["interference", "question", "lifeFactors", "生活中想到的干扰因素", "请写下你自己想到的生活中的干扰因素", "探究干扰对长时记忆的影响", ["生活", "干扰因素", "长时记忆"], 10],
   ["interference", "question", "materialFactors", "材料中列出的干扰因素", "请根据阅读材料自行填写", "探究干扰对长时记忆的影响", ["阅读材料", "干扰因素", "长时记忆"], 10],
   ["interference", "hypothesis", "hypothesis", "研究假设", "写下你自己对结果的预测", "探究干扰对长时记忆的影响", ["研究假设", "结果预测", "干扰", "长时记忆"], 10],
-  ["interference", "plan", "interferenceStagePlan", "干扰阶段", "请写出干扰阶段参与者需要做的事", "探究干扰对长时记忆的影响", ["干扰阶段", "参与者", "实验流程"], 10],
   ["interference", "plan", "independentVariablePlan", "自变量", "填写两轮实验中需要改变的条件", "探究干扰对长时记忆的影响", ["自变量", "两轮实验", "改变条件"], 10],
   ["interference", "plan", "dependentVariablePlan", "因变量", "填写实验中观察和记录的变化", "探究干扰对长时记忆的影响", ["因变量", "观察", "记录", "变化"], 10],
   ["interference", "plan", "controlVariablePlan", "无关变量", "填写两轮实验中必须保持不变的条件", "探究干扰对长时记忆的影响", ["无关变量", "两轮实验", "保持不变"], 10],

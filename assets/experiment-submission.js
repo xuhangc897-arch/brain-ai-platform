@@ -3,7 +3,7 @@
 
   const platform = global.BrainPlatform;
   const registry = global.BrainExperimentRegistry;
-  const SCHEMA_VERSION = 1;
+  const SCHEMA_VERSION = 2;
   const MAX_OUTBOX_ENTRIES = 50;
 
   function clone(value) {
@@ -54,8 +54,13 @@
   function normalizeSurveys(source) {
     const surveys = source && typeof source === "object" ? source : {};
     const current = surveys.current && typeof surveys.current === "object" ? surveys.current : surveys;
+    const metaSource = current.meta || current.postMeta || {};
+    const meta = {};
+    for (let index = 1; index <= 5; index += 1) {
+      if (Object.prototype.hasOwnProperty.call(metaSource, `q${index}`)) meta[`q${index}`] = clone(metaSource[`q${index}`]);
+    }
     return {
-      meta: clone(current.meta || current.postMeta || {}),
+      meta,
       cognitiveLoad: clone(current.cognitiveLoad || {}),
       inquiryParticipation: clone(current.inquiryParticipation || {})
     };
@@ -74,7 +79,7 @@
   function collectExperimentResults(state) {
     const excluded = new Set([
       "studentId", "studentName", "studentAge", "className", "groupName", "groupId", "isGuest",
-      "fields", "surveys", "knowledgeQuiz", "currentStep", "maxUnlockedStep", "flowVersion", "savedAt", "createdAt"
+      "fields", "surveys", "knowledgeQuiz", "knowledgeAssessment", "currentStep", "maxUnlockedStep", "flowVersion", "savedAt", "createdAt"
     ]);
     const results = {};
     Object.keys(state || {}).forEach((key) => {
@@ -105,6 +110,10 @@
       state.studentId || session.studentId || "guest",
       submissionTime
     ].join("|");
+    const assessmentApi = global.BrainKnowledgeAssessment;
+    const knowledgeAssessment = assessmentApi && typeof assessmentApi.normalizeTimeline === "function"
+      ? assessmentApi.normalizeTimeline(state.knowledgeAssessment)
+      : clone(state.knowledgeAssessment || null);
     return {
       schemaVersion: SCHEMA_VERSION,
       submissionId,
@@ -116,6 +125,7 @@
       answers: clone(state.fields || state.answers || {}),
       experimentResults: collectExperimentResults(state),
       knowledgeQuiz: normalizeKnowledgeQuiz(state.knowledgeQuiz),
+      knowledgeAssessment,
       surveys: normalizeSurveys(state.surveys),
       reflections: collectReflections(state.fields || {}),
       aiSummary: { usageCount: countAiUsage(experimentId) }

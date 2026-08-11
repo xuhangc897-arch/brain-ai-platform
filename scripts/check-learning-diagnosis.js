@@ -50,7 +50,7 @@ const generator = loadGenerator();
 const completeState = {
   maxUnlockedStep: 7,
   surveys: {
-    postMeta: Object.fromEntries(Array.from({ length: 6 }, (_, index) => [`q${index + 1}`, 4])),
+    postMeta: { ...Object.fromEntries(Array.from({ length: 5 }, (_, index) => [`q${index + 1}`, 4])), q6: 1 },
     cognitiveLoad: { q1: 5, q2: 6 },
     inquiryParticipation: Object.fromEntries(Array.from({ length: 9 }, (_, index) => [`q${index + 1}`, 4]))
   },
@@ -71,6 +71,8 @@ const readySources = {
     sourceSubmissionRecordId: `submission_${id}`
   }]))
 };
+const objectiveMetrics = generator.buildObjectiveMetrics(readySources.submissions, readySources.memories, {}, {});
+assert(objectiveMetrics.experiments.every((item) => item.surveys.metacognitionAverage === 4), "legacy q6 must not affect metacognition averages");
 assert.strictEqual(generator.evaluateReadiness(readySources).generationReady, true);
 const missingMemory = {
   submissions: readySources.submissions,

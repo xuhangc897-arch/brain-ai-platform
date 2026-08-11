@@ -222,6 +222,8 @@
         const detail = event.detail || {};
         if (detail.recordType === "submission" && detail.module === "strategies") {
           global.StudentMemory?.requestGeneration?.("strategies").then(() => requestGeneration());
+        } else if (detail.recordType === "submission" && detail.module === "poster") {
+          requestGeneration();
         }
       });
       global.addEventListener("online", () => flush());

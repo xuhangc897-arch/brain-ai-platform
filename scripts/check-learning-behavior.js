@@ -20,7 +20,7 @@ const pages = {
   ],
   "interference.html": [
     "lifeFactors", "lifeFactors_group", "materialFactors", "materialFactors_group",
-    "hypothesis", "hypothesis_group", "interferenceStagePlan", "independentVariablePlan",
+    "hypothesis", "hypothesis_group", "independentVariablePlan",
     "dependentVariablePlan", "controlVariablePlan", "headband", "conclusion",
     "conclusion_group", "strengths", "strengths_group", "improvements",
     "improvements_group", "learningInsight", "learningInsight_group"

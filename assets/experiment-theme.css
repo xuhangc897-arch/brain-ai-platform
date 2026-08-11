@@ -260,6 +260,26 @@ html[data-theme="archive"] .question-card {
   background: #fffdf8;
 }
 
+html[data-theme="archive"] .survey-option:hover .survey-option-card {
+  border-color: #b58b4a;
+  box-shadow: 0 8px 18px rgba(80, 50, 20, 0.12);
+}
+
+html[data-theme="archive"] .survey-option.is-selected .survey-option-card,
+html[data-theme="archive"] .survey-option input:checked + .survey-option-card {
+  border-color: #9b7135;
+  background: linear-gradient(135deg, #9b7135, #7d5927);
+  color: #fffaf2;
+  box-shadow: 0 10px 22px rgba(80, 50, 20, 0.16);
+}
+
+html[data-theme="archive"] .survey-option.is-selected .survey-score,
+html[data-theme="archive"] .survey-option.is-selected .survey-label,
+html[data-theme="archive"] .survey-option input:checked + .survey-option-card .survey-score,
+html[data-theme="archive"] .survey-option input:checked + .survey-option-card .survey-label {
+  color: #fffaf2;
+}
+
 html[data-theme="archive"] .question-prompt-strip,
 html[data-theme="archive"] .question-intro-strip,
 html[data-theme="archive"] .task-hero,
@@ -277,6 +297,121 @@ html[data-theme="archive"] .material-details {
   background: linear-gradient(135deg, #fffaf2, #f4ead8);
   color: var(--ink);
   box-shadow: 0 8px 24px rgba(80, 50, 20, 0.07);
+}
+
+html[data-theme="archive"] .quiz-option.is-selected,
+html[data-theme="archive"] .quiz-option:has(input:checked) {
+  border-color: #9b7135;
+  background: #f1e3ca;
+  color: #65471f;
+}
+
+/* Shared experiment overlays must stay above sticky navigation and assistants. */
+body.experiment-page .headband-modal,
+body.experiment-page .image-modal {
+  z-index: 10050;
+  padding:
+    max(12px, env(safe-area-inset-top))
+    max(12px, env(safe-area-inset-right))
+    max(12px, env(safe-area-inset-bottom))
+    max(12px, env(safe-area-inset-left));
+}
+
+body.experiment-page .headband-modal-card,
+body.experiment-page .image-modal-card {
+  max-height: calc(100dvh - max(24px, env(safe-area-inset-top) + env(safe-area-inset-bottom)));
+}
+
+body.experiment-page .headband-modal-close,
+body.experiment-page .image-modal-close {
+  top: max(8px, env(safe-area-inset-top));
+  right: max(8px, env(safe-area-inset-right));
+  z-index: 2;
+}
+
+/* The low-interference task view contains only task-critical controls. */
+body.experiment-page.is-focus-mode .memory-partner,
+body.experiment-page.is-focus-mode .ai-assistant,
+body.experiment-page.is-focus-mode .voice-assistant {
+  display: none !important;
+}
+
+/* Match the qualification knowledge-question radio layout. */
+body.experiment-page .quiz-options {
+  display: grid;
+  grid-template-columns: 1fr;
+  gap: 14px;
+}
+
+body.experiment-page .quiz-option {
+  position: relative;
+  display: grid;
+  grid-template-columns: 30px 34px minmax(0, 1fr);
+  align-items: center;
+  min-height: 64px;
+  padding: 10px 18px;
+  border: 1px solid var(--line);
+  border-radius: 10px;
+  background: #fff;
+  color: var(--muted);
+  cursor: pointer;
+  transition: border-color .16s ease, box-shadow .16s ease, transform .16s ease, background .16s ease;
+}
+
+body.experiment-page .quiz-option:hover {
+  transform: translateY(-1px);
+  border-color: color-mix(in srgb, var(--primary) 45%, var(--line));
+}
+
+body.experiment-page .quiz-option input {
+  grid-column: 1;
+  width: 20px;
+  height: 20px;
+  margin: 0;
+  accent-color: var(--primary);
+}
+
+body.experiment-page .quiz-key {
+  grid-column: 2;
+  font-size: 18px;
+  font-weight: 900;
+}
+
+body.experiment-page .quiz-label {
+  grid-column: 3;
+  font-size: 16px;
+  font-weight: 800;
+  line-height: 1.45;
+}
+
+body.experiment-page .quiz-option.is-selected,
+body.experiment-page .quiz-option:has(input:checked) {
+  border-color: var(--primary);
+  background: var(--primary-soft);
+  color: var(--primary-dark);
+  box-shadow: 0 10px 20px color-mix(in srgb, var(--primary) 13%, transparent);
+}
+
+html[data-theme="archive"] body.experiment-page .quiz-option.is-selected,
+html[data-theme="archive"] body.experiment-page .quiz-option:has(input:checked) {
+  border-color: #9b7135;
+  background: #f1e3ca;
+  color: #65471f;
+  box-shadow: 0 10px 20px rgba(80, 50, 20, 0.13);
+}
+
+/* The page header is the single visual title; inner cards keep only useful structure. */
+body.experiment-page .step-page-content > .page-card > h4:first-child,
+body.experiment-page .question-page-content > .page-card > h4:first-child,
+body.experiment-page .question-page-content > article > h4:first-child,
+body.experiment-page .headband-page > .reading-card > h4:first-child,
+body.experiment-page .survey-page .survey-card-head > h4:first-child,
+body.experiment-page .quiz-page .survey-intro > h3:first-child,
+body.experiment-page .quiz-page .quiz-card > h4:first-child,
+body.experiment-page .posttest-summary-page .survey-intro > h3:first-child,
+body.experiment-page .single-step-layout > .panel > .panel-head > h3:first-child,
+body.experiment-page .reflection-page > .panel > .panel-head > h3:first-child {
+  display: none;
 }
 
 html[data-theme="archive"] .question-prompt-strip p,

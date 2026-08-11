@@ -84,7 +84,7 @@
     .reading-list { display: grid; gap: 14px; }
     .reading-card { border: 1px solid #e5edf7; border-radius: 8px; padding: 16px; background: #fbfdff; }
     .reading-card h4 { margin: 0 0 8px; color: #1e3a8a; font-size: 16px; }
-    .reading-card p { margin: 0 0 10px; color: #344054; font-size: 14px; }
+    .reading-card p { margin: 0 0 14px; color: #344054; font-size: 16px; line-height: 1.8; }
     .reading-card p:last-child { margin-bottom: 0; }
     .question-intro-strip { grid-column: 1 / -1; border: 1px solid #bfdbfe; border-radius: 8px; padding: 18px 20px; background: linear-gradient(135deg, #eff6ff, #f8fbff); box-shadow: 0 12px 28px rgba(37,99,235,.08); }
     .question-intro-strip p { margin: 0 0 12px; color: #24364f; font-size: 15px; line-height: 1.8; }
@@ -98,7 +98,7 @@
     .material-details { border: 1px solid #e5edf7; border-radius: 8px; background: #fbfdff; overflow: hidden; }
     .material-details summary { padding: 14px 16px; color: #1e3a8a; font-weight: 900; cursor: pointer; }
     .material-details summary::marker { color: var(--primary); }
-    .material-details-body { display: grid; gap: 10px; padding: 0 16px 16px; color: #344054; font-size: 14px; }
+    .material-details-body { display: grid; gap: 12px; padding: 0 16px 16px; color: #344054; font-size: 16px; line-height: 1.8; }
     .material-details-body p { margin: 0; line-height: 1.8; }
     .material-details-body .field { margin: 2px 0 0; }
     .headband-image-container { margin: 24px 0; text-align: center; }
@@ -243,6 +243,7 @@
     .plan-variables-page .variable-table textarea { min-height: 42px; height: 44px; }
     .plan-variables-page .variable-table td { padding: 4px 8px; }
     .plan-parameters-page .form-grid { grid-template-columns: repeat(4, minmax(0, 1fr)); gap: 10px 12px; }
+    .time-parameter-grid { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 10px 12px; margin-top: 12px; }
     .plan-parameters-page .field { margin-bottom: 2px; }
 
     .headband-guide-trigger { margin-top: 14px; }
@@ -301,6 +302,7 @@
       body.experiment-page .top-actions > * { flex: 0 0 auto; }
       body.experiment-page .top-actions .theme-switch { grid-column: auto; width: auto; }
       .form-grid, .summary-grid, .comparison-grid, .phase-grid, .readonly-plan-grid, .run-results-grid, .question-page-cases .case-list, .question-page-form .thinking-layer, .step-page-form .thinking-layer, .reflection-page .thinking-layer { grid-template-columns: 1fr; }
+      .time-parameter-grid { grid-template-columns: 1fr; }
       .plan-material-page .comparison-grid { grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 8px; }
       .plan-material-page .comparison-card { padding: 10px; }
       .plan-flow-page .phase-grid { grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 8px; }
@@ -438,7 +440,8 @@
   <main id="main" class="main"></main>
 
   <script src="assets/experiment-registry.js"></script>
-  <script src="assets/knowledge-question-bank.js"></script>
+  <script src="assets/knowledge-post-interference.js"></script>
+  <script src="assets/knowledge-assessment.js"></script>
   <script src="assets/platform-core.js"></script>
   <script src="auth.js"></script>
   <script src="assets/experiment-uploader.js"></script>
@@ -498,8 +501,7 @@
           "这些有关长时记忆影响因素的知识对我很有用，我会继续运用。",
           "在学习这些有关长时记忆影响因素的知识时，我会与现实生活进行联系。",
           "我会根据今天科学探究中获得的知识，反思自己以前学习和记忆过程中可能受到的干扰，并尝试加以改进。",
-          "在学习这些有关长时记忆影响因素的知识时，我会联想到之前学过或了解过的知识。",
-          "我能够利用本次科学探究的结果，分析哪些因素可能会影响长时记忆的效果。"
+          "在学习这些有关长时记忆影响因素的知识时，我会联想到之前学过或了解过的知识。"
         ]
       },
       load: {
@@ -533,8 +535,9 @@
       }
     };
     const KNOWLEDGE_QUIZ = {
-      items: window.BrainKnowledgeQuestionBank.getExperimentQuestions("interference")
+      items: window.BrainKnowledgePostInterferenceQuestions
     };
+    const knowledgeAssessmentApi = window.BrainKnowledgeAssessment;
 
     function createDefaultSurveys() {
       return { current: { postMeta: {}, cognitiveLoad: {}, inquiryParticipation: {} } };
@@ -862,6 +865,7 @@
       records: [],
       surveys: createDefaultSurveys(),
       knowledgeQuiz: createDefaultKnowledgeQuiz(),
+      knowledgeAssessment: knowledgeAssessmentApi.emptyTimeline(),
       savedAt: ""
     };
     let state = loadState();
@@ -909,6 +913,7 @@
       merged.records = Array.isArray(incoming.records) ? incoming.records : [];
       merged.surveys = mergeSurveys(incoming.surveys);
       merged.knowledgeQuiz = mergeKnowledgeQuiz(incoming.knowledgeQuiz);
+      merged.knowledgeAssessment = knowledgeAssessmentApi.mergeTimelines(incoming.knowledgeAssessment, knowledgeAssessmentApi.readTimeline());
       if (!incoming.surveys) merged.currentStep = 0;
       if (incoming.flowVersion !== FLOW_VERSION) {
         merged.currentStep = migrateLegacyStepIndex(merged.currentStep);
@@ -999,7 +1004,6 @@
       materialFactors_group: "question",
       hypothesis: "hypothesis",
       hypothesis_group: "hypothesis",
-      interferenceStagePlan: "plan",
       independentVariablePlan: "plan",
       dependentVariablePlan: "plan",
       controlVariablePlan: "plan",
@@ -1017,7 +1021,6 @@
       "lifeFactors",
       "materialFactors",
       "hypothesis",
-      "interferenceStagePlan",
       "independentVariablePlan",
       "dependentVariablePlan",
       "controlVariablePlan",
@@ -1101,6 +1104,54 @@
       alert(message);
     }
 
+    function getFirstUnansweredSurveyQuestion(surveyKey, itemCount) {
+      const answers = state.surveys?.current?.[surveyKey] || {};
+      for (let index = 0; index < itemCount; index += 1) {
+        if (!Number(answers[`q${index + 1}`])) return index;
+      }
+      return -1;
+    }
+
+    function getIncompletePosttestPage() {
+      const quizAnswers = state.knowledgeQuiz?.answers || {};
+      for (let index = 0; index < KNOWLEDGE_QUIZ.items.length; index += 1) {
+        if (!quizAnswers[`q${index + 1}`]) return index;
+      }
+      let offset = KNOWLEDGE_QUIZ.items.length;
+      for (const [surveyKey, defKey] of [["postMeta", "meta"], ["cognitiveLoad", "load"], ["inquiryParticipation", "inquiry"]]) {
+        const missing = getFirstUnansweredSurveyQuestion(surveyKey, SURVEY_DEFS[defKey].items.length);
+        if (missing >= 0) return offset + Math.floor(missing / 3);
+        offset += Math.ceil(SURVEY_DEFS[defKey].items.length / 3);
+      }
+      return Math.max(0, getStepPageCount("posttest") - 1);
+    }
+
+    function getIncompleteStepPage(stepId) {
+      const fields = state.fields || {};
+      if (stepId === "question") return hasText(fields.materialFactors) ? 6 : 5;
+      if (stepId === "hypothesis") return 0;
+      if (stepId === "plan") {
+        if (!hasText(fields.independentVariablePlan) || !hasText(fields.dependentVariablePlan) || !hasText(fields.controlVariablePlan)) return 4;
+        return 5;
+      }
+      if (stepId === "evidence") return 0;
+      if (stepId === "analysis") return Array.isArray(state.records) && state.records.length ? 1 : 0;
+      if (stepId === "conclusion") return 1;
+      if (stepId === "reflection") {
+        if (!hasText(fields.strengths)) return 0;
+        if (!hasText(fields.improvements)) return 1;
+        return 2;
+      }
+      if (stepId === "posttest") return getIncompletePosttestPage();
+      return Math.max(0, getStepPageIndex(stepId));
+    }
+
+    function getIncompleteStepMessage(stepId) {
+      const pageCount = getStepPageCount(stepId);
+      const pageNumber = Math.min(Math.max(getIncompleteStepPage(stepId), 0), pageCount - 1) + 1;
+      return `请先完成本步骤内容。（${steps[state.currentStep].title}${pageNumber}/${pageCount}）`;
+    }
+
     function goToStep(targetStep) {
       const target = clampStepIndex(targetStep);
       if (!isDeveloperMode() && target > state.maxUnlockedStep) {
@@ -1114,7 +1165,7 @@
 
     function goNextStep() {
       if (!validateStep(steps[state.currentStep].id)) {
-        showStepMessage("请先完成本步骤内容。");
+        showStepMessage(getIncompleteStepMessage(steps[state.currentStep].id));
         return;
       }
       if (state.currentStep < steps.length - 1) {
@@ -1143,7 +1194,7 @@
       const fields = state.fields || {};
       if (stepId === "question") return hasText(fields.materialFactors) && hasText(fields.questionFactor);
       if (stepId === "hypothesis") return hasText(fields.hypothesis);
-      if (stepId === "plan") return hasText(fields.independentVariablePlan) && hasText(fields.dependentVariablePlan) && hasText(fields.controlVariablePlan) && hasText(fields.interferenceStagePlan) && hasText(fields.participant) && hasText(fields.factor) && hasText(fields.difficulty) && (!isEmotionFactor(fields.factor) || hasText(fields.emotionCondition)) && hasValidNumber(fields.memorySeconds, 10, 180) && hasValidNumber(fields.restSeconds, 5, 240) && hasValidNumber(fields.interferenceSeconds, 5, 240);
+      if (stepId === "plan") return hasText(fields.independentVariablePlan) && hasText(fields.dependentVariablePlan) && hasText(fields.controlVariablePlan) && hasText(fields.factor) && hasText(fields.difficulty) && (!isEmotionFactor(fields.factor) || hasText(fields.emotionCondition)) && hasValidNumber(fields.memorySeconds, 10, 180) && hasValidNumber(fields.restSeconds, 5, 240) && hasValidNumber(fields.interferenceSeconds, 5, 240);
       if (stepId === "evidence") return Array.isArray(state.records) && state.records.length > 0;
       if (stepId === "analysis") return Array.isArray(state.records) && state.records.length > 0 && (hasText(fields.headband) || hasStructuredMemberResult() || hasText(fields.teammate1Result) || hasText(fields.teammate2Result));
       if (stepId === "conclusion") return hasText(fields.conclusion);
@@ -1254,6 +1305,9 @@
     }
     function renderKnowledgeQuizItem(index) {
       const quiz = mergeKnowledgeQuiz(state.knowledgeQuiz);
+      if (state.knowledgeAssessment?.T3 || quiz.submitted || quiz.history.length) {
+        return '<section class="quiz-section"><div class="quiz-result">即时知识测试已完成，作答已锁定。</div></section>';
+      }
       const item = KNOWLEDGE_QUIZ.items[index];
       const itemKey = 'q' + (index + 1);
       const selectedAnswer = quiz.answers[itemKey] || '';
@@ -1261,7 +1315,7 @@
         '<article class="quiz-card"><h4>第' + (index + 1) + '题</h4><p>' + escapeHtml(item.question) + '</p><div class="quiz-options">' +
         Object.keys(item.options).map((key) => {
           const checked = selectedAnswer === key;
-          return '<label class="quiz-option ' + (checked ? 'is-selected' : '') + '"><input type="radio" name="knowledge-' + itemKey + '" data-quiz-question="' + itemKey + '" value="' + key + '" ' + (checked ? 'checked' : '') + (quiz.submitted ? ' disabled' : '') + '><span>' + key + '　' + escapeHtml(item.options[key]) + '</span></label>';
+          return '<label class="quiz-option ' + (checked ? 'is-selected' : '') + '"><input type="radio" name="knowledge-' + itemKey + '" data-quiz-question="' + itemKey + '" value="' + key + '" ' + (checked ? 'checked' : '') + (quiz.submitted ? ' disabled' : '') + '><span class="quiz-key">' + key + '</span><span class="quiz-label">' + escapeHtml(item.options[key]) + '</span></label>';
         }).join('') + '</div></article></section>';
     }
 
@@ -1283,6 +1337,8 @@
 
     function finalizeKnowledgeQuizOnce() {
       state.knowledgeQuiz = mergeKnowledgeQuiz(state.knowledgeQuiz);
+      state.knowledgeAssessment = knowledgeAssessmentApi.mergeTimelines(state.knowledgeAssessment, knowledgeAssessmentApi.readTimeline());
+      if (state.knowledgeAssessment.T3) return true;
       if (state.knowledgeQuiz.submitted || state.knowledgeQuiz.history.length) return true;
       const unanswered = KNOWLEDGE_QUIZ.items.some((_, index) => !state.knowledgeQuiz.answers['q' + (index + 1)]);
       if (unanswered) {
@@ -1315,6 +1371,11 @@
       state.knowledgeQuiz.submitted = true;
       state.knowledgeQuiz.submittedAt = record.submittedAt;
       state.knowledgeQuiz.wrongQuestions = record.wrongQuestions;
+      const assessmentDraft = {
+        questionOrder: KNOWLEDGE_QUIZ.items.map((item) => item.id),
+        answers: Object.fromEntries(KNOWLEDGE_QUIZ.items.map((item, index) => [item.id, state.knowledgeQuiz.answers['q' + (index + 1)]]))
+      };
+      state.knowledgeAssessment = knowledgeAssessmentApi.submitStage(state.knowledgeAssessment, "T3", KNOWLEDGE_QUIZ.items, assessmentDraft).timeline;
       saveState();
       renderApp();
       return true;
@@ -1410,7 +1471,7 @@
       const counts = {
         question: 7,
         hypothesis: 1,
-        plan: 7,
+        plan: 6,
         evidence: 1 + Math.ceil(getEvidenceRunGroups().length / getEvidencePageSize()),
         analysis: 3,
         conclusion: 2,
@@ -1540,11 +1601,6 @@
           content: () => `<article class="reading-card"><h4>头环工作原理与注意事项</h4><p>头环会在电脑上生成 3D 脑激活图。红—黄色代表脑区活动较强，蓝—冷色代表抑制或变化较弱，可辅助观察不同实验阶段的大脑活动。</p><p>使用时保持额头清洁、电极贴片贴紧；实验过程中保持专注，并记录记忆、干扰和测试阶段的颜色变化。</p><button class="btn secondary headband-guide-trigger" type="button" id="openHeadbandGuide">点击查看头环工作原理图</button></article><div class="headband-modal" id="headbandGuideModal" role="dialog" aria-modal="true" aria-label="头环工作原理" tabindex="-1"><div class="headband-modal-card"><button class="btn secondary headband-modal-close" type="button" id="closeHeadbandGuide" aria-label="关闭头环工作原理图">×</button><picture><source srcset="assets/headband-guide.webp" type="image/webp"><img src="assets/headband-guide.png" alt="头环工作原理示意图" width="1536" height="1024"></picture></div></div>`
         },
         {
-          title: "实验流程",
-          className: "plan-flow-page",
-          content: () => `<div class="single-step-layout"><div class="panel"><div class="panel-head"><h3>四个实验阶段</h3><p>正式测量会按固定材料流程推进。</p></div><div class="panel-body"><div class="phase-grid"><article class="phase-card"><h4>记忆阶段</h4><p>安静观察并尽可能记住目标材料。</p></article><article class="phase-card"><h4>休息阶段</h4><p>闭眼安静休息，不刻意复述材料。</p></article><article class="phase-card"><h4>干扰阶段</h4><p>按所选因素完成新材料学习或情绪诱发。</p></article><article class="phase-card"><h4>测试阶段</h4><p>在无提示情况下输入记住的目标材料。</p></article></div><div class="field" style="margin-top:14px"><label>请补充干扰阶段参与者需要做的事情</label><textarea data-field="interferenceStagePlan" placeholder="请写出干扰阶段参与者需要做的事">${escapeHtml(state.fields.interferenceStagePlan)}</textarea></div></div></div></div>`
-        },
-        {
           title: "变量设计",
           className: "plan-variables-page",
           content: () => `<div class="single-step-layout"><div class="panel"><div class="panel-head"><h3>变量设计</h3><p>请根据小组选择的探究因素填写变量。</p></div><div class="panel-body"><div class="variable-table-wrap"><table class="variable-table"><tbody><tr><td>自变量（需要改变的条件）</td><td><textarea data-field="independentVariablePlan">${escapeHtml(state.fields.independentVariablePlan)}</textarea></td></tr><tr><td>因变量（观察和记录的变化）</td><td><textarea data-field="dependentVariablePlan">${escapeHtml(state.fields.dependentVariablePlan)}</textarea></td></tr><tr><td>无关变量（必须保持不变的条件）</td><td><textarea data-field="controlVariablePlan">${escapeHtml(state.fields.controlVariablePlan)}</textarea></td></tr></tbody></table></div></div></div></div>`
@@ -1552,7 +1608,7 @@
         {
           title: "实验计划",
           className: "plan-parameters-page",
-          content: () => `<div class="single-step-layout"><div class="panel"><div class="panel-head"><h3>实验计划参数</h3><p>这些参数会直接用于搜集证据阶段。</p></div><div class="panel-body"><div class="form-grid"><div class="field"><label>实验类型</label><select data-field="factor">${factorOptions}</select></div><div class="field"><label>参与者编号</label><input type="text" data-field="participant" value="${escapeHtml(state.fields.participant)}" placeholder="请输入参与者编号"></div><div class="field"><label>材料难度</label><select data-field="difficulty"><option value="easy" ${selected("difficulty","easy")}>初级</option><option value="medium" ${selected("difficulty","medium")}>中级</option><option value="hard" ${selected("difficulty","hard")}>高级</option></select></div>${showEmotionCondition ? `<div class="field"><label>情绪视频条件</label><select data-field="emotionCondition"><option value="">请选择情绪视频条件</option><option value="中性" ${selected("emotionCondition","中性")}>中性</option><option value="悲伤" ${selected("emotionCondition","悲伤")}>悲伤</option><option value="愉悦" ${selected("emotionCondition","愉悦")}>愉悦</option></select></div>` : ""}<div class="field"><label>记忆时间（秒）</label><input type="number" min="10" max="180" data-field="memorySeconds" value="${escapeHtml(state.fields.memorySeconds)}"></div><div class="field"><label>休息时间（秒）</label><input type="number" min="5" max="240" data-field="restSeconds" value="${escapeHtml(state.fields.restSeconds)}"></div><div class="field"><label>干扰时间（秒）</label><input type="number" min="5" max="240" data-field="interferenceSeconds" value="${escapeHtml(state.fields.interferenceSeconds)}"></div><div class="field"><label>固定材料条件数</label><div class="readonly-value">2 个对照条件</div></div></div></div></div></div>`
+          content: () => `<div class="single-step-layout"><div class="panel"><div class="panel-head"><h3>实验计划参数</h3><p>这些参数会直接用于搜集证据阶段。</p></div><div class="panel-body"><div class="form-grid"><div class="field"><label>实验类型</label><select data-field="factor">${factorOptions}</select></div><div class="field"><label>材料难度</label><select data-field="difficulty"><option value="easy" ${selected("difficulty","easy")}>初级</option><option value="medium" ${selected("difficulty","medium")}>中级</option><option value="hard" ${selected("difficulty","hard")}>高级</option></select></div>${showEmotionCondition ? `<div class="field"><label>情绪视频条件</label><select data-field="emotionCondition"><option value="">请选择情绪视频条件</option><option value="中性" ${selected("emotionCondition","中性")}>中性</option><option value="悲伤" ${selected("emotionCondition","悲伤")}>悲伤</option><option value="愉悦" ${selected("emotionCondition","愉悦")}>愉悦</option></select></div>` : ""}</div><div class="time-parameter-grid"><div class="field"><label>记忆时间（秒）</label><input type="number" min="10" max="180" data-field="memorySeconds" value="${escapeHtml(state.fields.memorySeconds)}"></div><div class="field"><label>休息时间（秒）</label><input type="number" min="5" max="240" data-field="restSeconds" value="${escapeHtml(state.fields.restSeconds)}"></div><div class="field"><label>干扰时间（秒）</label><input type="number" min="5" max="240" data-field="interferenceSeconds" value="${escapeHtml(state.fields.interferenceSeconds)}"></div></div></div></div></div>`
         }
       ];
       return renderPagedStep("plan", pages);
@@ -2167,7 +2223,7 @@
       const summary = summarizeRecords();
       const sheets = [
         ["基本信息", [["项目","内容"],["实验","探究干扰长时记忆的因素"],["学号",state.studentId],["姓名",state.studentName || ""],["班级",state.className || ""],["小组",state.groupName || state.groupId || ""],["学生姓名",state.studentName || ""],["学生年龄",state.studentAge || ""],["学生编号",state.studentId],["小组编号",state.groupId],["实验时间",state.savedAt || ""],["导出时间",new Date().toLocaleString()]]],
-        ["实验过程", [["字段","内容"], ...getThinkingRows(), ["生活中的长时记忆干扰因素",state.fields.lifeFactors],["材料中列出的干扰因素",state.fields.materialFactors],["探究因素",state.fields.factor],["实验流程干扰因素",interferenceValueToLabel(state.fields.interferenceFactor)],["第一轮实验流程",normalizeFlowList(state.fields.flowRound1).join(" → ")],["第二轮实验流程",normalizeFlowList(state.fields.flowRound2).join(" → ")],["研究问题",state.fields.question],["自变量",state.fields.independentVariablePlan],["因变量",state.fields.dependentVariablePlan],["无关变量",state.fields.controlVariablePlan],["干扰阶段补全文字",state.fields.interferenceStagePlan],["研究假设",state.fields.hypothesis],["参与者",state.fields.participant],["难度",state.fields.difficulty],["情绪条件",state.fields.emotionCondition],["记忆时间s",state.fields.memorySeconds],["休息时间s",state.fields.restSeconds],["干扰时间s",state.fields.interferenceSeconds],["头环观察",state.fields.headband],["结论",state.fields.conclusion],["假设支持",state.fields.support],["可信度",state.fields.credibility],["优点",state.fields.strengths],["改进",state.fields.improvements],["学习启发",state.fields.learningInsight]]],
+        ["实验过程", [["字段","内容"], ...getThinkingRows(), ["生活中的长时记忆干扰因素",state.fields.lifeFactors],["材料中列出的干扰因素",state.fields.materialFactors],["探究因素",state.fields.factor],["实验流程干扰因素",interferenceValueToLabel(state.fields.interferenceFactor)],["第一轮实验流程",normalizeFlowList(state.fields.flowRound1).join(" → ")],["第二轮实验流程",normalizeFlowList(state.fields.flowRound2).join(" → ")],["研究问题",state.fields.question],["自变量",state.fields.independentVariablePlan],["因变量",state.fields.dependentVariablePlan],["无关变量",state.fields.controlVariablePlan],["研究假设",state.fields.hypothesis],["参与者",state.fields.participant],["难度",state.fields.difficulty],["情绪条件",state.fields.emotionCondition],["记忆时间s",state.fields.memorySeconds],["休息时间s",state.fields.restSeconds],["干扰时间s",state.fields.interferenceSeconds],["头环观察",state.fields.headband],["结论",state.fields.conclusion],["假设支持",state.fields.support],["可信度",state.fields.credibility],["优点",state.fields.strengths],["改进",state.fields.improvements],["学习启发",state.fields.learningInsight]]],
         ["实验明细", [["学号","姓名","班级","小组","学生姓名","学生年龄","学生编号","小组编号","参与者","轮次","实验类型","材料来源","材料类型","难度","条件","视频条件","记忆时间s","休息时间s","干扰时间s","记忆材料","干扰材料","评分规则","满分","得分","正确率","回忆内容","头环观察","情绪强度","反应时ms","记录时间"], ...state.records.map((record)=>[record.studentId,record.studentName || "",record.className || "",record.groupName || record.groupId || "",record.studentName || "",record.studentAge || "",record.studentId,record.groupId,record.participant,record.round,record.factor,record.materialSource,record.materialType,record.difficultyLabel || record.difficulty,record.condition,record.videoCondition,record.memorySeconds,record.restSeconds,record.interferenceSeconds,record.memoryItems,record.interferenceItems,record.scoreRule,record.fullScore,record.score ?? record.correctCount,`${record.accuracy}%`,record.recall,record.headband,record.emotionRating,record.reactionTime,record.createdAt])]],
         ["条件汇总", [["条件","次数","平均得分","平均正确率","平均反应时ms"], ...summary.map((item)=>[item.condition,item.count,item.avgCorrect,`${item.avgAccuracy}%`,item.avgRt])]],
         getTeamResultSheet(summary),
