@@ -94,6 +94,7 @@ function fullState(record) {
     const last = attempts[attempts.length - 1] || {};
     return Object.assign({}, record.experimentResults, {
       fields: record.answers || {},
+      knowledgeAssessment: record.knowledgeAssessment || null,
       surveys: { postMeta: record.surveys && record.surveys.meta || {}, cognitiveLoad: record.surveys && record.surveys.cognitiveLoad || {}, inquiryParticipation: record.surveys && record.surveys.inquiryParticipation || {} },
       knowledgeQuiz: Object.assign({}, quiz, { history: attempts.map((item) => Object.assign({}, item, { submittedAt: item.timestamp || item.submittedAt || "" })), submitted: attempts.length > 0, score: quiz.finalScore, correctCount: last.correctCount || 0, submittedAt: last.timestamp || "" })
     });
@@ -104,10 +105,10 @@ function fullState(record) {
 
 function surveyComplete(state) {
   const surveys = state.surveys || {};
-  const requiredCounts = { postMeta: 6, cognitiveLoad: 2, inquiryParticipation: 9 };
+  const requiredCounts = { postMeta: 5, cognitiveLoad: 2, inquiryParticipation: 9 };
   return Object.entries(requiredCounts).every(([key, count]) => {
     const answers = surveys[key] || {};
-    return Object.keys(answers).length >= count && Object.values(answers).every((value) => Number(value) > 0);
+    return Array.from({ length: count }, (_, index) => Number(answers[`q${index + 1}`]) > 0).every(Boolean);
   });
 }
 
@@ -144,8 +145,12 @@ async function readDocument(collection, id) {
   }
 }
 
-function numericValues(value) {
-  return Object.values(value && typeof value === "object" ? value : {})
+function numericValues(value, count) {
+  const source = value && typeof value === "object" ? value : {};
+  const values = Number.isInteger(count)
+    ? Array.from({ length: count }, (_, index) => source[`q${index + 1}`])
+    : Object.values(source);
+  return values
     .map(Number)
     .filter((number) => Number.isFinite(number) && number > 0);
 }
@@ -157,9 +162,9 @@ function average(values) {
 
 function surveyMetrics(state) {
   const surveys = state.surveys || {};
-  const meta = numericValues(surveys.postMeta);
-  const load = numericValues(surveys.cognitiveLoad);
-  const inquiry = numericValues(surveys.inquiryParticipation);
+  const meta = numericValues(surveys.postMeta, 5);
+  const load = numericValues(surveys.cognitiveLoad, 2);
+  const inquiry = numericValues(surveys.inquiryParticipation, 9);
   return {
     metacognitionAverage: average(meta),
     materialDifficulty: load.length ? load[0] : null,
@@ -220,7 +225,7 @@ function knowledgeMetrics(memory) {
   };
 }
 
-function buildObjectiveMetrics(submissions, memories, learningByExperiment, interventionsByExperiment) {
+function buildObjectiveMetrics(submissions, memories, learningByExperiment, interventionsByExperiment, posterSubmission = null) {
   const experiments = EXPERIMENTS.map((experiment) => {
     const submission = submissions[experiment.id];
     const memory = memories[experiment.id];
@@ -254,7 +259,13 @@ function buildObjectiveMetrics(submissions, memories, learningByExperiment, inte
       acceptedMemorySupportCount: 0
     }
   });
-  return { experiments, totals };
+  const timeline = posterSubmission?.knowledgeAssessment || fullState(posterSubmission).knowledgeAssessment || {};
+  const knowledgeAssessment = Object.fromEntries(["T0", "T1", "T2", "T3", "T4", "T5"].map((stage) => {
+    const record = timeline[stage];
+    return [stage, record ? { score: Number(record.score), correctCount: Number(record.correctCount), totalCount: Number(record.totalCount), timestamp: record.timestamp || "" } : null];
+  }));
+  knowledgeAssessment.changeT5FromT0 = timeline.T0 && timeline.T5 ? Number(timeline.T5.score) - Number(timeline.T0.score) : null;
+  return { experiments, totals, knowledgeAssessment };
 }
 
 function containsBannedText(value) {
@@ -352,6 +363,7 @@ function callAi(input) {
       "你是面向5—9年级学生的学习过程诊断摘要器，只能使用输入中的四次实验事实和结构化记忆。",
       "只描述当前学习表现和支持需要，不评价人格，不进行心理或医学诊断，不判断智力。",
       "不得使用“能力差”“不认真”“依赖AI”等固定标签，不得提供标准答案，不得补猜缺失数据。",
+      "学生报告不得出现知识测评的分数、正确题数、正确答案或错题；这些数值只保留在教师侧客观指标中。",
       "AI或语音使用次数少不能解释为工具使用能力不足。所有证据和变化必须列出sourceExperimentIds。",
       `dimensions必须且只能依次覆盖：${DIMENSION_IDS.join("、")}。`,
       "level只能为consistent、developing、support_recommended、insufficient_data。",
@@ -398,7 +410,7 @@ function callAi(input) {
 }
 
 async function readSources(studentId) {
-  const [submissionList, memoryResult, learningList, interventionList] = await Promise.all([
+  const [submissionList, memoryResult, learningList, interventionList, posterSubmission] = await Promise.all([
     Promise.all(EXPERIMENTS.map(async (experiment) => [experiment.id, await latestSubmission(studentId, experiment.id)])),
     memoriesCollection.where({ studentId, memoryType: "experiment" }).limit(10).get(),
     Promise.all(EXPERIMENTS.map(async (experiment) => {
@@ -408,13 +420,15 @@ async function readSources(studentId) {
     Promise.all(EXPERIMENTS.map(async (experiment) => {
       const result = await interventionsCollection.where({ studentId, experimentId: experiment.id }).limit(100).get();
       return [experiment.id, Array.isArray(result.data) ? result.data : []];
-    }))
+    })),
+    latestSubmission(studentId, "poster")
   ]);
   const submissions = Object.fromEntries(submissionList);
   const memoryRecords = Array.isArray(memoryResult.data) ? memoryResult.data : [];
   const memories = Object.fromEntries(memoryRecords.map((record) => [record.experimentId, record]));
   return {
     submissions,
+    posterSubmission,
     memories,
     learningByExperiment: Object.fromEntries(learningList),
     interventionsByExperiment: Object.fromEntries(interventionList)
@@ -460,6 +474,7 @@ function sourceSignature(sources, objectiveMetrics) {
     for (const item of sources.learningByExperiment[experiment.id] || []) if (item.recordId) sourceRecordIds.push(item.recordId);
     for (const item of sources.interventionsByExperiment[experiment.id] || []) if (item.recordId) sourceRecordIds.push(item.recordId);
   }
+  if (sources.posterSubmission?.recordId) sourceRecordIds.push(sources.posterSubmission.recordId);
   const uniqueSourceRecordIds = Array.from(new Set(sourceRecordIds.filter(Boolean))).sort().slice(0, 300);
   const sourceFactsHash = hash({ sourceMemoryVersions, objectiveMetrics, sourceRecordIds: uniqueSourceRecordIds });
   return { sourceMemoryVersions, sourceRecordIds: uniqueSourceRecordIds, sourceFactsHash };
@@ -521,7 +536,8 @@ exports.main = async (event) => {
       sources.submissions,
       sources.memories,
       sources.learningByExperiment,
-      sources.interventionsByExperiment
+      sources.interventionsByExperiment,
+      sources.posterSubmission
     );
     const signature = sourceSignature(sources, objectiveMetrics);
     const pointer = await readDocument(diagnosesCollection, pointerId(studentId));
@@ -560,7 +576,8 @@ exports.main = async (event) => {
       latestSources.submissions,
       latestSources.memories,
       latestSources.learningByExperiment,
-      latestSources.interventionsByExperiment
+      latestSources.interventionsByExperiment,
+      latestSources.posterSubmission
     );
     if (sourceSignature(latestSources, latestMetrics).sourceFactsHash !== signature.sourceFactsHash) {
       return { ok: false, code: "SOURCE_CHANGED", message: "学习数据已更新，将重新整理。", retryable: true };

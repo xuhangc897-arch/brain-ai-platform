@@ -162,7 +162,12 @@
     .difficulty-controls { display: grid; gap: 12px; }
     .difficulty-row { display: grid; grid-template-columns: 76px 1fr 76px; gap: 12px; align-items: center; padding: 12px; border: 1px solid var(--line); border-radius: 8px; background: #fbfdff; }
     .difficulty-row b { color: #344054; }
-    .difficulty-row input[type="range"] { padding: 0; }
+    .difficulty-row input[type="range"] { appearance: none; height: 6px; padding: 0; border: 0; border-radius: 999px; background: var(--primary-soft); accent-color: var(--primary); cursor: pointer; }
+    .difficulty-row input[type="range"]::-webkit-slider-runnable-track { height: 6px; border-radius: 999px; background: var(--primary-soft); }
+    .difficulty-row input[type="range"]::-webkit-slider-thumb { appearance: none; width: 18px; height: 18px; border: 2px solid #fff; border-radius: 50%; background: var(--primary); box-shadow: 0 2px 7px rgba(23, 32, 51, .24); }
+    .difficulty-row input[type="range"]::-moz-range-track { height: 6px; border-radius: 999px; background: var(--primary-soft); }
+    .difficulty-row input[type="range"]::-moz-range-progress { height: 6px; border-radius: 999px; background: var(--primary); }
+    .difficulty-row input[type="range"]::-moz-range-thumb { width: 16px; height: 16px; border: 2px solid #fff; border-radius: 50%; background: var(--primary); box-shadow: 0 2px 7px rgba(23, 32, 51, .24); }
     .difficulty-value { display: inline-grid; place-items: center; min-height: 34px; border-radius: 8px; background: var(--primary-soft); color: var(--primary-dark); font-weight: 900; }
     .puzzle-wrap { display: grid; gap: 14px; justify-items: center; }
     .puzzle-grid { display: grid; grid-template-columns: repeat(9, 36px); gap: 6px; justify-content: center; margin-top: 8px; }
@@ -318,9 +323,10 @@
     .paged-thinking textarea { min-height: 118px; }
     .strategy-guide-grid { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 12px; }
     .strategy-guide-grid .strategy-info-card { padding: 14px; }
-    .strategy-guide-grid .strategy-info-card p { font-size: 13px; line-height: 1.65; }
+    .strategy-guide-grid .strategy-info-card p { margin: 0 0 12px; font-size: 16px; line-height: 1.8; }
     .material-match-page { display: grid; grid-template-columns: minmax(0, 1.35fr) minmax(280px, .65fr); gap: 14px; height: 100%; }
     .material-match-page .reading-card, .material-match-page .match-status-card { height: 100%; padding: 16px; overflow: auto; }
+    .material-match-page .reading-card p, .material-match-page .match-status-card p { margin: 0 0 12px; font-size: 16px; line-height: 1.8; }
     .material-match-page .match-status-card { border: 1px solid var(--line); border-radius: 10px; background: #f8fbff; }
     .case-page .case-list { grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 7px 10px; margin-top: 0; }
     .case-page .template-card { grid-column: 1 / -1; padding: 9px 12px; }
@@ -342,8 +348,8 @@
     .round-plan-page .round-plan-card .field { margin: 0; }
     .round-plan-page .difficulty-controls { grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 8px; }
     .round-plan-page .difficulty-row { grid-template-columns: 42px minmax(0, 1fr) 52px; gap: 6px; padding: 8px; }
-    .plan-reading-page { font-size: 14px; line-height: 1.7; }
-    .plan-reading-page p { margin: 8px 0; }
+    .plan-reading-page { font-size: 16px; line-height: 1.8; }
+    .plan-reading-page p { margin: 0 0 14px; }
     .headband-modal { position: fixed; inset: 0; z-index: 80; display: none; place-items: center; padding: 24px; background: rgba(8,17,31,.82); }
     .headband-modal.is-visible { display: grid; }
     .headband-modal-card { position: relative; display: grid; place-items: center; width: min(1080px, 94vw); max-height: 90dvh; padding: 18px; border-radius: 12px; background: #fff; }
@@ -471,7 +477,8 @@
   </header>
   <main id="main" class="main"></main>
   <script src="assets/experiment-registry.js"></script>
-  <script src="assets/knowledge-question-bank.js"></script>
+  <script src="assets/knowledge-post-strategy.js"></script>
+  <script src="assets/knowledge-assessment.js"></script>
   <script src="assets/platform-core.js"></script>
   <script src="auth.js"></script>
   <script src="assets/experiment-uploader.js"></script>
@@ -545,8 +552,7 @@
           "这些有关改善长时记忆策略的知识对我很有用，我会继续运用。",
           "在学习这些有关改善长时记忆策略的知识时，我会与现实生活进行联系。",
           "我会根据今天科学探究中获得的知识，反思自己以前采用的记忆方法，并尝试加以改进。",
-          "在学习这些有关改善长时记忆策略的知识时，我会联想到之前学过或了解过的知识。",
-          "我能够根据不同的学习任务，选择合适的记忆策略来帮助自己学习。"
+          "在学习这些有关改善长时记忆策略的知识时，我会联想到之前学过或了解过的知识。"
         ]
       },
       load: {
@@ -580,8 +586,9 @@
       }
     };
     const KNOWLEDGE_QUIZ = {
-      items: window.BrainKnowledgeQuestionBank.getExperimentQuestions("strategies")
+      items: window.BrainKnowledgePostStrategyQuestions
     };
+    const knowledgeAssessmentApi = window.BrainKnowledgeAssessment;
 
     function createDefaultSurveys() {
       return { current: { postMeta: {}, cognitiveLoad: {}, inquiryParticipation: {} } };
@@ -723,6 +730,7 @@
       strategyScores: [],
       surveys: createDefaultSurveys(),
       knowledgeQuiz: createDefaultKnowledgeQuiz(),
+      knowledgeAssessment: knowledgeAssessmentApi.emptyTimeline(),
       savedAt: ""
     };
     let state = loadState();
@@ -771,6 +779,7 @@
       merged.strategyScores = Array.isArray(incoming.strategyScores) ? incoming.strategyScores : [];
       merged.surveys = mergeSurveys(incoming.surveys);
       merged.knowledgeQuiz = mergeKnowledgeQuiz(incoming.knowledgeQuiz);
+      merged.knowledgeAssessment = knowledgeAssessmentApi.mergeTimelines(incoming.knowledgeAssessment, knowledgeAssessmentApi.readTimeline());
       if (!incoming.surveys) merged.currentStep = 0;
       if (incoming.flowVersion !== FLOW_VERSION) {
         merged.currentStep = migrateLegacyStepIndex(merged.currentStep);
@@ -970,6 +979,59 @@
       alert(message);
     }
 
+    function getFirstUnansweredSurveyQuestion(surveyKey, itemCount) {
+      const answers = state.surveys?.current?.[surveyKey] || {};
+      for (let index = 0; index < itemCount; index += 1) {
+        if (!Number(answers[`q${index + 1}`])) return index;
+      }
+      return -1;
+    }
+
+    function getIncompletePosttestPage() {
+      const quizAnswers = state.knowledgeQuiz?.answers || {};
+      for (let index = 0; index < KNOWLEDGE_QUIZ.items.length; index += 1) {
+        if (!quizAnswers[`q${index + 1}`]) return index;
+      }
+      let offset = KNOWLEDGE_QUIZ.items.length;
+      for (const [surveyKey, defKey] of [["postMeta", "meta"], ["cognitiveLoad", "load"], ["inquiryParticipation", "inquiry"]]) {
+        const missing = getFirstUnansweredSurveyQuestion(surveyKey, SURVEY_DEFS[defKey].items.length);
+        if (missing >= 0) return offset + Math.floor(missing / 3);
+        offset += Math.ceil(SURVEY_DEFS[defKey].items.length / 3);
+      }
+      return Math.max(0, getStepPageCount("posttest") - 1);
+    }
+
+    function getIncompleteStepPage(stepId) {
+      const fields = state.fields || {};
+      if (stepId === "question") {
+        if (!hasText(fields.brainstormIndividual) || !hasText(fields.brainstormGroup)) return 0;
+        if (fields.strategyMatchConfirmed !== true) return 6;
+        return 7;
+      }
+      if (stepId === "hypothesis") return hasText(fields.hypothesis1) ? 1 : 0;
+      if (stepId === "plan") {
+        if (!hasText(fields.strategy1) || !hasText(fields.strategy2)) return 3;
+        if (getPlannedItemCount(1) <= 0) return 4;
+        return 5;
+      }
+      if (stepId === "evidence") return 0;
+      if (stepId === "analysis") return Array.isArray(state.records) && state.records.length ? 2 : 0;
+      if (stepId === "conclusion") return 0;
+      if (stepId === "reflection") {
+        if (!hasText(fields.designImprove)) return 0;
+        if (!hasText(fields.surprise)) return 1;
+        return 2;
+      }
+      if (stepId === "posttest") return getIncompletePosttestPage();
+      return Math.max(0, getStepPageIndex(stepId));
+    }
+
+    function getIncompleteStepMessage(stepId) {
+      const pageCount = getStepPageCount(stepId);
+      const pageNumber = Math.min(Math.max(getIncompleteStepPage(stepId), 0), pageCount - 1) + 1;
+      return `请先完成本步骤内容。（${steps[state.currentStep].title}${pageNumber}/${pageCount}）`;
+    }
+
     function goToStep(targetStep) {
       const target = clampStepIndex(targetStep);
       if (!isDeveloperMode() && target > state.maxUnlockedStep) {
@@ -983,7 +1045,7 @@
 
     function goNextStep() {
       if (!validateStep(steps[state.currentStep].id)) {
-        showStepMessage("请先完成本步骤内容。");
+        showStepMessage(getIncompleteStepMessage(steps[state.currentStep].id));
         return;
       }
       if (state.currentStep < steps.length - 1) {
@@ -1060,7 +1122,7 @@
       const fixedCounts = {
         question: 8,
         hypothesis: 2,
-        plan: 8,
+        plan: 7,
         evidence: 1 + Math.ceil((state.attemptHistory || []).length / 3),
         analysis: 4 + Math.ceil((state.strategyScores || []).length / 3),
         conclusion: 1,
@@ -1185,7 +1247,7 @@
           return '<article class="quiz-card"><h4>第' + (index + 1) + '题</h4><p>' + escapeHtml(item.question) + '</p>' +
             '<div class="quiz-options">' + Object.keys(item.options).map((key) => {
               const checked = selected === key;
-              return '<label class="quiz-option ' + (checked ? 'is-selected' : '') + '"><input type="radio" name="knowledge-' + itemKey + '" data-quiz-question="' + itemKey + '" value="' + key + '" ' + (checked ? 'checked' : '') + (quiz.submitted ? ' disabled' : '') + '><span>' + key + '　' + escapeHtml(item.options[key]) + '</span></label>';
+              return '<label class="quiz-option ' + (checked ? 'is-selected' : '') + '"><input type="radio" name="knowledge-' + itemKey + '" data-quiz-question="' + itemKey + '" value="' + key + '" ' + (checked ? 'checked' : '') + (quiz.submitted ? ' disabled' : '') + '><span class="quiz-key">' + key + '</span><span class="quiz-label">' + escapeHtml(item.options[key]) + '</span></label>';
             }).join('') + '</div></article>';
         }).join('') +
         result +
@@ -1193,12 +1255,15 @@
     }
     function renderKnowledgeQuizItem(index) {
       const quiz = mergeKnowledgeQuiz(state.knowledgeQuiz);
+      if (state.knowledgeAssessment?.T4 || quiz.submitted || quiz.history.length) {
+        return '<section class="quiz-section"><div class="quiz-result">即时知识测试已完成，作答已锁定。</div></section>';
+      }
       const item = KNOWLEDGE_QUIZ.items[index];
       const itemKey = `q${index + 1}`;
       const selectedValue = quiz.answers[itemKey] || "";
       return `<section class="quiz-section"><article class="quiz-card"><h4>第 ${index + 1} 题</h4><p>${escapeHtml(item.question)}</p><div class="quiz-options">${Object.keys(item.options).map((key) => {
         const checked = selectedValue === key;
-        return `<label class="quiz-option ${checked ? "is-selected" : ""}"><input type="radio" name="knowledge-${itemKey}" data-quiz-question="${itemKey}" value="${key}" ${checked ? "checked" : ""}${quiz.submitted ? " disabled" : ""}><span>${key}　${escapeHtml(item.options[key])}</span></label>`;
+        return `<label class="quiz-option ${checked ? "is-selected" : ""}"><input type="radio" name="knowledge-${itemKey}" data-quiz-question="${itemKey}" value="${key}" ${checked ? "checked" : ""}${quiz.submitted ? " disabled" : ""}><span class="quiz-key">${key}</span><span class="quiz-label">${escapeHtml(item.options[key])}</span></label>`;
       }).join("")}</div></article>${quiz.submitted ? '<div class="quiz-result">案件知识验证已完成，答案已锁定。</div>' : ""}</section>`;
     }
 
@@ -1220,6 +1285,8 @@
 
     function finalizeKnowledgeQuizOnce() {
       state.knowledgeQuiz = mergeKnowledgeQuiz(state.knowledgeQuiz);
+      state.knowledgeAssessment = knowledgeAssessmentApi.mergeTimelines(state.knowledgeAssessment, knowledgeAssessmentApi.readTimeline());
+      if (state.knowledgeAssessment.T4) return true;
       if (state.knowledgeQuiz.submitted || state.knowledgeQuiz.history.length) return true;
       const unanswered = KNOWLEDGE_QUIZ.items.some((_, index) => !state.knowledgeQuiz.answers['q' + (index + 1)]);
       if (unanswered) {
@@ -1252,6 +1319,11 @@
       state.knowledgeQuiz.submitted = true;
       state.knowledgeQuiz.submittedAt = record.submittedAt;
       state.knowledgeQuiz.wrongQuestions = record.wrongQuestions;
+      const assessmentDraft = {
+        questionOrder: KNOWLEDGE_QUIZ.items.map((item) => item.id),
+        answers: Object.fromEntries(KNOWLEDGE_QUIZ.items.map((item, index) => [item.id, state.knowledgeQuiz.answers['q' + (index + 1)]]))
+      };
+      state.knowledgeAssessment = knowledgeAssessmentApi.submitStage(state.knowledgeAssessment, "T4", KNOWLEDGE_QUIZ.items, assessmentDraft).timeline;
       saveState();
       renderApp();
       return true;
@@ -1462,8 +1534,7 @@
     }
     function renderPlanStep() {
       const pages = [
-        { title: "材料五：主动提取实验设计", content: () => `<article class="page-card plan-reading-page"><h4>材料五</h4><p>心理学家亨利·罗迪格（Henry Roediger）在2006年进行了一项关于主动提取如何影响长时记忆的重要实验。首先选取了40组斯瓦希里语-英语单词组作为记忆材料，比如"mashua-boat"这样的组合。将参与者随机分成两组，一组采用传统的重复学习方法，另一组则采用主动提取的方式。在第一阶段的学习中，所有参与者都会完整地学习一遍40组单词对，每组单词会呈现5秒钟，让参与者形成初步记忆。</p><p>接下来的练习阶段体现出了关键差异：重复学习组的参与者会再次完整地阅读所有单词对4遍，每次阅读的顺序都随机打乱，模拟了"死记硬背"的学习方法；而主动提取组的参与者则只阅读单词对1遍，之后就要面对3轮回忆测试。在回忆阶段，研究人员会单独呈现斯瓦希里语单词，比如"mashua"，参与者需要通过主动提取来回忆对应的英语释义"boat"。</p></article>` },
-        { title: "材料五：突袭测试与结果", content: () => `<article class="page-card plan-reading-page"><h4>材料五（续）</h4><p>随后，研究人员对所有参与者进行了突袭测试，要求他们根据斯瓦希里语单词回忆对应的英语释义，以此来评估长时记忆的保持效果。测试结果非常明显：主动提取组的平均正确率达到了80%左右，而重复学习组只有约30%的正确率。这个差距有力地证明了主动回忆比被动复习更能促进长时记忆的保持。</p></article>` },
+        { title: "材料五：主动提取实验设计", content: () => `<article class="page-card plan-reading-page"><p>心理学家亨利·罗迪格（Henry Roediger）在2006年进行了一项关于主动提取如何影响长时记忆的重要实验。首先选取了40组斯瓦希里语-英语单词组作为记忆材料，比如"mashua-boat"这样的组合。将参与者随机分成两组，一组采用传统的重复学习方法，另一组则采用主动提取的方式。在第一阶段的学习中，所有参与者都会完整地学习一遍40组单词对，每组单词会呈现5秒钟，让参与者形成初步记忆。</p><p>接下来的练习阶段体现出了关键差异：重复学习组的参与者会再次完整地阅读所有单词对4遍，每次阅读的顺序都随机打乱，模拟了"死记硬背"的学习方法；而主动提取组的参与者则只阅读单词对1遍，之后就要面对3轮回忆测试。在回忆阶段，研究人员会单独呈现斯瓦希里语单词，比如"mashua"，参与者需要通过主动提取来回忆对应的英语释义"boat"。</p><p>随后，研究人员对所有参与者进行了突袭测试，要求他们根据斯瓦希里语单词回忆对应的英语释义，以此来评估长时记忆的保持效果。测试结果非常明显：主动提取组的平均正确率达到了80%左右，而重复学习组只有约30%的正确率。这个差距有力地证明了主动回忆比被动复习更能促进长时记忆的保持。</p></article>` },
         { title: "材料六：头环说明", content: renderHeadbandPlanPage },
         { title: "策略与记忆材料推荐", content: renderStrategyRecommendationPage },
         { title: "实验策略与参与者", content: () => `<div class="page-card"><p>请分别设置两轮实验。每轮两个阶段的材料类型、难度和数量相同，但系统会抽取不同题目。</p><div class="strategy-mode-grid"><div class="strategy-mode-card"><h4>阶段一</h4><p>策略：简单复述。这是“不使用额外策略”的基线条件。</p></div><div class="strategy-mode-card"><h4>阶段二</h4><p>第一轮使用策略1，第二轮使用策略2。</p></div></div><div class="compact-form-grid"><div class="field"><label>阶段一策略</label>${renderStrategySelect("stage1Strategy", "简单复述", true)}</div><div class="field"><label>策略 1</label>${renderExperimentStrategySelect("strategy1")}</div><div class="field"><label>策略 2</label>${renderExperimentStrategySelect("strategy2")}</div><div class="field"><label>参与者编号</label><input type="text" data-field="participantId" value="${escapeHtml(state.fields.participantId || state.studentId)}" placeholder="请输入参与者编号"></div></div></div>` },

@@ -90,11 +90,6 @@
       activityTopic: "探究干扰对长时记忆的影响", referenceConcepts: ["研究假设", "结果预测", "干扰", "长时记忆"], minimumLength: 10
     },
     {
-      experimentId: "interference", stageId: "plan", taskId: "interferenceStagePlan",
-      taskTitle: "干扰阶段", taskInstruction: "请写出干扰阶段参与者需要做的事",
-      activityTopic: "探究干扰对长时记忆的影响", referenceConcepts: ["干扰阶段", "参与者", "实验流程"], minimumLength: 10
-    },
-    {
       experimentId: "interference", stageId: "plan", taskId: "independentVariablePlan",
       taskTitle: "自变量", taskInstruction: "填写两轮实验中需要改变的条件",
       activityTopic: "探究干扰对长时记忆的影响", referenceConcepts: ["自变量", "两轮实验", "改变条件"], minimumLength: 10

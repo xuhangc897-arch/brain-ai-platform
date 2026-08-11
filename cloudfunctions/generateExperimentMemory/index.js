@@ -3,7 +3,6 @@
 const cloudbase = require("@cloudbase/node-sdk");
 const crypto = require("crypto");
 const https = require("https");
-const answers = require("./question-answers");
 
 const EXPERIMENTS = Object.freeze({
   memory: { order: 1, label: "记忆容量实验" },
@@ -11,6 +10,7 @@ const EXPERIMENTS = Object.freeze({
   interference: { order: 3, label: "长时记忆干扰实验" },
   strategies: { order: 4, label: "长时记忆策略实验" }
 });
+const KNOWLEDGE_STAGE_BY_EXPERIMENT = { memory: "T1", nback: "T2", interference: "T3", strategies: "T4" };
 const STAGES = new Set(["question", "hypothesis", "plan", "evidence", "analysis", "conclusion", "reflection", "posttest"]);
 const SUMMARY_CODES = new Set([
   "FORM_QUESTION", "DESIGN_INQUIRY", "COMPARE_RESULTS", "USE_EVIDENCE",
@@ -83,6 +83,7 @@ function fullState(record) {
     const last = attempts[attempts.length - 1] || {};
     return Object.assign({}, record.experimentResults, {
       fields: record.answers || {},
+      knowledgeAssessment: record.knowledgeAssessment || null,
       surveys: { postMeta: record.surveys && record.surveys.meta || {}, cognitiveLoad: record.surveys && record.surveys.cognitiveLoad || {}, inquiryParticipation: record.surveys && record.surveys.inquiryParticipation || {} },
       knowledgeQuiz: Object.assign({}, quiz, { history: attempts.map((item) => Object.assign({}, item, { submittedAt: item.timestamp || item.submittedAt || "" })), submitted: attempts.length > 0, score: quiz.finalScore, correctCount: last.correctCount || 0, submittedAt: last.timestamp || "" })
     });
@@ -130,14 +131,14 @@ async function readDocument(id) {
 
 function surveyComplete(state) {
   const surveys = state.surveys || {};
-  const requiredCounts = { postMeta: 6, cognitiveLoad: 2, inquiryParticipation: 9 };
+  const requiredCounts = { postMeta: 5, cognitiveLoad: 2, inquiryParticipation: 9 };
   return Object.entries(requiredCounts).every(([key, requiredCount]) => {
     const answers = surveys[key] || {};
-    return Object.keys(answers).length >= requiredCount && Object.values(answers).every((value) => Number(value) > 0);
+    return Array.from({ length: requiredCount }, (_, index) => Number(answers[`q${index + 1}`]) > 0).every(Boolean);
   });
 }
 
-function completionFacts(state) {
+function completionFacts(state, experimentId = "") {
   const unlocked = Math.max(0, Math.min(7, Number(state.maxUnlockedStep) || 0));
   const completedStages = Array.from(STAGES).slice(0, unlocked);
   const posttestComplete = surveyComplete(state);
@@ -148,7 +149,7 @@ function completionFacts(state) {
     completedTaskCount: unique.length,
     unfinishedStageIds: Array.from(STAGES).filter((stageId) => !unique.includes(stageId)),
     posttestSurveyComplete: posttestComplete,
-    posttestKnowledgeComplete: Boolean(state.knowledgeQuiz && state.knowledgeQuiz.submitted)
+    posttestKnowledgeComplete: Boolean(state.knowledgeAssessment?.[KNOWLEDGE_STAGE_BY_EXPERIMENT[experimentId]] || state.knowledgeQuiz?.submitted)
   };
 }
 
@@ -181,31 +182,22 @@ function performanceFacts(experimentId, state) {
   return aggregate(strategyRecords, "strategy");
 }
 
-function quizSummary(state) {
-  const history = state.knowledgeQuiz && Array.isArray(state.knowledgeQuiz.history) ? state.knowledgeQuiz.history : [];
-  const first = history[0] || null;
-  const last = history[history.length - 1] || null;
-  const highest = history.reduce((best, item) => !best || Number(item.score) > Number(best.score) ? item : best, null);
+function quizSummary(state, experimentId) {
+  const record = state.knowledgeAssessment?.[KNOWLEDGE_STAGE_BY_EXPERIMENT[experimentId]] || null;
   return {
-    available: Boolean(history.length),
-    firstScore: first ? Number(first.score) || 0 : null,
-    latestScore: last ? Number(last.score) || 0 : null,
-    highestScore: highest ? Number(highest.score) || 0 : null,
-    submissionCount: history.length
+    available: Boolean(record),
+    firstScore: record ? Number(record.score) : null,
+    latestScore: record ? Number(record.score) : null,
+    highestScore: record ? Number(record.score) : null,
+    submissionCount: record ? 1 : 0
   };
 }
 
 function scorePretest(screening, experimentId) {
   const state = screening ? fullState(screening) : {};
-  const pretest = state.knowledgePretest || {};
-  const source = pretest.answersByQuestionId || {};
-  const answerKey = answers[experimentId];
-  if (!pretest.submitted || !answerKey) return { available: false, score: null, correctCount: null };
-  let correctCount = 0;
-  answerKey.forEach((answer, index) => {
-    if (String(source[`${experimentId}_q${index + 1}`] || "") === answer) correctCount += 1;
-  });
-  return { available: true, score: correctCount * 10, correctCount };
+  const category = state.knowledgeAssessment?.T0?.categoryScores?.[experimentId] || null;
+  if (!category) return { available: false, score: null, correctCount: null };
+  return { available: true, score: Number(category.score), correctCount: Number(category.correctCount) };
 }
 
 function interventionFacts(records) {
@@ -223,9 +215,9 @@ function interventionFacts(records) {
 }
 
 function buildFacts(experimentId, state, learning, interventions, screening, submission) {
-  const completion = completionFacts(state);
+  const completion = completionFacts(state, experimentId);
   const pretest = scorePretest(screening, experimentId);
-  const posttest = quizSummary(state);
+  const posttest = quizSummary(state, experimentId);
   return {
     completion,
     performance: performanceFacts(experimentId, state),
@@ -407,7 +399,7 @@ exports.main = async (event) => {
     const submission = await latestSubmission(studentId, experimentId);
     if (!submission) return { ok: false, code: "SUBMISSION_NOT_FOUND", message: "尚未找到实验提交记录。", retryable: true };
     const state = fullState(submission);
-    const completion = completionFacts(state);
+    const completion = completionFacts(state, experimentId);
     if (completion.completedTaskCount < 8) {
       return { ok: false, code: "EXPERIMENT_INCOMPLETE", message: "实验必要环节尚未完成。", retryable: false, completion };
     }

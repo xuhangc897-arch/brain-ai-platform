@@ -91,10 +91,10 @@ function fullState(record) {
 
 function completed(state) {
   const surveys = state.surveys || {};
-  const counts = { postMeta: 6, cognitiveLoad: 2, inquiryParticipation: 9 };
+  const counts = { postMeta: 5, cognitiveLoad: 2, inquiryParticipation: 9 };
   const surveyComplete = Object.entries(counts).every(([key, count]) => {
     const values = surveys[key] || {};
-    return Object.keys(values).length >= count && Object.values(values).every((value) => Number(value) > 0);
+    return Array.from({ length: count }, (_, index) => Number(values[`q${index + 1}`]) > 0).every(Boolean);
   });
   return Number(state.maxUnlockedStep) >= 7 && surveyComplete;
 }

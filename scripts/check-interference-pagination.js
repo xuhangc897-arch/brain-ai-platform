@@ -23,7 +23,7 @@ assert(source.includes('plan: renderPagedPlanStep'), "plan step must use paginat
 assert(source.includes('evidence: renderPagedEvidenceStep'), "evidence step must use pagination");
 
 const plan = sliceBetween("function renderPagedPlanStep()", "function renderPlanStep()");
-const order = ["实验材料一：倒摄干扰", "实验材料二：相似性干扰", "实验材料三：情绪干扰", "实验材料四：头环使用说明", "实验流程", "变量设计", "实验计划"];
+const order = ["实验材料一：倒摄干扰", "实验材料二：相似性干扰", "实验材料三：情绪干扰", "实验材料四：头环使用说明", "变量设计", "实验计划"];
 let previousIndex = -1;
 order.forEach((label) => {
   const index = plan.indexOf(label);
@@ -31,6 +31,10 @@ order.forEach((label) => {
   previousIndex = index;
 });
 assert(!plan.includes("第一轮") && !plan.includes("第二轮"), "plan flow must not expose round sorting sections");
+assert(!plan.includes("interferenceStagePlan") && !plan.includes("请补充干扰阶段参与者需要做的事情"), "removed interference-stage prompt must not render");
+assert(!plan.includes("参与者编号") && !plan.includes("固定材料条件数"), "removed plan parameters must not render");
+assert(source.includes("plan: 6"), "plan pagination must contain six pages");
+assert(source.includes(".time-parameter-grid") && source.includes("grid-template-columns: repeat(3"), "time parameters must share one desktop row");
 assert(!source.includes("步骤卡片池") && !source.includes("data-flow-") && !source.includes("bindFlowDesigner"), "legacy flow designer must be removed");
 
 const hypothesis = sliceBetween("function renderHypothesisStep()", "function renderPagedPlanStep()");
@@ -43,7 +47,7 @@ assert(evidence.includes("返回制定计划修改"), "evidence setup must link 
 assert(!evidence.includes("roundSelect") && !evidence.includes("participantInput") && !evidence.includes("emotionConditionSelect"), "evidence setup must not duplicate editable plan controls");
 assert(source.includes("getEvidenceRunGroups") && source.includes("getEvidencePageSize") && source.includes("groups.slice(index, index + pageSize)"), "evidence results must be grouped and paged at no more than three per page");
 
-for (const field of ["interferenceFactor", "flowRound1", "flowRound2"]) {
+for (const field of ["interferenceFactor", "flowRound1", "flowRound2", "interferenceStagePlan"]) {
   assert(source.includes(field), `legacy compatibility field missing: ${field}`);
 }
 assert(source.includes("syncLegacyFlowFields"), "legacy flow values must be synchronized automatically");

@@ -1135,6 +1135,7 @@
     let currentRecordView = "submissions";
     const DEFAULT_RECORD_DATA = Object.freeze({
       answers: {}, experimentResults: {}, knowledgeQuiz: { attempts: [] },
+      knowledgeAssessment: { schemaVersion: 2, T0: null, T1: null, T2: null, T3: null, T4: null, T5: null },
       surveys: {}, reflections: {}, aiSummary: { usageCount: 0 }
     });
 
@@ -1395,8 +1396,32 @@
 
     function showDetail(index) {
       const record = records[index];
-      detailContent.textContent = JSON.stringify(record, null, 2);
+      if (record?.module === "poster") {
+        const state = record.data?.fullState || record.data || {};
+        const rows = buildKnowledgeTrajectoryRows(state.knowledgeAssessment, Number(record.schemaVersion) < 2);
+        detailContent.innerHTML = `<h3>T0–T5 知识变化轨迹</h3>
+          <table><thead><tr><th>阶段</th><th>状态</th><th>得分</th><th>正确题数</th><th>提交时间</th></tr></thead>
+          <tbody>${rows.map((row) => `<tr>${row.map((cell) => `<td>${escapeHtml(cell)}</td>`).join("")}</tr>`).join("")}</tbody></table>
+          <details><summary>查看完整记录</summary><pre>${escapeHtml(JSON.stringify(record, null, 2))}</pre></details>`;
+      } else {
+        detailContent.textContent = JSON.stringify(record, null, 2);
+      }
       detailDialog.showModal();
+    }
+
+    function buildKnowledgeTrajectoryRows(value, legacy = false) {
+      const timeline = value && typeof value === "object" ? value : {};
+      const labels = { T0: "T0 知识基础", T1: "T1 短时记忆", T2: "T2 工作记忆", T3: "T3 记忆干扰", T4: "T4 记忆策略", T5: "T5 知识后测" };
+      const rows = Object.entries(labels).map(([stage, label]) => {
+        const record = timeline[stage];
+        return record
+          ? [label, "已完成", record.score, `${record.correctCount} / ${record.totalCount}`, formatDate(record.timestamp)]
+          : [label, legacy ? "旧版记录（未折算）" : "暂无数据", "", "", ""];
+      });
+      const t0 = timeline.T0;
+      const t5 = timeline.T5;
+      rows.push(["T5 - T0 提升值", t0 && t5 ? "已计算" : "暂无数据", t0 && t5 ? Number(t5.score) - Number(t0.score) : "", "", ""]);
+      return rows;
     }
 
     function getModuleLabel(module) {
@@ -1857,8 +1882,9 @@
         buildSurveySheet(studentLabel, state, "postMeta", NBACK_SURVEY_DEFS),
         buildSurveySheet(studentLabel, state, "cognitiveLoad", NBACK_SURVEY_DEFS),
         buildSurveySheet(studentLabel, state, "inquiryParticipation", NBACK_SURVEY_DEFS),
-        buildKnowledgeQuizSheet(studentLabel, state),
-        buildKnowledgeHistorySheet(studentLabel, state),
+        ...(Number(stateRecord.schemaVersion) >= 2
+          ? [buildKnowledgeAssessmentSheet(studentLabel, state)]
+          : [buildKnowledgeQuizSheet(studentLabel, state), buildKnowledgeHistorySheet(studentLabel, state)]),
         [`${studentLabel}-系统信息`, [
           ["项目", "内容"],
           ["实验版本", "science-inquiry-static-v1"],
@@ -2364,6 +2390,13 @@
       ]];
     }
 
+    function buildKnowledgeAssessmentSheet(studentLabel, state, legacy = false) {
+      return [`${studentLabel}-T0-T5知识轨迹`, [
+        ["阶段", "状态", "得分", "正确题数", "提交时间"],
+        ...buildKnowledgeTrajectoryRows(state.knowledgeAssessment, legacy)
+      ]];
+    }
+
     function buildPosterStateSheets(stateRecord) {
       const state = stateRecord.data?.fullState || stateRecord.data || {};
       const fields = state.fields || {};
@@ -2387,6 +2420,7 @@
           ["后台提交时间", formatDate(stateRecord.uploadedAt || stateRecord.createdAt)],
           ["导出时间", new Date().toLocaleString()]
         ]],
+        buildKnowledgeAssessmentSheet(studentLabel, state, Number(stateRecord.schemaVersion) < 2),
         [`${studentLabel}-海报方案与反思`, [
           ["字段", "内容"],
           ["研究问题", fields.researchQuestion],

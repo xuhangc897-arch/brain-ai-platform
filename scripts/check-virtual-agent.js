@@ -9,7 +9,7 @@ const pages = [
   { file: "nback.html", id: "nback", steps: 8 },
   { file: "interference.html", id: "interference", steps: 8 },
   { file: "strategies.html", id: "strategies", steps: 8 },
-  { file: "poster.html", id: "poster", steps: 6 }
+  { file: "poster.html", id: "poster", steps: 7 }
 ];
 const failures = [];
 

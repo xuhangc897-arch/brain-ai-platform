@@ -515,6 +515,9 @@
 
     .method-page .method-card {
       padding: 22px;
+      height: 100%;
+      display: flex;
+      flex-direction: column;
     }
 
     .method-page .method-grid {
@@ -524,7 +527,7 @@
       width: min(1080px, 100%);
       height: 100%;
       margin: 0 auto;
-      align-items: center;
+      align-items: stretch;
     }
 
     .question-sentence {
@@ -1466,6 +1469,8 @@
       .run-results-grid {
         grid-template-columns: 1fr;
       }
+
+      .method-page .method-card { height: auto; }
     }
 
     @media (max-width: 640px) {
@@ -1613,7 +1618,8 @@
   <main id="main" class="main"></main>
 
   <script src="assets/experiment-registry.js"></script>
-  <script src="assets/knowledge-question-bank.js"></script>
+  <script src="assets/knowledge-post-memory.js"></script>
+  <script src="assets/knowledge-assessment.js"></script>
   <script src="assets/platform-core.js"></script>
   <script src="auth.js"></script>
   <script src="assets/experiment-uploader.js"></script>
@@ -1653,8 +1659,7 @@
           "这些有关短时记忆容量的知识对我很有用，我会继续运用。",
           "在学习这些有关短时记忆容量的知识时，我会与现实生活进行联系。",
           "我会根据今天科学探究中获得的知识，反思自己以前记忆过程中做得不足的地方并加以改进。",
-          "在学习这些有关短时记忆容量的知识时，我会联想到之前学过或了解过的知识。",
-          "我能够利用本次科学探究的结果，解释为什么人的短时记忆容量是有限的。"
+          "在学习这些有关短时记忆容量的知识时，我会联想到之前学过或了解过的知识。"
         ]
       },
       load: {
@@ -1688,8 +1693,9 @@
       }
     };
     const KNOWLEDGE_QUIZ = {
-      items: window.BrainKnowledgeQuestionBank.getExperimentQuestions("memory")
+      items: window.BrainKnowledgePostMemoryQuestions
     };
+    const knowledgeAssessmentApi = window.BrainKnowledgeAssessment;
 
     function createDefaultSurveys() {
       return { current: { postMeta: {}, cognitiveLoad: {}, inquiryParticipation: {} } };
@@ -1828,6 +1834,7 @@
       records: [],
       surveys: createDefaultSurveys(),
       knowledgeQuiz: createDefaultKnowledgeQuiz(),
+      knowledgeAssessment: knowledgeAssessmentApi.emptyTimeline(),
       savedAt: ""
     };
 
@@ -1863,6 +1870,7 @@
       merged.records = Array.isArray(incoming.records) ? incoming.records : [];
       merged.surveys = mergeSurveys(incoming.surveys);
       merged.knowledgeQuiz = mergeKnowledgeQuiz(incoming.knowledgeQuiz);
+      merged.knowledgeAssessment = knowledgeAssessmentApi.mergeTimelines(incoming.knowledgeAssessment, knowledgeAssessmentApi.readTimeline());
       if (!incoming.surveys) merged.currentStep = 0;
       if (incoming.flowVersion !== FLOW_VERSION) {
         merged.currentStep = migrateLegacyStepIndex(merged.currentStep);
@@ -2045,6 +2053,55 @@
       alert(message);
     }
 
+    function getFirstUnansweredSurveyQuestion(surveyKey, itemCount) {
+      const answers = state.surveys?.current?.[surveyKey] || {};
+      for (let index = 0; index < itemCount; index += 1) {
+        if (!Number(answers[`q${index + 1}`])) return index;
+      }
+      return -1;
+    }
+
+    function getIncompletePosttestPage() {
+      const quizAnswers = state.knowledgeQuiz?.answers || {};
+      for (let index = 0; index < KNOWLEDGE_QUIZ.items.length; index += 1) {
+        if (!quizAnswers[`q${index + 1}`]) return index;
+      }
+      let offset = KNOWLEDGE_QUIZ.items.length;
+      for (const [surveyKey, defKey] of [["postMeta", "meta"], ["cognitiveLoad", "load"], ["inquiryParticipation", "inquiry"]]) {
+        const missing = getFirstUnansweredSurveyQuestion(surveyKey, SURVEY_DEFS[defKey].items.length);
+        if (missing >= 0) return offset + Math.floor(missing / 3);
+        offset += Math.ceil(SURVEY_DEFS[defKey].items.length / 3);
+      }
+      return Math.max(0, getStepPageCount("posttest") - 1);
+    }
+
+    function getIncompleteStepPage(stepId) {
+      const fields = state.fields || {};
+      if (stepId === "question") return Math.max(0, getStepPageCount(stepId) - 1);
+      if (stepId === "hypothesis") return 0;
+      if (stepId === "plan") {
+        if (fields.planOrderConfirmed !== true) return 2;
+        if (!hasText(fields.method) || !hasText(fields.material) || !hasText(fields.startLength)) return 3;
+        return 4;
+      }
+      if (stepId === "evidence") return 0;
+      if (stepId === "analysis") return Array.isArray(state.records) && state.records.length ? 1 : 0;
+      if (stepId === "conclusion") return hasText(fields.conclusionCapacity) ? 1 : 0;
+      if (stepId === "reflection") {
+        if (!hasText(fields.designImprove)) return 0;
+        if (!hasText(fields.teamwork)) return 1;
+        return 2;
+      }
+      if (stepId === "posttest") return getIncompletePosttestPage();
+      return Math.max(0, getStepPageIndex(stepId));
+    }
+
+    function getIncompleteStepMessage(stepId) {
+      const pageCount = getStepPageCount(stepId);
+      const pageNumber = Math.min(Math.max(getIncompleteStepPage(stepId), 0), pageCount - 1) + 1;
+      return `请先完成本步骤内容。（${steps[state.currentStep].title}${pageNumber}/${pageCount}）`;
+    }
+
     function goToStep(targetStep) {
       const target = clampStepIndex(targetStep);
       if (!isDeveloperMode() && target > state.maxUnlockedStep) {
@@ -2058,7 +2115,7 @@
 
     function goNextStep() {
       if (!validateStep(steps[state.currentStep].id)) {
-        showStepMessage("请先完成本步骤内容。");
+        showStepMessage(getIncompleteStepMessage(steps[state.currentStep].id));
         return;
       }
       if (state.currentStep < steps.length - 1) {
@@ -2165,7 +2222,7 @@
       pages.push({
         title: "完成侦探小结",
         className: "posttest-summary-page",
-        content: () => `${renderSurveySummaryCards()}<div class="survey-intro"><h3>完成案件调查</h3><p>确认知识验证和三份问卷均已完成后，生成记忆侦探报告。</p></div>${renderPosttestExportArea()}`
+        content: () => `${renderSurveySummaryCards()}<div class="survey-intro"><p>确认知识验证和三份问卷均已完成后，生成记忆侦探报告。</p></div>${renderPosttestExportArea()}`
       });
       return renderPagedStep("posttest", pages);
     }
@@ -2224,6 +2281,8 @@
 
     function finalizeKnowledgeQuizOnce() {
       state.knowledgeQuiz = mergeKnowledgeQuiz(state.knowledgeQuiz);
+      state.knowledgeAssessment = knowledgeAssessmentApi.mergeTimelines(state.knowledgeAssessment, knowledgeAssessmentApi.readTimeline());
+      if (state.knowledgeAssessment.T1) return true;
       if (state.knowledgeQuiz.submitted || state.knowledgeQuiz.history.length) return true;
       const unanswered = KNOWLEDGE_QUIZ.items.some((_, index) => !state.knowledgeQuiz.answers['q' + (index + 1)]);
       if (unanswered) {
@@ -2256,6 +2315,11 @@
       state.knowledgeQuiz.submitted = true;
       state.knowledgeQuiz.submittedAt = record.submittedAt;
       state.knowledgeQuiz.wrongQuestions = record.wrongQuestions;
+      const assessmentDraft = {
+        questionOrder: KNOWLEDGE_QUIZ.items.map((item) => item.id),
+        answers: Object.fromEntries(KNOWLEDGE_QUIZ.items.map((item, index) => [item.id, state.knowledgeQuiz.answers['q' + (index + 1)]]))
+      };
+      state.knowledgeAssessment = knowledgeAssessmentApi.submitStage(state.knowledgeAssessment, "T1", KNOWLEDGE_QUIZ.items, assessmentDraft).timeline;
       saveState();
       renderApp();
       return true;
@@ -2343,15 +2407,18 @@
 
     function renderKnowledgeQuizItem(index) {
       const quiz = mergeKnowledgeQuiz(state.knowledgeQuiz);
+      if (state.knowledgeAssessment?.T1 || quiz.submitted || quiz.history.length) {
+        return '<section class="quiz-section"><div class="quiz-result">即时知识测试已完成，作答已锁定。</div></section>';
+      }
       const item = KNOWLEDGE_QUIZ.items[index];
       const itemKey = 'q' + (index + 1);
       const selected = quiz.answers[itemKey] || '';
       return '<section class="quiz-section">' +
-        '<div class="survey-intro"><h3>🕵️ 案件知识验证</h3><p>每页完成一道题目，答案将在生成报告时统一提交。</p></div>' +
-        '<article class="quiz-card"><h4>第' + (index + 1) + '题</h4><p>' + escapeHtml(item.question) + '</p>' +
+        '<div class="survey-intro"><p>每页完成一道题目，答案将在生成报告时统一提交。</p></div>' +
+        '<article class="quiz-card"><p>' + escapeHtml(item.question) + '</p>' +
           '<div class="quiz-options">' + Object.keys(item.options).map((key) => {
             const checked = selected === key;
-            return '<label class="quiz-option ' + (checked ? 'is-selected' : '') + '"><input type="radio" name="knowledge-' + itemKey + '" data-quiz-question="' + itemKey + '" value="' + key + '" ' + (checked ? 'checked' : '') + (quiz.submitted ? ' disabled' : '') + '><span>' + key + '　' + escapeHtml(item.options[key]) + '</span></label>';
+            return '<label class="quiz-option ' + (checked ? 'is-selected' : '') + '"><input type="radio" name="knowledge-' + itemKey + '" data-quiz-question="' + itemKey + '" value="' + key + '" ' + (checked ? 'checked' : '') + (quiz.submitted ? ' disabled' : '') + '><span class="quiz-key">' + key + '</span><span class="quiz-label">' + escapeHtml(item.options[key]) + '</span></label>';
           }).join('') + '</div></article>' +
       '</section>';
     }
@@ -2483,6 +2550,10 @@
       }
       if (next) {
         next.addEventListener("click", () => {
+          if (!isDeveloperMode() && stepId === "plan" && pageIndex === 2 && state.fields.planOrderConfirmed !== true) {
+            showStepMessage("请先将实验计划流程调整为正确顺序并确认。");
+            return;
+          }
           if (pageIndex < pageCount - 1) changeStepPage(stepId, pageIndex + 1, pageCount);
           else goNextStep();
         });
@@ -2543,7 +2614,6 @@
           className: "headband-page",
           content: () => `
             <article class="reading-card">
-              <h4>材料三：头环的介绍</h4>
               <p>头环是我们用来测量参与者在进行顺背法或倒背法任务时大脑前额叶（主要负责记忆和工作的大脑区域）活动水平的工具。在开展实验时，只要把它戴在头上，它就能通过监测大脑血氧浓度的变化等来收集信息，并在电脑上生成一幅3D的脑激活图。这张图可以直观呈现被激活脑区的位置、范围和强度，它会用颜色告诉你，在实验过程中大脑中哪些地方被激活，图中用暖色调（红-黄）表示大脑区域激活强度高，即正在非常努力地工作；用冷色调（蓝）表示激活程度低或变化不大。当我们测试短时记忆容量时，参与者需要复述一串串长度逐渐增加的数字或者字母。头环会实时捕捉参与者大脑前额叶的活动变化。因此，通过观察脑激活图上前额叶区域的颜色如何随着数字串变长而变化，再结合参与者复述的准确性，我们就能科学地推断出：参与者的大脑短时记忆容量大约是多少个信息单位了！</p>
               <button class="btn secondary headband-guide-trigger" type="button" id="viewHeadbandGuide">点击查看头环工作原理</button>
             </article>
@@ -2882,7 +2952,7 @@
       return renderPagedStep("analysis", [
         {
           title: "容量平均值",
-          content: () => `<div class="single-step-layout"><div class="panel"><div class="panel-head"><h3>容量平均值</h3></div><div class="panel-body">
+          content: () => `<div class="single-step-layout"><div class="panel"><div class="panel-body">
             ${summary.length ? `<table><thead><tr><th>参与者</th><th>各次容量</th><th>平均容量</th><th>有效次数</th></tr></thead><tbody>${rows}</tbody></table>` : `<div class="empty-state">还没有实验数据。请先完成至少一次测量。</div>`}
             <div class="reading-card group-average-card"><h4>个人短时记忆容量</h4><p>当前根据已有数据计算出的平均容量约为：<strong>${totalAverage || "--"}</strong> 个信息单位。</p></div>
           </div></div></div>`
@@ -2890,7 +2960,7 @@
         {
           title: "结果图与脑活动记录",
           className: "step-page-form",
-          content: () => `<div class="single-step-layout"><div class="panel"><div class="panel-head"><h3>结果图与脑活动记录</h3></div><div class="panel-body"><div class="chart">${chart}</div><textarea data-field="brainFinding" placeholder="请询问在你进行实验时观察头环的同学，并记录头环观察结果：颜色主要是红/黄/蓝中的哪一种？颜色是否随着任务难度或材料长度变化？前额叶区域是否出现更明显的暖色？哪一次任务中颜色变化最明显？">${escapeHtml(state.fields.brainFinding)}</textarea></div></div></div>`
+          content: () => `<div class="single-step-layout"><div class="panel"><div class="panel-body"><div class="chart">${chart}</div><textarea data-field="brainFinding" placeholder="请询问在你进行实验时观察头环的同学，并记录头环观察结果：颜色主要是红/黄/蓝中的哪一种？颜色是否随着任务难度或材料长度变化？前额叶区域是否出现更明显的暖色？哪一次任务中颜色变化最明显？">${escapeHtml(state.fields.brainFinding)}</textarea></div></div></div>`
         },
         {
           title: "三人小组结果记录",
@@ -2904,7 +2974,7 @@
       return renderPagedStep("conclusion", [
         {
           title: "核对实验结果",
-          content: () => `<div class="single-step-layout"><div class="panel"><div class="panel-head"><h3>核对实验结果</h3></div><div class="panel-body"><div class="form-grid">
+          content: () => `<div class="single-step-layout"><div class="panel"><div class="panel-body"><div class="form-grid">
             <div class="field"><label>短时记忆容量约为</label><input type="number" min="0" max="12" step="0.1" data-field="conclusionCapacity" value="${escapeHtml(state.fields.conclusionCapacity)}" placeholder="例如：7" /></div>
             <div class="field"><label>与假设是否一致</label><select data-field="hypothesisRelation"><option value="一致" ${selected("hypothesisRelation", "一致")}>一致</option><option value="不一致" ${selected("hypothesisRelation", "不一致")}>不一致</option></select></div>
             <div class="field"><label>与 7±2 理论是否一致</label><select data-field="millerRelation"><option value="一致" ${selected("millerRelation", "一致")}>一致</option><option value="不一致" ${selected("millerRelation", "不一致")}>不一致</option></select></div>
@@ -2913,7 +2983,7 @@
         {
           title: "形成最终结论",
           className: "step-page-form",
-          content: () => `<div class="single-step-layout"><div class="panel"><div class="panel-head"><h3>形成最终结论</h3></div><div class="panel-body">${renderPairedField("最终结论", `<textarea data-field="finalConclusion" placeholder="结合实验数据、假设和米勒理论写出自己的最终结论">${escapeHtml(state.fields.finalConclusion)}</textarea>`, renderGroupTextarea("finalConclusion_group"))}</div></div></div>`
+          content: () => `<div class="single-step-layout"><div class="panel"><div class="panel-body">${renderPairedField("最终结论", `<textarea data-field="finalConclusion" placeholder="结合实验数据、假设和米勒理论写出自己的最终结论">${escapeHtml(state.fields.finalConclusion)}</textarea>`, renderGroupTextarea("finalConclusion_group"))}</div></div></div>`
         }
       ]);
     }
@@ -2945,7 +3015,7 @@
       return renderPagedStep("reflection", questions.map((item) => ({
         title: item.title,
         className: "reflection-page",
-        content: () => `<div class="reflection-layout"><div class="panel"><div class="panel-head"><h3>${item.title}</h3></div><div class="panel-body">${renderPairedField(item.label, `<textarea data-field="${item.field}" placeholder="${item.placeholder}">${escapeHtml(state.fields[item.field])}</textarea>`, renderGroupTextarea(item.groupField))}</div></div></div>`
+        content: () => `<div class="reflection-layout"><div class="panel"><div class="panel-body">${renderPairedField(item.label, `<textarea data-field="${item.field}" placeholder="${item.placeholder}">${escapeHtml(state.fields[item.field])}</textarea>`, renderGroupTextarea(item.groupField))}</div></div></div>`
       })));
     }
 

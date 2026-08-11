@@ -1383,6 +1383,9 @@
     .page-card h4 { margin: 0 0 8px; color: var(--primary-dark); }
     .page-card p { margin: 0 0 8px; color: #344054; font-size: 14px; }
     .page-card p:last-child { margin-bottom: 0; }
+    .reading-page .page-card p { margin: 0 0 14px; font-size: 16px; line-height: 1.8; }
+    .merged-reading-page { display: grid; gap: 18px; }
+    .merged-reading-section + .merged-reading-section { padding-top: 18px; border-top: 1px solid var(--line); }
     .page-card .memory-table-wrap { margin-top: 10px; }
     .page-card .thinking-layer { grid-template-columns: repeat(2, minmax(0, 1fr)); }
     .page-card textarea { min-height: 98px; }
@@ -1643,7 +1646,8 @@
   </div>
 
   <script src="assets/experiment-registry.js"></script>
-  <script src="assets/knowledge-question-bank.js"></script>
+  <script src="assets/knowledge-post-nback.js"></script>
+  <script src="assets/knowledge-assessment.js"></script>
   <script src="assets/platform-core.js"></script>
   <script src="auth.js"></script>
   <script src="assets/experiment-uploader.js"></script>
@@ -1683,8 +1687,7 @@
           "这些有关工作记忆的知识对我很有用，我会继续运用。",
           "在学习这些有关工作记忆的知识时，我会与现实生活进行联系。",
           "我会根据今天科学探究中获得的知识，反思自己以前完成复杂任务时的表现，并尝试加以改进。",
-          "在学习这些有关工作记忆的知识时，我会联想到之前学过或了解过的知识。",
-          "我能够利用本次科学探究的结果，解释为什么任务难度增加时，工作记忆的负担会发生变化。"
+          "在学习这些有关工作记忆的知识时，我会联想到之前学过或了解过的知识。"
         ]
       },
       load: {
@@ -1718,8 +1721,9 @@
       }
     };
     const KNOWLEDGE_QUIZ = {
-      items: window.BrainKnowledgeQuestionBank.getExperimentQuestions("nback")
+      items: window.BrainKnowledgePostNbackQuestions
     };
+    const knowledgeAssessmentApi = window.BrainKnowledgeAssessment;
 
     function createDefaultSurveys() {
       return { current: { postMeta: {}, cognitiveLoad: {}, inquiryParticipation: {} } };
@@ -1847,6 +1851,7 @@
       testRuns: [],
       surveys: createDefaultSurveys(),
       knowledgeQuiz: createDefaultKnowledgeQuiz(),
+      knowledgeAssessment: knowledgeAssessmentApi.emptyTimeline(),
       savedAt: ""
     };
 
@@ -1899,6 +1904,7 @@
       merged.testRuns = Array.isArray(incoming.testRuns) ? incoming.testRuns : [];
       merged.surveys = mergeSurveys(incoming.surveys);
       merged.knowledgeQuiz = mergeKnowledgeQuiz(incoming.knowledgeQuiz);
+      merged.knowledgeAssessment = knowledgeAssessmentApi.mergeTimelines(incoming.knowledgeAssessment, knowledgeAssessmentApi.readTimeline());
       if (!incoming.surveys) merged.currentStep = 0;
       if (incoming.flowVersion !== FLOW_VERSION) {
         merged.currentStep = migrateLegacyStepIndex(merged.currentStep);
@@ -2060,6 +2066,48 @@
       alert(message);
     }
 
+    function getFirstUnansweredSurveyQuestion(surveyKey, itemCount) {
+      const answers = state.surveys?.current?.[surveyKey] || {};
+      for (let index = 0; index < itemCount; index += 1) {
+        if (!Number(answers[`q${index + 1}`])) return index;
+      }
+      return -1;
+    }
+
+    function getIncompletePosttestPage() {
+      const quizAnswers = state.knowledgeQuiz?.answers || {};
+      for (let index = 0; index < KNOWLEDGE_QUIZ.items.length; index += 1) {
+        if (!quizAnswers[`q${index + 1}`]) return index;
+      }
+      const surveys = [["postMeta", "meta"], ["cognitiveLoad", "load"], ["inquiryParticipation", "inquiry"]];
+      for (let index = 0; index < surveys.length; index += 1) {
+        const [surveyKey, defKey] = surveys[index];
+        if (getFirstUnansweredSurveyQuestion(surveyKey, SURVEY_DEFS[defKey].items.length) >= 0) {
+          return KNOWLEDGE_QUIZ.items.length + index;
+        }
+      }
+      return Math.max(0, getStepPageCount("posttest") - 1);
+    }
+
+    function getIncompleteStepPage(stepId) {
+      const fields = state.fields || {};
+      if (stepId === "question") return 4;
+      if (stepId === "hypothesis") return 0;
+      if (stepId === "plan") return 1;
+      if (stepId === "evidence") return 0;
+      if (stepId === "analysis") return Array.isArray(state.testRuns) && state.testRuns.length ? 1 : 0;
+      if (stepId === "conclusion") return 0;
+      if (stepId === "reflection") return hasText(fields.improvement) ? 1 : 0;
+      if (stepId === "posttest") return getIncompletePosttestPage();
+      return Math.max(0, getStepPageIndex(stepId));
+    }
+
+    function getIncompleteStepMessage(stepId) {
+      const pageCount = getStepPageCount(stepId);
+      const pageNumber = Math.min(Math.max(getIncompleteStepPage(stepId), 0), pageCount - 1) + 1;
+      return `请先完成本步骤内容。（${steps[state.currentStep].title}${pageNumber}/${pageCount}）`;
+    }
+
     function goToStep(targetStep) {
       const target = clampStepIndex(targetStep);
       if (!isDeveloperMode() && target > state.maxUnlockedStep) {
@@ -2073,7 +2121,7 @@
 
     function goNextStep() {
       if (!validateStep(steps[state.currentStep].id)) {
-        showStepMessage("请先完成本步骤内容。");
+        showStepMessage(getIncompleteStepMessage(steps[state.currentStep].id));
         return;
       }
       if (state.currentStep < steps.length - 1) {
@@ -2162,7 +2210,7 @@
 
     function getStepPageCount(stepId) {
       const fixedCounts = {
-        question: 6,
+        question: 5,
         hypothesis: 1,
         plan: 2,
         analysis: 3,
@@ -2295,6 +2343,9 @@
 
     function renderKnowledgeQuizItem(index) {
       const quiz = mergeKnowledgeQuiz(state.knowledgeQuiz);
+      if (state.knowledgeAssessment?.T2 || quiz.submitted || quiz.history.length) {
+        return '<section class="quiz-section"><div class="quiz-result">即时知识测试已完成，作答已锁定。</div></section>';
+      }
       const item = KNOWLEDGE_QUIZ.items[index];
       const itemKey = "q" + (index + 1);
       const selectedAnswer = quiz.answers[itemKey] || "";
@@ -2303,7 +2354,7 @@
         <article class="quiz-card"><h4>第 ${index + 1} 题</h4><p>${escapeHtml(item.question)}</p>
           <div class="quiz-options">${Object.keys(item.options).map((key) => {
             const isSelected = selectedAnswer === key;
-            return `<label class="quiz-option ${isSelected ? "is-selected" : ""}"><input type="radio" name="knowledge-${itemKey}" data-quiz-question="${itemKey}" value="${key}" ${isSelected ? "checked" : ""}${quiz.submitted ? " disabled" : ""}><span>${key}　${escapeHtml(item.options[key])}</span></label>`;
+            return `<label class="quiz-option ${isSelected ? "is-selected" : ""}"><input type="radio" name="knowledge-${itemKey}" data-quiz-question="${itemKey}" value="${key}" ${isSelected ? "checked" : ""}${quiz.submitted ? " disabled" : ""}><span class="quiz-key">${key}</span><span class="quiz-label">${escapeHtml(item.options[key])}</span></label>`;
           }).join("")}</div>
         </article>
         ${quiz.submitted ? '<div class="quiz-result">案件知识验证已完成，答案已锁定。</div>' : ""}
@@ -2323,7 +2374,7 @@
           return '<article class="quiz-card"><h4>第' + (index + 1) + '题</h4><p>' + escapeHtml(item.question) + '</p>' +
             '<div class="quiz-options">' + Object.keys(item.options).map((key) => {
               const checked = selected === key;
-              return '<label class="quiz-option ' + (checked ? 'is-selected' : '') + '"><input type="radio" name="knowledge-' + itemKey + '" data-quiz-question="' + itemKey + '" value="' + key + '" ' + (checked ? 'checked' : '') + (quiz.submitted ? ' disabled' : '') + '><span>' + key + '　' + escapeHtml(item.options[key]) + '</span></label>';
+              return '<label class="quiz-option ' + (checked ? 'is-selected' : '') + '"><input type="radio" name="knowledge-' + itemKey + '" data-quiz-question="' + itemKey + '" value="' + key + '" ' + (checked ? 'checked' : '') + (quiz.submitted ? ' disabled' : '') + '><span class="quiz-key">' + key + '</span><span class="quiz-label">' + escapeHtml(item.options[key]) + '</span></label>';
             }).join('') + '</div></article>';
         }).join('') +
         result +
@@ -2348,6 +2399,8 @@
 
     function finalizeKnowledgeQuizOnce() {
       state.knowledgeQuiz = mergeKnowledgeQuiz(state.knowledgeQuiz);
+      state.knowledgeAssessment = knowledgeAssessmentApi.mergeTimelines(state.knowledgeAssessment, knowledgeAssessmentApi.readTimeline());
+      if (state.knowledgeAssessment.T2) return true;
       if (state.knowledgeQuiz.submitted || state.knowledgeQuiz.history.length) return true;
       const unanswered = KNOWLEDGE_QUIZ.items.some((_, index) => !state.knowledgeQuiz.answers['q' + (index + 1)]);
       if (unanswered) {
@@ -2380,6 +2433,11 @@
       state.knowledgeQuiz.submitted = true;
       state.knowledgeQuiz.submittedAt = record.submittedAt;
       state.knowledgeQuiz.wrongQuestions = record.wrongQuestions;
+      const assessmentDraft = {
+        questionOrder: KNOWLEDGE_QUIZ.items.map((item) => item.id),
+        answers: Object.fromEntries(KNOWLEDGE_QUIZ.items.map((item, index) => [item.id, state.knowledgeQuiz.answers['q' + (index + 1)]]))
+      };
+      state.knowledgeAssessment = knowledgeAssessmentApi.submitStage(state.knowledgeAssessment, "T2", KNOWLEDGE_QUIZ.items, assessmentDraft).timeline;
       saveState();
       renderApp();
       return true;
@@ -2876,10 +2934,9 @@
 
     function renderQuestionStep() {
       const pages = [
-        { title: "材料一：工作记忆", content: () => `<article class="page-card"><h4>材料一：工作记忆</h4><p>工作记忆是指对信息进行暂时存储和加工的容量有限的记忆系统。工作记忆对信息的加工主要体现在维持和更新这两个方面。</p><p>例如，要完成口算任务2×4×5×6，你首先必须记住2×4等于8；接着还必须记住8×5等于40，这样才能顺利进行下一步的计算，这里需要在工作记忆中维持和更新每一步的计算结果，如8和40。假如工作记忆出了问题，就不可能计算成功。</p><div class="memory-table-wrap"><table class="memory-table" aria-label="工作记忆特点说明"><thead><tr><th>工作记忆特点</th><th>在 N-back 任务中的体现</th></tr></thead><tbody><tr><td>维持</td><td>指个体在工作记忆中持续保存最近呈现的数字信息，以便将其与第 N 个数字进行对比。随着 N 的增加，个体需要在大脑中记忆的数字数量增加，维持信息的时间变长。</td></tr><tr><td>更新</td><td>指个体在每次新数字出现时，动态替换记忆中最旧的数字。随着关卡数的增加，个体需要更新信息的次数增加。</td></tr></tbody></table></div></article>` },
-        { title: "材料二：N-back任务", content: () => `<article class="page-card"><h4>材料二：N-back任务</h4><p>N-back任务是一种常用的工作记忆任务。在N-back任务中，人们需要根据当前的刺激（比如字母、数字、算式或图形及图形的位置）来判断是否与该刺激的第前n个刺激相同。这种任务要求被试者不仅要记住当前刺激，还要持续关注前面的刺激序列，以便做出正确的反应。</p><p>例如，假设n=2，屏幕上显示的数字是：7，5，6，5，8，3...当你看到数字6时，需回想：数字6的前2个数字是什么？是7，所以不一样，按否；下一个数字是5，你继续回想，数字5的前2个数字也是5，一致，按是。</p><button class="btn secondary illustration-trigger" type="button" data-open-image-modal="questionNbackModal">点击查看 N-back 活动示意图</button> <button class="btn illustration-trigger" id="openPracticeBtn" type="button">体验 N-back</button></article>${renderNbackIllustrationModal("questionNbackModal", "N-back活动示意图")}${renderPracticeModal()}` },
-        { title: "材料三：控制变量", content: () => `<article class="page-card"><h4>材料三：控制变量</h4><p>控制变量是指在实验的过程中需要控制那些除了自变量以外的所有影响实验结果的变量，这些变量不是本实验所要研究的变量，所以又称无关变量。只有将自变量以外的所有无关变量控制好，才能弄清实验中的因果关系。</p></article>` },
-        { title: "材料四：头环", content: () => `<article class="page-card"><h4>材料四：头环</h4><p>头环是我们用来测量N-back活动中大脑前额叶活动水平的工具。头环就像一个特殊的“脑力探测器”，只要把头环戴在头上就可以可以收集信息，并且可以在电脑显示屏上生成一幅3D的脑激活图，展示大脑在执行特定任务或接受刺激时，不同脑区神经活动的空间分布状态。这张图可以直观呈现被激活脑区的位置、范围和强度，它会用颜色告诉你，在实验过程中大脑中哪些地方被激活，用红-黄色表示激活强度高，蓝-冷色表示抑制或无变化。也就是说，图中的某个脑区越红说明越活跃，在努力“思考”。假设3-back比2-back需要消耗更多的大脑资源，导致前额叶的激活水平更高，那么头环收集信息生成的结果图中，3-back的结果图中某个区域的颜色应该比2-back的结果图中相应区域的颜色更红，说明在玩更难的3-back游戏时，大脑需要花比玩2-back多得多的“力气”。</p><button class="btn secondary illustration-trigger" type="button" data-open-image-modal="headbandGuideModal">点击查看头环工作原理</button></article>${renderHeadbandModal()}` },
+        { title: "材料一：工作记忆", className: "reading-page", content: () => `<article class="page-card"><h4>材料一：工作记忆</h4><p>工作记忆是指对信息进行暂时存储和加工的容量有限的记忆系统。工作记忆对信息的加工主要体现在维持和更新这两个方面。</p><p>例如，要完成口算任务2×4×5×6，你首先必须记住2×4等于8；接着还必须记住8×5等于40，这样才能顺利进行下一步的计算，这里需要在工作记忆中维持和更新每一步的计算结果，如8和40。假如工作记忆出了问题，就不可能计算成功。</p><div class="memory-table-wrap"><table class="memory-table" aria-label="工作记忆特点说明"><thead><tr><th>工作记忆特点</th><th>在 N-back 任务中的体现</th></tr></thead><tbody><tr><td>维持</td><td>指个体在工作记忆中持续保存最近呈现的数字信息，以便将其与第 N 个数字进行对比。随着 N 的增加，个体需要在大脑中记忆的数字数量增加，维持信息的时间变长。</td></tr><tr><td>更新</td><td>指个体在每次新数字出现时，动态替换记忆中最旧的数字。随着关卡数的增加，个体需要更新信息的次数增加。</td></tr></tbody></table></div></article>` },
+        { title: "材料二：N-back任务", className: "reading-page", content: () => `<article class="page-card"><h4>材料二：N-back任务</h4><p>N-back任务是一种常用的工作记忆任务。在N-back任务中，人们需要根据当前的刺激（比如字母、数字、算式或图形及图形的位置）来判断是否与该刺激的第前n个刺激相同。这种任务要求被试者不仅要记住当前刺激，还要持续关注前面的刺激序列，以便做出正确的反应。</p><p>例如，假设n=2，屏幕上显示的数字是：7，5，6，5，8，3...当你看到数字6时，需回想：数字6的前2个数字是什么？是7，所以不一样，按否；下一个数字是5，你继续回想，数字5的前2个数字也是5，一致，按是。</p><button class="btn secondary illustration-trigger" type="button" data-open-image-modal="questionNbackModal">点击查看 N-back 活动示意图</button> <button class="btn illustration-trigger" id="openPracticeBtn" type="button">体验 N-back</button></article>${renderNbackIllustrationModal("questionNbackModal", "N-back活动示意图")}${renderPracticeModal()}` },
+        { title: "材料三与材料四：控制变量和头环", className: "reading-page", content: () => `<article class="page-card merged-reading-page"><section class="merged-reading-section"><h4>材料三：控制变量</h4><p>控制变量是指在实验的过程中需要控制那些除了自变量以外的所有影响实验结果的变量，这些变量不是本实验所要研究的变量，所以又称无关变量。只有将自变量以外的所有无关变量控制好，才能弄清实验中的因果关系。</p></section><section class="merged-reading-section"><h4>材料四：头环</h4><p>头环是我们用来测量N-back活动中大脑前额叶活动水平的工具。头环就像一个特殊的“脑力探测器”，只要把头环戴在头上就可以可以收集信息，并且可以在电脑显示屏上生成一幅3D的脑激活图，展示大脑在执行特定任务或接受刺激时，不同脑区神经活动的空间分布状态。这张图可以直观呈现被激活脑区的位置、范围和强度，它会用颜色告诉你，在实验过程中大脑中哪些地方被激活，用红-黄色表示激活强度高，蓝-冷色表示抑制或无变化。也就是说，图中的某个脑区越红说明越活跃，在努力“思考”。假设3-back比2-back需要消耗更多的大脑资源，导致前额叶的激活水平更高，那么头环收集信息生成的结果图中，3-back的结果图中某个区域的颜色应该比2-back的结果图中相应区域的颜色更红，说明在玩更难的3-back游戏时，大脑需要花比玩2-back多得多的“力气”。</p><button class="btn secondary illustration-trigger" type="button" data-open-image-modal="headbandGuideModal">点击查看头环工作原理</button></section></article>${renderHeadbandModal()}` },
         { title: "科学探究案例", className: "case-page", content: () => `<div class="page-card">${renderInquiryCases()}${renderInquiryScaffold("question")}</div>` },
         { title: "提出研究问题", content: () => `<div class="page-card"><div class="page-form-grid"><div class="field"><label>自变量</label><div class="choice-group"><label class="choice"><input type="radio" name="independentVariable" data-field="independentVariable" value="N的大小" ${checked("independentVariable", "N的大小")}>N-back 活动中 N 的大小</label><label class="choice"><input type="radio" name="independentVariable" data-field="independentVariable" value="关卡数量" ${checked("independentVariable", "关卡数量")}>N-back 活动中关卡的数量</label></div></div><div class="field"><label>因变量</label><div class="choice-group"><label class="choice"><input type="checkbox" data-field="dependentMemory" ${state.fields.dependentMemory ? "checked" : ""}>工作记忆表现（N-back 正确率）</label><label class="choice"><input type="checkbox" data-field="dependentBrain" ${state.fields.dependentBrain ? "checked" : ""}>大脑活动水平（前额叶激活水平）</label></div></div></div><div class="field"><label>控制变量</label><div class="choice-group"><label class="choice"><input type="checkbox" data-field="controlContentType" ${state.fields.controlContentType ? "checked" : ""}>N-back 任务中记忆内容的类型</label></div><input type="text" data-field="controlOther" value="${escapeHtml(state.fields.controlOther)}" placeholder="其他控制变量"></div>${renderPairedField("研究问题", `<textarea data-field="researchQuestion" placeholder="写下你自己真正想探究的问题">${escapeHtml(state.fields.researchQuestion)}</textarea>`, renderGroupTextarea("researchQuestion_group"))}</div>` }
       ];
