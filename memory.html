@@ -397,12 +397,13 @@
     }
 
     .question-page-material .reading-card h4 {
-      font-size: 18px;
+      font-size: 21px;
+      line-height: 1.6;
     }
 
     .question-page-material .reading-card p {
-      font-size: 15px;
-      line-height: 1.85;
+      font-size: 18px;
+      line-height: 2.05;
     }
 
     .question-page-cases .case-list {
@@ -832,6 +833,12 @@
       color: #65471f;
     }
 
+    html[data-theme="archive"] body.experiment-page .shape-answer-sequence,
+    html[data-theme="archive"] body.experiment-page .shape-choice {
+      border-color: var(--line);
+      background: #fffaf2;
+    }
+
     html[data-theme="archive"] body.experiment-page .quiz-option.is-selected,
     html[data-theme="archive"] body.experiment-page .quiz-option:has(input:checked) {
       border-color: #9b7135;
@@ -1024,6 +1031,62 @@
       color: var(--muted);
       font-size: 13px;
       font-weight: 700;
+    }
+
+    .shape-answer-panel { display: none; gap: 12px; margin-top: 12px; }
+    .answer-box.is-shape-answer .shape-answer-panel { display: grid; }
+    .answer-box.is-shape-answer #answerInput { display: none; }
+
+    .shape-answer-sequence {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      min-height: 64px;
+      padding: 7px 10px;
+      border: 1px solid var(--line);
+      border-radius: 8px;
+      background: var(--panel);
+      overflow-x: auto;
+    }
+
+    .shape-answer-placeholder {
+      width: 100%;
+      color: var(--muted);
+      font-size: 14px;
+      text-align: center;
+    }
+
+    .shape-answer-sequence svg { flex: 0 0 44px; width: 44px; height: 44px; }
+
+    .shape-choice-row {
+      display: grid;
+      grid-template-columns: repeat(5, minmax(54px, 1fr));
+      gap: 8px;
+    }
+
+    .shape-choice {
+      display: grid;
+      place-items: center;
+      min-height: 66px;
+      padding: 5px;
+      border: 1px solid var(--line);
+      background: var(--panel);
+      color: var(--ink);
+    }
+
+    .shape-choice:hover,
+    .shape-choice:focus-visible {
+      border-color: var(--primary);
+      background: var(--primary-soft);
+      outline: none;
+    }
+
+    .shape-answer-actions { display: flex; justify-content: flex-end; gap: 8px; }
+    .shape-answer-actions .btn { min-height: 38px !important; padding: 7px 14px; font-size: 14px !important; }
+
+    .memory-shape-svg .memory-shape-mark {
+      fill: var(--primary);
+      stroke: var(--primary-dark);
     }
 
     label {
@@ -2108,6 +2171,7 @@
         showStepMessage("请先完成前一步内容，再进入下一步。");
         return;
       }
+      preparePagedInputLifecycle();
       state.currentStep = target;
       if (!isDeveloperMode()) saveState();
       renderApp();
@@ -2181,6 +2245,8 @@
       applyLearningBehaviorMetadata();
       bindInputs();
       bindStepEvents(step.id);
+      window.TaskRelevance?.afterPageRender();
+      window.TypingSupport?.afterPageRender();
     }
 
     function getStepHtml(stepId) {
@@ -2514,6 +2580,7 @@
       const currentPage = getStepPageIndex(stepId);
       const target = Math.min(Math.max(targetPage, 0), pageCount - 1);
       if (target === currentPage || stepPageTransitioning) return;
+      preparePagedInputLifecycle();
       const content = main.querySelector(".question-page-content");
       const reduceMotion = window.matchMedia?.("(prefers-reduced-motion: reduce)").matches;
       const finish = () => {
@@ -2528,6 +2595,13 @@
       stepPageTransitioning = true;
       content.classList.add("is-leaving");
       window.setTimeout(finish, 150);
+    }
+
+    function preparePagedInputLifecycle() {
+      const active = document.activeElement;
+      if (active?.matches?.('textarea[data-agent-track="true"]')) active.blur();
+      window.TaskRelevance?.beforePageChange();
+      window.TypingSupport?.beforePageChange();
     }
 
     function bindPagedStepEvents(stepId) {
@@ -2555,7 +2629,10 @@
             return;
           }
           if (pageIndex < pageCount - 1) changeStepPage(stepId, pageIndex + 1, pageCount);
-          else goNextStep();
+          else {
+            preparePagedInputLifecycle();
+            goNextStep();
+          }
         });
       }
     }
@@ -2735,15 +2812,14 @@
                 </div>
                 <div id="memoryStimulus" class="memory-stimulus">记</div>
                 <div id="answerBox" class="answer-box">
-                  <label for="answerInput">请输入复述结果</label>
-                  <input id="answerInput" type="text" autocomplete="off" placeholder="可不加空格，图形请用 A/B/C/D/E 作答" />
-                  <div id="shapeAnswerHint" class="shape-code-guide" style="display:${state.fields.materialType === "shape" ? "flex" : "none"};">
-                    <span>图形代号说明：</span>
-                    <span>△ = A</span>
-                    <span>□ = B</span>
-                    <span>○ = C</span>
-                    <span>★ = D</span>
-                    <span>◇ = E</span>
+                  <label for="answerInput" id="answerPrompt">请输入复述结果</label>
+                  <input id="answerInput" type="text" autocomplete="off" placeholder="可不加空格" />
+                  <div id="shapeAnswerPanel" class="shape-answer-panel" aria-label="图形作答区">
+                    <div id="shapeAnswerSequence" class="shape-answer-sequence" aria-live="polite"><span class="shape-answer-placeholder">请按复述顺序点击下方图形</span></div>
+                    <div class="shape-choice-row">
+                      ${["A", "B", "C", "D", "E"].map((code) => `<button class="shape-choice" type="button" data-shape-answer="${code}" aria-label="选择${getShapeLabel(code)}">${getShapeSvg(code, 48)}</button>`).join("")}
+                    </div>
+                    <div class="shape-answer-actions"><button class="btn secondary" type="button" id="undoShapeAnswerBtn">撤销一个</button><button class="btn secondary" type="button" id="clearShapeAnswerBtn">清空</button></div>
                   </div>
                   <button class="btn" type="button" id="submitAnswerBtn" style="width:100%;margin-top:12px;">提交答案</button>
                 </div>
@@ -2767,7 +2843,7 @@
               <div class="focus-prep-card">
                 <h3>准备开始短时记忆测量</h3>
                 <p>页面将切换到低干扰实验界面，并尝试进入浏览器全屏。若浏览器拒绝全屏，实验仍会正常开始。</p>
-                <p>请专注记住屏幕中央依次出现的材料，呈现结束后按要求顺背或倒背输入结果。图形代号说明：△ = A，□ = B，○ = C，★ = D，◇ = E。</p>
+                <p>请专注记住屏幕中央依次出现的材料，呈现结束后按要求顺背或倒背输入结果。选择图形材料时，直接按顺序点击图形完成作答。</p>
                 <button class="btn" type="button" id="confirmStartRunBtn">进入测量</button>
                 <button class="btn secondary" type="button" id="cancelStartRunBtn">取消</button>
               </div>
@@ -3246,6 +3322,19 @@
       document.getElementById("answerInput")?.addEventListener("keydown", (event) => {
         if (event.key === "Enter") submitAnswer();
       });
+      main.querySelectorAll("[data-shape-answer]").forEach((button) => {
+        button.addEventListener("click", () => addShapeAnswer(button.dataset.shapeAnswer));
+      });
+      document.getElementById("undoShapeAnswerBtn")?.addEventListener("click", () => {
+        if (!game) return;
+        game.shapeAnswer.pop();
+        renderShapeAnswer();
+      });
+      document.getElementById("clearShapeAnswerBtn")?.addEventListener("click", () => {
+        if (!game) return;
+        game.shapeAnswer = [];
+        renderShapeAnswer();
+      });
       const subjectInput = document.getElementById("subject");
       subjectInput?.addEventListener("input", updateAutomaticRunLabel);
       updateGameUi();
@@ -3306,6 +3395,7 @@
         wrongStreak: 0,
         localRecords: [],
         sequence: [],
+        shapeAnswer: [],
         presenting: false,
         startedAt: new Date().toISOString()
       };
@@ -3330,9 +3420,13 @@
           game.presenting = false;
           const answerBox = document.getElementById("answerBox");
           answerBox.classList.add("is-visible");
+          answerBox.classList.toggle("is-shape-answer", game.materialType === "shape");
           const input = document.getElementById("answerInput");
           input.value = "";
-          input.focus();
+          game.shapeAnswer = [];
+          renderShapeAnswer();
+          if (game.materialType === "shape") document.querySelector("[data-shape-answer]")?.focus();
+          else input.focus();
           updateGameUi();
           return;
         }
@@ -3366,7 +3460,11 @@
       element.innerHTML = getShapeSvg(value);
     }
 
-    function getShapeSvg(code) {
+    function getShapeLabel(code) {
+      return { A: "三角形", B: "正方形", C: "圆形", D: "星形", E: "菱形" }[code] || "图形";
+    }
+
+    function getShapeSvg(code, size = 112) {
       const shapes = {
         A: '<polygon points="50,12 88,84 12,84"></polygon>',
         B: '<rect x="18" y="18" width="64" height="64" rx="8"></rect>',
@@ -3374,10 +3472,24 @@
         D: '<polygon points="50,10 61,38 91,38 67,56 76,86 50,68 24,86 33,56 9,38 39,38"></polygon>',
         E: '<polygon points="50,10 90,50 50,90 10,50"></polygon>'
       };
-      const labels = { A: "三角形", B: "正方形", C: "圆形", D: "星形", E: "菱形" };
-      return '<svg viewBox="0 0 100 100" width="112" height="112" role="img" aria-label="' + labels[code] + '">' +
-        '<g fill="#4f7cff" stroke="#17315f" stroke-width="4">' + shapes[code] + '</g>' +
+      return '<svg class="memory-shape-svg" viewBox="0 0 100 100" width="' + size + '" height="' + size + '" role="img" aria-label="' + getShapeLabel(code) + '">' +
+        '<g class="memory-shape-mark" stroke-width="4">' + shapes[code] + '</g>' +
       '</svg>';
+    }
+
+    function addShapeAnswer(code) {
+      if (!game || game.presenting || game.materialType !== "shape") return;
+      game.shapeAnswer.push(code);
+      renderShapeAnswer();
+    }
+
+    function renderShapeAnswer() {
+      const sequence = document.getElementById("shapeAnswerSequence");
+      if (!sequence) return;
+      const answer = game?.shapeAnswer || [];
+      sequence.innerHTML = answer.length
+        ? answer.map((code) => getShapeSvg(code, 44)).join("")
+        : '<span class="shape-answer-placeholder">请按复述顺序点击下方图形</span>';
     }
 
     function normalizeMemoryAnswer(raw) {
@@ -3387,7 +3499,7 @@
     function submitAnswer() {
       if (!game || game.presenting) return;
       const raw = document.getElementById("answerInput").value;
-      const answer = normalizeMemoryAnswer(raw);
+      const answer = game.materialType === "shape" ? game.shapeAnswer.slice() : normalizeMemoryAnswer(raw);
       const expected = game.method === "倒背法" ? game.sequence.slice().reverse() : game.sequence.slice();
       const isCorrect = answer.join("") === expected.join("");
       const record = {
@@ -3489,15 +3601,16 @@
       const status = document.getElementById("gameStatus");
       const stimulus = document.getElementById("memoryStimulus");
       const answerBox = document.getElementById("answerBox");
+      const answerPrompt = document.getElementById("answerPrompt");
       const gameHint = document.getElementById("gameHint");
-      const shapeAnswerHint = document.getElementById("shapeAnswerHint");
       const lengthStat = document.getElementById("lengthStat");
       const capacityStat = document.getElementById("capacityStat");
       const correctStreakStat = document.getElementById("correctStreakStat");
       const wrongStreakStat = document.getElementById("wrongStreakStat");
       const log = document.getElementById("gameLogBody");
       if (!status) return;
-      if (shapeAnswerHint) shapeAnswerHint.style.display = game && game.materialType === "shape" ? "flex" : "none";
+      answerBox.classList.toggle("is-shape-answer", game?.materialType === "shape");
+      if (answerPrompt) answerPrompt.textContent = game?.materialType === "shape" ? "请按复述顺序选择图形" : "请输入复述结果";
       if (!game) {
         status.textContent = "请选择参与者并开始测量";
         if (gameHint) gameHint.textContent = `${state.fields.method} / ${getMaterialTypeLabel(state.fields.materialType)}`;

@@ -1,11 +1,11 @@
 (function (global) {
   "use strict";
   const questions = [
-    { id: "t2_nback_concept_1", question: "工作记忆的核心特点是（ ）", options: { A: "只负责永久储存", B: "暂时保持信息并对其进行加工", C: "不需要注意参与", D: "只能处理图像" }, answer: "B" },
-    { id: "t2_nback_concept_2", question: "完成 N-back 任务时，需要不断进行的是（ ）", options: { A: "忽略刚出现的所有刺激", B: "只记住第一个刺激", C: "保持并更新最近出现的信息", D: "把每个刺激写成长时日记" }, answer: "C" },
-    { id: "t2_nback_phenomenon_1", question: "一名同学从 1-back 进入 3-back 后正确率下降，较合理的解释是（ ）", options: { A: "需要保持和更新的信息增加，工作记忆负担变大", B: "3-back 不需要比较历史信息", C: "N 值越大，任务材料一定越少", D: "正确率下降只能说明设备损坏" }, answer: "A" },
-    { id: "t2_nback_phenomenon_2", question: "完成连续判断任务时，如果注意频繁转向周围声音，最可能出现（ ）", options: { A: "更新信息更准确", B: "漏答或错误判断增加", C: "工作记忆容量自动扩大", D: "所有反应时间完全相同" }, answer: "B" },
-    { id: "t2_nback_transfer_1", question: "阅读一道包含多个条件的应用题时，为减轻工作记忆负担，可以（ ）", options: { A: "同时打开多个聊天窗口", B: "跳过所有中间条件", C: "圈出关键条件并分步骤计算", D: "只凭第一印象写答案" }, answer: "C" }
+    { id: "t2_nback_concept_1", question: "工作记忆与短时保持相比，更强调（ ）", options: { A: "信息保持时间较长", B: "保持信息的同时对其进行加工", C: "把信息与情绪体验联系起来", D: "依靠重复使信息进入长期储存" }, answer: "B" },
+    { id: "t2_nback_concept_2", question: "完成2-back任务时，当前项目出现后，学习者需要（ ）", options: { A: "把当前项目与前一个项目比较", B: "记住当前项目，忽略前面出现的项目", C: "判断当前项目是否与前两个位置的项目相同", D: "统计当前项目在整组材料中出现的次数" }, answer: "C" },
+    { id: "t2_nback_phenomenon_1", question: "同一同学完成1-back和3-back时，正确率分别为92%和67%，反应时间分别为620毫秒和850毫秒。较合理的解释是（ ）", options: { A: "3-back需要保持和更新更多信息，任务负担更大", B: "3-back项目出现得更慢，使判断速度下降", C: "1-back练习次数较多，使记忆容量增加", D: "两项任务使用相同材料，成绩差异来自猜测" }, answer: "A" },
+    { id: "t2_nback_phenomenon_2", question: "研究注意干扰对2-back表现的影响，较合理的比较方案是（ ）", options: { A: "安静条件用数字，干扰条件用字母，呈现速度相同", B: "安静条件做1-back，干扰条件做2-back，材料相同", C: "两种条件材料相同，但干扰条件增加更多练习", D: "两种条件任务和材料相同，仅干扰条件播放无关声音" }, answer: "D" },
+    { id: "t2_nback_transfer_1", question: "阅读包含多个条件的应用题时，下列做法最能减轻工作记忆负担的是（ ）", options: { A: "先读问题，再凭印象寻找相关数字", B: "圈出条件，画出关系并分步骤计算", C: "把题目多读几遍，同时记住所有数字", D: "先计算最熟悉的部分，再补看遗漏条件" }, answer: "B" }
   ].map((item) => Object.freeze({ ...item, options: Object.freeze({ ...item.options }) }));
   global.BrainKnowledgePostNbackQuestions = Object.freeze(questions);
 })(window);

@@ -306,6 +306,80 @@ html[data-theme="archive"] .quiz-option:has(input:checked) {
   color: #65471f;
 }
 
+html[data-theme="archive"] .score-hero {
+  border-color: #d8bd91;
+  border-radius: 4px;
+  background: linear-gradient(135deg, #fffaf2, #f4ead8);
+  box-shadow: 0 12px 30px rgba(80, 50, 20, 0.09);
+}
+
+html[data-theme="archive"] .score-hero::after {
+  background: radial-gradient(circle, rgba(181, 139, 74, 0.18), transparent 68%);
+}
+
+html[data-theme="archive"] .score-progress-card {
+  border-color: rgba(181, 139, 74, 0.38);
+  border-radius: 3px;
+  background: rgba(255, 253, 248, 0.84);
+  box-shadow: 0 10px 24px rgba(80, 50, 20, 0.08);
+}
+
+html[data-theme="archive"] .score-progress-track {
+  background: #e9ddc8;
+}
+
+html[data-theme="archive"] .score-progress-fill {
+  background: linear-gradient(90deg, #9b7135, #5f765e);
+}
+
+html[data-theme="archive"] .score-group-btn,
+html[data-theme="archive"] .best-poster-btn,
+html[data-theme="archive"] .score-value-btn {
+  border-color: #d8bd91;
+  background: #fffdf8;
+  box-shadow: 0 7px 16px rgba(80, 50, 20, 0.06);
+}
+
+html[data-theme="archive"] .score-group-btn:hover,
+html[data-theme="archive"] .best-poster-btn:hover,
+html[data-theme="archive"] .score-value-btn:hover {
+  border-color: #b58b4a;
+  box-shadow: 0 10px 20px rgba(80, 50, 20, 0.12);
+}
+
+html[data-theme="archive"] .score-group-btn.is-active,
+html[data-theme="archive"] .best-poster-btn.is-active,
+html[data-theme="archive"] .score-value-btn.is-selected {
+  border-color: #9b7135;
+  background: linear-gradient(135deg, #9b7135, #7d5927);
+  color: #fffaf2;
+  box-shadow: 0 10px 22px rgba(80, 50, 20, 0.16);
+}
+
+html[data-theme="archive"] .score-dimension-head {
+  border-bottom-color: rgba(181, 139, 74, 0.38);
+  background: linear-gradient(90deg, rgba(181, 139, 74, 0.10), transparent 72%);
+}
+
+html[data-theme="archive"] .score-current-value {
+  background: #f1e3ca;
+  color: #65471f;
+}
+
+html[data-theme="archive"] .score-rule {
+  border-color: #d8bd91;
+  background: #f7eddd;
+}
+
+html[data-theme="archive"] .score-delete-btn {
+  background: #8b4e42;
+  color: #fffaf2;
+}
+
+html[data-theme="archive"] .score-delete-btn:hover {
+  background: #713d34;
+}
+
 /* Shared experiment overlays must stay above sticky navigation and assistants. */
 body.experiment-page .headband-modal,
 body.experiment-page .image-modal {
@@ -398,6 +472,36 @@ html[data-theme="archive"] body.experiment-page .quiz-option:has(input:checked) 
   background: #f1e3ca;
   color: #65471f;
   box-shadow: 0 10px 20px rgba(80, 50, 20, 0.13);
+}
+
+/* Keep the ten-point survey scale readable and on one desktop row. */
+body.experiment-page .survey-page .survey-scale {
+  grid-template-columns: repeat(10, minmax(0, 1fr));
+  gap: 8px;
+  width: 100%;
+  max-width: none;
+}
+
+body.experiment-page .survey-page .survey-option-card {
+  min-height: 64px;
+  padding: 9px 6px;
+}
+
+body.experiment-page .survey-page .survey-score {
+  font-size: 21px;
+}
+
+body.experiment-page .survey-page .survey-label {
+  margin-top: 5px;
+  font-size: 13px;
+}
+
+@media (max-width: 760px) {
+  body.experiment-page .survey-page .survey-scale {
+    grid-template-columns: repeat(10, 92px);
+    overflow-x: auto;
+    padding-bottom: 4px;
+  }
 }
 
 /* The page header is the single visual title; inner cards keep only useful structure. */
