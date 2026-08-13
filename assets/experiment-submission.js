@@ -5,6 +5,7 @@
   const registry = global.BrainExperimentRegistry;
   const SCHEMA_VERSION = 2;
   const MAX_OUTBOX_ENTRIES = 50;
+  const acknowledgedSubmissions = new Set();
 
   function clone(value) {
     return value == null ? value : structuredClone(value);
@@ -163,6 +164,24 @@
     writeOutbox(readOutbox().filter((entry) => entry.submissionId !== submissionId));
   }
 
+  function notifyAcknowledged(submission, result) {
+    if (!submission || !result || !(result.ok || result.code === "DUPLICATE")) return false;
+    const submissionId = text(submission.submissionId);
+    if (!submissionId || acknowledgedSubmissions.has(submissionId)) return false;
+    acknowledgedSubmissions.add(submissionId);
+    if (global.document && typeof global.CustomEvent === "function") {
+      global.document.dispatchEvent(new CustomEvent("experiment-submission:acknowledged", {
+        detail: {
+          experimentId: text(submission.experimentId),
+          submissionId,
+          recordId: text(result.recordId),
+          status: text(result.code || "STORED")
+        }
+      }));
+    }
+    return true;
+  }
+
   async function sendSubmission(submission) {
     const session = platform.identity.readStudentSession() || {};
     if (!session.sessionToken || session.isGuest) {
@@ -188,7 +207,10 @@
     for (const submission of entries) {
       const result = await sendSubmission(submission);
       results.push(result);
-      if (result.ok || result.code === "DUPLICATE") acknowledge(submission.submissionId);
+      if (result.ok || result.code === "DUPLICATE") {
+        acknowledge(submission.submissionId);
+        notifyAcknowledged(submission, result);
+      }
       if (!result.ok && result.retryable === false) acknowledge(submission.submissionId);
     }
     return { ok: results.every((result) => result.ok), results, queued: readOutbox().length };
@@ -202,7 +224,10 @@
     if (session.isGuest) return { ok: true, guest: true, submission };
     if (!pending) enqueue(submission);
     const result = await sendSubmission(submission);
-    if (result.ok || result.code === "DUPLICATE" || result.retryable === false) acknowledge(submission.submissionId);
+    if (result.ok || result.code === "DUPLICATE") {
+      acknowledge(submission.submissionId);
+      notifyAcknowledged(submission, result);
+    } else if (result.retryable === false) acknowledge(submission.submissionId);
     return Object.assign({}, result, {
       submission,
       submissionId: submission.submissionId,

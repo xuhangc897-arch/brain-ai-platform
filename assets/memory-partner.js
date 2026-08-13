@@ -121,6 +121,7 @@
     const aiAssistant = document.querySelector(".ai-assistant");
     const voiceAssistant = document.querySelector(".voice-assistant");
     const root = document.createElement("div");
+    let activeDetailMode = "";
     root.className = "memory-partner";
     root.dataset.experimentId = config.experimentId;
     root.innerHTML = `
@@ -351,6 +352,7 @@
     }
 
     function showMenuView() {
+      activeDetailMode = "";
       menuView.classList.add("is-active");
       detailView.classList.remove("is-active");
     }
@@ -551,6 +553,7 @@
     }
 
     async function renderStudentMemory() {
+      activeDetailMode = "memory";
       detail.innerHTML = '<p>正在读取你的学习记录...</p>';
       showDetail();
       try {
@@ -575,6 +578,7 @@
     }
 
     function renderDiagnosis() {
+      activeDetailMode = "diagnosis";
       const available = Boolean(diagnosisMenuState?.available);
       detail.innerHTML = `
         <div class="memory-partner-detail-heading">
@@ -650,6 +654,12 @@
       if (mode === "memory") renderStudentMemory();
       if (mode === "diagnosis") renderDiagnosis();
     }
+
+    document.addEventListener("student-memory:updated", () => {
+      if (activeDetailMode === "memory" && root.classList.contains("is-menu-open")) {
+        renderStudentMemory();
+      }
+    });
 
     launcher.addEventListener("pointerdown", (event) => {
       if (event.button !== undefined && event.button !== 0) return;

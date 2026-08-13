@@ -109,12 +109,91 @@ assert(platform.includes("studentMemorySupportState"));
 const studentMemory = source("assets/student-memory.js");
 assert(studentMemory.includes("MAX_SUPPORTS_PER_EXPERIMENT = 2"));
 assert(studentMemory.includes("experiment-records:acknowledged"));
+assert(studentMemory.includes("experiment-submission:acknowledged"));
+assert(studentMemory.includes("student-memory:updated"));
+assert(studentMemory.includes("generatedSubmissionIds"));
+assert(studentMemory.includes("currentView = await loadStudentView()"));
 assert(studentMemory.includes("showMemorySupport"));
 assert(studentMemory.includes("Authorization: `Bearer"));
 
 const partner = source("assets/memory-partner.js");
 assert(partner.includes("我的学习记录"));
 assert(partner.includes("showMemorySupport"));
+assert(partner.includes('activeDetailMode === "memory"'));
+assert(partner.includes('document.addEventListener("student-memory:updated"'));
+
+async function checkSubmissionDrivenRefresh() {
+  const listeners = {};
+  const dispatched = [];
+  const storage = new Map();
+  let generationCalls = 0;
+  let viewCalls = 0;
+  const context = {
+    window: null, console, Date, Object, Array, String, Number, Promise, setTimeout, clearTimeout,
+    CustomEvent: class CustomEvent {
+      constructor(type, options) { this.type = type; this.detail = options && options.detail; }
+    },
+    document: {
+      addEventListener(name, listener) { (listeners[name] ||= []).push(listener); },
+      dispatchEvent(event) {
+        dispatched.push(event);
+        for (const listener of listeners[event.type] || []) listener(event);
+      }
+    },
+    addEventListener() {},
+    localStorage: {
+      getItem(key) { return storage.get(key) || null; },
+      setItem(key, value) { storage.set(key, value); }
+    },
+    BrainExperimentRegistry: {
+      get: () => ({ id: "memory", order: 1 }),
+      experiments: [{ id: "memory", order: 1 }]
+    },
+    BrainPlatform: {
+      config: {
+        endpoints: {
+          generateExperimentMemory: "/generate",
+          getStudentMemory: "/view",
+          saveAgentIntervention: "/intervention"
+        },
+        storageKeys: {
+          studentMemoryOutbox: "memory-outbox",
+          studentMemorySupportState: "memory-support"
+        }
+      },
+      identity: { readStudentSession: () => ({ studentId: "S001", sessionToken: "token" }) }
+    },
+    async fetch(url) {
+      if (url === "/generate") {
+        generationCalls += 1;
+        return { ok: true, async json() { return { ok: true, operation: "created", version: 1 }; } };
+      }
+      if (url === "/view") {
+        viewCalls += 1;
+        const completedExperiments = generationCalls ? [{ experimentId: "memory" }] : [];
+        return { ok: true, async json() { return { ok: true, view: { completedExperiments } }; } };
+      }
+      return { ok: true, async json() { return { ok: true }; } };
+    }
+  };
+  context.window = context;
+  require("vm").runInNewContext(studentMemory, context, { filename: "student-memory-refresh.js" });
+  context.StudentMemory.init({ experimentId: "memory" });
+  while (!viewCalls) await new Promise((resolve) => setTimeout(resolve, 0));
+  context.document.dispatchEvent(new context.CustomEvent("experiment-submission:acknowledged", {
+    detail: { experimentId: "memory", submissionId: "submission-1" }
+  }));
+  context.document.dispatchEvent(new context.CustomEvent("experiment-submission:acknowledged", {
+    detail: { experimentId: "memory", submissionId: "submission-1" }
+  }));
+  while (!dispatched.some((event) => event.type === "student-memory:updated")) {
+    await new Promise((resolve) => setTimeout(resolve, 0));
+  }
+  assert.strictEqual(generationCalls, 1, "one formal submission must generate memory once");
+  assert(viewCalls >= 2, "successful generation must refresh the cached student view");
+  const view = await context.StudentMemory.getStudentView();
+  assert.strictEqual(view.completedExperiments[0].experimentId, "memory");
+}
 
 const generator = loadGenerator().__test;
 const completeState = {
@@ -158,6 +237,7 @@ assert(source("cloudfunctions/getExperimentRecords/index.js").includes('role: "t
 assert(source("admin/dashboard.html").includes("TEMPORARY_DASHBOARD_LOGIN_BYPASS = false"));
 
 (async () => {
+  await checkSubmissionDrivenRefresh();
   const secret = "student-memory-test-secret-at-least-32-characters";
   process.env.STUDENT_SESSION_SECRET = secret;
   const memoryDocuments = [
