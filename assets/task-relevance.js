@@ -23,7 +23,6 @@
   let activePrompt = null;
   let hashWarningShown = false;
   const lastCheckedText = new Map();
-  const focusText = new WeakMap();
   const pendingHashes = new Map();
   const taskStates = new Map();
 
@@ -451,11 +450,7 @@
     if (!options.force) {
       const previous = lastCheckedText.get(key);
       if (previous !== undefined && editSize(previous, normalized) < MIN_BLUR_EDIT_SIZE) return null;
-      const target = liveTarget(snapshot);
-      const focused = target ? focusText.get(target) : undefined;
-      if (previous === undefined && focused !== undefined && editSize(focused, normalized) < MIN_BLUR_EDIT_SIZE) {
-        return null;
-      }
+      if (previous === undefined && !normalized) return null;
     }
 
     pendingHashes.set(key, hash);
@@ -554,18 +549,13 @@
 
   function beforePageChange() {
     const snapshots = captureCurrentTargets();
-    snapshots.forEach((snapshot) => checkSnapshot(snapshot, { trigger: "page_change" }));
+    snapshots.forEach((snapshot) => checkSnapshot(snapshot, { trigger: "blur" }));
     if (activePrompt) global.VirtualAgent.hideRelevanceSuggestion("closed");
   }
 
   function afterPageRender() {
     captureCurrentTargets();
     taskStates.forEach((state, key) => presentPending(state, key));
-  }
-
-  function onFocusIn(event) {
-    if (!eligibleTarget(event.target)) return;
-    focusText.set(event.target, normalizeText(event.target.value));
   }
 
   function onFocusOut(event) {
@@ -598,7 +588,6 @@
     }
     experimentId = String(options.experimentId);
     initialized = true;
-    document.addEventListener("focusin", onFocusIn);
     document.addEventListener("focusout", onFocusOut);
     document.addEventListener("input", onInput);
     document.addEventListener("learning-behavior:stage-submitted", onStageSubmitted);

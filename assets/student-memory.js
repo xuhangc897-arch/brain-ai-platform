@@ -7,6 +7,7 @@
   let activeSupport = null;
   let flushPromise = null;
   let retryTimer = null;
+  const generatedSubmissionIds = new Set();
 
   function identity() {
     const session = global.BrainPlatform?.identity?.readStudentSession?.();
@@ -93,7 +94,15 @@
           experimentId: entry.experimentId
         });
         if (result.ok && global.document && typeof global.CustomEvent === "function") {
+          currentView = await loadStudentView().catch(() => null);
           global.document.dispatchEvent(new CustomEvent("student-memory:generated", {
+            detail: {
+              experimentId: entry.experimentId,
+              operation: result.operation || "",
+              version: result.version || 0
+            }
+          }));
+          global.document.dispatchEvent(new CustomEvent("student-memory:updated", {
             detail: {
               experimentId: entry.experimentId,
               operation: result.operation || "",
@@ -128,7 +137,20 @@
 
   function requestGeneration(experimentId) {
     if (!enqueueGeneration(experimentId)) return Promise.resolve({ ok: false, code: "UNAUTHORIZED" });
-    return flush();
+    return flush().then((result) => {
+      const session = identity();
+      const key = session ? `${session.studentId}|${experimentId}` : "";
+      return key && readOutbox().entries.some((entry) => entry.key === key) ? flush() : result;
+    });
+  }
+
+  function requestSubmissionGeneration(detail) {
+    const experimentId = String(detail?.experimentId || detail?.module || "").trim();
+    const submissionId = String(detail?.submissionId || detail?.clientRecordId || "").trim();
+    if (!experimentId || experimentId === "screening" || experimentId === "poster") return Promise.resolve(null);
+    if (submissionId && generatedSubmissionIds.has(submissionId)) return Promise.resolve(null);
+    if (submissionId) generatedSubmissionIds.add(submissionId);
+    return requestGeneration(experimentId);
   }
 
   async function loadStudentView() {
@@ -220,7 +242,7 @@
     registry.experiments
       .filter((entry) => entry.order < current.order && entry.order <= 4)
       .forEach((entry) => enqueueGeneration(entry.id));
-    flush().then(() => loadStudentView().catch(() => null));
+    flush();
   }
 
   function init(config) {
@@ -228,10 +250,13 @@
     currentConfig = config;
     loadStudentView().then(reconcilePreviousExperiments).catch(() => reconcilePreviousExperiments());
     document.addEventListener("focusin", (event) => considerSupport(event.target));
+    document.addEventListener("experiment-submission:acknowledged", (event) => {
+      requestSubmissionGeneration(event.detail || {});
+    });
     document.addEventListener("experiment-records:acknowledged", (event) => {
       const detail = event.detail || {};
-      if (detail.recordType === "submission" && detail.module === currentConfig.experimentId) {
-        requestGeneration(detail.module).then(() => loadStudentView().catch(() => null));
+      if (detail.recordType === "submission") {
+        requestSubmissionGeneration(detail);
       }
     });
     global.addEventListener("online", () => flush());

@@ -222,6 +222,9 @@ function createPaginationHarness(result) {
   return {
     context, requests, prompts,
     setTargets(next) { targets = next; },
+    emit(name, target) {
+      for (const listener of listeners[name] || []) listener({ target });
+    },
     resolveRequest() { resolveRequest(); },
     target: (taskId, value) => new FakeElement(taskId, value)
   };
@@ -311,13 +314,83 @@ function payload(overrides) {
 }
 
 (async () => {
+  async function waitForRequest(harness, count = 1) {
+    while (harness.requests.length < count) await new Promise((resolve) => setTimeout(resolve, 0));
+  }
+
+  for (const shortText of ["1", "12"]) {
+    const firstBlur = createPaginationHarness({
+      result: { status: "insufficient", confidence: 1 }, promptEligible: true
+    });
+    const target = firstBlur.target("question", shortText);
+    firstBlur.setTargets([target]);
+    firstBlur.emit("focusout", target);
+    await waitForRequest(firstBlur);
+    assert.strictEqual(firstBlur.requests[0].inputText, shortText,
+      `first blur with ${shortText.length} character(s) must enter the existing check flow`);
+    assert.strictEqual(firstBlur.requests[0].trigger, "blur");
+    firstBlur.resolveRequest();
+    await new Promise((resolve) => setTimeout(resolve, 0));
+  }
+
+  for (const modifiedText of ["原始回答内容甲", "原始回答内容甲乙"]) {
+    const smallEdit = createPaginationHarness({
+      result: { status: "relevant", confidence: 0.95 }, promptEligible: true
+    });
+    const target = smallEdit.target("question", "原始回答内容");
+    smallEdit.setTargets([target]);
+    const initialCheck = smallEdit.context.TaskRelevance.checkTarget(target);
+    await waitForRequest(smallEdit);
+    smallEdit.resolveRequest();
+    await initialCheck;
+    target.value = modifiedText;
+    smallEdit.emit("focusout", target);
+    await new Promise((resolve) => setTimeout(resolve, 10));
+    assert.strictEqual(smallEdit.requests.length, 1,
+      "one- or two-character edits after a completed check must remain deduplicated");
+  }
+
+  const pageChange = createPaginationHarness({
+    result: { status: "insufficient", confidence: 1 }, promptEligible: true
+  });
+  const pageChangeTarget = pageChange.target("question", "1");
+  pageChange.setTargets([pageChangeTarget]);
+  pageChange.context.TaskRelevance.beforePageChange();
+  await waitForRequest(pageChange);
+  assert.strictEqual(pageChange.requests[0].trigger, "blur",
+    "page changes must reuse a trigger accepted by the server");
+  const pageChangeResponse = await relevanceFunction.main(payload({
+    inputText: "1",
+    trigger: pageChange.requests[0].trigger
+  }));
+  assert.strictEqual(pageChangeResponse.ok, true);
+  assert.notStrictEqual(pageChangeResponse.code, "INVALID_TRIGGER");
+  pageChange.resolveRequest();
+  await new Promise((resolve) => setTimeout(resolve, 0));
+  documents.clear();
+  serverTick = 0;
+
+  const blurAndPageChange = createPaginationHarness({
+    result: { status: "insufficient", confidence: 1 }, promptEligible: true
+  });
+  const blurAndPageTarget = blurAndPageChange.target("question", "1");
+  blurAndPageChange.setTargets([blurAndPageTarget]);
+  blurAndPageChange.emit("focusout", blurAndPageTarget);
+  blurAndPageChange.context.TaskRelevance.beforePageChange();
+  await waitForRequest(blurAndPageChange);
+  await new Promise((resolve) => setTimeout(resolve, 10));
+  assert.strictEqual(blurAndPageChange.requests.length, 1,
+    "blur and immediate page change must share the in-flight text hash");
+  blurAndPageChange.resolveRequest();
+  await new Promise((resolve) => setTimeout(resolve, 0));
+
   const paged = createPaginationHarness({
     result: { status: "off_topic", confidence: 0.9 }, promptEligible: true
   });
   const originalTarget = paged.target("question", "我只想聊今天的午饭是什么");
   paged.setTargets([originalTarget]);
   const firstCheck = paged.context.TaskRelevance.checkTarget(originalTarget, { force: true });
-  while (!paged.requests.length) await new Promise((resolve) => setTimeout(resolve, 0));
+  await waitForRequest(paged);
   originalTarget.isConnected = false;
   paged.setTargets([]);
   paged.resolveRequest();
@@ -336,7 +409,7 @@ function payload(overrides) {
   const relevantTarget = relevant.target("question", "我想比较不同材料长度下的记忆容量");
   relevant.setTargets([relevantTarget]);
   const relevantCheck = relevant.context.TaskRelevance.checkTarget(relevantTarget, { force: true });
-  while (!relevant.requests.length) await new Promise((resolve) => setTimeout(resolve, 0));
+  await waitForRequest(relevant);
   relevant.resolveRequest();
   await relevantCheck;
   assert.strictEqual(relevant.prompts.length, 0, "relevant text must not trigger a prompt");

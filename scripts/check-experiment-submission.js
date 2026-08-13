@@ -7,12 +7,24 @@ const vm = require("vm");
 
 const source = fs.readFileSync(path.join(__dirname, "..", "assets", "experiment-submission.js"), "utf8");
 const store = new Map();
+const documentListeners = {};
+const acknowledgedEvents = [];
 const session = { studentId: "s-1", sessionToken: "token", name: "Student" };
 const context = {
   structuredClone,
   fetch: async () => ({ ok: true, json: async () => ({ ok: true, code: "STORED" }) }),
   localStorage: { getItem: (key) => store.get(key) || null, setItem: (key, value) => store.set(key, value) },
   addEventListener() {},
+  CustomEvent: class CustomEvent {
+    constructor(type, options) { this.type = type; this.detail = options && options.detail; }
+  },
+  document: {
+    addEventListener(name, listener) { (documentListeners[name] ||= []).push(listener); },
+    dispatchEvent(event) {
+      acknowledgedEvents.push(event);
+      for (const listener of documentListeners[event.type] || []) listener(event);
+    }
+  },
   BrainExperimentRegistry: { get: (id) => ({ id, label: id === "screening" ? "Screening" : "Memory", kind: id === "screening" ? "screening" : "experiment" }) },
   BrainExperimentIntegration: { resolveSourceModule: (_source, pathName) => pathName.includes("memory") ? "memory" : "" },
   BrainAIChat: { readLogs: () => [{ path: "/memory.html", failed: false }, { path: "/memory.html", failed: true }] },
@@ -62,11 +74,20 @@ assert.strictEqual(screening.experimentResults.knowledgePretest.submitted, true)
 context.BrainExperimentSubmission.submit({ experimentId: "memory", state, submissionTime: "2026-08-03T02:00:00.000Z" }).then((result) => {
   assert.strictEqual(result.ok, true);
   assert.strictEqual(result.queued, false);
+  assert.strictEqual(acknowledgedEvents.length, 1);
+  assert.strictEqual(acknowledgedEvents[0].type, "experiment-submission:acknowledged");
+  assert.strictEqual(acknowledgedEvents[0].detail.experimentId, "memory");
+  assert.strictEqual(acknowledgedEvents[0].detail.submissionId, result.submissionId);
+  return context.BrainExperimentSubmission.submit({ experimentId: "memory", state, submissionTime: "2026-08-03T02:00:00.000Z" })
+    .then(() => {
+      assert.strictEqual(acknowledgedEvents.length, 1, "the same submission must only emit one acknowledgement");
+    });
+}).then(() => {
   const saveSource = fs.readFileSync(path.join(__dirname, "..", "cloudfunctions", "saveExperimentSubmission", "index.js"), "utf8");
   const getSource = fs.readFileSync(path.join(__dirname, "..", "cloudfunctions", "getLatestExperimentSubmission", "index.js"), "utf8");
   const adminSource = fs.readFileSync(path.join(__dirname, "..", "cloudfunctions", "getExperimentSubmissionsAdmin", "index.js"), "utf8");
   assert.match(saveSource, /experiment_submissions/);
   assert.match(getSource, /experimentRecords/);
   assert.match(adminSource, /Promise\.all/);
-  console.log("Experiment submission normalization, queue and compatibility checks passed.");
+  console.log("Experiment submission normalization, acknowledgement and compatibility checks passed.");
 }).catch((error) => { console.error(error); process.exitCode = 1; });
