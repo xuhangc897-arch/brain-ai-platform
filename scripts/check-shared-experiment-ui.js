@@ -27,7 +27,13 @@ for (const file of experimentFiles) {
   assert(page.includes("function getIncompleteStepMessage(stepId)"), `${file}: missing incomplete-page formatter`);
   assert(page.includes("showStepMessage(getIncompleteStepMessage(steps[state.currentStep].id))"), `${file}: validation must include the incomplete page`);
   assert(page.includes('class="quiz-key"') && page.includes('class="quiz-label"'), `${file}: knowledge choices must use qualification-style structure`);
+  assert(page.includes('className: "survey-page"'), `${file}: paged surveys must expose the shared ten-column layout hook`);
   assert(!page.includes('showStepMessage("请先完成本步骤内容。")'), `${file}: generic incomplete message must not remain`);
+  assert(page.includes("preparePagedInputLifecycle();"), `${file}: pagination lifecycle preparation missing`);
+  assert(page.includes("window.TaskRelevance?.beforePageChange();"), `${file}: relevance pre-page hook missing`);
+  assert(page.includes("window.TypingSupport?.beforePageChange();"), `${file}: typing support pre-page hook missing`);
+  assert(page.includes("window.TaskRelevance?.afterPageRender();"), `${file}: relevance post-render hook missing`);
+  assert(page.includes("window.TypingSupport?.afterPageRender();"), `${file}: typing support post-render hook missing`);
 }
 
 const theme = source("assets/experiment-theme.css");
@@ -38,6 +44,9 @@ for (const marker of [
   "body.experiment-page.is-focus-mode .memory-partner",
   "body.experiment-page .quiz-key",
   "body.experiment-page .quiz-label",
+  "grid-template-columns: repeat(10, minmax(0, 1fr))",
+  "body.experiment-page .survey-page .survey-option-card",
+  "font-size: 21px",
   "The page header is the single visual title"
 ]) {
   assert(theme.includes(marker), `shared experiment theme missing: ${marker}`);

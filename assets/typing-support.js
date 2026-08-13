@@ -363,6 +363,16 @@
     drainOutbox();
   }
 
+  function beforePageChange() {
+    stopTimer();
+    if (activeSuggestionKey) global.VirtualAgent.hideVoiceSuggestion("ignored");
+    activeTarget = null;
+  }
+
+  function afterPageRender() {
+    if (activeTarget && !activeTarget.isConnected) activeTarget = null;
+  }
+
   function recoverUnresolvedEntries() {
     const currentIdentity = identity();
     if (!currentIdentity) return;
@@ -397,7 +407,7 @@
     return true;
   }
 
-  global.TypingSupport = Object.freeze({ init, flush });
+  global.TypingSupport = Object.freeze({ init, beforePageChange, afterPageRender, flush });
   global.__TypingSupportTestHooks = Object.freeze({
     message: MESSAGE,
     normalizeText,

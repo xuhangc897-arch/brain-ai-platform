@@ -328,15 +328,23 @@
     .material-match-page .reading-card, .material-match-page .match-status-card { height: 100%; padding: 16px; overflow: auto; }
     .material-match-page .reading-card p, .material-match-page .match-status-card p { margin: 0 0 12px; font-size: 16px; line-height: 1.8; }
     .material-match-page .match-status-card { border: 1px solid var(--line); border-radius: 10px; background: #f8fbff; }
-    .case-page .case-list { grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 7px 10px; margin-top: 0; }
-    .case-page .template-card { grid-column: 1 / -1; padding: 9px 12px; }
-    .case-page .template-card p, .case-page .case-body p { margin: 4px 0; }
-    .case-page .case-card summary { padding: 8px 11px; }
-    .case-page .case-body { padding: 0 11px 9px; font-size: 12px; }
-    .case-question-layout { display: grid; grid-template-columns: minmax(0, 1.2fr) minmax(300px, .8fr); gap: 12px; padding: 10px 14px; }
-    .case-question-layout .inquiry-helper { margin-top: 0; }
-    .case-question-layout .helper-card { padding: 10px 12px; }
-    .case-question-layout .helper-card li { margin: 3px 0; }
+    .research-question-layout { display: grid; grid-template-columns: 1fr; align-content: center; gap: 16px; padding: 18px; }
+    .research-question-layout .inquiry-helper { margin: 0; }
+    .research-question-layout .helper-card,
+    .research-question-form { padding: 18px 22px; border: 1px solid var(--line); border-radius: 10px; background: #f8fbff; box-shadow: none; }
+    .research-question-layout .helper-card h4,
+    .research-question-form h4 { margin: 0 0 14px; color: #172033; font-size: 17px; }
+    .research-question-layout .helper-card ul { font-size: 15px; line-height: 1.75; }
+    .research-question-layout .helper-card li + li { margin-top: 7px; }
+    .research-question-form { display: grid; align-content: center; }
+    .research-question-form p { margin: 0 0 18px; color: var(--muted); font-size: 14px; line-height: 1.7; }
+    .research-question-form .field { margin: 0; }
+    .research-question-form .strategy-question-line { display: grid; grid-template-columns: minmax(0, 1fr) auto; flex-wrap: nowrap; }
+    .research-question-form .strategy-question-line span { white-space: nowrap; }
+    .strategy-recommendation-page table { margin-top: 14px; font-size: 17px; }
+    .strategy-recommendation-page th,
+    .strategy-recommendation-page td { padding: 14px 16px; line-height: 1.65; }
+    .strategy-recommendation-page th { font-size: 17px; }
     .compact-form-grid { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 12px; }
     .compact-form-grid .field { margin: 0; }
     .round-plan-page .page-card { padding: 8px; }
@@ -380,9 +388,13 @@
     .score-input-page .score-record-list { display: none; }
     .score-input-page .page-card { padding: 6px 8px; }
     .score-input-page .field { margin: 0 0 5px; }
+    .score-input-page .score-table { min-width: 760px; table-layout: fixed; }
+    .score-input-page .score-table .score-dimension-col { width: 150px; }
+    .score-input-page .score-table .score-value-col { width: 150px; }
     .score-input-page .score-table th,
-    .score-input-page .score-table td { padding: 3px 6px; font-size: 11px; }
-    .score-input-page .score-table-wrap p { margin: 0; font-size: 11px; line-height: 1.25; }
+    .score-input-page .score-table td { padding: 7px 10px; font-size: 14px; line-height: 1.4; }
+    .score-input-page .score-table-wrap p { margin: 0 0 2px; font-size: 14px; line-height: 1.4; }
+    .score-input-page .score-table select { min-height: 42px; font-size: 14px; }
     .score-input-page .score-actions { margin-top: 5px; }
     .score-history-grid { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 12px; }
     .posttest-summary-page .survey-summary { margin-bottom: 12px; }
@@ -406,6 +418,8 @@
     html[data-theme="archive"] body.experiment-page .run-result-card h4 { color: var(--ink); }
     html[data-theme="archive"] body.experiment-page .question-page-head { border-bottom-color: rgba(181,139,74,.38); }
     html[data-theme="archive"] body.experiment-page .page-card,
+    html[data-theme="archive"] body.experiment-page .research-question-layout .helper-card,
+    html[data-theme="archive"] body.experiment-page .research-question-form,
     html[data-theme="archive"] body.experiment-page .match-status-card,
     html[data-theme="archive"] body.experiment-page .readonly-summary > div,
     html[data-theme="archive"] body.experiment-page .evidence-task-preview,
@@ -429,7 +443,8 @@
       .main.is-paged-step > .panel > .panel-body, .step-page-content { height: auto; overflow: visible; }
       .strategy-guide-grid, .material-match-page, .evidence-start-grid, .run-results-grid, .score-history-grid { grid-template-columns: 1fr; }
       .paged-thinking .thinking-layer, .compact-form-grid, .readonly-summary { grid-template-columns: 1fr; }
-      .case-question-layout { grid-template-columns: 1fr; }
+      .research-question-form .strategy-question-line { grid-template-columns: 1fr; }
+      .research-question-form .strategy-question-line span { white-space: normal; }
       .round-plan-page .round-plan-card, .round-plan-page .difficulty-controls { grid-template-columns: 1fr; }
       .round-plan-page .round-plan-card > h4, .round-plan-page .round-plan-card > p, .round-plan-page .round-plan-card > .field:last-child { grid-column: auto; }
       .page-card { height: auto; overflow: visible; }
@@ -865,7 +880,7 @@
     function joinThoughts(items) { return items.filter(hasThoughtText).join("\n"); }
     function thoughtLine(label, value) { return hasThoughtText(value) ? `${label}：${value}` : ""; }
     function renderPairedField(label, personalHtml, groupHtml) {
-      return `<div class="field paired-field"><label>${label}</label><div class="thinking-layer"><div class="thinking-box thinking-personal"><span class="thinking-label">个人思考（我）</span>${personalHtml}</div><div class="thinking-box thinking-group"><span class="thinking-label">小组共识（我们）</span>${groupHtml}</div></div></div>`;
+      return `<div class="field paired-field">${label ? `<label>${label}</label>` : ""}<div class="thinking-layer"><div class="thinking-box thinking-personal"><span class="thinking-label">个人思考（我）</span>${personalHtml}</div><div class="thinking-box thinking-group"><span class="thinking-label">小组共识（我们）</span>${groupHtml}</div></div></div>`;
     }
     const TRACKED_TEXT_TASKS = Object.freeze({
       brainstormIndividual: "question",
@@ -1038,6 +1053,7 @@
         showStepMessage("请先完成前一步内容，再进入下一步。");
         return;
       }
+      preparePagedInputLifecycle();
       state.currentStep = target;
       if (!isDeveloperMode()) saveState();
       renderApp();
@@ -1099,6 +1115,8 @@
       applyLearningBehaviorMetadata();
       bindInputs();
       bindStepEvents(step.id);
+      window.TaskRelevance?.afterPageRender();
+      window.TypingSupport?.afterPageRender();
     }
     function getStepHtml(stepId) {
       return {
@@ -1151,6 +1169,7 @@
       const currentPage = getStepPageIndex(stepId);
       const target = Math.min(Math.max(targetPage, 0), pageCount - 1);
       if (target === currentPage || stepPageTransitioning) return;
+      preparePagedInputLifecycle();
       const content = main.querySelector(".step-page-content");
       const reduceMotion = window.matchMedia?.("(prefers-reduced-motion: reduce)").matches;
       const finish = () => {
@@ -1162,6 +1181,12 @@
       stepPageTransitioning = true;
       content.classList.add("is-leaving");
       window.setTimeout(finish, 150);
+    }
+    function preparePagedInputLifecycle() {
+      const active = document.activeElement;
+      if (active?.matches?.('textarea[data-agent-track="true"]')) active.blur();
+      window.TaskRelevance?.beforePageChange();
+      window.TypingSupport?.beforePageChange();
     }
     function bindPagedStepEvents(stepId) {
       const pageCount = getStepPageCount(stepId);
@@ -1178,7 +1203,10 @@
       });
       next?.addEventListener("click", () => {
         if (pageIndex < pageCount - 1) changeStepPage(stepId, pageIndex + 1, pageCount);
-        else goNextStep();
+        else {
+          preparePagedInputLifecycle();
+          goNextStep();
+        }
       });
     }
 
@@ -1466,7 +1494,7 @@
         { title: "记忆策略说明（一）", content: () => `<div class="page-card strategy-guide-grid">${explanations.slice(0, 3).map(renderStrategyInfoCard).join("")}</div>` },
         { title: "记忆策略说明（二）", content: () => `<div class="page-card strategy-guide-grid">${explanations.slice(3).map(renderStrategyInfoCard).join("")}</div>` },
         ...getStrategyMatchMaterials().map((material, index) => ({ title: `${material.title}：材料—策略匹配`, content: () => renderSingleStrategyMatchPage(material, index) })),
-        { title: "科学探究案例与研究问题", className: "case-page", content: () => `<div class="page-card case-question-layout"><div>${renderInquiryCases()}</div><div>${renderInquiryScaffold("question")}${state.fields.strategyMatchConfirmed ? `<div class="field"><label for="questionStrategy">研究问题（小组）</label><div class="strategy-question-line"><input id="questionStrategy" type="text" data-field="questionStrategy" value="${escapeHtml(state.fields.questionStrategy)}" placeholder="请输入记忆策略"><span>可以改善长时记忆</span></div></div>` : '<div class="tip-box">请先完成并确认材料—策略匹配，再填写研究问题。</div>'}</div></div>` }
+        { title: "提出研究问题", className: "research-question-page", content: () => `<div class="page-card research-question-layout"><div>${renderInquiryScaffold("question")}</div><section class="research-question-form"><h4>研究问题提出</h4><p>根据材料匹配结果，填写小组准备探究的记忆策略。</p>${state.fields.strategyMatchConfirmed ? `<div class="field"><label for="questionStrategy">研究问题（小组）</label><div class="strategy-question-line"><input id="questionStrategy" type="text" data-field="questionStrategy" value="${escapeHtml(state.fields.questionStrategy)}" placeholder="请输入记忆策略"><span>可以改善长时记忆</span></div></div>` : '<div class="tip-box">请先完成并确认材料—策略匹配，再填写研究问题。</div>'}</section></div>` }
       ];
       return renderPagedStep("question", pages);
     }
@@ -1551,7 +1579,7 @@
       return `<div class="headband-modal" id="headbandGuideModal" role="dialog" aria-modal="true" aria-label="头环工作原理" tabindex="-1"><div class="headband-modal-card"><button class="btn secondary headband-modal-close" type="button" id="closeHeadbandGuide" aria-label="关闭头环工作原理">×</button><picture><source srcset="assets/headband-guide.webp" type="image/webp"><img src="assets/headband-guide.png" alt="头环工作原理示意图" width="1536" height="1024" loading="lazy" decoding="async"></picture></div></div>`;
     }
     function renderStrategyRecommendationPage() {
-      return `<div class="page-card"><h4>策略与对应记忆材料推荐</h4><table><thead><tr><th>记忆策略</th><th>推荐记忆材料</th></tr></thead><tbody><tr><td>情景关联</td><td>古诗</td></tr><tr><td>主动回忆</td><td>英文单词、古诗、成语</td></tr><tr><td>新旧知识关联</td><td>英文单词</td></tr><tr><td>信息可视化</td><td>古诗、成语</td></tr><tr><td>信息提取</td><td>英文单词、成语</td></tr></tbody></table></div>`;
+      return `<div class="page-card strategy-recommendation-page"><h4>策略与对应记忆材料推荐</h4><table><thead><tr><th>记忆策略</th><th>推荐记忆材料</th></tr></thead><tbody><tr><td>情景关联</td><td>古诗</td></tr><tr><td>主动回忆</td><td>英文单词、古诗、成语</td></tr><tr><td>新旧知识关联</td><td>英文单词</td></tr><tr><td>信息可视化</td><td>古诗、成语</td></tr><tr><td>信息提取</td><td>英文单词、成语</td></tr></tbody></table></div>`;
     }
     function renderMaterialTypeSelect(field) {
       return `<select data-field="${field}">${["word", "poem", "idiom"].map((type) => `<option value="${type}" ${state.fields[field] === type ? "selected" : ""}>${MATERIAL_TYPE_LABELS[type]}</option>`).join("")}</select>`;
@@ -1704,7 +1732,7 @@
       return `<div class="score-layout">
         <div>
           <div class="field"><label>策略名称</label>${renderStrategySelect("scoreStrategyName", state.fields.scoreStrategyName || state.fields.strategy1 || MEMORY_STRATEGIES[0])}</div>
-          <div class="score-table-wrap"><table class="score-table"><thead><tr><th>评分维度</th><th>水平</th><th>得分</th></tr></thead><tbody>
+          <div class="score-table-wrap"><table class="score-table"><colgroup><col class="score-dimension-col"><col><col class="score-value-col"></colgroup><thead><tr><th>评分维度</th><th>水平</th><th>得分</th></tr></thead><tbody>
             ${renderScoreRow("答案准确性", "scoreAccuracy", ["5分：全部答案完全准确，无任何错误", "4分：1-2处非关键性错误（如拼写或标点轻微偏差）", "3分：3-4处错误，但关键内容保留（如古诗半句正确）", "2分：仅能回忆零碎片段（如单词首字母）", "1分：答案完全错误或空白"])}
             ${renderScoreRow("策略利用率", "scoreUse", ["5分：能高效运用记忆策略，准确回忆内容", "4分：策略使用恰当但略显常规", "3分：能通过策略回忆主要信息，但应用不够系统", "2分：回忆内容片段化，策略与信息关联性较弱", "1分：未能使用策略，与未使用策略相比差异较小"])}
             ${renderScoreRow("记忆信心度", "scoreConfidence", ["5分：确信完全掌握所有内容", "4分：对大部分内容有信心", "3分：对部分内容有信心", "2分：对回忆能力不确定", "1分：确信自己记不住"])}
@@ -1764,7 +1792,7 @@
         ["结果是否出乎意料？为什么？", "surprise", "surprise_group", "可以结合不同策略的表现差异、自己原来的预测、使用策略时的感受和数据结果进行分析。"],
         ["以上策略适用于所有学习内容吗？", "applicability", "applicability_group", "可以思考不同策略适合哪些学习任务，是否会受到材料类型、学习目标、时间长短和个人习惯的影响。"]
       ];
-      return renderPagedStep("reflection", prompts.map(([title, field, groupField, placeholder]) => ({ title, className: "paged-thinking", content: () => `<div class="page-card">${renderPairedField(title, `<textarea data-field="${field}" placeholder="${placeholder}">${escapeHtml(state.fields[field])}</textarea>`, renderGroupTextarea(groupField))}</div>` })));
+      return renderPagedStep("reflection", prompts.map(([title, field, groupField, placeholder]) => ({ title, className: "paged-thinking", content: () => `<div class="page-card">${renderPairedField("", `<textarea data-field="${field}" placeholder="${placeholder}">${escapeHtml(state.fields[field])}</textarea>`, renderGroupTextarea(groupField))}</div>` })));
     }
     function bindInputs() {
       main.querySelectorAll("[data-field]").forEach((element)=>{ const field = element.dataset.field; element.addEventListener("change",()=>updateField(element, field)); element.addEventListener("input",()=>updateField(element, field)); });

@@ -60,13 +60,45 @@ allQuestions.forEach((item) => {
 ["本次实验", "今天探究", "根据实验结果", "完成实验后", "实验中我们"].forEach((phrase) => {
   assert.ok(pretest.every((item) => !item.question.includes(phrase)), `T0 contains forbidden phrase: ${phrase}`);
 });
+["1-back", "2-back", "3-back", "N-back", "N值", "N 值"].forEach((phrase) => {
+  assert.ok(
+    pretest.every((item) => !`${item.question} ${Object.values(item.options).join(" ")}`.includes(phrase)),
+    `T0 requires prior N-back knowledge: ${phrase}`
+  );
+});
+["永久保存所有信息", "自动扩大记忆容量", "设备损坏是唯一原因", "只抄写标点符号", "任何情况下", "永远"].forEach((phrase) => {
+  assert.ok(
+    allQuestions.every((item) => !`${item.question} ${Object.values(item.options).join(" ")}`.includes(phrase)),
+    `Question bank contains an obvious distractor phrase: ${phrase}`
+  );
+});
+
+function answerDistribution(questions) {
+  return Object.fromEntries(["A", "B", "C", "D"].map((key) => [
+    key,
+    questions.filter((item) => item.answer === key).length
+  ]));
+}
+
+assert.deepStrictEqual(answerDistribution(pretest), { A: 5, B: 5, C: 5, D: 5 });
+assert.deepStrictEqual(answerDistribution(posts.flat()), { A: 5, B: 5, C: 5, D: 5 });
 
 const api = context.BrainKnowledgeAssessment;
+assert.strictEqual(api.questionSetVersion, "knowledge-v3-2026-08");
 const t0Draft = api.createDraft("T0", pretest, true);
 const t5Draft = api.createDraft("T5", pretest, true);
 assert.notStrictEqual(t0Draft, t5Draft);
 assert.notStrictEqual(t0Draft.questionOrder, t5Draft.questionOrder);
 assert.deepStrictEqual([...t0Draft.questionOrder].sort(), [...t5Draft.questionOrder].sort());
+const staleDraft = api.normalizeDraft({
+  stage: "T0",
+  questionSetVersion: "knowledge-v2-2026-08",
+  questionOrder: pretest.map((item) => item.id),
+  answers: { [pretest[0].id]: "A" },
+  currentPage: 9
+}, "T0", pretest, true);
+assert.strictEqual(Object.keys(staleDraft.answers).length, 0);
+assert.strictEqual(staleDraft.currentPage, 0);
 const posterSource = fs.readFileSync(path.join(root, "poster.html"), "utf8");
 const pretestSource = fs.readFileSync(path.join(root, "pretest.html"), "utf8");
 assert.match(posterSource, /const knowledgeQuestions = window\.BrainKnowledgePretestQuestions;/);

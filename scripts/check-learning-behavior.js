@@ -197,6 +197,20 @@ assert(platform.includes("learning-behavior-outbox-v1"), "outbox key missing");
   assert.strictEqual(summary.voiceUsed, true);
   assert.strictEqual(summary.aiUsed, true);
 
+  fakeDocument.activeElement = null;
+  dispatch("focusout", question);
+  const replacementQuestion = new FakeElement("question", "question");
+  replacementQuestion.value = question.value;
+  fakeDocument.activeElement = replacementQuestion;
+  dispatch("focusin", replacementQuestion);
+  replacementQuestion.value += "继续";
+  dispatch("input", replacementQuestion);
+  const replacementSummary = behaviorSandbox.LearningBehaviorTracker.getDebugSummary()[0];
+  assert.strictEqual(replacementSummary.focusCount, 2, "recreated paged input must continue focus counting");
+  assert.strictEqual(replacementSummary.inputMethod, "mixed", "recreated paged input must preserve input method metrics");
+  assert(replacementSummary.keyboardInputCharacterCount >= 6,
+    "recreated paged input must continue keyboard character counting");
+
   dispatch("virtual-agent:ai-opened", null, { experimentId: "memory", stageId: "conclusion" });
   const conclusion = new FakeElement("conclusion", "conclusion");
   fakeDocument.activeElement = conclusion;
@@ -206,7 +220,7 @@ assert(platform.includes("learning-behavior-outbox-v1"), "outbox key missing");
   assert.strictEqual(summary.aiUsed, true, "pending AI use must attach to the next task in that stage");
 
   fetchShouldFail = true;
-  dispatch("focusout", question);
+  dispatch("focusout", replacementQuestion);
   await new Promise((resolve) => setTimeout(resolve, 0));
   assert(storage.get("learning-behavior-outbox-v1"), "offline summary must remain in the outbox");
   assert(requests.every((request) => request.authorization === "Bearer signed-session-token"));

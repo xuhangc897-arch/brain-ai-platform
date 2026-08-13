@@ -129,6 +129,9 @@ assert(controller.includes("studentResponse: \"ignored\""));
 assert(controller.includes("voice-assistant:text-inserted"));
 assert(partner.includes("showVoiceSuggestion") && partner.includes("openVoiceFor"));
 assert(voice.includes("setTarget") && voice.includes("voice-assistant:text-inserted"));
+assert(controller.includes("function beforePageChange()"));
+assert(controller.includes("function afterPageRender()"));
+assert(controller.includes("activeTarget = null"), "pagination must release the unloaded target");
 
 function createControllerHarness(options) {
   class FakeElement {

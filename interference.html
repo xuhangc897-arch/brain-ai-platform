@@ -221,6 +221,10 @@
     .question-page-content { flex: 1; min-height: 0; animation: question-page-fade-in 150ms ease both; }
     .question-page-content.is-leaving { pointer-events: none; animation: question-page-fade-out 150ms ease both; }
     .question-page-material { display: grid; align-items: center; width: min(980px, 100%); height: 100%; margin: 0 auto; }
+    .question-materials-combined { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 14px; align-content: center; width: 100%; height: 100%; }
+    .question-materials-combined .reading-card { padding: 18px; }
+    .question-materials-combined .reading-card h4 { font-size: 19px; line-height: 1.5; }
+    .question-materials-combined .reading-card p { font-size: 16px; line-height: 1.9; }
     .question-page-cases .case-list { grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 8px 12px; margin-top: 0; }
     .question-page-cases .template-card { grid-column: 1 / -1; padding: 11px 14px; }
     .question-page-cases .case-card summary { padding: 9px 12px; }
@@ -289,6 +293,9 @@
 
     @media (max-width: 980px) {
       .step-layout, .analysis-layout, .experiment-game { grid-template-columns: 1fr; }
+      .question-materials-combined { grid-template-columns: 1fr; gap: 10px; }
+      .question-materials-combined .reading-card { padding: 14px 16px; }
+      .question-materials-combined .reading-card p { margin-bottom: 6px; }
       .phase-grid, .readonly-plan-grid, .run-results-grid { grid-template-columns: repeat(2, minmax(0, 1fr)); }
       .plan-parameters-page .form-grid { grid-template-columns: repeat(2, minmax(0, 1fr)); }
       .progress { grid-template-columns: repeat(8, 132px); }
@@ -994,8 +1001,8 @@
     function hasThoughtText(value) { return value !== null && value !== undefined && String(value).trim() !== ""; }
     function joinThoughts(items) { return items.filter(hasThoughtText).join("\n"); }
     function thoughtLine(label, value) { return hasThoughtText(value) ? `${label}：${value}` : ""; }
-    function renderPairedField(label, personalHtml, groupHtml) {
-      return `<div class="field paired-field"><label>${label}</label><div class="thinking-layer"><div class="thinking-box thinking-personal"><span class="thinking-label">个人思考（我）</span>${personalHtml}</div><div class="thinking-box thinking-group"><span class="thinking-label">小组共识（我们）</span>${groupHtml}</div></div></div>`;
+    function renderPairedField(label, personalHtml, groupHtml, showLabel = true) {
+      return `<div class="field paired-field">${showLabel ? `<label>${label}</label>` : ""}<div class="thinking-layer"><div class="thinking-box thinking-personal"><span class="thinking-label">个人思考（我）</span>${personalHtml}</div><div class="thinking-box thinking-group"><span class="thinking-label">小组共识（我们）</span>${groupHtml}</div></div></div>`;
     }
     const TRACKED_TEXT_TASKS = Object.freeze({
       lifeFactors: "question",
@@ -1158,6 +1165,7 @@
         showStepMessage("请先完成前一步内容，再进入下一步。");
         return;
       }
+      preparePagedInputLifecycle();
       state.currentStep = target;
       if (!isDeveloperMode()) saveState();
       renderApp();
@@ -1226,6 +1234,8 @@
       applyLearningBehaviorMetadata();
       bindInputs();
       bindStepEvents(step.id);
+      window.TaskRelevance?.afterPageRender();
+      window.TypingSupport?.afterPageRender();
     }
     function getStepHtml(stepId) {
       return {
@@ -1469,7 +1479,7 @@
     }
     function getStepPageCount(stepId) {
       const counts = {
-        question: 7,
+        question: 4,
         hypothesis: 1,
         plan: 6,
         evidence: 1 + Math.ceil(getEvidenceRunGroups().length / getEvidencePageSize()),
@@ -1497,6 +1507,7 @@
       const currentPage = getStepPageIndex(stepId);
       const target = Math.min(Math.max(targetPage, 0), pageCount - 1);
       if (target === currentPage || stepPageTransitioning) return;
+      preparePagedInputLifecycle();
       const content = main.querySelector(".question-page-content");
       const reduceMotion = window.matchMedia?.("(prefers-reduced-motion: reduce)").matches;
       const finish = () => {
@@ -1508,6 +1519,12 @@
       stepPageTransitioning = true;
       content.classList.add("is-leaving");
       window.setTimeout(finish, 150);
+    }
+    function preparePagedInputLifecycle() {
+      const active = document.activeElement;
+      if (active?.matches?.('textarea[data-agent-track="true"]')) active.blur();
+      window.TaskRelevance?.beforePageChange();
+      window.TypingSupport?.beforePageChange();
     }
     function bindPagedStepEvents(stepId) {
       const pageCount = getStepPageCount(stepId);
@@ -1522,19 +1539,19 @@
       });
       document.getElementById("stepNextPage")?.addEventListener("click", () => {
         if (pageIndex < pageCount - 1) changeStepPage(stepId, pageIndex + 1, pageCount);
-        else goNextStep();
+        else {
+          preparePagedInputLifecycle();
+          goNextStep();
+        }
       });
     }
 
     function renderPagedQuestionStep() {
       const pages = [
         { title: "生活中的长时记忆干扰", className: "question-page-form", content: () => `<div class="question-intro-strip"><p>你有没有这样的经历：在回忆一篇课文时，开头和结尾记得很清楚，中间部分却比较模糊？长时记忆可能受到了干扰。</p><p>请先独立思考，再与小组讨论生活中可能干扰长时记忆的因素。</p>${renderPairedField("生活中想到的干扰因素", `<textarea data-field="lifeFactors" placeholder="请写下你想到的干扰因素">${escapeHtml(state.fields.lifeFactors)}</textarea>`, renderGroupTextarea("lifeFactors_group"))}</div>` },
-        { title: "阅读材料一：新旧记忆干扰", className: "question-page-material", content: () => `<article class="reading-card"><h4>前摄干扰与倒摄干扰</h4><p>在接受新信息时，大脑还储存着以前学习的信息。旧记忆对新记忆的干扰叫“前摄干扰”，新记忆对旧记忆的干扰叫“倒摄干扰”。</p><p>连续学习多个内容时，旧内容可能妨碍后续学习；学习新环境或新知识后，也可能更难回忆旧环境或旧知识的细节。</p></article>` },
-        { title: "阅读材料二：材料相似性", className: "question-page-material", content: () => `<article class="reading-card"><h4>相似记忆更容易互相干扰</h4><p>回忆信息时，如果大脑中存在许多相似记忆，更容易发生干扰。平常的一顿午餐可能很难回忆，而一次独特的饭菜往往更容易记住。</p><p>请思考：记忆材料和随后出现的材料越相似，回忆成绩可能发生什么变化？</p></article>` },
-        { title: "阅读材料三：情绪状态", className: "question-page-material", content: () => `<article class="reading-card"><h4>情绪也会影响记忆</h4><p>情绪状态会影响注意、编码与提取。过度紧张、悲伤或兴奋时，人可能把更多注意资源用于情绪体验，从而影响对材料的记忆。</p><p>通过比较不同情绪条件下的回忆结果，可以检验情绪状态是否造成长时记忆干扰。</p></article>` },
-        { title: "科学探究案例", className: "question-page-cases", content: () => renderInquiryCases() },
-        { title: "整理材料中的干扰因素", className: "question-page-form", content: () => `${renderInquiryScaffold("question")}${renderPairedField("材料中列出的干扰因素", `<textarea data-field="materialFactors" placeholder="请根据阅读材料自行填写">${escapeHtml(state.fields.materialFactors)}</textarea>`, renderGroupTextarea("materialFactors_group"))}` },
-        { title: "提出研究问题", className: "question-page-form", content: () => `<div class="panel"><div class="panel-head"><h3>确定小组研究问题</h3><p>从刚才整理的干扰因素中选择一个可测量的因素。</p></div><div class="panel-body"><div class="field"><label>研究问题（小组）</label><div class="form-grid"><input type="text" data-field="questionFactor" value="${escapeHtml(state.fields.questionFactor)}" placeholder="请输入干扰因素"><div class="readonly-value">会对长时记忆造成干扰吗？</div></div></div></div></div>` }
+        { title: "阅读材料：长时记忆的三种干扰因素", className: "question-page-material", content: () => `<div class="question-materials-combined"><article class="reading-card"><h4>材料一：新旧记忆干扰</h4><p>在接受新信息时，大脑还储存着以前学习的信息。旧记忆对新记忆的干扰叫“前摄干扰”，新记忆对旧记忆的干扰叫“倒摄干扰”。</p><p>连续学习多个内容时，旧内容可能妨碍后续学习；学习新环境或新知识后，也可能更难回忆旧环境或旧知识的细节。</p></article><article class="reading-card"><h4>材料二：材料相似性</h4><p>回忆信息时，如果大脑中存在许多相似记忆，更容易发生干扰。平常的一顿午餐可能很难回忆，而一次独特的饭菜往往更容易记住。</p><p>请思考：记忆材料和随后出现的材料越相似，回忆成绩可能发生什么变化？</p></article><article class="reading-card"><h4>材料三：情绪状态</h4><p>情绪状态会影响注意、编码与提取。过度紧张、悲伤或兴奋时，人可能把更多注意资源用于情绪体验，从而影响对材料的记忆。</p><p>通过比较不同情绪条件下的回忆结果，可以检验情绪状态是否造成长时记忆干扰。</p></article></div>` },
+        { title: "整理材料中的干扰因素", className: "question-page-form", content: () => renderPairedField("材料中列出的干扰因素", `<textarea data-field="materialFactors" placeholder="请根据阅读材料自行填写">${escapeHtml(state.fields.materialFactors)}</textarea>`, renderGroupTextarea("materialFactors_group")) },
+        { title: "提出研究问题", className: "question-page-form", content: () => `<div class="panel"><div class="panel-head"><h3>确定小组研究问题</h3><p>从刚才整理的干扰因素中选择一个可测量的因素。</p></div><div class="panel-body"><div class="field"><label>研究问题（小组）</label><div class="form-grid"><input type="text" data-field="questionFactor" value="${escapeHtml(state.fields.questionFactor)}" placeholder="请输入干扰因素"><div class="readonly-value">会对长时记忆造成干扰吗？</div></div></div></div></div>${renderInquiryScaffold("question")}` }
       ];
       return renderPagedStep("question", pages);
     }
@@ -1822,7 +1839,7 @@
         ["还有哪些可以改进？", "improvements", "improvements_group", "可以从干扰条件、时间设置和数据充分性等方面思考。"],
         ["本实验结论对学习有什么启发？", "learningInsight", "learningInsight_group", "联系复习安排、材料相似性、情绪状态或学习环境。"]
       ];
-      return renderPagedStep("reflection", questions.map(([title, field, groupField, placeholder]) => ({ title, className: "reflection-page", content: () => `<div class="panel"><div class="panel-body">${renderPairedField(title, `<textarea data-field="${field}" placeholder="${placeholder}">${escapeHtml(state.fields[field])}</textarea>`, renderGroupTextarea(groupField))}</div></div>` })));
+      return renderPagedStep("reflection", questions.map(([title, field, groupField, placeholder]) => ({ title, className: "reflection-page", content: () => `<div class="panel"><div class="panel-body">${renderPairedField(title, `<textarea data-field="${field}" placeholder="${placeholder}">${escapeHtml(state.fields[field])}</textarea>`, renderGroupTextarea(groupField), false)}</div></div>` })));
     }
 
     function renderAnalysisStep() {

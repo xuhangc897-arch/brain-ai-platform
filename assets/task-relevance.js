@@ -25,6 +25,7 @@
   const lastCheckedText = new Map();
   const focusText = new WeakMap();
   const pendingHashes = new Map();
+  const taskStates = new Map();
 
   function identity() {
     const session = global.BrainPlatform?.identity?.readStudentSession?.();
@@ -71,6 +72,48 @@
       !target.disabled &&
       !target.readOnly &&
       target.isConnected;
+  }
+
+  function snapshotTarget(target, currentIdentity) {
+    if (!eligibleTarget(target) || !currentIdentity) return null;
+    const snapshot = {
+      studentId: currentIdentity.studentId,
+      fieldId: String(target.dataset.field || target.id || target.dataset.taskId || ""),
+      experimentId: String(target.dataset.experimentId || ""),
+      stageId: String(target.dataset.stageId || ""),
+      taskId: String(target.dataset.taskId || ""),
+      value: normalizeText(target.value)
+    };
+    const config = global.TaskRelevanceConfig?.get(snapshot.experimentId, snapshot.taskId);
+    if (!config || config.stageId !== snapshot.stageId) return null;
+    return snapshot;
+  }
+
+  function snapshotKey(snapshot) {
+    return [snapshot.studentId, snapshot.experimentId, snapshot.stageId, snapshot.taskId].join("|");
+  }
+
+  function rememberSnapshot(snapshot) {
+    const key = snapshotKey(snapshot);
+    const previous = taskStates.get(key) || {};
+    if (previous.snapshot?.value !== snapshot.value) {
+      previous.pendingResult = null;
+      previous.pendingHash = "";
+    }
+    previous.snapshot = snapshot;
+    taskStates.set(key, previous);
+    return { key, state: previous };
+  }
+
+  function liveTarget(snapshot) {
+    return Array.from(document.querySelectorAll(
+      'textarea[data-agent-track="true"][data-relevance-check="true"]'
+    )).find((target) => eligibleTarget(target) &&
+      target.dataset.experimentId === snapshot.experimentId &&
+      target.dataset.stageId === snapshot.stageId &&
+      target.dataset.taskId === snapshot.taskId &&
+      String(target.dataset.field || target.id || target.dataset.taskId || "") === snapshot.fieldId &&
+      normalizeText(target.value) === snapshot.value) || null;
   }
 
   function taskConfig(target) {
@@ -257,9 +300,9 @@
     return {
       schemaVersion: SCHEMA_VERSION,
       studentId: currentIdentity.studentId,
-      experimentId: target.dataset.experimentId,
-      stageId: target.dataset.stageId,
-      taskId: target.dataset.taskId,
+      experimentId: target.experimentId || target.dataset.experimentId,
+      stageId: target.stageId || target.dataset.stageId,
+      taskId: target.taskId || target.dataset.taskId,
       pageId: pageId()
     };
   }
@@ -297,8 +340,9 @@
 
   function saveInteraction(target, hash, interaction) {
     const currentIdentity = identity();
-    if (!currentIdentity || !taskConfig(target)) return;
-    const payload = Object.assign(basePayload(target, currentIdentity), {
+    const snapshot = target.dataset ? snapshotTarget(target, currentIdentity) : target;
+    if (!currentIdentity || !snapshot) return;
+    const payload = Object.assign(basePayload(snapshot, currentIdentity), {
       action: "interaction",
       textHash: hash,
       interaction
@@ -307,13 +351,13 @@
     flush();
   }
 
-  function handlePromptResponse(target, hash, response) {
-    if (!activePrompt || activePrompt.target !== target || activePrompt.hash !== hash) return;
-    saveInteraction(target, hash, response);
+  function handlePromptResponse(snapshot, hash, response) {
+    if (!activePrompt || activePrompt.key !== snapshotKey(snapshot) || activePrompt.hash !== hash) return;
+    saveInteraction(snapshot, hash, response);
     if (response !== "view_task") activePrompt = null;
   }
 
-  function showPrompt(target, hash, result, config, key) {
+  function showPrompt(target, snapshot, hash, result, config, key) {
     const local = findLocalEntry(key) || {};
     if ((local.promptedHashes || []).includes(hash) || global.VirtualAgent.isBusy()) {
       return false;
@@ -331,7 +375,7 @@
       message: tieredMessage(prompt, promptNumber),
       taskTitle: config.taskTitle,
       taskInstruction: config.taskInstruction,
-      onResponse: (response) => handlePromptResponse(target, hash, response)
+      onResponse: (response) => handlePromptResponse(snapshot, hash, response)
     });
     if (!shown) return false;
 
@@ -346,12 +390,12 @@
       lastPromptAtByCategory,
       promptedHashes
     });
-    activePrompt = { target, hash };
+    activePrompt = { target, key, hash };
     const currentIdentity = identity();
     if (currentIdentity) {
-      const promptPayload = Object.assign(basePayload(target, currentIdentity), {
+      const promptPayload = Object.assign(basePayload(snapshot, currentIdentity), {
         action: "check",
-        inputText: normalizeText(target.value),
+        inputText: snapshot.value,
         trigger: "prompt_shown",
         prompted: true
       });
@@ -361,13 +405,35 @@
     return true;
   }
 
-  async function checkTarget(target, options = {}) {
-    const config = taskConfig(target);
-    const currentIdentity = identity();
-    if (!config || !currentIdentity) return null;
+  function presentPending(state, key) {
+    if (!state?.pendingResult || !state.snapshot) return false;
+    if (!promptForResult(state.pendingResult)) {
+      rememberHash(key, state.pendingHash);
+      state.pendingResult = null;
+      state.pendingHash = "";
+      return false;
+    }
+    const target = liveTarget(state.snapshot);
+    if (!target) return false;
+    const config = global.TaskRelevanceConfig?.get(state.snapshot.experimentId, state.snapshot.taskId);
+    if (!config) return false;
+    const shown = showPrompt(target, state.snapshot, state.pendingHash, state.pendingResult, config, key);
+    if (shown) {
+      rememberHash(key, state.pendingHash);
+      state.pendingResult = null;
+      state.pendingHash = "";
+    }
+    return shown;
+  }
 
-    const normalized = normalizeText(target.value);
-    const key = taskKey(target, currentIdentity.studentId);
+  async function checkSnapshot(snapshot, options = {}) {
+    const config = global.TaskRelevanceConfig?.get(snapshot.experimentId, snapshot.taskId);
+    const currentIdentity = identity();
+    if (!config || config.stageId !== snapshot.stageId || !currentIdentity ||
+        currentIdentity.studentId !== snapshot.studentId) return null;
+
+    const normalized = snapshot.value;
+    const { key, state } = rememberSnapshot(snapshot);
     let hash;
     try {
       hash = await sha256(normalized);
@@ -385,14 +451,15 @@
     if (!options.force) {
       const previous = lastCheckedText.get(key);
       if (previous !== undefined && editSize(previous, normalized) < MIN_BLUR_EDIT_SIZE) return null;
-      const focused = focusText.get(target);
+      const target = liveTarget(snapshot);
+      const focused = target ? focusText.get(target) : undefined;
       if (previous === undefined && focused !== undefined && editSize(focused, normalized) < MIN_BLUR_EDIT_SIZE) {
         return null;
       }
     }
 
     pendingHashes.set(key, hash);
-    const payload = Object.assign(basePayload(target, currentIdentity), {
+    const payload = Object.assign(basePayload(snapshot, currentIdentity), {
       action: "check",
       inputText: normalized,
       trigger: String(options.trigger || "blur")
@@ -402,23 +469,24 @@
       lastCheckedText.set(key, normalized);
       if (global.AGENT_DEBUG === true) {
         console.debug("[TaskRelevance] Check completed.", {
-          experimentId: target.dataset.experimentId,
-          stageId: target.dataset.stageId,
-          taskId: target.dataset.taskId,
+          experimentId: snapshot.experimentId,
+          stageId: snapshot.stageId,
+          taskId: snapshot.taskId,
           trigger: payload.trigger,
           status: response.result?.status,
           confidence: response.result?.confidence,
           cached: Boolean(response.cached)
         });
       }
-      const unchanged = target.isConnected &&
-        normalizeText(target.value) === normalized &&
-        target.dataset.stageId === config.stageId;
+      const currentState = taskStates.get(key);
+      const unchanged = currentState?.snapshot?.value === normalized;
       let shown = false;
       if (unchanged && response.promptEligible !== false) {
-        shown = showPrompt(target, response.textHash || hash, response.result, config, key);
+        currentState.pendingResult = response.result;
+        currentState.pendingHash = response.textHash || hash;
+        shown = presentPending(currentState, key);
       }
-      if (shown || response.promptEligible === false || !unchanged) rememberHash(key, response.textHash || hash);
+      if (response.promptEligible === false || !unchanged) rememberHash(key, response.textHash || hash);
       return response;
     } catch (error) {
       console.warn("[TaskRelevance] Check unavailable; student work can continue.");
@@ -428,25 +496,33 @@
     }
   }
 
-  function targetsForStage(stageId) {
-    return Array.from(document.querySelectorAll(
-      'textarea[data-agent-track="true"][data-relevance-check="true"]'
-    )).filter((target) => eligibleTarget(target) && target.dataset.stageId === stageId);
+  function checkTarget(target, options = {}) {
+    const currentIdentity = identity();
+    const snapshot = snapshotTarget(target, currentIdentity);
+    if (!snapshot) return Promise.resolve(null);
+    rememberSnapshot(snapshot);
+    return checkSnapshot(snapshot, options);
   }
 
   function checkStage(stageId, options = {}) {
-    return Promise.allSettled(targetsForStage(stageId).map((target) =>
-      checkTarget(target, { trigger: options.trigger || "stage_complete", force: true })
+    captureCurrentTargets();
+    const currentIdentity = identity();
+    const snapshots = Array.from(taskStates.values(), (state) => state.snapshot)
+      .filter((snapshot) => snapshot && currentIdentity &&
+        snapshot.studentId === currentIdentity.studentId &&
+        snapshot.experimentId === experimentId && snapshot.stageId === stageId);
+    return Promise.allSettled(snapshots.map((snapshot) =>
+      checkSnapshot(snapshot, { trigger: options.trigger || "stage_complete", force: true })
     ));
   }
 
-  function submitTarget(target, trigger) {
-    const config = taskConfig(target);
+  function submitSnapshot(snapshot, trigger) {
     const currentIdentity = identity();
-    if (!config || !currentIdentity) return Promise.resolve(null);
-    const payload = Object.assign(basePayload(target, currentIdentity), {
+    const config = global.TaskRelevanceConfig?.get(snapshot.experimentId, snapshot.taskId);
+    if (!config || config.stageId !== snapshot.stageId || !currentIdentity) return Promise.resolve(null);
+    const payload = Object.assign(basePayload(snapshot, currentIdentity), {
       action: "submit",
-      finalText: normalizeText(target.value),
+      finalText: snapshot.value,
       trigger: trigger || "stage_submit"
     });
     enqueue(payload);
@@ -454,9 +530,37 @@
   }
 
   function submitStage(stageId, options = {}) {
-    return Promise.allSettled(targetsForStage(stageId).map((target) =>
-      submitTarget(target, options.trigger || "stage_submit")
+    captureCurrentTargets();
+    const currentIdentity = identity();
+    const snapshots = Array.from(taskStates.values(), (state) => state.snapshot)
+      .filter((snapshot) => snapshot && currentIdentity &&
+        snapshot.studentId === currentIdentity.studentId &&
+        snapshot.experimentId === experimentId && snapshot.stageId === stageId);
+    return Promise.allSettled(snapshots.map((snapshot) =>
+      submitSnapshot(snapshot, options.trigger || "stage_submit")
     ));
+  }
+
+  function captureCurrentTargets() {
+    const currentIdentity = identity();
+    if (!currentIdentity) return [];
+    return Array.from(document.querySelectorAll(
+      'textarea[data-agent-track="true"][data-relevance-check="true"]'
+    )).map((target) => snapshotTarget(target, currentIdentity)).filter(Boolean).map((snapshot) => {
+      rememberSnapshot(snapshot);
+      return snapshot;
+    });
+  }
+
+  function beforePageChange() {
+    const snapshots = captureCurrentTargets();
+    snapshots.forEach((snapshot) => checkSnapshot(snapshot, { trigger: "page_change" }));
+    if (activePrompt) global.VirtualAgent.hideRelevanceSuggestion("closed");
+  }
+
+  function afterPageRender() {
+    captureCurrentTargets();
+    taskStates.forEach((state, key) => presentPending(state, key));
   }
 
   function onFocusIn(event) {
@@ -512,6 +616,8 @@
     checkTarget,
     checkStage,
     submitStage,
+    beforePageChange,
+    afterPageRender,
     flush
   });
   global.__TaskRelevanceTestHooks = Object.freeze({

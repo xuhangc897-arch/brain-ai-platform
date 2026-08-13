@@ -2,7 +2,7 @@
   "use strict";
 
   const SCHEMA_VERSION = 2;
-  const QUESTION_SET_VERSION = "knowledge-v2-2026-08";
+  const QUESTION_SET_VERSION = "knowledge-v3-2026-08";
   const STORAGE_KEY = "knowledge-assessment-v2";
   const STAGES = Object.freeze(["T0", "T1", "T2", "T3", "T4", "T5"]);
   const VALID_ANSWERS = new Set(["A", "B", "C", "D"]);
@@ -98,14 +98,17 @@
 
   function normalizeDraft(value, stage, questions, randomize) {
     const source = value && typeof value === "object" ? value : {};
+    const sameQuestionSet = source.questionSetVersion === QUESTION_SET_VERSION;
     const validIds = new Set(questions.map((item) => item.id));
-    const incomingOrder = Array.isArray(source.questionOrder) ? source.questionOrder.filter((id) => validIds.has(id)) : [];
+    const incomingOrder = sameQuestionSet && Array.isArray(source.questionOrder)
+      ? source.questionOrder.filter((id) => validIds.has(id))
+      : [];
     const draft = createDraft(stage, questions, randomize);
     if (incomingOrder.length === questions.length && new Set(incomingOrder).size === questions.length) draft.questionOrder = incomingOrder;
-    Object.entries(source.answers || {}).forEach(([id, answer]) => {
+    Object.entries(sameQuestionSet ? source.answers || {} : {}).forEach(([id, answer]) => {
       if (validIds.has(id) && VALID_ANSWERS.has(String(answer))) draft.answers[id] = String(answer);
     });
-    draft.currentPage = Math.max(0, Number(source.currentPage) || 0);
+    draft.currentPage = sameQuestionSet ? Math.max(0, Number(source.currentPage) || 0) : 0;
     return draft;
   }
 

@@ -71,6 +71,15 @@ assert(partnerSource.includes("查看任务要求"));
 assert(partnerSource.includes("仍然保留"));
 assert(platformSource.includes("checkTaskRelevance"));
 assert(platformSource.includes("task-relevance-outbox-v1"));
+assert(controllerSource.includes("const taskStates = new Map()"));
+assert(controllerSource.includes("function snapshotTarget("));
+assert(controllerSource.includes("function presentPending("));
+assert(controllerSource.includes("function beforePageChange("));
+assert(controllerSource.includes("function afterPageRender("));
+assert(!controllerSource.includes("const unchanged = target.isConnected"),
+  "async relevance results must not depend on the original DOM node remaining connected");
+assert(controllerSource.includes("Array.from(taskStates.values()"),
+  "stage submission must include saved tasks from unloaded pages");
 
 const controllerSandbox = {
   Array,
@@ -142,6 +151,81 @@ const contentPrompt = controllerHooks.promptForResult({
   status: "cognitive_difficulty", confidence: 1, supportHint: ""
 });
 assert(controllerHooks.tieredMessage(contentPrompt, 2).includes("实验现象"));
+
+function createPaginationHarness(result) {
+  class FakeElement {
+    constructor(taskId, value) {
+      this.dataset = {
+        agentTrack: "true", relevanceCheck: "true", field: taskId,
+        experimentId: "memory", stageId: "question", taskId
+      };
+      this.value = value;
+      this.disabled = false;
+      this.readOnly = false;
+      this.isConnected = true;
+    }
+    matches(selector) { return selector.includes('data-relevance-check="true"'); }
+  }
+  const listeners = {};
+  const storage = new Map();
+  const requests = [];
+  const prompts = [];
+  let targets = [];
+  let resolveRequest;
+  const context = {
+    window: null, Element: FakeElement, Array, Map, WeakMap, Object, String, Number, Date,
+    TextEncoder, crypto: require("crypto").webcrypto, console, setTimeout, clearTimeout,
+    location: { pathname: "/memory.html" },
+    addEventListener() {},
+    document: {
+      activeElement: null,
+      addEventListener(name, listener) { (listeners[name] ||= []).push(listener); },
+      querySelectorAll() { return targets; }
+    },
+    localStorage: {
+      getItem(key) { return storage.get(key) || null; },
+      setItem(key, value) { storage.set(key, value); }
+    },
+    BrainPlatform: {
+      config: {
+        endpoints: { checkTaskRelevance: "/checkTaskRelevance" },
+        storageKeys: {
+          taskRelevanceState: "task-relevance-state-v1",
+          taskRelevanceOutbox: "task-relevance-outbox-v1"
+        }
+      },
+      identity: { readStudentSession: () => ({ studentId: "S001", sessionToken: "token" }) }
+    },
+    TaskRelevanceConfig: {
+      get(experimentId, taskId) {
+        if (experimentId !== "memory" || !["question", "hypothesis"].includes(taskId)) return null;
+        return { stageId: "question", taskTitle: taskId, taskInstruction: taskId };
+      }
+    },
+    VirtualAgent: {
+      isBusy: () => false,
+      isSuggestionElement: () => false,
+      showRelevanceSuggestion(prompt) { prompts.push(prompt); return true; },
+      hideRelevanceSuggestion() { return true; }
+    },
+    fetch(url, options) {
+      requests.push(JSON.parse(options.body));
+      return new Promise((resolve) => { resolveRequest = () => resolve({
+        ok: true,
+        async json() { return Object.assign({ ok: true, textHash: "hash-1", promptEligible: true }, result); }
+      }); });
+    }
+  };
+  context.window = context;
+  vm.runInNewContext(controllerSource, context, { filename: "task-relevance-pagination.js" });
+  context.TaskRelevance.init({ experimentId: "memory" });
+  return {
+    context, requests, prompts,
+    setTargets(next) { targets = next; },
+    resolveRequest() { resolveRequest(); },
+    target: (taskId, value) => new FakeElement(taskId, value)
+  };
+}
 
 const documents = new Map();
 const students = [{ studentId: "S001", name: "测试学生", class: "七年级", group: "一组" }];
@@ -227,6 +311,36 @@ function payload(overrides) {
 }
 
 (async () => {
+  const paged = createPaginationHarness({
+    result: { status: "off_topic", confidence: 0.9 }, promptEligible: true
+  });
+  const originalTarget = paged.target("question", "我只想聊今天的午饭是什么");
+  paged.setTargets([originalTarget]);
+  const firstCheck = paged.context.TaskRelevance.checkTarget(originalTarget, { force: true });
+  while (!paged.requests.length) await new Promise((resolve) => setTimeout(resolve, 0));
+  originalTarget.isConnected = false;
+  paged.setTargets([]);
+  paged.resolveRequest();
+  await firstCheck;
+  assert.strictEqual(paged.prompts.length, 0, "unloaded input must defer its relevance prompt");
+  const replacement = paged.target("question", originalTarget.value);
+  paged.setTargets([replacement]);
+  paged.context.TaskRelevance.afterPageRender();
+  assert.strictEqual(paged.prompts.length, 1, "returning to the page must restore the deferred prompt");
+  assert.strictEqual(paged.requests.filter((item) => item.trigger !== "prompt_shown").length, 1,
+    "page restoration must not repeat the same text check");
+
+  const relevant = createPaginationHarness({
+    result: { status: "relevant", confidence: 0.95 }, promptEligible: true
+  });
+  const relevantTarget = relevant.target("question", "我想比较不同材料长度下的记忆容量");
+  relevant.setTargets([relevantTarget]);
+  const relevantCheck = relevant.context.TaskRelevance.checkTarget(relevantTarget, { force: true });
+  while (!relevant.requests.length) await new Promise((resolve) => setTimeout(resolve, 0));
+  relevant.resolveRequest();
+  await relevantCheck;
+  assert.strictEqual(relevant.prompts.length, 0, "relevant text must not trigger a prompt");
+
   const memoryQuestion = serverTasks.find((task) =>
     task.experimentId === "memory" && task.taskId === "question"
   );

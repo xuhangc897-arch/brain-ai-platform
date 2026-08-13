@@ -1383,7 +1383,10 @@
     .page-card h4 { margin: 0 0 8px; color: var(--primary-dark); }
     .page-card p { margin: 0 0 8px; color: #344054; font-size: 14px; }
     .page-card p:last-child { margin-bottom: 0; }
-    .reading-page .page-card p { margin: 0 0 14px; font-size: 16px; line-height: 1.8; }
+    .reading-page .page-card p { margin: 0 0 14px; font-size: 18px; line-height: 1.85; }
+    .reading-page .memory-table { font-size: 17px; line-height: 1.7; }
+    .reading-page .memory-table th,
+    .reading-page .memory-table td { padding: 13px 16px; }
     .merged-reading-page { display: grid; gap: 18px; }
     .merged-reading-section + .merged-reading-section { padding-top: 18px; border-top: 1px solid var(--line); }
     .page-card .memory-table-wrap { margin-top: 10px; }
@@ -1446,13 +1449,17 @@
     .case-page .case-card summary { min-height: 44px; padding: 8px 10px; font-size: 13px; }
     .case-page .inquiry-helper { margin-top: 8px; }
     .case-page .helper-card { padding: 10px 12px; }
-    .question-form-page .page-card { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 10px 14px; }
-    .question-form-page .page-form-grid { grid-column: 1 / -1; }
-    .question-form-page .choice-group { gap: 5px; margin-top: 4px; }
+    .question-form-page .page-card { display: grid; grid-template-columns: 1fr; gap: 10px; }
+    .question-form-page .page-form-grid { grid-column: auto; grid-template-columns: 1fr; gap: 10px; }
+    .question-form-page .choice-group { grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 10px; margin-top: 6px; }
+    .question-form-page .page-card > .field .choice-group { grid-template-columns: 1fr; }
     .question-form-page .choice { padding: 6px 8px; }
     .question-form-page .field { margin-bottom: 0; }
     .question-form-page .thinking-box { padding: 8px; }
     .question-form-page textarea { min-height: 68px; }
+    .plan-intro-page .page-card h4 { margin-bottom: 14px; font-size: 20px; }
+    .plan-intro-page .page-card p { margin: 0 0 16px; font-size: 18px; line-height: 1.9; }
+    .plan-intro-page .plan-drawing-instruction strong { color: var(--ink); font-weight: 900; }
     .step-page-content > .survey-card .survey-items { grid-template-columns: repeat(3, minmax(0, 1fr)); }
     .step-page-content > .survey-card .survey-item { padding: 9px; border-right: 1px solid var(--line); }
     .step-page-content > .survey-card .survey-item p { margin-bottom: 7px; font-size: 12px; line-height: 1.4; }
@@ -1560,6 +1567,7 @@
       .question-form-page .page-card,
       .step-page-content > .survey-card .survey-items { grid-template-columns: 1fr; }
       .question-form-page .page-form-grid { grid-column: auto; }
+      .question-form-page .choice-group { grid-template-columns: 1fr; }
       .image-modal { padding: 10px; }
       .step-page-actions .btn { min-width: 96px; }
     }
@@ -2114,6 +2122,7 @@
         showStepMessage("请先完成前一步内容，再进入下一步。");
         return;
       }
+      preparePagedInputLifecycle();
       state.currentStep = target;
       if (!isDeveloperMode()) saveState();
       renderApp();
@@ -2184,6 +2193,8 @@
       applyLearningBehaviorMetadata();
       bindInputs();
       bindStepEvents(step.id);
+      window.TaskRelevance?.afterPageRender();
+      window.TypingSupport?.afterPageRender();
     }
 
     function getStepHtml(stepId) {
@@ -2248,6 +2259,7 @@
       const currentPage = getStepPageIndex(stepId);
       const target = Math.min(Math.max(targetPage, 0), pageCount - 1);
       if (target === currentPage || stepPageTransitioning) return;
+      preparePagedInputLifecycle();
       const content = main.querySelector(".step-page-content");
       const reduceMotion = window.matchMedia?.("(prefers-reduced-motion: reduce)").matches;
       const finish = () => {
@@ -2259,6 +2271,13 @@
       stepPageTransitioning = true;
       content.classList.add("is-leaving");
       window.setTimeout(finish, 150);
+    }
+
+    function preparePagedInputLifecycle() {
+      const active = document.activeElement;
+      if (active?.matches?.('textarea[data-agent-track="true"]')) active.blur();
+      window.TaskRelevance?.beforePageChange();
+      window.TypingSupport?.beforePageChange();
     }
 
     function bindPagedStepEvents(stepId) {
@@ -2274,6 +2293,7 @@
       });
       document.getElementById("stepNextPage")?.addEventListener("click", () => {
         if (pageIndex < pageCount - 1) return changeStepPage(stepId, pageIndex + 1, pageCount);
+        preparePagedInputLifecycle();
         goNextStep();
       });
     }
@@ -2284,9 +2304,9 @@
         content: () => renderKnowledgeQuizItem(index)
       }));
       pages.push(
-        { title: SURVEY_DEFS.meta.title, content: () => renderSurveyForm("postMeta", "meta") },
-        { title: SURVEY_DEFS.load.title, content: () => renderSurveyForm("cognitiveLoad", "load") },
-        { title: SURVEY_DEFS.inquiry.title, content: () => renderSurveyForm("inquiryParticipation", "inquiry") },
+        { title: SURVEY_DEFS.meta.title, className: "survey-page", content: () => renderSurveyForm("postMeta", "meta") },
+        { title: SURVEY_DEFS.load.title, className: "survey-page", content: () => renderSurveyForm("cognitiveLoad", "load") },
+        { title: SURVEY_DEFS.inquiry.title, className: "survey-page", content: () => renderSurveyForm("inquiryParticipation", "inquiry") },
         { title: "完成案件调查", content: () => `<div class="survey-shell"><div class="survey-intro"><h3>完成案件调查</h3><p>确认知识验证和三份问卷均已完成后，生成记忆侦探报告。</p></div>${renderSurveySummaryCards()}${renderPosttestExportArea()}</div>` }
       );
       return renderPagedStep("posttest", pages);
@@ -2938,7 +2958,7 @@
         { title: "材料二：N-back任务", className: "reading-page", content: () => `<article class="page-card"><h4>材料二：N-back任务</h4><p>N-back任务是一种常用的工作记忆任务。在N-back任务中，人们需要根据当前的刺激（比如字母、数字、算式或图形及图形的位置）来判断是否与该刺激的第前n个刺激相同。这种任务要求被试者不仅要记住当前刺激，还要持续关注前面的刺激序列，以便做出正确的反应。</p><p>例如，假设n=2，屏幕上显示的数字是：7，5，6，5，8，3...当你看到数字6时，需回想：数字6的前2个数字是什么？是7，所以不一样，按否；下一个数字是5，你继续回想，数字5的前2个数字也是5，一致，按是。</p><button class="btn secondary illustration-trigger" type="button" data-open-image-modal="questionNbackModal">点击查看 N-back 活动示意图</button> <button class="btn illustration-trigger" id="openPracticeBtn" type="button">体验 N-back</button></article>${renderNbackIllustrationModal("questionNbackModal", "N-back活动示意图")}${renderPracticeModal()}` },
         { title: "材料三与材料四：控制变量和头环", className: "reading-page", content: () => `<article class="page-card merged-reading-page"><section class="merged-reading-section"><h4>材料三：控制变量</h4><p>控制变量是指在实验的过程中需要控制那些除了自变量以外的所有影响实验结果的变量，这些变量不是本实验所要研究的变量，所以又称无关变量。只有将自变量以外的所有无关变量控制好，才能弄清实验中的因果关系。</p></section><section class="merged-reading-section"><h4>材料四：头环</h4><p>头环是我们用来测量N-back活动中大脑前额叶活动水平的工具。头环就像一个特殊的“脑力探测器”，只要把头环戴在头上就可以可以收集信息，并且可以在电脑显示屏上生成一幅3D的脑激活图，展示大脑在执行特定任务或接受刺激时，不同脑区神经活动的空间分布状态。这张图可以直观呈现被激活脑区的位置、范围和强度，它会用颜色告诉你，在实验过程中大脑中哪些地方被激活，用红-黄色表示激活强度高，蓝-冷色表示抑制或无变化。也就是说，图中的某个脑区越红说明越活跃，在努力“思考”。假设3-back比2-back需要消耗更多的大脑资源，导致前额叶的激活水平更高，那么头环收集信息生成的结果图中，3-back的结果图中某个区域的颜色应该比2-back的结果图中相应区域的颜色更红，说明在玩更难的3-back游戏时，大脑需要花比玩2-back多得多的“力气”。</p><button class="btn secondary illustration-trigger" type="button" data-open-image-modal="headbandGuideModal">点击查看头环工作原理</button></section></article>${renderHeadbandModal()}` },
         { title: "科学探究案例", className: "case-page", content: () => `<div class="page-card">${renderInquiryCases()}${renderInquiryScaffold("question")}</div>` },
-        { title: "提出研究问题", content: () => `<div class="page-card"><div class="page-form-grid"><div class="field"><label>自变量</label><div class="choice-group"><label class="choice"><input type="radio" name="independentVariable" data-field="independentVariable" value="N的大小" ${checked("independentVariable", "N的大小")}>N-back 活动中 N 的大小</label><label class="choice"><input type="radio" name="independentVariable" data-field="independentVariable" value="关卡数量" ${checked("independentVariable", "关卡数量")}>N-back 活动中关卡的数量</label></div></div><div class="field"><label>因变量</label><div class="choice-group"><label class="choice"><input type="checkbox" data-field="dependentMemory" ${state.fields.dependentMemory ? "checked" : ""}>工作记忆表现（N-back 正确率）</label><label class="choice"><input type="checkbox" data-field="dependentBrain" ${state.fields.dependentBrain ? "checked" : ""}>大脑活动水平（前额叶激活水平）</label></div></div></div><div class="field"><label>控制变量</label><div class="choice-group"><label class="choice"><input type="checkbox" data-field="controlContentType" ${state.fields.controlContentType ? "checked" : ""}>N-back 任务中记忆内容的类型</label></div><input type="text" data-field="controlOther" value="${escapeHtml(state.fields.controlOther)}" placeholder="其他控制变量"></div>${renderPairedField("研究问题", `<textarea data-field="researchQuestion" placeholder="写下你自己真正想探究的问题">${escapeHtml(state.fields.researchQuestion)}</textarea>`, renderGroupTextarea("researchQuestion_group"))}</div>` }
+        { title: "提出研究问题", className: "question-form-page", content: () => `<div class="page-card"><div class="page-form-grid"><div class="field"><label>自变量</label><div class="choice-group"><label class="choice"><input type="radio" name="independentVariable" data-field="independentVariable" value="N的大小" ${checked("independentVariable", "N的大小")}>N-back 活动中 N 的大小</label><label class="choice"><input type="radio" name="independentVariable" data-field="independentVariable" value="关卡数量" ${checked("independentVariable", "关卡数量")}>N-back 活动中关卡的数量</label></div></div><div class="field"><label>因变量</label><div class="choice-group"><label class="choice"><input type="checkbox" data-field="dependentMemory" ${state.fields.dependentMemory ? "checked" : ""}>工作记忆表现（N-back 正确率）</label><label class="choice"><input type="checkbox" data-field="dependentBrain" ${state.fields.dependentBrain ? "checked" : ""}>大脑活动水平（前额叶激活水平）</label></div></div></div><div class="field"><label>控制变量</label><div class="choice-group"><label class="choice"><input type="checkbox" data-field="controlContentType" ${state.fields.controlContentType ? "checked" : ""}>N-back 任务中记忆内容的类型</label></div><input type="text" data-field="controlOther" value="${escapeHtml(state.fields.controlOther)}" placeholder="其他控制变量"></div>${renderPairedField("研究问题", `<textarea data-field="researchQuestion" placeholder="写下你自己真正想探究的问题">${escapeHtml(state.fields.researchQuestion)}</textarea>`, renderGroupTextarea("researchQuestion_group"))}</div>` }
       ];
       return renderPagedStep("question", pages);
     }
@@ -2949,7 +2969,7 @@
 
     function renderPlanStep() {
       const pages = [
-        { title: "实验设计说明", content: () => `<article class="page-card"><h4>实验设计思考</h4><p>在提出问题和假设之后，我们就要制定研究计划。</p><p>首先请你思考，针对不同的自变量，我们应该如何设计实验呢？</p><p>请以下图示意图为基础，请在纸上分别画出自变量为N的大小和自变量为关卡数量时的实验示意图。</p><p>提醒：在图中，我们采用的实验材料是【数字】，你也可以使用【图形】【汉字】【字母】作为N-back的材料。请在讨论后与你的组员一起确定你们小组的实验材料吧！</p><button class="btn secondary illustration-trigger" type="button" data-open-image-modal="planNbackModal">点击查看 N-back 活动示意图</button></article>${renderNbackIllustrationModal("planNbackModal", "实验设计示意图")}` },
+        { title: "实验设计说明", className: "plan-intro-page", content: () => `<article class="page-card"><h4>实验设计思考</h4><p>在提出问题和假设之后，我们就要制定研究计划。</p><p>首先请你思考，针对不同的自变量，我们应该如何设计实验呢？</p><p class="plan-drawing-instruction"><strong>请以下图示意图为基础，请在纸上分别画出自变量为N的大小和自变量为关卡数量时的实验示意图。</strong></p><p>提醒：在图中，我们采用的实验材料是【数字】，你也可以使用【图形】【汉字】【字母】作为N-back的材料。请在讨论后与你的组员一起确定你们小组的实验材料吧！</p><button class="btn secondary illustration-trigger" type="button" data-open-image-modal="planNbackModal">点击查看 N-back 活动示意图</button></article>${renderNbackIllustrationModal("planNbackModal", "实验设计示意图")}` },
         { title: "设置实验参数", content: () => `<div class="page-card"><div class="page-form-grid"><div class="field"><label for="materialType">实验材料类别</label><select id="materialType" data-field="materialType"><option value="image" ${selected("materialType", "image")}>图片</option><option value="number" ${selected("materialType", "number")}>数字</option><option value="letter" ${selected("materialType", "letter")}>英文大写字母</option><option value="chinese" ${selected("materialType", "chinese")}>汉字</option></select></div><div class="field"><label for="experimentDesign">实验设计</label><select id="experimentDesign" data-field="experimentDesign"><option value="N的大小" ${selected("experimentDesign", "N的大小")}>自变量为 N 的大小</option><option value="关卡数量" ${selected("experimentDesign", "关卡数量")}>自变量为关卡数量</option></select></div><div class="field"><label for="stimulusInterval">每个刺激作答时间（秒）</label><input id="stimulusInterval" type="number" min="1" max="5" step="0.5" data-field="stimulusInterval" value="${escapeHtml(state.fields.stimulusInterval || 2)}"></div></div><article class="reading-card"><h4>设计提示</h4><p>如果研究 N 的大小，请保持关卡数量相同；如果研究关卡数量，请保持 N 的大小相同。其他条件尽量保持一致。</p></article></div>` }
       ];
       return renderPagedStep("plan", pages);
