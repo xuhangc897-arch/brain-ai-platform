@@ -142,7 +142,7 @@
 .case-intro-pose {
   position: absolute;
   inset: 0;
-  background-image: url("memory-detective-states.png");
+  background-image: url("memory-detective-states.webp");
   background-position-y: center;
   background-repeat: no-repeat;
   background-size: 200% 100%;

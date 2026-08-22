@@ -399,8 +399,14 @@
   }
 
   .voice-panel {
-    width: min(360px, calc(100vw - 24px));
-    max-height: calc(100vh - 104px);
+    position: fixed !important;
+    top: auto !important;
+    right: max(8px, env(safe-area-inset-right)) !important;
+    bottom: max(8px, env(safe-area-inset-bottom)) !important;
+    left: max(8px, env(safe-area-inset-left)) !important;
+    width: auto;
+    max-height: min(78dvh, 680px);
+    border-radius: 20px;
   }
 
   .voice-head {
@@ -408,17 +414,23 @@
   }
 
   .voice-body {
-    max-height: calc(100vh - 160px);
+    max-height: calc(min(78dvh, 680px) - 62px);
     padding: 12px;
   }
 
   .voice-output {
     min-height: 130px;
+    font-size: 16px;
   }
 
   .voice-recording-status {
     align-items: flex-start;
     flex-direction: column;
+  }
+
+  .voice-action,
+  .voice-close {
+    min-height: 44px;
   }
 }
 

@@ -924,22 +924,22 @@
 
     @media (max-width: 720px) {
       .brand-logo {
-        width: clamp(170px, 51vw, 230px);
+        width: clamp(176px, 52vw, 214px);
       }
 
       .auth-hud {
-        top: 18px;
+        top: calc(max(18px, env(safe-area-inset-top)) + 66px);
         left: 16px;
         right: 16px;
-        justify-content: flex-end;
-        flex-wrap: wrap;
+        justify-content: flex-start;
+        flex-wrap: nowrap;
         gap: 6px;
         font-size: 10px;
       }
 
       .auth-status {
-        min-height: 30px;
-        max-width: 44vw;
+        min-height: 44px;
+        max-width: 38vw;
         padding: 0 9px;
         overflow: hidden;
         text-overflow: ellipsis;
@@ -995,7 +995,7 @@
       }
 
       .scene--arrival .topbar {
-        padding: 19px 20px;
+        padding: max(18px, env(safe-area-inset-top)) 20px 0;
       }
 
       .scene--arrival .brand {
@@ -1012,9 +1012,7 @@
       }
 
       .scene--arrival .scene-index {
-        display: grid;
-        column-gap: 7px;
-        margin-top: 42px;
+        display: none;
       }
 
       .scene--arrival .scene-index::before {
@@ -1027,10 +1025,10 @@
       }
 
       .scene--arrival .hero-content {
-        top: 48%;
+        top: 51%;
         left: 20px;
         width: calc(100% - 40px);
-        transform: translateY(-42%);
+        transform: translateY(-40%);
       }
 
       .scene--arrival .eyebrow {
@@ -1045,7 +1043,7 @@
       }
 
       .scene--arrival .hero-title {
-        font-size: clamp(32px, 10vw, 48px);
+        font-size: clamp(32px, 9.7vw, 44px);
         line-height: 1.16;
         letter-spacing: 0.035em;
       }
@@ -1058,14 +1056,14 @@
       }
 
       .scene--arrival .advance-button {
+        width: min(100%, 220px);
         min-width: 168px;
-        min-height: 48px;
+        min-height: 50px;
         margin-top: 20px;
       }
 
       .archive-stamp {
-        left: 20px;
-        bottom: max(17px, env(safe-area-inset-bottom));
+        display: none;
       }
 
       .case-select-header {
@@ -1160,15 +1158,14 @@
       <video
         class="scene-video"
         id="arrivalVideo"
-        autoplay
         loop
         muted
         playsinline
-        preload="auto"
+        preload="none"
         poster="assets/new-frontpage/首页静图-web.webp"
         aria-hidden="true"
       >
-        <source src="assets/new-frontpage/首页视频-web.mp4" type="video/mp4" />
+        <source data-src="assets/new-frontpage/首页视频-web.mp4" type="video/mp4" />
       </video>
       <img class="scene-poster" src="assets/new-frontpage/首页静图-web.webp" alt="" width="1536" height="1024" decoding="async" fetchpriority="high" />
       <div class="scene-shade" aria-hidden="true"></div>
@@ -1205,13 +1202,13 @@
         poster="assets/new-frontpage/第二页面静图-web.webp"
         aria-hidden="true"
       >
-        <source src="assets/new-frontpage/第二页面视频-web.mp4" type="video/mp4" />
+        <source data-src="assets/new-frontpage/第二页面视频-web.mp4" type="video/mp4" />
       </video>
-      <img class="scene-poster" src="assets/new-frontpage/第二页面静图-web.webp" alt="" width="1448" height="1086" loading="lazy" decoding="async" />
+      <img class="scene-poster" data-src="assets/new-frontpage/第二页面静图-web.webp" alt="" width="1448" height="1086" decoding="async" />
       <div class="scene-shade" aria-hidden="true"></div>
 
       <header class="topbar">
-        <img class="brand-logo" src="assets/new-frontpage/logo-web.webp" alt="记忆侦探社 Memory Detective Agency" width="900" height="291" loading="lazy" decoding="async" />
+        <img class="brand-logo" data-src="assets/new-frontpage/logo-web.webp" alt="记忆侦探社 Memory Detective Agency" width="900" height="291" decoding="async" />
         <span class="scene-index">02 / 03　案卷</span>
       </header>
 
@@ -1225,7 +1222,7 @@
     </section>
 
     <section class="scene scene--navigation" data-scene="2" aria-label="案件导航">
-      <img class="navigation-backdrop" src="assets/new-frontpage/导航图背景-web.webp" alt="" width="1448" height="1086" loading="lazy" decoding="async" aria-hidden="true" />
+      <img class="navigation-backdrop" data-src="assets/new-frontpage/导航图背景-web.webp" alt="" width="1448" height="1086" decoding="async" aria-hidden="true" />
       <header class="case-select-header">
         <p>Evidence archive · Select a case</p>
         <h2>选择你的调查案件</h2>
@@ -1233,27 +1230,27 @@
       </header>
       <div class="case-deck" aria-label="案件列表">
         <button class="case-card" type="button" data-case-id="screening" data-case-label="侦探资格审查" data-case-route="pretest.html">
-          <img src="assets/new-frontpage/资格审查-web.webp" alt="侦探资格审查案件封面" loading="lazy" decoding="async" />
+          <img data-src="assets/new-frontpage/资格审查-web.webp" alt="侦探资格审查案件封面" decoding="async" />
           <span class="case-card-label"><span>PRELUDE</span><strong>资格审查</strong></span>
         </button>
         <button class="case-card" type="button" data-case-id="memory" data-case-label="CASE 01：记忆容量调查" data-case-route="memory.html">
-          <img src="assets/new-frontpage/实验一-web.webp" alt="CASE 01 记忆容量调查案件封面" loading="lazy" decoding="async" />
+          <img data-src="assets/new-frontpage/实验一-web.webp" alt="CASE 01 记忆容量调查案件封面" decoding="async" />
           <span class="case-card-label"><span>CASE 01</span><strong>记忆容量调查</strong></span>
         </button>
         <button class="case-card" type="button" data-case-id="nback" data-case-label="CASE 02：工作记忆追踪" data-case-route="nback.html">
-          <img src="assets/new-frontpage/实验二-web.webp" alt="CASE 02 工作记忆追踪案件封面" loading="lazy" decoding="async" />
+          <img data-src="assets/new-frontpage/实验二-web.webp" alt="CASE 02 工作记忆追踪案件封面" decoding="async" />
           <span class="case-card-label"><span>CASE 02</span><strong>工作记忆追踪</strong></span>
         </button>
         <button class="case-card" type="button" data-case-id="interference" data-case-label="CASE 03：遗忘元凶调查" data-case-route="interference.html">
-          <img src="assets/new-frontpage/实验三-web.webp" alt="CASE 03 遗忘元凶调查案件封面" loading="lazy" decoding="async" />
+          <img data-src="assets/new-frontpage/实验三-web.webp" alt="CASE 03 遗忘元凶调查案件封面" decoding="async" />
           <span class="case-card-label"><span>CASE 03</span><strong>遗忘元凶调查</strong></span>
         </button>
         <button class="case-card" type="button" data-case-id="strategies" data-case-label="CASE 04：记忆策略破解" data-case-route="strategies.html">
-          <img src="assets/new-frontpage/实验四-web.webp" alt="CASE 04 记忆策略破解案件封面" loading="lazy" decoding="async" />
+          <img data-src="assets/new-frontpage/实验四-web.webp" alt="CASE 04 记忆策略破解案件封面" decoding="async" />
           <span class="case-card-label"><span>CASE 04</span><strong>记忆策略破解</strong></span>
         </button>
         <button class="case-card" type="button" data-case-id="poster" data-case-label="CASE 05：调查成果展示" data-case-route="poster.html">
-          <img src="assets/new-frontpage/成果展示-web.webp" alt="CASE 05 调查成果展示案件封面" loading="lazy" decoding="async" />
+          <img data-src="assets/new-frontpage/成果展示-web.webp" alt="CASE 05 调查成果展示案件封面" decoding="async" />
           <span class="case-card-label"><span>CASE 05</span><strong>调查成果展示</strong></span>
         </button>
       </div>
@@ -1320,29 +1317,77 @@
       const nextCaseButton = document.getElementById("nextCaseButton");
       const casePosition = document.getElementById("casePosition");
       const reduceMotion = window.matchMedia("(prefers-reduced-motion: reduce)");
+      const compactViewport = window.matchMedia("(max-width: 720px)");
+      const connection = navigator.connection || navigator.mozConnection || navigator.webkitConnection;
       const sceneNames = ["记忆侦探社入口", "案件卷宗", "案件导航"];
-      const caseIntro = window.CaseIntro.create({
-        platform,
-        stories: window.MemoryCaseStories,
-        backdropRoot: document.getElementById("experience"),
-        onNavigate(route) {
-          window.location.href = route;
-        },
-        onOpen(story) {
-          sceneStatus.textContent = `正在阅读${story.caseNumber}：${story.title}的案件前情提要。`;
-        },
-        onClose() {
-          sceneStatus.textContent = "已返回案件导航。";
-        }
-      });
+      let caseIntro = null;
       let activeScene = 0;
       let transitionLocked = false;
       let activeCaseIndex = 0;
       let pointerStartX = null;
       let carouselDragged = false;
 
+      function hydrateElement(element) {
+        if (!element?.dataset.src) return false;
+        element.src = element.dataset.src;
+        delete element.dataset.src;
+        return true;
+      }
+
+      function hydrateScene(sceneIndex) {
+        const scene = scenes[sceneIndex];
+        if (!scene) return;
+        scene.querySelectorAll("img[data-src]").forEach(hydrateElement);
+        scene.querySelectorAll("video").forEach((video) => {
+          const sourceChanged = Array.from(video.querySelectorAll("source[data-src]")).some(hydrateElement);
+          if (sourceChanged) video.load();
+        });
+      }
+
+      function getCaseIntro() {
+        if (caseIntro) return caseIntro;
+        caseIntro = window.CaseIntro.create({
+          platform,
+          stories: window.MemoryCaseStories,
+          backdropRoot: document.getElementById("experience"),
+          onNavigate(route) {
+            window.location.href = route;
+          },
+          onOpen(story) {
+            sceneStatus.textContent = `正在阅读${story.caseNumber}：${story.title}的案件前情提要。`;
+          },
+          onClose() {
+            sceneStatus.textContent = "已返回案件导航。";
+          }
+        });
+        return caseIntro;
+      }
+
+      function canLoadAmbientVideo() {
+        if (reduceMotion.matches || connection?.saveData) return false;
+        return !/^(slow-)?2g$/i.test(connection?.effectiveType || "");
+      }
+
+      function scheduleArrivalVideo() {
+        if (!canLoadAmbientVideo()) return;
+        const start = () => {
+          if (activeScene !== 0) return;
+          hydrateScene(0);
+          updateVideos(0);
+        };
+        const schedule = () => {
+          if ("requestIdleCallback" in window) {
+            window.requestIdleCallback(start, { timeout: compactViewport.matches ? 2400 : 1200 });
+          } else {
+            window.setTimeout(start, compactViewport.matches ? 1200 : 400);
+          }
+        };
+        if (document.readyState === "complete") schedule();
+        else window.addEventListener("load", schedule, { once: true });
+      }
+
       function safePlay(video) {
-        if (!video || reduceMotion.matches) return;
+        if (!video || reduceMotion.matches || !video.currentSrc) return;
         const playRequest = video.play();
         if (playRequest && typeof playRequest.catch === "function") {
           playRequest.catch(() => {});
@@ -1366,6 +1411,8 @@
       function showScene(nextScene) {
         if (transitionLocked || nextScene === activeScene || !scenes[nextScene]) return;
         transitionLocked = true;
+        hydrateScene(nextScene);
+        if (nextScene === 2) getCaseIntro();
 
         const previous = scenes[activeScene];
         const next = scenes[nextScene];
@@ -1436,7 +1483,7 @@
       }
 
       function openCaseIntro(card) {
-        caseIntro.open({
+        getCaseIntro().open({
           caseId: card.dataset.caseId,
           route: card.dataset.caseRoute,
           returnFocus: card
@@ -1516,7 +1563,7 @@
           return;
         }
 
-        if (caseIntro.isOpen()) return;
+        if (caseIntro?.isOpen()) return;
 
         if (activeScene === 2 && event.key === "ArrowLeft") {
           event.preventDefault();
@@ -1545,7 +1592,7 @@
       window.addEventListener("resize", updateCaseCarousel);
       reduceMotion.addEventListener("change", () => updateVideos(activeScene));
       updateCaseCarousel();
-      updateVideos(0);
+      scheduleArrivalVideo();
     })();
   </script>
 </body>

@@ -641,6 +641,12 @@ td {
 }
 
 @media (max-width: 640px) {
+  html,
+  body.experiment-page {
+    max-width: 100%;
+    overflow-x: clip;
+  }
+
   .main,
   .single-step-layout,
   .step-layout,
@@ -718,15 +724,17 @@ td {
   .experiment-page .top-actions {
     display: grid;
     width: 100%;
-    grid-template-columns: repeat(4, minmax(0, 1fr));
+    grid-template-columns: minmax(0, 1fr) 68px;
     gap: 6px;
   }
 
   .experiment-page .top-actions .theme-switch {
-    grid-column: 1 / -1;
+    grid-column: 1;
+    min-width: 0;
   }
 
   .experiment-page .top-actions > .btn {
+    display: none;
     width: 100%;
     min-width: 0;
     padding: 0 4px;
@@ -734,9 +742,40 @@ td {
     white-space: normal;
   }
 
+  .experiment-page .top-actions > .mobile-actions-toggle {
+    display: inline-flex;
+    grid-column: 2;
+    grid-row: 1;
+  }
+
+  .experiment-page .top-actions.mobile-actions-open > .btn:not(.mobile-actions-toggle) {
+    display: inline-flex;
+    grid-column: auto;
+  }
+
+  .experiment-page .top-actions.mobile-actions-open {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+
+  .experiment-page .top-actions.mobile-actions-open .theme-switch {
+    grid-column: 1;
+  }
+
+  .experiment-page .top-actions.mobile-actions-open > .mobile-actions-toggle {
+    grid-column: 2;
+  }
+
+  .mobile-progress-current {
+    margin: 2px 0 6px;
+    color: var(--muted);
+    font-size: 12px;
+    font-weight: 800;
+    line-height: 1.4;
+  }
+
   .experiment-page .progress {
     display: grid;
-    grid-template-columns: repeat(8, minmax(0, 1fr));
+    grid-template-columns: repeat(auto-fit, minmax(40px, 1fr));
     gap: 1px;
     overflow-x: visible;
     padding-bottom: 0;
@@ -770,6 +809,116 @@ td {
 
   html[data-theme="archive"] .progress-step:not(:last-child)::after {
     display: none;
+  }
+
+  .experiment-page input:not([type="checkbox"]):not([type="radio"]),
+  .experiment-page textarea,
+  .experiment-page select {
+    max-width: 100%;
+    font-size: 16px;
+  }
+
+  .experiment-page .actions .btn,
+  .experiment-page .response-btn,
+  .experiment-page button[type="submit"] {
+    min-height: 44px;
+  }
+
+  .experiment-page .table-wrap,
+  .experiment-page .run-trials,
+  .experiment-page .score-table-wrap,
+  .experiment-page .quiz-history-table {
+    max-width: 100%;
+    overflow-x: auto;
+    overscroll-behavior-inline: contain;
+    -webkit-overflow-scrolling: touch;
+  }
+
+  .experiment-page .table-wrap::before,
+  .experiment-page .run-trials::before,
+  .experiment-page .score-table-wrap::before,
+  .experiment-page .quiz-history-table::before {
+    position: sticky;
+    left: 0;
+    z-index: 2;
+    display: block;
+    width: max-content;
+    margin: 0 0 6px;
+    padding: 4px 8px;
+    border-radius: 999px;
+    background: var(--primary-soft);
+    color: var(--primary-dark);
+    content: "左右滑动查看完整表格";
+    font-size: 11px;
+    font-weight: 800;
+  }
+
+  .experiment-page .variable-table-wrap,
+  .experiment-page .strategy-material-recommendation {
+    overflow: visible;
+  }
+
+  .experiment-page .variable-table,
+  .experiment-page .strategy-material-recommendation table {
+    display: block;
+    min-width: 0;
+    background: transparent;
+  }
+
+  .experiment-page .variable-table tbody,
+  .experiment-page .strategy-material-recommendation tbody {
+    display: grid;
+    gap: 10px;
+  }
+
+  .experiment-page .strategy-material-recommendation thead {
+    display: none;
+  }
+
+  .experiment-page .variable-table tr,
+  .experiment-page .strategy-material-recommendation tr {
+    display: grid;
+    gap: 6px;
+    padding: 12px;
+    border: 1px solid var(--line);
+    border-radius: 10px;
+    background: var(--panel);
+  }
+
+  .experiment-page .variable-table td,
+  .experiment-page .strategy-material-recommendation td {
+    display: block;
+    width: auto !important;
+    padding: 0;
+    border: 0;
+  }
+
+  .experiment-page .strategy-material-recommendation td:nth-child(2)::before {
+    display: block;
+    margin-bottom: 3px;
+    color: var(--muted);
+    content: "推荐材料";
+    font-size: 11px;
+    font-weight: 800;
+  }
+
+  .experiment-page .headband-modal,
+  .experiment-page .image-modal {
+    align-items: flex-end;
+  }
+
+  .experiment-page .headband-modal-card,
+  .experiment-page .image-modal-card {
+    width: 100%;
+    max-height: calc(100dvh - max(24px, env(safe-area-inset-top) + env(safe-area-inset-bottom)));
+    overflow: auto;
+  }
+}
+
+@media (min-width: 641px) {
+  .mobile-actions-toggle,
+  .mobile-progress-current {
+    display: none !important;
   }
 }
 

@@ -427,6 +427,58 @@ body {
   .bar-row { grid-template-columns: 90px 1fr 46px; }
 }
 
+@media (max-width: 480px) {
+  .review-toolbar {
+    top: max(8px, env(safe-area-inset-top));
+    left: 8px;
+    right: 8px;
+    gap: 6px;
+  }
+
+  .toolbar-btn {
+    display: inline-flex;
+    min-height: 44px;
+    align-items: center;
+    justify-content: center;
+    padding: 8px 12px;
+    font-size: 13px;
+  }
+
+  .review-root {
+    width: calc(100% - 12px);
+    padding-top: calc(70px + env(safe-area-inset-top));
+  }
+
+  .report-sheet,
+  .loading-card {
+    min-height: 0;
+    padding: 18px 14px;
+    border-radius: 6px;
+  }
+
+  .report-sheet::before {
+    inset: 8px;
+  }
+
+  .report-sheet::after {
+    top: 154px;
+    right: 16px;
+    font-size: 16px;
+  }
+
+  .report-title h1 { font-size: clamp(34px, 12vw, 46px); }
+  .report-title p { font-size: 17px; }
+  .section-label { font-size: 22px; }
+  .info-card,
+  .activity-card,
+  .result-card,
+  .conclusion-card { padding: 16px; }
+  .footprints { grid-template-columns: 1fr; }
+  .bar-row { grid-template-columns: 70px minmax(0, 1fr) 38px; }
+  .footer-note { align-items: stretch; flex-direction: column; }
+  .quote-note { max-width: 100%; transform: none; }
+}
+
 @page {
   size: A4 portrait;
   margin: 10mm;

@@ -62,7 +62,7 @@ expectedCases.forEach(([id, route, title, buttonText], indexPosition) => {
   'src="assets/case-stories.js"',
   'src="assets/case-intro.js"',
   "window.CaseIntro.create",
-  "caseIntro.isOpen()"
+  "caseIntro?.isOpen()"
 ].forEach((contract) => assert(index.includes(contract), `首页缺少剧情接入契约：${contract}`));
 
 [
