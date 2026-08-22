@@ -1460,7 +1460,7 @@
           <div class="headband-image-container">
             <picture>
               <source srcset="assets/headband-guide.webp" type="image/webp">
-              <img src="assets/headband-guide.png" alt="头环工作原理示意图" class="headband-guide-image" width="1536" height="1024" loading="lazy" decoding="async">
+              <img src="assets/headband-guide.webp" alt="头环工作原理示意图" class="headband-guide-image" width="1536" height="1024" loading="lazy" decoding="async">
             </picture>
           </div>
         </div></details>
@@ -1576,7 +1576,7 @@
       return `<article class="page-card plan-reading-page"><h4>材料六</h4><p>本次长时记忆探究活动中，头环将成为探索记忆奥秘的重要科学工具，它能帮助我们“看到”大脑在记忆时的活动情况。</p><p>头环主要通过两种方式来监测大脑活动：一种是记录脑电波（EEG），就像给大脑的活动“录音”；另一种是检测血流变化（fNIRS），相当于观察大脑哪个区域在工作时会“充血”。在实验中，当你使用不同的记忆方法时，头环会实时记录下大脑的反应，并通过软件将这些数据转化成直观的图表和3D脑图。在证据搜集环节，头环可以帮助你获得更科学的实验数据（例如，当用分组记忆法背单词时，头环能显示大脑哪些区域被激活），这些数据会成为研究假设的有力证据。在信息处理阶段，可以将头环采集到的脑活动热力图与回忆率进行对比分析，看看哪种记忆方法能让大脑更活跃，记忆效果更好。在得出结论时，头环提供的数据会让结论更有说服力。例如，如果数据显示使用图像联想记忆法时，大脑的视觉区域特别活跃，同时回忆率也最高，那么就可得出相应的科学结论。</p><p>使用头环时要注意：保持额头清洁，确保电极贴片贴紧；实验过程中保持专注；认真记录每个环节的数据变化。希望你能善用这个工具，在探究活动中获得更多发现！</p><button class="btn secondary" type="button" id="openHeadbandGuide">点击查看头环工作原理</button>${renderHeadbandModal()}</article>`;
     }
     function renderHeadbandModal() {
-      return `<div class="headband-modal" id="headbandGuideModal" role="dialog" aria-modal="true" aria-label="头环工作原理" tabindex="-1"><div class="headband-modal-card"><button class="btn secondary headband-modal-close" type="button" id="closeHeadbandGuide" aria-label="关闭头环工作原理">×</button><picture><source srcset="assets/headband-guide.webp" type="image/webp"><img src="assets/headband-guide.png" alt="头环工作原理示意图" width="1536" height="1024" loading="lazy" decoding="async"></picture></div></div>`;
+      return `<div class="headband-modal" id="headbandGuideModal" role="dialog" aria-modal="true" aria-label="头环工作原理" tabindex="-1"><div class="headband-modal-card"><button class="btn secondary headband-modal-close" type="button" id="closeHeadbandGuide" aria-label="关闭头环工作原理">×</button><picture><source srcset="assets/headband-guide.webp" type="image/webp"><img src="assets/headband-guide.webp" alt="头环工作原理示意图" width="1536" height="1024" loading="lazy" decoding="async"></picture></div></div>`;
     }
     function renderStrategyRecommendationPage() {
       return `<div class="page-card strategy-recommendation-page"><h4>策略与对应记忆材料推荐</h4><table><thead><tr><th>记忆策略</th><th>推荐记忆材料</th></tr></thead><tbody><tr><td>情景关联</td><td>古诗</td></tr><tr><td>主动回忆</td><td>英文单词、古诗、成语</td></tr><tr><td>新旧知识关联</td><td>英文单词</td></tr><tr><td>信息可视化</td><td>古诗、成语</td></tr><tr><td>信息提取</td><td>英文单词、成语</td></tr></tbody></table></div>`;

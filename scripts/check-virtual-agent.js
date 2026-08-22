@@ -36,7 +36,8 @@ expect(!partnerScript.includes('data-partner-mode="progress"'), "assets/memory-p
 expect(!partnerScript.includes("memory-partner-menu-kicker"), "assets/memory-partner.js: obsolete menu kicker remains");
 expect(!partnerScript.includes("<small"), "assets/memory-partner.js: obsolete action subtitles remain");
 expect(partnerStyle.includes("width: min(280px, calc(100vw - 28px))"), "assets/memory-partner.css: compact 280px menu width missing");
-expect(partnerStyle.includes("width: min(280px, calc(100vw - 20px))"), "assets/memory-partner.css: compact mobile menu width missing");
+expect(partnerStyle.includes("max-height: min(72dvh, 620px)"), "assets/memory-partner.css: mobile bottom-sheet height missing");
+expect(partnerStyle.includes("width: 52px"), "assets/memory-partner.css: compact mobile launcher missing");
 expect(partnerStyle.includes("grid-template-columns: minmax(0, 1fr)"), "assets/memory-partner.css: single-column menu contract missing");
 expect(partnerScript.includes("global.VirtualAgent"), "assets/memory-partner.js: missing VirtualAgent API");
 expect(partnerScript.includes("global.MemoryPartner"), "assets/memory-partner.js: missing MemoryPartner compatibility API");
@@ -47,7 +48,7 @@ expect(
   "assets/memory-partner.js: original assistant entries must only hide after successful attachment"
 );
 expect(
-  partnerStyle.includes("--virtual-agent-image"),
+  partnerStyle.includes('--virtual-agent-image: url("memory-detective-states.webp")'),
   "assets/memory-partner.css: missing replaceable image variable"
 );
 expect(

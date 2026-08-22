@@ -662,6 +662,7 @@
     });
 
     launcher.addEventListener("pointerdown", (event) => {
+      if (window.matchMedia("(max-width: 640px)").matches) return;
       if (event.button !== undefined && event.button !== 0) return;
       const rect = launcher.getBoundingClientRect();
       pointerId = event.pointerId;

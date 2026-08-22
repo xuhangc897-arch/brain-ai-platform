@@ -1,6 +1,6 @@
 .memory-partner {
   /* Replace this URL when the final virtual-agent artwork is updated. */
-  --virtual-agent-image: url("memory-detective-states.png");
+  --virtual-agent-image: url("memory-detective-states.webp");
   position: fixed;
   right: max(18px, env(safe-area-inset-right));
   bottom: max(18px, env(safe-area-inset-bottom));
@@ -672,15 +672,25 @@ body.has-virtual-agent .voice-title {
     bottom: max(10px, env(safe-area-inset-bottom));
   }
 
+  .memory-partner.is-dragged {
+    top: auto !important;
+    left: auto !important;
+    right: max(10px, env(safe-area-inset-right)) !important;
+    bottom: max(10px, env(safe-area-inset-bottom)) !important;
+  }
+
   .memory-partner-launcher {
-    min-width: 56px;
-    min-height: 64px;
+    width: 52px;
+    min-width: 52px;
+    min-height: 52px;
     gap: 0;
+    cursor: pointer;
+    touch-action: manipulation;
   }
 
   .memory-partner-avatar {
-    width: 48px;
-    height: 64px;
+    width: 39px;
+    height: 52px;
   }
 
   .memory-partner-copy {
@@ -688,7 +698,7 @@ body.has-virtual-agent .voice-title {
   }
 
   body.has-virtual-agent .main {
-    padding-bottom: calc(96px + env(safe-area-inset-bottom));
+    padding-bottom: calc(78px + env(safe-area-inset-bottom));
   }
 
   .memory-partner-menu,
@@ -696,19 +706,24 @@ body.has-virtual-agent .voice-title {
   .memory-partner-memory-support,
   .memory-partner-diagnosis-ready,
   .memory-partner-relevance {
-    right: 0;
-    width: min(318px, calc(100vw - 20px));
-    max-height: calc(100vh - 24px);
+    position: fixed;
+    top: auto;
+    right: max(8px, env(safe-area-inset-right));
+    bottom: calc(max(8px, env(safe-area-inset-bottom)) + 62px);
+    left: max(8px, env(safe-area-inset-left));
+    width: auto;
+    max-height: min(72dvh, 620px);
+    overflow-y: auto;
   }
 
   .memory-partner-menu {
-    width: min(280px, calc(100vw - 20px));
+    width: auto;
   }
 
   body.has-virtual-agent .ai-panel,
   body.has-virtual-agent .voice-panel {
-    right: max(10px, env(safe-area-inset-right));
-    bottom: calc(max(10px, env(safe-area-inset-bottom)) + 70px);
+    right: max(8px, env(safe-area-inset-right));
+    bottom: max(8px, env(safe-area-inset-bottom));
   }
 }
 

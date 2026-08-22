@@ -184,6 +184,20 @@ h1 {
 @media (max-width: 680px) {
   .diagnosis-toolbar {
     flex-wrap: wrap;
+    padding: max(10px, env(safe-area-inset-top)) 10px 10px;
+  }
+
+  .diagnosis-button { min-height: 44px; }
+
+  .diagnosis-root {
+    width: calc(100% - 20px);
+    margin: 14px auto calc(32px + env(safe-area-inset-bottom));
+  }
+
+  .diagnosis-sheet,
+  .diagnosis-status {
+    padding: 22px 18px;
+    border-radius: 18px;
   }
 
   .dimension-grid {

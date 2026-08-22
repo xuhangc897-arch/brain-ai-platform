@@ -965,6 +965,8 @@
       line-height: 1.7;
     }
 
+    .flow-card-mobile-actions { display: none; }
+
     .plan-order-actions {
       display: flex;
       align-items: center;
@@ -1567,6 +1569,35 @@
       .bar-row {
         grid-template-columns: 1fr;
         gap: 6px;
+      }
+
+      .flow-card {
+        padding-right: 58px;
+        touch-action: manipulation;
+      }
+
+      .flow-card-mobile-actions {
+        position: absolute;
+        top: 8px;
+        right: 8px;
+        display: grid;
+        gap: 4px;
+      }
+
+      .flow-card-mobile-actions button {
+        width: 44px;
+        height: 44px;
+        padding: 0;
+        border: 1px solid var(--line);
+        border-radius: 8px;
+        background: var(--panel);
+        color: var(--primary-dark);
+        font: inherit;
+        font-weight: 900;
+      }
+
+      .flow-card-mobile-actions button:disabled {
+        opacity: 0.38;
       }
     }
 
@@ -2672,12 +2703,17 @@
     }
 
     function renderPlanFlowCards() {
-      return getPlanOrder().map((id) => {
+      const order = getPlanOrder();
+      return order.map((id, index) => {
         const step = PLAN_ORDER_STEPS.find((item) => item.id === id);
         return `
           <article class="flow-card" data-plan-step="${escapeHtml(step.id)}" tabindex="0" aria-label="${escapeHtml(step.title)}">
             <h4>${escapeHtml(step.title)}</h4>
             <p>${escapeHtml(step.description)}</p>
+            <div class="flow-card-mobile-actions" aria-label="调整${escapeHtml(step.title)}的位置">
+              <button type="button" data-plan-move="-1" aria-label="上移${escapeHtml(step.title)}" ${index === 0 ? "disabled" : ""}>↑</button>
+              <button type="button" data-plan-move="1" aria-label="下移${escapeHtml(step.title)}" ${index === order.length - 1 ? "disabled" : ""}>↓</button>
+            </div>
           </article>
         `;
       }).join("");
@@ -2699,7 +2735,7 @@
                 <button class="btn secondary headband-modal-close" type="button" id="closeHeadbandGuide" aria-label="关闭头环工作原理">×</button>
                 <picture>
                   <source srcset="assets/headband-guide.webp" type="image/webp">
-                  <img src="assets/headband-guide.png" alt="头环工作原理示意图" width="1536" height="1024" loading="lazy" decoding="async">
+                  <img src="assets/headband-guide.webp" alt="头环工作原理示意图" width="1536" height="1024" loading="lazy" decoding="async">
                 </picture>
               </div>
             </div>
@@ -3253,6 +3289,16 @@
       saveState();
     }
 
+    function updatePlanMoveButtons(flow) {
+      const cards = Array.from(flow.querySelectorAll(".flow-card"));
+      cards.forEach((card, index) => {
+        const up = card.querySelector('[data-plan-move="-1"]');
+        const down = card.querySelector('[data-plan-move="1"]');
+        if (up) up.disabled = index === 0;
+        if (down) down.disabled = index === cards.length - 1;
+      });
+    }
+
     function bindPlanOrderEvents() {
       const flow = document.getElementById("planFlow");
       const confirm = document.getElementById("confirmPlanOrder");
@@ -3262,6 +3308,7 @@
 
       flow.addEventListener("pointerdown", (event) => {
         if (event.button !== undefined && event.button !== 0) return;
+        if (event.target.closest("[data-plan-move]")) return;
         const card = event.target.closest(".flow-card");
         if (!card || !flow.contains(card)) return;
         draggingCard = card;
@@ -3293,10 +3340,25 @@
         }
         draggingCard = null;
         savePlanOrderFromDom();
+        updatePlanMoveButtons(flow);
       };
 
       flow.addEventListener("pointerup", finishDrag);
       flow.addEventListener("pointercancel", finishDrag);
+
+      flow.querySelectorAll("[data-plan-move]").forEach((button) => {
+        button.addEventListener("click", () => {
+          const card = button.closest(".flow-card");
+          const direction = Number(button.dataset.planMove);
+          const sibling = direction < 0 ? card?.previousElementSibling : card?.nextElementSibling;
+          if (!card || !sibling) return;
+          if (direction < 0) flow.insertBefore(card, sibling);
+          else flow.insertBefore(sibling, card);
+          savePlanOrderFromDom();
+          updatePlanMoveButtons(flow);
+          card.querySelector(`[data-plan-move="${direction}"]`)?.focus();
+        });
+      });
 
       confirm.addEventListener("click", () => {
         const currentOrder = getCurrentPlanOrderFromDom();
