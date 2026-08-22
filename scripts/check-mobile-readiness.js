@@ -38,6 +38,9 @@ assert(home.includes('data-src="assets/new-frontpage/第二页面视频-web.mp4"
 assert(home.includes('data-src="assets/new-frontpage/导航图背景-web.webp"'), "index.html: navigation background must be deferred");
 assert(home.includes("scheduleArrivalVideo") && home.includes("connection?.saveData"), "index.html: weak-network media guard missing");
 assert(home.includes("function hydrateScene"), "index.html: scene asset hydration missing");
+assert(home.includes("is-navigation-active"), "index.html: mobile case-navigation state missing");
+assert(home.includes("compact ? distance !== 0"), "index.html: mobile carousel must expose one clear active card");
+assert(home.includes("左右滑动或点击箭头切换"), "index.html: mobile carousel touch guidance missing");
 
 const theme = read("assets/experiment-theme.css");
 [

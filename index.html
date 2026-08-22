@@ -1067,30 +1067,70 @@
       }
 
       .case-select-header {
-        top: 78px;
+        top: max(90px, calc(env(safe-area-inset-top) + 82px));
+        width: calc(100% - 32px);
+      }
+
+      .case-select-header p {
+        margin-bottom: 6px;
+        font-size: 8px;
+        letter-spacing: 0.2em;
       }
 
       .case-select-header h2 {
-        font-size: 26px;
+        font-size: clamp(22px, 6.5vw, 28px);
+        line-height: 1.2;
+        letter-spacing: 0.08em;
+      }
+
+      .case-position {
+        margin-top: 8px;
+      }
+
+      .experience.is-navigation-active .auth-hud {
+        top: max(10px, env(safe-area-inset-top));
+        left: auto;
+        right: 12px;
+        width: auto;
+        justify-content: flex-end;
+      }
+
+      .experience.is-navigation-active .auth-status,
+      .experience.is-navigation-active .teacher-menu,
+      .experience.is-navigation-active .auth-logout:not(.replay-button) {
+        display: none;
+      }
+
+      .experience.is-navigation-active .replay-button {
+        min-height: 44px;
+        padding: 0 13px;
+        font-size: 11px;
+        letter-spacing: 0.06em;
       }
 
       .case-deck {
-        top: 50%;
-        width: calc(100% - 74px);
-        height: min(530px, 68vh);
+        top: 53%;
+        width: 100%;
+        height: min(430px, 55vh);
       }
 
       .case-card {
-        width: min(66vw, 270px);
+        width: min(70vw, 280px);
+        overflow: hidden;
+        border-radius: 18px;
+      }
+
+      .case-card[data-offset]:not([data-offset="0"]) {
+        pointer-events: none;
       }
 
       .case-card[data-offset="0"]:hover,
       .case-card[data-offset="0"]:focus-visible {
-        transform: translate(-50%, calc(-50% - 8px)) scale(1.045);
+        transform: translate(-50%, calc(-50% - 4px)) scale(1.02);
       }
 
       .case-carousel-button {
-        top: 52%;
+        top: 53%;
         width: 44px;
         height: 44px;
         font-size: 23px;
@@ -1105,14 +1145,50 @@
       }
 
       .nav-instruction {
-        bottom: 14px;
-        white-space: nowrap;
+        bottom: max(14px, env(safe-area-inset-bottom));
+        width: max-content;
+        max-width: calc(100% - 32px);
+        padding: 8px 13px;
+        font-size: 10px;
+        line-height: 1.45;
+        letter-spacing: 0.06em;
+        text-align: center;
+        white-space: normal;
+      }
+
+      .nav-instruction--desktop {
+        display: none;
       }
 
       .replay-button {
         min-height: 44px;
         padding: 0 9px;
         font-size: 12px;
+      }
+    }
+
+    @media (max-width: 720px) and (max-height: 700px) {
+      .case-select-header {
+        top: max(76px, calc(env(safe-area-inset-top) + 68px));
+      }
+
+      .case-select-header p {
+        display: none;
+      }
+
+      .case-deck {
+        top: 55%;
+        height: 48vh;
+      }
+
+      .case-card {
+        width: min(56vw, 220px);
+      }
+    }
+
+    @media (min-width: 721px) {
+      .nav-instruction--mobile {
+        display: none;
       }
     }
 
@@ -1151,7 +1227,7 @@
         </nav>
       </div>
       <button class="auth-logout" id="logoutBtn" type="button">退出</button>
-      <button class="replay-button" id="replayButton" type="button" hidden>重新查看引导</button>
+      <button class="replay-button" id="replayButton" type="button" hidden>重看引导</button>
     </div>
 
     <section class="scene scene--arrival is-active" data-scene="0" aria-label="记忆侦探社入口">
@@ -1256,7 +1332,7 @@
       </div>
       <button class="case-carousel-button case-carousel-button--prev" id="prevCaseButton" type="button" aria-label="上一个案件">‹</button>
       <button class="case-carousel-button case-carousel-button--next" id="nextCaseButton" type="button" aria-label="下一个案件">›</button>
-      <p class="nav-instruction">点击两侧卡片切换 · 再次点击中央卡片进入</p>
+      <p class="nav-instruction"><span class="nav-instruction--desktop">点击两侧卡片切换 · 再次点击中央卡片进入</span><span class="nav-instruction--mobile">左右滑动或点击箭头切换 · 点击卡片进入</span></p>
     </section>
 
     <p class="sr-only" id="sceneStatus" aria-live="polite">当前位于记忆侦探社入口。</p>
@@ -1275,6 +1351,7 @@
       if (!currentStudent) return;
 
       const platform = window.BrainPlatform;
+      const experience = document.getElementById("experience");
       const identity = platform.identity.getStudentIdentityFields(currentStudent);
       const welcomeUser = document.getElementById("welcomeUser");
       welcomeUser.textContent = currentStudent.isGuest
@@ -1423,6 +1500,7 @@
         next.removeAttribute("aria-hidden");
 
         activeScene = nextScene;
+        experience.classList.toggle("is-navigation-active", nextScene === 2);
         replayButton.hidden = nextScene !== scenes.length - 1;
         updateVideos(nextScene);
         sceneStatus.textContent = `当前位于${sceneNames[nextScene]}。`;
@@ -1458,9 +1536,14 @@
         caseCards.forEach((card, index) => {
           const offset = getCircularOffset(index);
           const distance = Math.abs(offset);
-          const hidden = distance > 2;
-          const scale = distance === 0 ? 1.08 : distance === 1 ? 0.9 : 0.76;
+          const hidden = compact ? distance !== 0 : distance > 2;
+          const scale = compact ? 1 : distance === 0 ? 1.08 : distance === 1 ? 0.9 : 0.76;
           const opacity = hidden ? 0 : distance === 2 ? 0.64 : 1;
+
+          if (compact && offset === 0 && activeScene === 2) {
+            const cover = card.querySelector("img");
+            if (cover) cover.fetchPriority = "high";
+          }
 
           card.dataset.offset = String(offset);
           card.style.setProperty("--case-x", `${offset * spacing}px`);
