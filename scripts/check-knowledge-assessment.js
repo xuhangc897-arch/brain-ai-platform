@@ -90,6 +90,8 @@ const t5Draft = api.createDraft("T5", pretest, true);
 assert.notStrictEqual(t0Draft, t5Draft);
 assert.notStrictEqual(t0Draft.questionOrder, t5Draft.questionOrder);
 assert.deepStrictEqual([...t0Draft.questionOrder].sort(), [...t5Draft.questionOrder].sort());
+const resumedDraft = api.normalizeDraft(t0Draft, "T0", pretest, true);
+assert.deepStrictEqual(Array.from(resumedDraft.questionOrder), Array.from(t0Draft.questionOrder), "refresh must preserve each student's question order");
 const staleDraft = api.normalizeDraft({
   stage: "T0",
   questionSetVersion: "knowledge-v2-2026-08",
@@ -121,5 +123,38 @@ const saveStateSource = pretestSource.slice(
 );
 assert.doesNotMatch(saveStateSource, /knowledgePageIndex|metaPageIndex/);
 assert.match(saveStateSource, /currentPage: 0/);
+
+const dashboardSource = fs.readFileSync(path.join(root, "admin/dashboard.html"), "utf8");
+const exportSource = dashboardSource.slice(
+  dashboardSource.indexOf("function buildKnowledgeComparisonSheets(stateRecords)"),
+  dashboardSource.indexOf("function buildPosterStateSheets(stateRecord)")
+);
+assert(exportSource && dashboardSource.includes("...buildKnowledgeComparisonSheets(latestStateRecords)"));
+const ids = pretest.map((item) => item.id);
+const answers = Object.fromEntries(pretest.map((item) => [item.id, item.answer]));
+const exportContext = {
+  window: { BrainKnowledgePretestQuestions: pretest, BrainKnowledgeAssessment: api },
+  formatDate: (value) => value,
+  stateRecords: [
+    { studentId: "S2", data: { knowledgeAssessment: { T0: { assessmentId: "S2-T0", questionSetVersion: api.questionSetVersion, questionOrder: ids.slice().reverse(), answers, correctCount: 20, score: 100, timestamp: "2026-08-01" } } } },
+    { studentId: "S1", data: { knowledgeAssessment: { T5: { assessmentId: "S1-T5", questionSetVersion: api.questionSetVersion, questionOrder: ids.slice().reverse(), answers, correctCount: 20, score: 100, timestamp: "2026-08-02" }, T0: { assessmentId: "S1-T0", questionSetVersion: api.questionSetVersion, questionOrder: ids, answers, correctCount: 20, score: 100, timestamp: "2026-08-01" } } } }
+  ]
+};
+vm.runInNewContext(exportSource, exportContext);
+const comparisonSheets = vm.runInNewContext("buildKnowledgeComparisonSheets(stateRecords)", exportContext);
+assert.strictEqual(vm.runInNewContext("buildKnowledgeComparisonSheets([]).length", exportContext), 0);
+const summaryRows = comparisonSheets[0][1];
+const detailRows = comparisonSheets[1][1];
+assert.deepStrictEqual(Array.from(summaryRows.slice(1), (row) => row[0]), ["S1", "S2"]);
+assert.strictEqual(detailRows.length, 61);
+assert.deepStrictEqual(Array.from(detailRows.filter((row) => row[0] === "S2"), (row) => row[6]), Array.from(ids));
+assert.strictEqual(detailRows.find((row) => row[0] === "S2")[12], 20, "export order must be independent of the displayed order");
+assert.strictEqual(detailRows.find((row) => row[0] === "S2")[11], 1);
+exportContext.stateRecords = [{ studentId: "S3", data: { knowledgeAssessment: { T0: {
+  assessmentId: "S3-T0", questionSetVersion: "older-bank", questionOrder: ids, answers, correctCount: 20, score: 100, timestamp: "2026-07-01"
+} } } }];
+const olderRows = vm.runInNewContext("buildKnowledgeComparisonSheets(stateRecords)", exportContext)[1][1];
+assert.strictEqual(olderRows.length, 2);
+assert.match(olderRows[1][15], /题库版本不同/);
 
 console.log("T0-T5 knowledge assessment question banks and shared-source contract checks passed.");

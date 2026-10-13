@@ -33,6 +33,18 @@ body {
   right: 18px;
   display: flex;
   gap: 10px;
+  align-items: center;
+}
+
+#archiveStatus {
+  position: absolute;
+  top: calc(100% + 8px);
+  right: 0;
+  max-width: 230px;
+  color: #efe1c3;
+  font-size: 13px;
+  font-weight: 700;
+  text-align: right;
 }
 
 .toolbar-btn {

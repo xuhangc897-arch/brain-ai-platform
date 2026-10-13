@@ -4,17 +4,21 @@
 
   const root = document.getElementById("reviewRoot");
   const printBtn = document.getElementById("printBtn");
+  const archiveStatus = document.getElementById("archiveStatus");
+  const params = new URLSearchParams(window.location.search);
+  const archiveRender = params.get("archiveRender") === "1";
 
   if (printBtn) {
     printBtn.addEventListener("click", () => window.print());
   }
 
-  const params = new URLSearchParams(window.location.search);
   const requestedActivityType = params.get("activityType") || "memory";
   const activityType = integration.resolveReportActivity(requestedActivityType, "memory").id;
-  loadReview().catch(() => {
-    root.innerHTML = '<section class="loading-card"><h2>正式报告读取失败</h2><p>请检查网络连接后刷新页面。</p></section>';
-  });
+  if (!archiveRender) {
+    loadReview().catch(() => {
+      root.innerHTML = '<section class="loading-card"><h2>正式报告读取失败</h2><p>请检查网络连接后刷新页面。</p></section>';
+    });
+  }
 
   async function loadReview() {
     const session = readStudentSession();
@@ -30,6 +34,31 @@
     }
     renderReviewPage(buildReviewData(activityType, result.state, result.submission));
     if (activityType === "strategies") appendLearningDiagnosis();
+    if (["memory", "nback", "interference", "strategies"].includes(activityType)) {
+      archiveFormalReport(result.submission?.submissionId);
+    }
+  }
+
+  async function archiveFormalReport(submissionId) {
+    if (!submissionId || !window.BrainReportArchiveClient) return;
+    if (archiveStatus) archiveStatus.textContent = "正在将报告存入平台…";
+    const result = await window.BrainReportArchiveClient.generate(activityType, submissionId);
+    if (archiveStatus) archiveStatus.textContent = result.ok
+      ? "报告已存入平台，可在案件五查看"
+      : "云端归档暂未完成，可在案件五重试";
+  }
+
+  function renderArchiveSubmission(submission) {
+    if (!archiveRender || !submission || submission.experimentId !== activityType) return false;
+    const state = Object.assign({}, submission.experimentResults || {}, {
+      studentId: submission.studentId,
+      studentName: submission.studentName,
+      className: submission.className,
+      groupName: submission.groupName,
+      fields: submission.answers || {}
+    });
+    renderReviewPage(buildReviewData(activityType, state, submission));
+    return Boolean(root.querySelector(".report-sheet"));
   }
 
   async function appendLearningDiagnosis() {
@@ -658,4 +687,5 @@
   window.renderReviewPage = renderReviewPage;
   window.renderScienceReport = renderScienceReport;
   window.renderPosterReport = renderPosterReport;
+  window.BrainReportArchive = Object.freeze({ render: renderArchiveSubmission });
 })();

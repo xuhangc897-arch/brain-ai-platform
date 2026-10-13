@@ -23,6 +23,7 @@
       saveExperimentRecord: `${HTTP_BASE}/saveExperimentRecord`,
       saveExperimentSubmission: `${HTTP_BASE}/saveExperimentSubmission`,
       getLatestExperimentSubmission: `${HTTP_BASE}/getLatestExperimentSubmission`,
+      experimentReportArchive: `${HTTP_BASE}/experimentReportArchive`,
       saveLearningRecord: `${HTTP_BASE}/saveLearningRecord`,
       saveAgentIntervention: `${HTTP_BASE}/saveAgentIntervention`,
       checkTaskRelevance: `${HTTP_BASE}/checkTaskRelevance`,

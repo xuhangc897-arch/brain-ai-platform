@@ -1460,14 +1460,6 @@
     .plan-intro-page .page-card h4 { margin-bottom: 14px; font-size: 20px; }
     .plan-intro-page .page-card p { margin: 0 0 16px; font-size: 18px; line-height: 1.9; }
     .plan-intro-page .plan-drawing-instruction strong { color: var(--ink); font-weight: 900; }
-    .step-page-content > .survey-card .survey-items { grid-template-columns: repeat(3, minmax(0, 1fr)); }
-    .step-page-content > .survey-card .survey-item { padding: 9px; border-right: 1px solid var(--line); }
-    .step-page-content > .survey-card .survey-item p { margin-bottom: 7px; font-size: 12px; line-height: 1.4; }
-    .step-page-content > .survey-card .survey-scale { grid-template-columns: repeat(auto-fit, minmax(46px, 1fr)); gap: 4px; }
-    .step-page-content > .survey-card .survey-option-card { min-height: 46px; padding: 5px 3px; }
-    .step-page-content > .survey-card .survey-score { font-size: 15px; }
-    .step-page-content > .survey-card .survey-label { margin-top: 3px; font-size: 10px; }
-
     body.is-focus-mode .step-page-head,
     body.is-focus-mode .step-page-actions,
     body.is-focus-mode .evidence-prep,
@@ -1566,8 +1558,7 @@
       .run-meta-grid,
       .evidence-start-grid { grid-template-columns: 1fr; }
       .case-page .case-list,
-      .question-form-page .page-card,
-      .step-page-content > .survey-card .survey-items { grid-template-columns: 1fr; }
+      .question-form-page .page-card { grid-template-columns: 1fr; }
       .question-form-page .page-form-grid { grid-column: auto; }
       .question-form-page .choice-group { grid-template-columns: 1fr; }
       .image-modal { padding: 10px; }
@@ -3540,8 +3531,8 @@
       const mode = state.fields.experimentDesign === "关卡数量" ? "levels" : "nSize";
       const condition = document.getElementById("gameCondition");
       const options = mode === "levels"
-        ? [15, 20, 25, 30, 35].map((total) => ({ value: `2-${total}`, label: `N=2，关卡数=${total}` }))
-        : [2, 3, 4, 5, 6].map((n) => ({ value: `${n}-15`, label: `N=${n}，关卡数=15` }));
+        ? [15, 20, 25, 30, 35].map((total) => ({ value: `3-${total}`, label: `N=3，关卡数=${total}` }))
+        : [2, 3, 4, 5, 6].map((n) => ({ value: `${n}-20`, label: `N=${n}，关卡数=20` }));
       condition.innerHTML = options.map((item) => `<option value="${item.value}">${item.label}</option>`).join("");
     }
 
