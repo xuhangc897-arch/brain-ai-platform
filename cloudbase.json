@@ -45,6 +45,13 @@
       "runtime": "Nodejs20.19"
     },
     {
+      "name": "experimentReportArchive",
+      "timeout": 120,
+      "runtime": "Nodejs20.19",
+      "memorySize": 2048,
+      "installDependency": true
+    },
+    {
       "name": "getExperimentSubmissionsAdmin",
       "timeout": 60,
       "runtime": "Nodejs20.19"

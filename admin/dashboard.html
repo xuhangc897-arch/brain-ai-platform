@@ -1077,6 +1077,8 @@
   <script src="../assets/experiment-registry.js"></script>
   <script src="../assets/platform-core.js"></script>
   <script src="../assets/experiment-integration.js"></script>
+  <script src="../assets/knowledge-pretest.js"></script>
+  <script src="../assets/knowledge-assessment.js"></script>
   <script src="../cloudbase.js"></script>
   <script>
     const experimentRegistry = window.BrainExperimentRegistry;
@@ -2397,6 +2399,60 @@
       ]];
     }
 
+    function buildKnowledgeComparisonSheets(stateRecords) {
+      const students = new Map();
+      stateRecords.forEach((record) => {
+        const state = record.data?.fullState || record.data || {};
+        const studentId = String(record.studentId || state.studentId || "").trim();
+        const timeline = state.knowledgeAssessment || {};
+        if (!studentId || (!timeline.T0 && !timeline.T5)) return;
+        if (!students.has(studentId)) students.set(studentId, { studentId, T0: null, T5: null });
+        const student = students.get(studentId);
+        student.studentName ||= record.studentName || state.studentName || "";
+        student.className ||= record.className || state.className || "";
+        student.groupName ||= record.groupName || state.groupName || state.groupId || "";
+        ["T0", "T5"].forEach((stage) => {
+          const assessment = timeline[stage];
+          if (assessment?.assessmentId && (!student[stage] || String(assessment.timestamp || "") > String(student[stage].timestamp || ""))) {
+            student[stage] = assessment;
+          }
+        });
+      });
+      const orderedStudents = Array.from(students.values()).sort((left, right) => left.studentId.localeCompare(right.studentId, "zh-CN", { numeric: true }));
+      if (!orderedStudents.length) return [];
+      const questions = window.BrainKnowledgePretestQuestions;
+      const questionSetVersion = window.BrainKnowledgeAssessment.questionSetVersion;
+      const summaryRows = orderedStudents.map((student) => {
+        const t0 = student.T0;
+        const t5 = student.T5;
+        return [student.studentId, student.studentName, student.className, student.groupName,
+          t0?.correctCount ?? "", t0?.score ?? "", t0?.questionSetVersion ?? "",
+          t5?.correctCount ?? "", t5?.score ?? "", t5?.questionSetVersion ?? "",
+          t0 && t5 ? Number(t5.score) - Number(t0.score) : ""];
+      });
+      const detailRows = orderedStudents.flatMap((student) => ["T0", "T5"].flatMap((stage) => {
+        const assessment = student[stage];
+        if (!assessment) return [];
+        if (assessment.questionSetVersion !== questionSetVersion) {
+          return [[student.studentId, student.studentName, student.className, student.groupName,
+            stage, "", "", "", "", "", "", "", "", assessment.questionSetVersion,
+            formatDate(assessment.timestamp), "题库版本不同，无法按当前题库展开逐题结果"]];
+        }
+        return questions.map((question, index) => {
+          const answer = assessment.answers?.[question.id] || "";
+          const displayIndex = assessment.questionOrder?.indexOf(question.id) ?? -1;
+          return [student.studentId, student.studentName, student.className, student.groupName,
+            stage, index + 1, question.id, question.category, question.question, answer, question.answer,
+            answer ? Number(answer === question.answer) : "", displayIndex < 0 ? "" : displayIndex + 1,
+            assessment.questionSetVersion, formatDate(assessment.timestamp), ""];
+        });
+      }));
+      return [
+        ["前后测成绩汇总", [["学号", "姓名", "班级", "小组", "T0正确题数", "T0得分", "T0题库版本", "T5正确题数", "T5得分", "T5题库版本", "T5-T0提升值"], ...summaryRows]],
+        ["前后测逐题作答", [["学号", "姓名", "班级", "小组", "阶段", "固定题号", "题目ID", "类别", "题目", "学生作答", "正确答案", "是否正确(1/0)", "学生端题号", "题库版本", "提交时间", "备注"], ...detailRows]]
+      ];
+    }
+
     function buildPosterStateSheets(stateRecord) {
       const state = stateRecord.data?.fullState || stateRecord.data || {};
       const fields = state.fields || {};
@@ -2615,7 +2671,7 @@
         });
         const strategyAttemptHistory = collectStrategyAttemptHistory(latestStateRecords, cloudAttemptRecords);
         const attemptSheets = strategyAttemptHistory.length ? [buildStrategyAttemptHistorySheet(strategyAttemptHistory)] : [];
-        sheets = [buildOverviewSheet(latestStateRecords), ...detailSheets, ...attemptSheets];
+        sheets = [buildOverviewSheet(latestStateRecords), ...buildKnowledgeComparisonSheets(latestStateRecords), ...detailSheets, ...attemptSheets];
       } catch (error) {
         console.warn("读取完整状态快照失败，将使用明细记录导出。", getErrorSummary(error));
       }

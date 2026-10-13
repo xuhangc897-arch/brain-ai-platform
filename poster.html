@@ -100,7 +100,7 @@
 
     .progress {
       display: grid;
-      grid-template-columns: repeat(7, minmax(88px, calc((100% - 56px) / 8)));
+      grid-template-columns: repeat(8, minmax(88px, 1fr));
       justify-content: center;
       gap: 8px;
       overflow-x: auto;
@@ -641,6 +641,14 @@
     .knowledge-option:has(input:checked) { border-color: var(--primary); background: var(--primary-soft); color: var(--primary); }
     .knowledge-complete { padding: 22px; border: 1px solid var(--line); border-radius: 12px; text-align: center; background: var(--panel); }
 
+    .report-archive-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(220px, 1fr)); gap: 14px; margin: 20px 0; }
+    .report-archive-card { border: 1px solid var(--line); border-radius: 12px; padding: 18px; background: var(--panel); }
+    .report-archive-card h3 { margin: 0 0 8px; font-size: 17px; }
+    .report-archive-card p { min-height: 2.5em; color: var(--muted); }
+    .report-archive-card button { width: 100%; }
+    .report-archive-viewer { width: 100%; height: min(75vh, 900px); border: 1px solid var(--line); border-radius: 12px; background: #fff; }
+    .report-archive-hint { color: var(--muted); }
+
   </style>
   <link rel="stylesheet" href="assets/experiment-theme.css">
   <script src="assets/experiment-theme.js"></script>
@@ -682,6 +690,7 @@
   <script src="assets/knowledge-pretest.js"></script>
   <script src="assets/knowledge-assessment.js"></script>
   <script src="assets/experiment-submission.js"></script>
+  <script src="assets/report-archive.js"></script>
   <script src="assets/learning-diagnosis.js"></script>
   <script>
     checkLogin();
@@ -725,6 +734,7 @@
       groupId: "",
       currentStep: 0,
       maxUnlockedStep: 0,
+      dataReaderSeen: false,
       fields: {
         researchQuestion: "",
         hypothesis: "",
@@ -765,6 +775,7 @@
     };
 
     let state = loadState();
+    let dataReaderOpen = !state.dataReaderSeen && state.currentStep === 0;
     let activeScoreGroup = 1;
     const progress = document.getElementById("progress");
     const main = document.getElementById("main");
@@ -926,6 +937,8 @@
         return;
       }
       state.currentStep = target;
+      dataReaderOpen = false;
+      state.dataReaderSeen = true;
       if (!isDeveloperMode()) saveState();
       renderApp();
     }
@@ -972,14 +985,15 @@
 
     function renderProgress() {
       normalizeStepAccess();
-      progress.innerHTML = steps.map((step, index) => {
-        const isActive = index === state.currentStep;
+      progress.innerHTML = '<button class="progress-step ' + (dataReaderOpen ? 'is-active' : '') + '" type="button" id="openDataReader"><strong>资料</strong><span>读取实验数据</span></button>' + steps.map((step, index) => {
+        const isActive = !dataReaderOpen && index === state.currentStep;
         const isDone = index < state.maxUnlockedStep;
         const isLocked = !isDeveloperMode() && index > state.maxUnlockedStep;
         const cls = isActive ? "is-active" : isDone ? "is-done" : isLocked ? "is-locked" : "";
         const lockedAttrs = isLocked ? ' aria-disabled="true" title="请先完成前一步内容，再进入下一步。"' : '';
         return `<button class="progress-step ${cls}" type="button" data-step="${index}"${lockedAttrs}><strong>${index + 1}</strong><span>${step.title}</span></button>`;
       }).join("");
+      progress.querySelector("#openDataReader").addEventListener("click", openDataReader);
       progress.querySelectorAll("[data-step]").forEach((button) => {
         button.addEventListener("click", () => {
           goToStep(Number(button.dataset.step));
@@ -988,6 +1002,10 @@
     }
 
     function renderStep() {
+      if (dataReaderOpen) {
+        renderDataReader();
+        return;
+      }
       const step = steps[state.currentStep];
       main.innerHTML = `
         <section class="panel">
@@ -1005,11 +1023,83 @@
       bindStepEvents();
     }
 
+    function openDataReader() {
+      dataReaderOpen = true;
+      renderApp();
+    }
+
+    function renderDataReader() {
+      main.innerHTML = `
+        <section class="panel">
+          <div class="panel-head">
+            <h2>读取实验数据</h2>
+            <p>查看自己在前四次实验生成的侦探小结档案。此环节不占用步骤编号。</p>
+          </div>
+          <div class="panel-body">
+            <p class="report-archive-hint">选择一份档案，即可在本页查看 PDF，并参考其中的研究问题、数据和结论制作海报。</p>
+            <div id="reportArchiveList" class="report-archive-grid" role="status">正在读取档案…</div>
+            <div id="reportArchiveViewer"></div>
+            <div class="actions"><button class="btn" type="button" id="beginPosterPlan">进入第 1 步：制定初步方案</button></div>
+          </div>
+        </section>`;
+      document.getElementById("beginPosterPlan").addEventListener("click", () => {
+        state.dataReaderSeen = true;
+        dataReaderOpen = false;
+        saveState();
+        renderApp();
+      });
+      loadReportArchives();
+    }
+
+    async function loadReportArchives() {
+      const list = document.getElementById("reportArchiveList");
+      const client = window.BrainReportArchiveClient;
+      const result = client && await client.list();
+      if (!list || !dataReaderOpen) return;
+      if (!result?.ok) {
+        list.textContent = "暂时无法读取云端档案，请检查网络或登录状态后重试。";
+        return;
+      }
+      list.innerHTML = (result.items || []).map((item) => `
+        <article class="report-archive-card">
+          <h3>${escapeHtml(item.label)}</h3>
+          <p>${item.archived ? "PDF 已存入平台" : item.submitted ? "正式数据已提交，PDF 待生成" : "尚未找到正式提交"}</p>
+          <button class="btn ${item.archived ? "" : "secondary"}" type="button" data-archive-id="${escapeHtml(item.experimentId)}" ${item.submitted ? "" : "disabled"}>
+            ${item.archived ? "在平台内查看" : item.submitted ? "生成并查看 PDF" : "暂无档案"}
+          </button>
+        </article>`).join("");
+      list.querySelectorAll("[data-archive-id]").forEach((button) => {
+        button.addEventListener("click", async () => {
+          const item = result.items.find((entry) => entry.experimentId === button.dataset.archiveId);
+          if (!item) return;
+          button.disabled = true;
+          button.textContent = "正在打开…";
+          const archive = item.archived ? item : await client.generate(item.experimentId, item.submissionId);
+          if (!archive?.url) {
+            button.disabled = false;
+            button.textContent = "重试生成 PDF";
+            return;
+          }
+          const viewer = document.getElementById("reportArchiveViewer");
+          if (!viewer) return;
+          viewer.innerHTML = `<h3>${escapeHtml(item.label)} · 侦探小结档案</h3>`;
+          const frame = document.createElement("iframe");
+          frame.className = "report-archive-viewer";
+          frame.title = `${item.label} PDF`;
+          frame.src = archive.url;
+          viewer.appendChild(frame);
+          viewer.scrollIntoView({ behavior: "smooth", block: "start" });
+          if (!item.archived) loadReportArchives();
+          else { button.disabled = false; button.textContent = "在平台内查看"; }
+        });
+      });
+    }
+
     function renderNavigation() {
       const isFinalStep = state.currentStep === steps.length - 1;
       return `
         <div class="actions">
-          <button class="btn ghost" type="button" id="prevStep" ${state.currentStep === 0 ? "disabled" : ""}>上一步</button>
+          <button class="btn ghost" type="button" id="prevStep">上一步</button>
           ${isFinalStep
             ? `<button class="btn secondary final-step-action" type="button" id="reviewReportBtn" ${state.knowledgeAssessment?.T5 ? "" : "disabled"}>生成记忆侦探报告</button>`
             : '<button class="btn" type="button" id="nextStep">下一步</button>'}
@@ -1464,6 +1554,7 @@
       const next = document.getElementById("nextStep");
       if (prev) prev.addEventListener("click", () => {
         if (state.currentStep > 0) goToStep(state.currentStep - 1);
+        else openDataReader();
       });
       if (next) next.addEventListener("click", goNextStep);
       const reviewReport = document.getElementById("reviewReportBtn");
@@ -1706,6 +1797,7 @@
       if (!confirm("确定要清空本模块在当前浏览器中保存的数据吗？")) return;
       localStorage.removeItem(STORAGE_KEY);
       state = loadState();
+      dataReaderOpen = true;
       renderApp();
     });
 

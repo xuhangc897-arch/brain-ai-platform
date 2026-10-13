@@ -289,6 +289,7 @@
     html[data-theme="archive"] body.experiment-page .bar-track { background: #e8dcc8; }
     html[data-theme="archive"] body.experiment-page .bar-fill { background: linear-gradient(90deg, #9b7135, #5f765e); }
     html[data-theme="archive"] body.experiment-page .quiz-option.is-selected { border-color: #9b7135; background: #f1e3ca; color: #65471f; }
+    html[data-theme="archive"] body.experiment-page .quiz-card p { color: var(--ink); }
     html[data-theme="archive"] body.experiment-page .survey-option.is-selected .survey-option-card,
     html[data-theme="archive"] body.experiment-page .survey-option input:checked + .survey-option-card { border-color: #9b7135; background: linear-gradient(135deg, #9b7135, #7d5927); color: #fffaf2; box-shadow: 0 10px 22px rgba(80,50,20,.16); }
 
@@ -905,6 +906,9 @@
       const merged = structuredClone(base);
       Object.assign(merged, incoming);
       merged.fields = Object.assign({}, base.fields, incoming.fields || {});
+      const sharedPhaseSeconds = merged.fields.restSeconds === "" ? merged.fields.interferenceSeconds : merged.fields.restSeconds;
+      merged.fields.restSeconds = sharedPhaseSeconds;
+      merged.fields.interferenceSeconds = sharedPhaseSeconds;
       merged.fields.otherMemberResults = normalizeOtherMemberResults(merged.fields);
       merged.fields.flowRound1 = normalizeFlowList(merged.fields.flowRound1);
       merged.fields.flowRound2 = normalizeFlowList(merged.fields.flowRound2);
@@ -1555,7 +1559,7 @@
     function renderPagedQuestionStep() {
       const pages = [
         { title: "生活中的长时记忆干扰", className: "question-page-form", content: () => `<div class="question-intro-strip"><p>你有没有这样的经历：在回忆一篇课文时，开头和结尾记得很清楚，中间部分却比较模糊？长时记忆可能受到了干扰。</p><p>请先独立思考，再与小组讨论生活中可能干扰长时记忆的因素。</p>${renderPairedField("生活中想到的干扰因素", `<textarea data-field="lifeFactors" placeholder="请写下你想到的干扰因素">${escapeHtml(state.fields.lifeFactors)}</textarea>`, renderGroupTextarea("lifeFactors_group"))}</div>` },
-        { title: "阅读材料：长时记忆的三种干扰因素", className: "question-page-material", content: () => `<div class="question-materials-combined"><article class="reading-card"><h4>材料一：新旧记忆干扰</h4><p>在接受新信息时，大脑还储存着以前学习的信息。旧记忆对新记忆的干扰叫“前摄干扰”，新记忆对旧记忆的干扰叫“倒摄干扰”。</p><p>连续学习多个内容时，旧内容可能妨碍后续学习；学习新环境或新知识后，也可能更难回忆旧环境或旧知识的细节。</p></article><article class="reading-card"><h4>材料二：材料相似性</h4><p>回忆信息时，如果大脑中存在许多相似记忆，更容易发生干扰。平常的一顿午餐可能很难回忆，而一次独特的饭菜往往更容易记住。</p><p>请思考：记忆材料和随后出现的材料越相似，回忆成绩可能发生什么变化？</p></article><article class="reading-card"><h4>材料三：情绪状态</h4><p>情绪状态会影响注意、编码与提取。过度紧张、悲伤或兴奋时，人可能把更多注意资源用于情绪体验，从而影响对材料的记忆。</p><p>通过比较不同情绪条件下的回忆结果，可以检验情绪状态是否造成长时记忆干扰。</p></article></div>` },
+        { title: "阅读材料：长时记忆的三种干扰因素", className: "question-page-material", content: () => `<div class="question-materials-combined"><article class="reading-card"><h4>材料一</h4><p>在接受新信息时，大脑还储存着以前学习的信息。旧记忆对新记忆的干扰叫“前摄干扰”，新记忆对旧记忆的干扰叫“倒摄干扰”。</p><p>连续学习多个内容时，旧内容可能妨碍后续学习；学习新环境或新知识后，也可能更难回忆旧环境或旧知识的细节。</p></article><article class="reading-card"><h4>材料二</h4><p>回忆信息时，如果大脑中存在许多相似记忆，更容易发生干扰。平常的一顿午餐可能很难回忆，而一次独特的饭菜往往更容易记住。</p><p>请思考：记忆材料和随后出现的材料越相似，回忆成绩可能发生什么变化？</p></article><article class="reading-card"><h4>材料三</h4><p>情绪状态会影响注意、编码与提取。过度紧张、悲伤或兴奋时，人可能把更多注意资源用于情绪体验，从而影响对材料的记忆。</p><p>通过比较不同情绪条件下的回忆结果，可以检验情绪状态是否造成长时记忆干扰。</p></article></div>` },
         { title: "整理材料中的干扰因素", className: "question-page-form", content: () => renderPairedField("材料中列出的干扰因素", `<textarea data-field="materialFactors" placeholder="请根据阅读材料自行填写">${escapeHtml(state.fields.materialFactors)}</textarea>`, renderGroupTextarea("materialFactors_group")) },
         { title: "提出研究问题", className: "question-page-form", content: () => `<div class="panel"><div class="panel-head"><h3>确定小组研究问题</h3><p>从刚才整理的干扰因素中选择一个可测量的因素。</p></div><div class="panel-body"><div class="field"><label>研究问题（小组）</label><div class="form-grid"><input type="text" data-field="questionFactor" value="${escapeHtml(state.fields.questionFactor)}" placeholder="请输入干扰因素"><div class="readonly-value">会对长时记忆造成干扰吗？</div></div></div></div></div>${renderInquiryScaffold("question")}` }
       ];
@@ -1884,6 +1888,11 @@
     }
     function updateField(element, field) {
       state.fields[field] = element.type === "number" ? (element.value === "" ? "" : Number(element.value)) : element.value;
+      if (field === "restSeconds" || field === "interferenceSeconds") {
+        const pairedField = field === "restSeconds" ? "interferenceSeconds" : "restSeconds";
+        state.fields[pairedField] = state.fields[field];
+        main.querySelectorAll(`[data-field="${pairedField}"]`).forEach((input) => { input.value = element.value; });
+      }
       if (field === "questionFactor") {
         state.fields.question = state.fields.questionFactor ? `${state.fields.questionFactor}会对长时记忆造成干扰吗？` : "";
       }

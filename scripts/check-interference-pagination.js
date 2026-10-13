@@ -3,6 +3,7 @@
 const assert = require("assert");
 const fs = require("fs");
 const path = require("path");
+const vm = require("vm");
 
 const root = path.resolve(__dirname, "..");
 const source = fs.readFileSync(path.join(root, "interference.html"), "utf8");
@@ -22,6 +23,9 @@ assert(source.includes('question: renderPagedQuestionStep'), "question step must
 assert(source.includes("question: 4"), "question pagination must contain four pages after removing the inquiry cases");
 const question = sliceBetween("function renderPagedQuestionStep()", "function renderQuestionStep()");
 assert(question.includes('className: "question-page-material"') && question.includes("question-materials-combined"), "the three reading materials must share one page");
+for (const title of ["材料一", "材料二", "材料三"]) {
+  assert(question.includes(`<h4>${title}</h4>`), `reading card must show only ${title}`);
+}
 assert((question.match(/className: "question-page-material"/g) || []).length === 1, "reading materials must not render as separate pages");
 assert(!question.includes('title: "科学探究案例"') && !question.includes("renderInquiryCases()"), "question pagination must not contain an inquiry-cases page");
 assert(question.lastIndexOf('renderInquiryScaffold("question")') > question.indexOf('title: "提出研究问题"'), "research-question prompts must appear at the bottom of the final question page");
@@ -42,6 +46,25 @@ assert(!plan.includes("interferenceStagePlan") && !plan.includes("请补充干�
 assert(!plan.includes("参与者编号") && !plan.includes("固定材料条件数"), "removed plan parameters must not render");
 assert(source.includes("plan: 6"), "plan pagination must contain six pages");
 assert(source.includes(".time-parameter-grid") && source.includes("grid-template-columns: repeat(3"), "time parameters must share one desktop row");
+assert(source.includes('merged.fields.interferenceSeconds = sharedPhaseSeconds;'), "saved rest and interference times must be reconciled on load");
+const updateFieldSource = sliceBetween("function updateField(element, field)", "function bindHeadbandModalEvents()");
+const fields = { restSeconds: "", interferenceSeconds: "" };
+const inputs = { restSeconds: { value: "" }, interferenceSeconds: { value: "" } };
+const context = {
+  state: { fields },
+  main: { querySelectorAll: (selector) => [inputs[selector.match(/data-field="([^"]+)"/)[1]]] },
+  saveState() {}
+};
+vm.runInNewContext(updateFieldSource, context);
+vm.runInNewContext('updateField({ type: "number", value: "45" }, "restSeconds")', context);
+assert.strictEqual(fields.restSeconds, 45);
+assert.strictEqual(fields.interferenceSeconds, 45);
+assert.strictEqual(inputs.interferenceSeconds.value, "45");
+vm.runInNewContext('updateField({ type: "number", value: "90" }, "interferenceSeconds")', context);
+assert.strictEqual(fields.restSeconds, 90);
+assert.strictEqual(fields.interferenceSeconds, 90);
+assert.strictEqual(inputs.restSeconds.value, "90");
+assert(source.includes('html[data-theme="archive"] body.experiment-page .quiz-card p { color: var(--ink); }'), "archive quiz question text must use the theme ink color");
 assert(!source.includes("步骤卡片池") && !source.includes("data-flow-") && !source.includes("bindFlowDesigner"), "legacy flow designer must be removed");
 
 const hypothesis = sliceBetween("function renderHypothesisStep()", "function renderPagedPlanStep()");

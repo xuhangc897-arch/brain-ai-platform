@@ -106,6 +106,7 @@
     .strategy-material-recommendation table { min-width: 520px; margin-top: 12px; background: #fff; }
     .strategy-material-recommendation th, .strategy-material-recommendation td { padding: 12px 14px; font-size: 15px; }
     .strategy-material-recommendation td:first-child { width: 38%; color: #1e3a8a; font-weight: 900; }
+    .strategy-recommendation-question { margin: 12px 0 0; color: var(--muted); font-size: 14px; }
     .headband-image-container { margin: 24px 0; text-align: center; }
     .headband-guide-image { width: 100%; max-width: 1100px; height: auto; border-radius: 16px; box-shadow: 0 8px 24px rgba(15, 23, 42, 0.12); display: block; margin: 0 auto; }
     .strategy-mode-grid { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 14px; margin-bottom: 18px; }
@@ -431,6 +432,9 @@
     html[data-theme="archive"] body.experiment-page .bar-fill,
     html[data-theme="archive"] body.experiment-page .timer-fill { background: linear-gradient(90deg, #9b7135, #5f765e); }
     html[data-theme="archive"] body.experiment-page .quiz-option.is-selected { border-color: #9b7135; background: #f1e3ca; color: #65471f; }
+    html[data-theme="archive"] body.experiment-page .quiz-card p { color: var(--ink); }
+    html[data-theme="archive"] body.experiment-page .combination-progress-item:not(.is-complete) { border-color: var(--line); background: #fffaf2; color: var(--ink); }
+    html[data-theme="archive"] body.experiment-page .memory-item { border-color: var(--line); color: var(--ink); }
     html[data-theme="archive"] body.experiment-page .survey-option.is-selected .survey-option-card,
     html[data-theme="archive"] body.experiment-page .survey-option input:checked + .survey-option-card { border-color: #9b7135; background: linear-gradient(135deg,#9b7135,#7d5927); color: #fffaf2; box-shadow: 0 10px 22px rgba(80,50,20,.16); }
     html[data-theme="archive"] body.experiment-page.is-focus-mode .stage-meta,
@@ -514,8 +518,8 @@
       { id: "question", title: "提出问题", minutes: "10分钟", taskDescription: "回忆自己的学习经历，完成头脑风暴和材料—策略匹配，并提出研究问题。" },
       { id: "hypothesis", title: "作出假设", minutes: "10分钟", taskDescription: "阅读材料一至四，提出关于两种改善长时记忆策略的假设。" },
       { id: "plan", title: "制定计划", minutes: "20分钟", taskDescription: "分别设置两轮实验，并确定材料类型、难度、数量和时间。" },
-      { id: "evidence", title: "搜集证据", minutes: "45分钟", taskDescription: "每轮先使用简单复述，再使用计划策略，完成记忆、找不同和测试。" },
-      { id: "analysis", title: "处理信息", minutes: "15分钟", taskDescription: "汇总轮次与阶段数据，记录头环观察，并完成长时记忆策略评分表。" },
+      { id: "evidence", title: "搜集证据", minutes: "45分钟", taskDescription: "每轮先使用简单复述，再使用计划策略，完成记忆、找不同、测试和策略评分。" },
+      { id: "analysis", title: "处理信息", minutes: "15分钟", taskDescription: "汇总轮次与阶段数据，并记录头环观察。" },
       { id: "conclusion", title: "得出结论", minutes: "5分钟", taskDescription: "结合回忆率、策略评分和头环观察，说明哪种策略更有效。" },
       { id: "reflection", title: "反思交流", minutes: "15分钟", taskDescription: "反思实验设计、意外结果以及不同策略适用的学习内容。" },
       { id: "posttest", title: "侦探小结", minutes: "15分钟", taskDescription: "完成案件知识验证、学习收获调查、认知负荷调查和探究参与调查。" }
@@ -1029,8 +1033,8 @@
         if (getPlannedItemCount(1) <= 0) return 4;
         return 5;
       }
-      if (stepId === "evidence") return 0;
-      if (stepId === "analysis") return Array.isArray(state.records) && state.records.length ? 2 : 0;
+      if (stepId === "evidence") return hasRequiredCombinationRecords() ? 2 : 0;
+      if (stepId === "analysis") return 0;
       if (stepId === "conclusion") return 0;
       if (stepId === "reflection") {
         if (!hasText(fields.designImprove)) return 0;
@@ -1084,8 +1088,8 @@
       if (stepId === "question") return hasText(fields.brainstormIndividual) && hasText(fields.brainstormGroup) && fields.strategyMatchConfirmed === true && hasText(fields.questionStrategy);
       if (stepId === "hypothesis") return hasText(fields.hypothesis1) && hasText(fields.hypothesis2);
       if (stepId === "plan") return hasText(fields.strategy1) && hasText(fields.strategy2) && getPlannedItemCount(1) > 0 && getPlannedItemCount(2) > 0;
-      if (stepId === "evidence") return hasRequiredCombinationRecords();
-      if (stepId === "analysis") return Array.isArray(state.records) && state.records.length > 0 && Array.isArray(state.strategyScores) && state.strategyScores.length > 0;
+      if (stepId === "evidence") return hasRequiredCombinationRecords() && Array.isArray(state.strategyScores) && state.strategyScores.length > 0;
+      if (stepId === "analysis") return Array.isArray(state.records) && state.records.length > 0;
       if (stepId === "conclusion") return hasText(fields.conclusion);
       if (stepId === "reflection") return hasText(fields.designImprove) && hasText(fields.surprise) && hasText(fields.applicability);
       return true;
@@ -1141,8 +1145,8 @@
         question: 8,
         hypothesis: 2,
         plan: 7,
-        evidence: 1 + Math.ceil((state.attemptHistory || []).length / 3),
-        analysis: 4 + Math.ceil((state.strategyScores || []).length / 3),
+        evidence: 3 + Math.max(0, Math.ceil((state.attemptHistory || []).length / 3) - 1) + Math.ceil((state.strategyScores || []).length / 3),
+        analysis: 3,
         conclusion: 1,
         reflection: 3
       };
@@ -1566,7 +1570,7 @@
     }
     function renderPlanStep() {
       const pages = [
-        { title: "材料五：主动提取实验设计", content: () => `<article class="page-card plan-reading-page"><p>心理学家亨利·罗迪格（Henry Roediger）在2006年进行了一项关于主动提取如何影响长时记忆的重要实验。首先选取了40组斯瓦希里语-英语单词组作为记忆材料，比如"mashua-boat"这样的组合。将参与者随机分成两组，一组采用传统的重复学习方法，另一组则采用主动提取的方式。在第一阶段的学习中，所有参与者都会完整地学习一遍40组单词对，每组单词会呈现5秒钟，让参与者形成初步记忆。</p><p>接下来的练习阶段体现出了关键差异：重复学习组的参与者会再次完整地阅读所有单词对4遍，每次阅读的顺序都随机打乱，模拟了"死记硬背"的学习方法；而主动提取组的参与者则只阅读单词对1遍，之后就要面对3轮回忆测试。在回忆阶段，研究人员会单独呈现斯瓦希里语单词，比如"mashua"，参与者需要通过主动提取来回忆对应的英语释义"boat"。</p><p>随后，研究人员对所有参与者进行了突袭测试，要求他们根据斯瓦希里语单词回忆对应的英语释义，以此来评估长时记忆的保持效果。测试结果非常明显：主动提取组的平均正确率达到了80%左右，而重复学习组只有约30%的正确率。这个差距有力地证明了主动回忆比被动复习更能促进长时记忆的保持。</p></article>` },
+        { title: "材料五：主动提取实验设计", content: () => `<article class="page-card plan-reading-page"><p>心理学家亨利·罗迪格（Henry Roediger）在2006年进行了一项关于主动提取如何影响长时记忆的重要实验。首先选取了40组斯瓦希里语-英语单词组作为记忆材料，比如"mashua-boat"这样的组合。将参与者随机分成两组，一组采用传统的重复学习方法，另一组则采用主动提取的方式。在第一阶段的学习中，所有参与者都会完整地学习一遍40组单词对，每组单词会呈现5秒钟，让参与者形成初步记忆。</p><p>接下来的练习阶段体现出了关键差异：重复学习组的参与者会再次完整地阅读所有单词对4遍，每次阅读的顺序都随机打乱，模拟了"死记硬背"的学习方法；而主动提取组的参与者则只阅读单词对1遍，之后就要面对3轮回忆测试。在回忆阶段，研究人员会单独呈现斯瓦希里语单词，比如"mashua"，参与者需要通过主动提取来回忆对应的英语释义"boat"。</p><p>随后，研究人员对所有参与者进行了突袭测试，要求他们根据斯瓦希里语单词回忆对应的英语释义，以此来评估长时记忆的保持效果。测试结果非常明显：主动提取组的平均正确率达到了80%左右，而重复学习组只有约30%的正确率。这个差距有力地证明了主动回忆比被动复习更能促进长时记忆的保持。</p><button class="btn secondary" type="button" id="openRetrievalStudy">点击查看主动提取实验示意图</button>${renderRetrievalStudyModal()}</article>` },
         { title: "材料六：头环说明", content: renderHeadbandPlanPage },
         { title: "策略与记忆材料推荐", content: renderStrategyRecommendationPage },
         { title: "实验策略与参与者", content: () => `<div class="page-card"><p>请分别设置两轮实验。每轮两个阶段的材料类型、难度和数量相同，但系统会抽取不同题目。</p><div class="strategy-mode-grid"><div class="strategy-mode-card"><h4>阶段一</h4><p>策略：简单复述。这是“不使用额外策略”的基线条件。</p></div><div class="strategy-mode-card"><h4>阶段二</h4><p>第一轮使用策略1，第二轮使用策略2。</p></div></div><div class="compact-form-grid"><div class="field"><label>阶段一策略</label>${renderStrategySelect("stage1Strategy", "简单复述", true)}</div><div class="field"><label>策略 1</label>${renderExperimentStrategySelect("strategy1")}</div><div class="field"><label>策略 2</label>${renderExperimentStrategySelect("strategy2")}</div><div class="field"><label>参与者编号</label><input type="text" data-field="participantId" value="${escapeHtml(state.fields.participantId || state.studentId)}" placeholder="请输入参与者编号"></div></div></div>` },
@@ -1582,8 +1586,11 @@
     function renderHeadbandModal() {
       return `<div class="headband-modal" id="headbandGuideModal" role="dialog" aria-modal="true" aria-label="头环工作原理" tabindex="-1"><div class="headband-modal-card"><div class="headband-modal-viewport"><img src="assets/headband-guide.webp" alt="头环工作原理示意图" width="1536" height="1024" loading="lazy" decoding="async"></div><div class="headband-modal-actions"><button class="btn secondary" type="button" data-headband-zoom="out" aria-label="缩小头环图片">−</button><button class="btn secondary" type="button" data-headband-zoom="in" aria-label="放大头环图片">＋</button><button class="btn secondary" type="button" id="closeHeadbandGuide">关闭</button></div></div></div>`;
     }
+    function renderRetrievalStudyModal() {
+      return `<div class="headband-modal" id="retrievalStudyModal" role="dialog" aria-modal="true" aria-label="主动提取实验示意图" tabindex="-1"><div class="headband-modal-card"><div class="headband-modal-viewport"><img src="assets/active-retrieval-study.png" alt="主动提取实验六步示意图" width="1536" height="1024" loading="lazy" decoding="async"></div><div class="headband-modal-actions"><button class="btn secondary" type="button" data-headband-zoom="out" aria-label="缩小主动提取实验图片">−</button><button class="btn secondary" type="button" data-headband-zoom="in" aria-label="放大主动提取实验图片">＋</button><button class="btn secondary" type="button" id="closeRetrievalStudy">关闭</button></div></div></div>`;
+    }
     function renderStrategyRecommendationPage() {
-      return `<div class="page-card strategy-recommendation-page"><h4>策略与对应记忆材料推荐</h4><table><thead><tr><th>记忆策略</th><th>推荐记忆材料</th></tr></thead><tbody><tr><td>情景关联</td><td>古诗</td></tr><tr><td>主动回忆</td><td>英文单词、古诗、成语</td></tr><tr><td>新旧知识关联</td><td>英文单词</td></tr><tr><td>信息可视化</td><td>古诗、成语</td></tr><tr><td>信息提取</td><td>英文单词、成语</td></tr></tbody></table></div>`;
+      return `<div class="page-card strategy-recommendation-page"><h4>策略与对应记忆材料推荐</h4><table><thead><tr><th>记忆策略</th><th>推荐记忆材料</th></tr></thead><tbody><tr><td>情景关联</td><td>古诗</td></tr><tr><td>主动回忆</td><td>英文单词、古诗、成语</td></tr><tr><td>新旧知识关联</td><td>英文单词</td></tr><tr><td>信息可视化</td><td>古诗、成语</td></tr><tr><td>信息提取</td><td>英文单词、成语</td></tr></tbody></table><p class="strategy-recommendation-question">思考：为什么有的材料适合一种策略，而有的材料适合另一种策略？</p></div>`;
     }
     function renderMaterialTypeSelect(field) {
       return `<select data-field="${field}">${["word", "poem", "idiom"].map((type) => `<option value="${type}" ${state.fields[field] === type ? "selected" : ""}>${MATERIAL_TYPE_LABELS[type]}</option>`).join("")}</select>`;
@@ -1636,10 +1643,21 @@
     }
     function renderEvidenceStep() {
       const attempts = Array.isArray(state.attemptHistory) ? state.attemptHistory : [];
-      const pages = [{ title: "策略记忆网页实验", className: "evidence-page", content: renderEvidenceStartPage }];
-      for (let index = 0; index < attempts.length; index += 3) {
+      const pages = [
+        { title: "策略记忆网页实验", className: "evidence-page", content: renderEvidenceStartPage },
+        { title: "测量结果", className: "evidence-results-page", content: () => attempts.length
+          ? `<div class="run-results-grid">${attempts.slice(0, 3).map(renderStrategyRunResultCard).join("")}</div>`
+          : '<div class="empty-state">完成测量后，这里会显示结果。</div>' },
+        { title: "长时记忆策略评分", className: "score-input-page", content: () => `<div class="page-card">${renderStrategyScoreTable()}</div>` }
+      ];
+      for (let index = 3; index < attempts.length; index += 3) {
         const records = attempts.slice(index, index + 3);
         pages.push({ title: `测量结果 ${Math.floor(index / 3) + 1}/${Math.ceil(attempts.length / 3)}`, className: "evidence-results-page", content: () => `<div class="run-results-grid">${records.map((record, offset) => renderStrategyRunResultCard(record, index + offset)).join("")}</div>` });
+      }
+      const scoreRecords = state.strategyScores || [];
+      for (let index = 0; index < scoreRecords.length; index += 3) {
+        const records = scoreRecords.slice(index, index + 3);
+        pages.push({ title: `评分历史 ${Math.floor(index / 3) + 1}/${Math.ceil(scoreRecords.length / 3)}`, content: () => `<div class="page-card score-history-grid">${records.map(renderScoreHistoryCard).join("")}</div>` });
       }
       return renderPagedStep("evidence", pages);
     }
@@ -1655,14 +1673,17 @@
     }
     function renderStrategyRunResultCard(record, index) {
       const items = getRecordMaterialDetails(record);
-      const responses = String(record.recall || "").split("；").map((item) => item.trim()).filter(Boolean);
+      const responses = String(record.recall || "").split("；").map((item) => item.trim());
+      const legacyResponses = responses.filter(Boolean);
       const usedResponses = new Set();
       const rows = items.map((item, itemIndex) => {
-        const responseIndex = responses.findIndex((response, candidateIndex) => !usedResponses.has(candidateIndex) && normalizeRecallValue(response, item.type) === normalizeRecallValue(item.answer, item.type));
-        const correct = responseIndex >= 0;
-        if (correct) usedResponses.add(responseIndex);
-        const response = correct ? responses[responseIndex] : (responses[itemIndex] || "未作答");
-        return `<div class="trial-result-row ${correct ? "is-correct" : "is-wrong"}"><span>${itemIndex + 1}</span><span title="正确答案">${escapeHtml(item.display || item.answer)}</span><span title="参与者作答">${escapeHtml(response)}</span><strong>${correct ? "正确" : "错误"}</strong></div>`;
+        const responseIndex = record.orderRequired
+          ? itemIndex
+          : legacyResponses.findIndex((response, candidateIndex) => !usedResponses.has(candidateIndex) && normalizeRecallValue(response, item.type) === normalizeRecallValue(item.answer, item.type));
+        const response = record.orderRequired ? responses[itemIndex] : (responseIndex >= 0 ? legacyResponses[responseIndex] : legacyResponses[itemIndex]);
+        const correct = responseIndex >= 0 && normalizeRecallValue(response, item.type) === normalizeRecallValue(item.answer, item.type);
+        if (correct && !record.orderRequired) usedResponses.add(responseIndex);
+        return `<div class="trial-result-row ${correct ? "is-correct" : "is-wrong"}"><span>${itemIndex + 1}</span><span title="正确答案">${escapeHtml(item.display || item.answer)}</span><span title="参与者作答">${escapeHtml(response || "未作答")}</span><strong>${correct ? "正确" : "错误"}</strong></div>`;
       }).join("");
       const valid = items.length > 0 && Number(record.itemCount || items.length) > 0;
       return `<article class="run-result-card"><h4>第 ${index + 1} 次测量</h4><div class="run-result-meta"><span>参与者：${escapeHtml(record.studentId || state.fields.participantId || state.studentId)}</span><span>${escapeHtml(record.roundLabel || getRoundLabel(record.round))} · ${escapeHtml(record.stageLabel || getStageLabel(record.stage))}</span><span>策略：${escapeHtml(record.strategy)}</span><span>材料：${escapeHtml(record.materialTypeLabel || MATERIAL_TYPE_LABELS[record.materialType] || record.materialType)}</span><span>难度：${escapeHtml(record.difficultySummary || formatDifficultyCounts(record.difficultyCounts))}</span><span>结果：${Number(record.correctCount) || 0}/${Number(record.itemCount) || items.length}，${Number(record.accuracy) || 0}%</span><span>有效测量：${valid ? "是" : "否"}</span><span>记录时间：${escapeHtml(record.createdAt || "--")}</span></div><div class="trial-result-list">${rows || '<div class="tip-box">本轮历史记录缺少题目明细，无法逐题还原。</div>'}</div>${valid ? "" : '<p class="hint">本轮没有可评分题目，无法精确测得结果。</p>'}</article>`;
@@ -1703,16 +1724,10 @@
       return ["头环数据摘要", [["项目","内容"],["上传文件名",""],["头环观察记录",state.fields.headband || ""],["记录内头环观察",state.records.map((record)=>record.headband).filter(Boolean).join("；")],["数据摘要",state.fields.headband || ""],["统计结果",""]]];
     }
     function renderAnalysisStep() {
-      const scoreRecords = state.strategyScores || [];
       const pages = [
         { title: "轮次与阶段汇总", className: "analysis-summary-page", content: renderAnalysisSummaryPage },
-        { title: "头环观察", className: "paged-thinking", content: () => `<div class="page-card">${renderPairedField("头环观察", `<textarea data-field="headband" placeholder="请记录使用不同记忆策略时头环颜色和前额叶活动的变化。">${escapeHtml(state.fields.headband)}</textarea>`, '<div class="reading-card"><h4>观察提示</h4><p>结合不同策略的回忆率，比较前额叶区域的颜色与活跃程度，并记录数据是否支持研究假设。</p></div>')}</div>` },
-        { title: "长时记忆策略评分", className: "score-input-page", content: () => `<div class="page-card">${renderStrategyScoreTable()}</div>` }
+        { title: "头环观察", className: "paged-thinking", content: () => `<div class="page-card">${renderPairedField("头环观察", `<textarea data-field="headband" placeholder="请记录使用不同记忆策略时头环颜色和前额叶活动的变化。">${escapeHtml(state.fields.headband)}</textarea>`, '<div class="reading-card"><h4>观察提示</h4><p>结合不同策略的回忆率，比较前额叶区域的颜色与活跃程度，并记录数据是否支持研究假设。</p></div>')}</div>` }
       ];
-      for (let index = 0; index < scoreRecords.length; index += 3) {
-        const records = scoreRecords.slice(index, index + 3);
-        pages.push({ title: `评分历史 ${Math.floor(index / 3) + 1}/${Math.ceil(scoreRecords.length / 3)}`, content: () => `<div class="page-card score-history-grid">${records.map(renderScoreHistoryCard).join("")}</div>` });
-      }
       pages.push({ title: "其他组员实验结果", className: "team-result-page", content: () => `<div class="page-card">${renderTeamResultTable(summarizeRecords())}</div>` });
       return renderPagedStep("analysis", pages);
     }
@@ -1809,7 +1824,7 @@
       const stepId = steps[state.currentStep]?.id;
       if (/^round[12](Low|Mid|High)Count$/.test(field) && stepId === "plan") renderApp();
       if (["strategy1", "strategy2"].includes(field) && stepId === "plan") renderApp();
-      if ((["scoreAccuracy", "scoreUse", "scoreConfidence"].includes(field) || field === "scoreRecordViewId") && stepId === "analysis") renderApp();
+      if ((["scoreAccuracy", "scoreUse", "scoreConfidence"].includes(field) || field === "scoreRecordViewId") && stepId === "evidence") renderApp();
     }
     function bindStepEvents(stepId) {
       bindSurveyInputs();
@@ -1818,27 +1833,29 @@
       bindHeadbandModalEvents();
       if (stepId === "evidence" && document.getElementById("startRunBtn")) bindGameEvents();
       if (stepId === "question") bindStrategyMatchEvents();
-      if (stepId === "analysis") bindScoreEvents();
+      if (stepId === "evidence") bindScoreEvents();
       const reviewReport = document.getElementById("reviewReportBtn");
       if (reviewReport) reviewReport.addEventListener("click", () => generateReviewReport("strategies"));
     }
     function bindHeadbandModalEvents() {
-      const open = document.getElementById("openHeadbandGuide");
-      const modal = document.getElementById("headbandGuideModal");
-      const close = document.getElementById("closeHeadbandGuide");
-      if (!open || !modal || !close) return;
-      const hide = () => {
-        window.HeadbandGuide.close(modal);
-        lastHeadbandTrigger?.focus();
-      };
-      open.addEventListener("click", () => {
-        lastHeadbandTrigger = open;
-        window.HeadbandGuide.open(modal);
-        close.focus();
+      [["openHeadbandGuide", "headbandGuideModal", "closeHeadbandGuide"], ["openRetrievalStudy", "retrievalStudyModal", "closeRetrievalStudy"]].forEach(([openId, modalId, closeId]) => {
+        const open = document.getElementById(openId);
+        const modal = document.getElementById(modalId);
+        const close = document.getElementById(closeId);
+        if (!open || !modal || !close) return;
+        const hide = () => {
+          window.HeadbandGuide.close(modal);
+          lastHeadbandTrigger?.focus();
+        };
+        open.addEventListener("click", () => {
+          lastHeadbandTrigger = open;
+          window.HeadbandGuide.open(modal);
+          close.focus();
+        });
+        close.addEventListener("click", hide);
+        modal.addEventListener("click", (event) => { if (event.target === modal) hide(); });
+        modal.addEventListener("keydown", (event) => { if (event.key === "Escape") hide(); });
       });
-      close.addEventListener("click", hide);
-      modal.addEventListener("click", (event) => { if (event.target === modal) hide(); });
-      modal.addEventListener("keydown", (event) => { if (event.key === "Escape") hide(); });
     }
     async function generateReviewReport(activityType) {
       if (!isSurveyStepComplete("posttest")) {
@@ -2050,7 +2067,8 @@
       if (phase === "memory") {
         seconds = clamp(Number(state.fields.memorySeconds), 10, 180, 60);
         const memoryInstruction = session.stage === 1 ? "请只使用简单复述的策略进行记忆" : `采用记忆策略：${escapeHtml(session.strategy)}`;
-        taskCard.innerHTML = `<h3>记忆阶段</h3><p>${memoryInstruction}</p>${renderItems(session.items)}`;
+        const wordTip = session.materialPlan.materialType === "word" ? "<p>中文释义用于辅助记忆，回忆时不需要写出中文。</p>" : "";
+        taskCard.innerHTML = `<h3>记忆阶段</h3><p>${memoryInstruction}</p><p>回忆时需要按顺序写出。</p>${wordTip}${renderItems(session.items)}`;
       } else if (phase === "puzzle") {
         seconds = clamp(Number(state.fields.puzzleSeconds), 10, 180, 30);
         taskCard.innerHTML = `<h3>高强度找不同</h3><p>在限定时间内连续点击每一题中唯一不同的图形</p><div id="puzzleMount"></div>`;
@@ -2107,6 +2125,8 @@
       session.recallStartedAt = performance.now();
       document.getElementById("taskCard").style.display = "none";
       document.getElementById("answerBox").classList.add("is-visible");
+      const wordTip = session.materialPlan.materialType === "word" ? "中文释义用于辅助记忆，回忆时不需要写出中文。" : "";
+      document.querySelector("#answerBox label").textContent = `请在每个格子中填写一个回忆内容。回忆时需要按顺序写出。${wordTip}`;
       const grid = document.getElementById("recallGrid");
       grid.innerHTML = session.items.map((item, index) => `<input class="recall-cell" data-recall-index="${index}" type="text" autocomplete="off" placeholder="第 ${index + 1} 个">`).join("");
       const firstInput = grid.querySelector("input");
@@ -2129,13 +2149,13 @@
     function submitRecall() {
       if (!session || session.phase !== "recall") return;
       clearTimers();
-      const recallValues = Array.from(document.querySelectorAll("[data-recall-index]")).map((input) => input.value.trim()).filter(Boolean);
+      const recallValues = Array.from(document.querySelectorAll("[data-recall-index]")).map((input) => input.value.trim());
       const recall = recallValues.join("；");
       const headband = "";
       const correct = scoreRecall(recallValues, session.items);
       const accuracy = session.items.length ? Math.round((correct.length / session.items.length) * 100) : 0;
       const reactionTime = Math.round(performance.now() - session.recallStartedAt);
-      const record = { runId: session.id, studentName: state.studentName, studentAge: state.studentAge, studentId: state.studentId, groupId: state.groupId, round: session.round, roundLabel: session.roundLabel, stage: session.stage, stageLabel: session.stageLabel, combinationKey: session.combinationKey, strategy: session.strategy, materialType: session.materialPlan.materialType, materialTypeLabel: session.materialPlan.materialTypeLabel, difficultyCounts: structuredClone(session.materialPlan.difficultyCounts), difficultySummary: formatDifficultyCounts(session.materialPlan.difficultyCounts), itemCount: session.items.length, itemDetails: structuredClone(session.items), memorySeconds: state.fields.memorySeconds, puzzleSeconds: state.fields.puzzleSeconds, testSeconds: state.fields.testSeconds, items: session.items.map((item) => item.display).join("；"), recall, correctItems: correct.map((item) => item.display).join("；"), correctCount: correct.length, accuracy, reactionTime, puzzleHits: session.puzzleHits, puzzleAttempts: session.puzzleAttempts, headband, scoreTotal: getScoreTotal(), createdAt: new Date().toLocaleString() };
+      const record = { runId: session.id, studentName: state.studentName, studentAge: state.studentAge, studentId: state.studentId, groupId: state.groupId, round: session.round, roundLabel: session.roundLabel, stage: session.stage, stageLabel: session.stageLabel, combinationKey: session.combinationKey, strategy: session.strategy, materialType: session.materialPlan.materialType, materialTypeLabel: session.materialPlan.materialTypeLabel, difficultyCounts: structuredClone(session.materialPlan.difficultyCounts), difficultySummary: formatDifficultyCounts(session.materialPlan.difficultyCounts), itemCount: session.items.length, itemDetails: structuredClone(session.items), memorySeconds: state.fields.memorySeconds, puzzleSeconds: state.fields.puzzleSeconds, testSeconds: state.fields.testSeconds, items: session.items.map((item) => item.display).join("；"), recall, orderRequired: true, correctItems: correct.map((item) => item.display).join("；"), correctCount: correct.length, accuracy, reactionTime, puzzleHits: session.puzzleHits, puzzleAttempts: session.puzzleAttempts, headband, scoreTotal: getScoreTotal(), createdAt: new Date().toLocaleString() };
       Object.assign(record, getStudentIdentityFields());
       state.attemptHistory = Array.isArray(state.attemptHistory) ? state.attemptHistory : [];
       state.attemptHistory.push(structuredClone(record));
@@ -2154,13 +2174,7 @@
       return text.replace(/[\s，。！？；：、“”‘’（）()《》,.!?;:'"·—-]/g, "");
     }
     function scoreRecall(responses, items) {
-      const unmatched = items.slice();
-      const correct = [];
-      responses.forEach((response) => {
-        const matchIndex = unmatched.findIndex((item) => normalizeRecallValue(response, item.type) === normalizeRecallValue(item.answer, item.type));
-        if (matchIndex >= 0) correct.push(unmatched.splice(matchIndex, 1)[0]);
-      });
-      return correct;
+      return items.filter((item, index) => normalizeRecallValue(responses[index], item.type) === normalizeRecallValue(item.answer, item.type));
     }
     function updateGameUi(totalSeconds) {
       const status = document.getElementById("phaseStatus");

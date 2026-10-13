@@ -3,6 +3,7 @@
 const assert = require("assert");
 const fs = require("fs");
 const path = require("path");
+const vm = require("vm");
 
 const root = path.resolve(__dirname, "..");
 const experimentFiles = ["memory.html", "nback.html", "interference.html", "strategies.html"];
@@ -27,6 +28,7 @@ for (const file of experimentFiles) {
   assert(page.includes("function getIncompleteStepMessage(stepId)"), `${file}: missing incomplete-page formatter`);
   assert(page.includes("showStepMessage(getIncompleteStepMessage(steps[state.currentStep].id))"), `${file}: validation must include the incomplete page`);
   assert(page.includes('class="quiz-key"') && page.includes('class="quiz-label"'), `${file}: knowledge choices must use qualification-style structure`);
+  assert(page.includes('<link rel="stylesheet" href="assets/experiment-theme.css">'), `${file}: knowledge choices must load the shared layout`);
   assert(page.includes('className: "survey-page"'), `${file}: paged surveys must expose the shared ten-column layout hook`);
   assert(!page.includes('showStepMessage("请先完成本步骤内容。")'), `${file}: generic incomplete message must not remain`);
   assert(page.includes("preparePagedInputLifecycle();"), `${file}: pagination lifecycle preparation missing`);
@@ -37,6 +39,7 @@ for (const file of experimentFiles) {
 }
 
 const theme = source("assets/experiment-theme.css");
+assert(/body\.experiment-page \.quiz-options\s*\{[^}]*grid-template-columns:\s*1fr;/.test(theme), "knowledge choices must use the same single-column layout in all four experiments");
 for (const marker of [
   "body.experiment-page .headband-modal,",
   "body.experiment-page .image-modal",
@@ -61,6 +64,18 @@ assert(memory.includes('stepId === "plan" && pageIndex === 2 && state.fields.pla
 assert(memory.includes('showStepMessage("请先将实验计划流程调整为正确顺序并确认。")'), "memory plan flow must show a clear ordering message");
 
 const nback = source("nback.html");
+const conditionSource = nback.slice(nback.indexOf("function populateConditions()"), nback.indexOf("function startGame()"));
+function nbackConditions(experimentDesign) {
+  const select = { innerHTML: "" };
+  vm.runInNewContext(`${conditionSource}\npopulateConditions();`, {
+    state: { fields: { experimentDesign } },
+    document: { getElementById: () => select }
+  });
+  return Array.from(select.innerHTML.matchAll(/<option value="([^"]+)">([^<]+)<\/option>/g), ([, value, label]) => ({ value, label }));
+}
+assert.deepStrictEqual(nbackConditions("N的大小"), [2, 3, 4, 5, 6].map((n) => ({ value: `${n}-20`, label: `N=${n}，关卡数=20` })));
+assert.deepStrictEqual(nbackConditions("关卡数量"), [15, 20, 25, 30, 35].map((total) => ({ value: `3-${total}`, label: `N=3，关卡数=${total}` })));
+assert(!/survey-items\s*\{\s*grid-template-columns:\s*repeat\(3/.test(nback), "N-back survey questions must not use narrow three-column cards");
 assert(nback.includes("question: 5") && nback.includes('if (stepId === "question") return 4'), "N-back question pagination must contain five pages");
 assert(nback.includes('title: "材料三与材料四：控制变量和头环"') && nback.includes("merged-reading-page"), "N-back materials three and four must share one page");
 assert(nback.includes(".reading-page .page-card p") && nback.includes("font-size: 16px") && nback.includes("line-height: 1.8"), "N-back reading pages must use readable typography");
@@ -76,6 +91,28 @@ const strategies = source("strategies.html");
 assert(strategies.includes("plan: 7") && !strategies.includes('title: "材料五：突袭测试与结果"'), "strategy plan pagination must contain seven pages with one material-five page");
 assert(strategies.includes(".plan-reading-page { font-size: 16px; line-height: 1.8; }") && strategies.includes(".strategy-guide-grid .strategy-info-card p") && strategies.includes(".material-match-page .reading-card p"), "strategy reading sections must use readable typography");
 assert(strategies.includes("accent-color: var(--primary)") && strategies.includes("::-webkit-slider-thumb") && strategies.includes("::-moz-range-thumb"), "strategy difficulty sliders must use the active theme color");
+assert(strategies.includes("思考：为什么有的材料适合一种策略，而有的材料适合另一种策略？"), "strategy recommendation must include the reflection prompt");
+assert(strategies.includes("中文释义用于辅助记忆，回忆时不需要写出中文。") && strategies.match(/回忆时需要按顺序写出。/g)?.length >= 2, "strategy memory and recall must explain ordered English-only responses");
+assert(strategies.includes('html[data-theme="archive"] body.experiment-page .combination-progress-item:not(.is-complete)') && strategies.includes('html[data-theme="archive"] body.experiment-page .memory-item') && strategies.includes('html[data-theme="archive"] body.experiment-page .quiz-card p'), "strategy archive screens must replace blue accents");
+const strategyPageSource = strategies.slice(strategies.indexOf("function getStepPageCount(stepId)"), strategies.indexOf("function renderPagedStep(stepId, pages)")) +
+  strategies.slice(strategies.indexOf("function renderEvidenceStep()"), strategies.indexOf("function getNextEvidenceAssignment()"));
+for (const [attemptCount, scoreCount] of [[0, 0], [4, 1], [7, 4]]) {
+  const context = {
+    state: { attemptHistory: Array(attemptCount).fill({}), strategyScores: Array(scoreCount).fill({}) },
+    renderPagedStep: (_, pages) => pages,
+    renderEvidenceStartPage() {}
+  };
+  vm.runInNewContext(strategyPageSource, context);
+  const pages = vm.runInNewContext('renderEvidenceStep()', context);
+  assert.strictEqual(pages[2].title, "长时记忆策略评分", "strategy scoring must remain evidence page three");
+  assert.strictEqual(pages.length, vm.runInNewContext('getStepPageCount("evidence")', context), "strategy evidence page count must match its rendered pages");
+}
+const strategyScoringSource = strategies.slice(strategies.indexOf("function normalizeRecallValue(value, type)"), strategies.indexOf("function updateGameUi(totalSeconds)"));
+const scoringContext = { items: [{ answer: "cat", type: "word" }, { answer: "dog", type: "word" }] };
+vm.runInNewContext(strategyScoringSource, scoringContext);
+assert.strictEqual(vm.runInNewContext('scoreRecall(["cat", "dog"], items).length', scoringContext), 2);
+assert.strictEqual(vm.runInNewContext('scoreRecall(["dog", "cat"], items).length', scoringContext), 0, "reordered responses must not score as correct");
+assert.strictEqual(vm.runInNewContext('scoreRecall(["", "dog"], items).length', scoringContext), 1, "blank recall slots must preserve later positions");
 
 for (const file of [
   "cloudfunctions/generateLearningDiagnosis/index.js",
