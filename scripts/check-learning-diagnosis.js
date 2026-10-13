@@ -11,8 +11,8 @@ function source(relativePath) {
   return fs.readFileSync(path.join(root, relativePath), "utf8");
 }
 
-function loadGenerator() {
-  const filename = path.join(root, "cloudfunctions", "generateLearningDiagnosis", "index.js");
+function loadFunction(name) {
+  const filename = path.join(root, "cloudfunctions", name, "index.js");
   const originalLoad = Module._load;
   const collection = {
     where() { return this; },
@@ -46,7 +46,8 @@ function loadGenerator() {
   finally { Module._load = originalLoad; }
 }
 
-const generator = loadGenerator();
+const generator = loadFunction("generateLearningDiagnosis");
+const reader = loadFunction("getLearningDiagnosis");
 const completeState = {
   maxUnlockedStep: 7,
   surveys: {
@@ -59,6 +60,27 @@ const completeState = {
 assert.strictEqual(generator.completionFacts(completeState).completed, true);
 assert.strictEqual(generator.completionFacts({ ...completeState, knowledgeQuiz: {} }).completed, true, "legacy missing quiz should remain eligible");
 assert.strictEqual(generator.completionFacts({ maxUnlockedStep: 6, surveys: completeState.surveys }).completed, false);
+const submittedRecord = {
+  submissionTime: "2026-07-29T01:00:00.000Z",
+  experimentResults: {},
+  surveys: {
+    meta: completeState.surveys.postMeta,
+    cognitiveLoad: completeState.surveys.cognitiveLoad,
+    inquiryParticipation: completeState.surveys.inquiryParticipation
+  },
+  knowledgeQuiz: { attempts: [{ timestamp: "2026-07-29T01:00:00.000Z" }] }
+};
+assert.strictEqual(generator.completionFacts(generator.fullState(submittedRecord)).completed, true,
+  "a completed normalized submission must be eligible for diagnosis generation");
+assert.strictEqual(reader.completed(reader.fullState(submittedRecord)), true,
+  "the student diagnosis reader must agree with the generator");
+for (const record of [
+  { ...submittedRecord, surveys: {} },
+  { ...submittedRecord, experimentResults: { maxUnlockedStep: 6 } }
+]) {
+  assert.strictEqual(generator.completionFacts(generator.fullState(record)).completed, false);
+  assert.strictEqual(reader.completed(reader.fullState(record)), false);
+}
 
 const experimentIds = ["memory", "nback", "interference", "strategies"];
 const readySources = {
@@ -74,6 +96,12 @@ const readySources = {
 const objectiveMetrics = generator.buildObjectiveMetrics(readySources.submissions, readySources.memories, {}, {});
 assert(objectiveMetrics.experiments.every((item) => item.surveys.metacognitionAverage === 4), "legacy q6 must not affect metacognition averages");
 assert.strictEqual(generator.evaluateReadiness(readySources).generationReady, true);
+const normalizedSources = {
+  submissions: Object.fromEntries(experimentIds.map((id) => [id, { ...submittedRecord, recordId: `submission_${id}` }])),
+  memories: readySources.memories
+};
+assert.strictEqual(generator.evaluateReadiness(normalizedSources).generationReady, true,
+  "four completed normalized submissions and matching memories must qualify for diagnosis");
 const missingMemory = {
   submissions: readySources.submissions,
   memories: { ...readySources.memories }
@@ -118,6 +146,11 @@ const validDiagnosis = {
   }]
 };
 assert(generator.validateDiagnosis(validDiagnosis));
+assert.deepStrictEqual(generator.parseAiResponse(JSON.stringify({ choices: [{ finish_reason: "stop", message: { content: JSON.stringify(validDiagnosis) } }] })), validDiagnosis);
+assert.throws(() => generator.parseAiResponse(JSON.stringify({ choices: [{ finish_reason: "length", message: { content: '{"dimensions":[' } }] })), { code: "AI_RESPONSE_TRUNCATED" });
+assert.throws(() => generator.parseAiResponse(JSON.stringify({ choices: [{ finish_reason: "stop", message: { content: null } }] })), { code: "AI_EMPTY_CONTENT" });
+assert.throws(() => generator.parseAiResponse(JSON.stringify({ choices: [{ finish_reason: "stop", message: { content: "{broken" } }] })), { code: "AI_INVALID_JSON" });
+assert(source("cloudfunctions/generateLearningDiagnosis/index.js").includes('thinking: { type: "disabled" }'));
 assert.strictEqual(generator.validateDiagnosis({ ...validDiagnosis, dimensions: dimensions.slice(0, 4) }), null);
 assert.strictEqual(generator.validateDiagnosis({
   ...validDiagnosis,

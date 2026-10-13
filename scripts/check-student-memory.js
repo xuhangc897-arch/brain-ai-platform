@@ -209,6 +209,23 @@ const completeState = {
 assert.strictEqual(generator.completionFacts(completeState).completedTaskCount, 8);
 assert.strictEqual(generator.completionFacts(completeState, "memory").posttestKnowledgeComplete, true);
 assert.strictEqual(generator.completionFacts({ maxUnlockedStep: 3, surveys: {} }).completedTaskCount, 3);
+const submittedRecord = {
+  submissionTime: "2026-07-29T01:00:00.000Z",
+  experimentResults: { records: [] },
+  surveys: {
+    meta: completeState.surveys.postMeta,
+    cognitiveLoad: completeState.surveys.cognitiveLoad,
+    inquiryParticipation: completeState.surveys.inquiryParticipation
+  },
+  knowledgeQuiz: { attempts: [{ timestamp: "2026-07-29T01:00:00.000Z" }] }
+};
+assert.strictEqual(generator.completionFacts(generator.fullState(submittedRecord), "memory").completedTaskCount, 8,
+  "a completed normalized submission must remain eligible for memory generation");
+assert.strictEqual(generator.completionFacts(generator.fullState({ ...submittedRecord, surveys: {} }), "memory").completedTaskCount, 0,
+  "a submission without completed surveys must remain incomplete");
+assert.strictEqual(generator.completionFacts(generator.fullState({
+  ...submittedRecord, experimentResults: { maxUnlockedStep: 6 }
+}), "memory").completedTaskCount, 7, "an explicit incomplete progress marker must remain authoritative");
 
 const taskIds = new Set(["question_text", "analysis_text", "reflection_text"]);
 const validSummary = {
@@ -227,6 +244,11 @@ assert.strictEqual(
   generator.validateSummary({ ...validSummary, strengths: [{ code: "COMPARE_RESULTS", evidence: "无来源", sourceTaskIds: ["unknown"] }] }, taskIds),
   null
 );
+assert.deepStrictEqual(generator.parseAiResponse(JSON.stringify({ choices: [{ finish_reason: "stop", message: { content: JSON.stringify(validSummary) } }] })), validSummary);
+assert.throws(() => generator.parseAiResponse(JSON.stringify({ choices: [{ finish_reason: "length", message: { content: '{"strengths":[' } }] })), { code: "AI_RESPONSE_TRUNCATED" });
+assert.throws(() => generator.parseAiResponse(JSON.stringify({ choices: [{ finish_reason: "stop", message: { content: "  " } }] })), { code: "AI_EMPTY_CONTENT" });
+assert.throws(() => generator.parseAiResponse(JSON.stringify({ choices: [{ finish_reason: "stop", message: { content: "{broken" } }] })), { code: "AI_INVALID_JSON" });
+assert(source("cloudfunctions/generateExperimentMemory/index.js").includes('thinking: { type: "disabled" }'));
 
 const cloudbaseConfig = JSON.parse(source("cloudbase.json"));
 for (const name of ["generateExperimentMemory", "getStudentMemory", "getStudentMemoriesAdmin"]) {

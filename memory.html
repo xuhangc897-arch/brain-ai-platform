@@ -85,6 +85,9 @@
     body.is-focus-mode .main > .panel > .panel-head,
     body.is-focus-mode .main > .panel > .panel-body > .actions,
     body.is-focus-mode .memory-toolbar,
+    body.is-focus-mode .evidence-overview,
+    body.is-focus-mode .question-page-head,
+    body.is-focus-mode .question-page-actions,
     body.is-focus-mode .game-log,
     body.is-focus-mode .game-side .stat-grid {
       display: none;
@@ -94,6 +97,11 @@
       min-height: 100vh;
       padding: 0;
     }
+
+    body.is-focus-mode { height: 100dvh; overflow: hidden; }
+    body.is-focus-mode .question-flow { display: block; min-height: 100dvh; gap: 0; }
+    body.is-focus-mode .question-page-content,
+    body.is-focus-mode .evidence-shell { min-height: 100dvh; margin: 0; padding: 0; }
 
     .topbar-inner {
       max-width: 1240px;
@@ -672,18 +680,6 @@
       width: 100%;
       max-height: calc(88vh - 36px);
       object-fit: contain;
-    }
-
-    .headband-modal-close {
-      position: absolute;
-      top: 10px;
-      right: 10px;
-      z-index: 1;
-      width: 38px;
-      min-width: 38px;
-      height: 38px;
-      padding: 0;
-      border-radius: 50%;
     }
 
     .evidence-page .stage {
@@ -1683,6 +1679,7 @@
   </style>
   <link rel="stylesheet" href="assets/experiment-theme.css">
   <script src="assets/experiment-theme.js"></script>
+  <script src="assets/headband-guide.js"></script>
   <link rel="stylesheet" href="assets/ai-assistant.css">
   <link rel="stylesheet" href="assets/voice-assistant.css">
   <link rel="stylesheet" href="assets/memory-partner.css">
@@ -2366,7 +2363,9 @@
           state.knowledgeQuiz = mergeKnowledgeQuiz(state.knowledgeQuiz);
           state.knowledgeQuiz.answers[input.dataset.quizQuestion] = input.value;
           saveState();
-          renderApp();
+          input.closest(".quiz-options")?.querySelectorAll(".quiz-option").forEach((option) => {
+            option.classList.toggle("is-selected", option.querySelector("input")?.checked === true);
+          });
         });
       });
     }
@@ -2430,7 +2429,9 @@
           state.surveys = mergeSurveys(state.surveys);
           state.surveys.current[surveyKey][questionKey] = Number(input.value);
           saveState();
-          renderApp();
+          input.closest(".survey-scale")?.querySelectorAll(".survey-option").forEach((option) => {
+            option.classList.toggle("is-selected", option.querySelector("input")?.checked === true);
+          });
         });
       });
     }
@@ -2732,11 +2733,8 @@
             </article>
             <div class="headband-modal" id="headbandGuideModal" role="dialog" aria-modal="true" aria-label="头环工作原理" tabindex="-1">
               <div class="headband-modal-card">
-                <button class="btn secondary headband-modal-close" type="button" id="closeHeadbandGuide" aria-label="关闭头环工作原理">×</button>
-                <picture>
-                  <source srcset="assets/headband-guide.webp" type="image/webp">
-                  <img src="assets/headband-guide.webp" alt="头环工作原理示意图" width="1536" height="1024" loading="lazy" decoding="async">
-                </picture>
+                <div class="headband-modal-viewport"><img src="assets/headband-guide.webp" alt="头环工作原理示意图" width="1536" height="1024" loading="lazy" decoding="async"></div>
+                <div class="headband-modal-actions"><button class="btn secondary" type="button" data-headband-zoom="out" aria-label="缩小头环图片">−</button><button class="btn secondary" type="button" data-headband-zoom="in" aria-label="放大头环图片">＋</button><button class="btn secondary" type="button" id="closeHeadbandGuide">关闭</button></div>
               </div>
             </div>
           `
@@ -3209,11 +3207,11 @@
       const modal = document.getElementById("headbandGuideModal");
       if (!openButton || !closeButton || !modal) return;
       const closeModal = () => {
-        modal.classList.remove("is-visible");
+        window.HeadbandGuide.close(modal);
         openButton.focus();
       };
       openButton.addEventListener("click", () => {
-        modal.classList.add("is-visible");
+        window.HeadbandGuide.open(modal);
         modal.focus();
       });
       closeButton.addEventListener("click", closeModal);
@@ -3631,6 +3629,7 @@
     }
 
     async function enterFocusMode() {
+      window.scrollTo(0, 0);
       document.body.classList.add("is-focus-mode");
       try {
         if (!document.fullscreenElement && document.documentElement.requestFullscreen) {

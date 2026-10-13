@@ -79,24 +79,32 @@ function fullState(record) {
   if (record && record.experimentResults && typeof record.experimentResults === "object") {
     const quiz = record.knowledgeQuiz || {};
     const attempts = Array.isArray(quiz.attempts) ? quiz.attempts : [];
-    return Object.assign({}, record.experimentResults, {
+    const state = Object.assign({}, record.experimentResults, {
       fields: record.answers || {},
       surveys: { postMeta: record.surveys && record.surveys.meta || {}, cognitiveLoad: record.surveys && record.surveys.cognitiveLoad || {}, inquiryParticipation: record.surveys && record.surveys.inquiryParticipation || {} },
       knowledgeQuiz: Object.assign({}, quiz, { history: attempts, submitted: attempts.length > 0, score: quiz.finalScore })
     });
+    // Existing formal submissions omitted progress; their completed posttest is the retained completion evidence.
+    if (record.submissionTime && !Object.prototype.hasOwnProperty.call(record.experimentResults, "maxUnlockedStep") && surveyComplete(state)) {
+      state.maxUnlockedStep = 7;
+    }
+    return state;
   }
   const data = recordData(record);
   return data.fullState && typeof data.fullState === "object" ? data.fullState : {};
 }
 
-function completed(state) {
+function surveyComplete(state) {
   const surveys = state.surveys || {};
   const counts = { postMeta: 5, cognitiveLoad: 2, inquiryParticipation: 9 };
-  const surveyComplete = Object.entries(counts).every(([key, count]) => {
+  return Object.entries(counts).every(([key, count]) => {
     const values = surveys[key] || {};
     return Array.from({ length: count }, (_, index) => Number(values[`q${index + 1}`]) > 0).every(Boolean);
   });
-  return Number(state.maxUnlockedStep) >= 7 && surveyComplete;
+}
+
+function completed(state) {
+  return Number(state.maxUnlockedStep) >= 7 && surveyComplete(state);
 }
 
 async function readDocument(collection, id) {
@@ -229,4 +237,4 @@ exports.main = async (event) => {
   }
 };
 
-exports.__test = Object.freeze({ completed, studentView, pointerId });
+exports.__test = Object.freeze({ fullState, completed, studentView, pointerId });

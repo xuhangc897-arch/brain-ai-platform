@@ -1375,15 +1375,26 @@
           state.scores[key] = value || "";
           savePosterScoreRecord(element.dataset.score, element.dataset.group, value);
           saveState();
-          renderApp();
-        });
-        element.addEventListener("change", () => {
-          const key = element.dataset.score + "_" + element.dataset.group;
-          const value = Number(element.dataset.value || element.value || 0);
-          state.scores[key] = value || "";
-          savePosterScoreRecord(element.dataset.score, element.dataset.group, value);
-          saveState();
-          renderApp();
+          const indicator = element.closest(".score-indicator");
+          indicator.querySelectorAll(".score-value-btn").forEach((button) => {
+            const selected = button === element;
+            button.classList.toggle("is-selected", selected);
+            button.setAttribute("aria-pressed", String(selected));
+          });
+          indicator.querySelector(".score-current-value").textContent = `${value} 分`;
+          const currentDone = indicators.filter((item) => getScore(item.key, activeScoreGroup)).length;
+          const groups = getPosterGroups();
+          const overallDone = groups.reduce((total, _, index) => total + indicators.filter((item) => getScore(item.key, index + 1)).length, 0);
+          const progress = main.querySelector(".score-progress-card");
+          progress.querySelector("strong").textContent = `${currentDone} / ${indicators.length}`;
+          progress.querySelector(".score-progress-fill").style.width = `${Math.round(currentDone / indicators.length * 100)}%`;
+          progress.querySelectorAll("span")[1].textContent = `整体完成 ${overallDone} / ${indicators.length * groups.length} 项`;
+          const groupButton = main.querySelector(`[data-score-group="${activeScoreGroup}"]`);
+          groupButton.textContent = `${groups[activeScoreGroup - 1]} | ${currentDone}/${indicators.length}`;
+          const summary = summarizeScores();
+          main.querySelectorAll(".summary-grid .summary-card strong").forEach((total, index) => {
+            total.textContent = summary[index].total;
+          });
         });
       });
       main.querySelectorAll("[data-score-group]").forEach((element) => {
@@ -1400,7 +1411,7 @@
         element.addEventListener("click", () => {
           state.fields.bestPoster = element.dataset.bestPoster || "";
           saveState();
-          renderApp();
+          main.querySelectorAll("[data-best-poster]").forEach((button) => button.classList.toggle("is-active", button === element));
         });
       });
       const addQuestion = document.getElementById("addQuestionBtn");
@@ -1461,7 +1472,9 @@
         input.addEventListener("change", () => {
           state.knowledgeDraftT5.answers[input.dataset.knowledgeAnswer] = input.value;
           saveState();
-          renderStep();
+          input.closest(".knowledge-options")?.querySelectorAll(".knowledge-option").forEach((option) => {
+            option.classList.toggle("is-selected", option.querySelector("input")?.checked === true);
+          });
         });
       });
       const previousPosttestPage = document.getElementById("posttestPrevPage");

@@ -813,7 +813,10 @@
           if (state.knowledgeAssessment.T0) return;
           state.knowledgeDraft.answers[input.dataset.pretestQuestion] = input.value;
           saveState();
-          renderKnowledgePretest();
+          input.closest(".knowledge-options")?.querySelectorAll(".survey-option").forEach((option) => {
+            option.classList.toggle("is-selected", option.querySelector("input")?.checked === true);
+          });
+          knowledgePretestStatus.textContent = "已完成 " + Object.keys(state.knowledgeDraft.answers).length + " / 20 题。";
         });
       });
 
@@ -951,7 +954,9 @@
           state.completed = false;
           state.completedAt = "";
           saveState();
-          renderSurvey();
+          input.closest(".survey-scale")?.querySelectorAll(".survey-option").forEach((option) => {
+            option.classList.toggle("is-selected", option.querySelector("input")?.checked === true);
+          });
           renderSummary();
         });
       });
