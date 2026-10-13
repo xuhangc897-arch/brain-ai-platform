@@ -78,6 +78,72 @@ html[data-theme="archive"] {
   --radius: 4px;
 }
 
+html[data-theme="archive"] input[type="checkbox"],
+html[data-theme="archive"] input[type="radio"] {
+  accent-color: var(--primary);
+}
+
+/* The headband guide is moved under body while open so paged cards cannot clip it. */
+.headband-modal {
+  z-index: 1000;
+  padding: 12px;
+}
+
+.headband-modal-card {
+  box-sizing: border-box;
+  display: flex;
+  flex-direction: column;
+  align-items: stretch;
+  width: min(1600px, calc(100vw - 24px));
+  height: calc(100dvh - 24px);
+  max-height: none;
+  min-height: 0;
+  padding: 12px;
+}
+
+.headband-modal-viewport {
+  display: flex;
+  flex: 1;
+  box-sizing: border-box;
+  width: 100%;
+  min-width: 0;
+  min-height: 0;
+  align-items: safe center;
+  justify-content: safe center;
+  overflow: auto;
+}
+
+.headband-modal-viewport img {
+  display: block;
+  flex: none;
+  width: auto;
+  height: auto;
+  max-width: 100%;
+  max-height: 100%;
+  object-fit: contain;
+}
+
+.headband-modal-actions {
+  display: flex;
+  flex: none;
+  justify-content: center;
+  gap: 10px;
+  padding-top: 12px;
+}
+
+.headband-modal-actions .btn {
+  min-width: 56px;
+  min-height: 44px;
+}
+
+@media (min-width: 641px) {
+  body.experiment-page.has-virtual-agent .question-page-actions,
+  body.experiment-page.has-virtual-agent .step-page-actions,
+  body.experiment-page.has-virtual-agent .evidence-page .actions {
+    padding-right: 140px;
+  }
+}
+
 html[data-theme="archive"] body {
   background-color: var(--bg);
   background-image:

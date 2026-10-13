@@ -73,7 +73,10 @@ strategies_q1..q10
 - `getStudentMemoriesAdmin`：验证教师 CloudBase UID，返回教师详细视图。
 - `saveAgentIntervention`：额外接受 `interventionType=memory_support`。
 
+已保存的新版正式提交没有 `maxUnlockedStep`。记忆生成在读取时仅对具有 `submissionTime` 且三份实验后问卷完整的此类提交，推定七个探究环节已完成；若记录明确保留了 `maxUnlockedStep`，仍以该值为准。不修改数据库原记录或 `schemaVersion`。完成实验一后即可生成该实验的学习记忆；学习诊断仍需完成四个实验。
+
 AI输入最多选取研究问题、假设、分析、结论和反思各一段，每段最多800个Unicode字符、合计最多4000字符。AI输出必须通过代码枚举、长度、阶段和来源任务 ID 校验。
+结构化摘要请求使用 DeepSeek 非思考模式和 4000 token 输出上限；空内容、截断和非法 JSON 分别返回稳定错误码，均不写入不完整记忆，也不记录原始模型正文。
 
 ## 部署顺序
 
@@ -84,6 +87,9 @@ AI输入最多选取研究问题、假设、分析、结论和反思各一段，
 5. 再部署 `generateExperimentMemory`、`getStudentMemory`、`getStudentMemoriesAdmin`。
 6. 最后发布静态资源。旧登录会话没有签名令牌，发布后需重新登录一次。
 7. 使用两个学生账号验证互相不可读取，再使用教师白名单账号验证后台查询。
+
+修复既有正式提交的记忆缺失时，应先部署新版 `generateExperimentMemory` 云函数；GitHub Pages 发布不会部署云函数。备份并核对 `experiment_submissions` 中的正式提交后，让同一正式学生账号重新进入下一实验以触发前次记忆生成，再用教师后台查询 `student_memories`。若仍为空，按云函数返回码继续检查 AI、`learning_records` 和函数配置，不直接改写提交或记忆集合。
+2026-10-12 的线上日志显示正式提交已通过完成检查，但 DeepSeek 返回内容无法解析，报 `AI_INVALID_JSON`；是否具体由截断或空内容造成，旧日志无法区分。部署本次生成修复后，保留原正式提交，重试待处理的记忆生成，并用新错误码及集合写入结果复核。
 
 回滚时先回滚静态资源，再回滚云函数。已经生成的 `student_memories` 保留，不应在回滚中删除。
 

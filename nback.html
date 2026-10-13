@@ -1475,6 +1475,8 @@
     body.is-focus-mode { height: 100vh; overflow: hidden; }
     body.is-focus-mode .step-page-flow,
     body.is-focus-mode .step-page-content { min-height: 100vh; }
+    body.is-focus-mode .step-page-flow { display: block; height: 100dvh; gap: 0; }
+    body.is-focus-mode .step-page-content { height: 100dvh; }
     body.is-focus-mode .game-area { display: grid; }
     body:not(.is-focus-mode) .measurement-focus-shell { display: none; }
     body.is-focus-mode .measurement-focus-shell { display: block; }
@@ -1587,6 +1589,7 @@
   </style>
   <link rel="stylesheet" href="assets/experiment-theme.css">
   <script src="assets/experiment-theme.js"></script>
+  <script src="assets/headband-guide.js"></script>
   <link rel="stylesheet" href="assets/ai-assistant.css">
   <link rel="stylesheet" href="assets/voice-assistant.css">
   <link rel="stylesheet" href="assets/memory-partner.css">
@@ -2407,7 +2410,9 @@
           state.knowledgeQuiz = mergeKnowledgeQuiz(state.knowledgeQuiz);
           state.knowledgeQuiz.answers[input.dataset.quizQuestion] = input.value;
           saveState();
-          renderApp();
+          input.closest(".quiz-options")?.querySelectorAll(".quiz-option").forEach((option) => {
+            option.classList.toggle("is-selected", option.querySelector("input")?.checked === true);
+          });
         });
       });
     }
@@ -2471,7 +2476,9 @@
           state.surveys = mergeSurveys(state.surveys);
           state.surveys.current[surveyKey][questionKey] = Number(input.value);
           saveState();
-          renderApp();
+          input.closest(".survey-scale")?.querySelectorAll(".survey-option").forEach((option) => {
+            option.classList.toggle("is-selected", option.querySelector("input")?.checked === true);
+          });
         });
       });
     }
@@ -2947,8 +2954,8 @@
     }
 
     function renderHeadbandModal() {
-      return `<div class="image-modal" id="headbandGuideModal" role="dialog" aria-modal="true" aria-label="头环工作原理" tabindex="-1">
-        <div class="image-modal-card"><button class="btn secondary image-modal-close" type="button" data-close-image-modal aria-label="关闭头环工作原理">×</button><div class="image-modal-body"><picture><source srcset="assets/headband-guide.webp" type="image/webp"><img src="assets/headband-guide.webp" alt="头环工作原理示意图" width="1536" height="1024" loading="lazy" decoding="async"></picture></div></div>
+      return `<div class="image-modal headband-modal" id="headbandGuideModal" role="dialog" aria-modal="true" aria-label="头环工作原理" tabindex="-1">
+        <div class="image-modal-card headband-modal-card"><div class="headband-modal-viewport"><img src="assets/headband-guide.webp" alt="头环工作原理示意图" width="1536" height="1024" loading="lazy" decoding="async"></div><div class="headband-modal-actions"><button class="btn secondary" type="button" data-headband-zoom="out" aria-label="缩小头环图片">−</button><button class="btn secondary" type="button" data-headband-zoom="in" aria-label="放大头环图片">＋</button><button class="btn secondary" type="button" data-close-image-modal>关闭</button></div></div>
       </div>`;
     }
 
@@ -3304,11 +3311,13 @@
         const modal = document.getElementById(button.dataset.openImageModal);
         if (!modal) return;
         const closeModal = () => {
-          modal.classList.remove("is-visible");
+          if (modal.id === "headbandGuideModal") window.HeadbandGuide.close(modal);
+          else modal.classList.remove("is-visible");
           button.focus();
         };
         button.addEventListener("click", () => {
-          modal.classList.add("is-visible");
+          if (modal.id === "headbandGuideModal") window.HeadbandGuide.open(modal);
+          else modal.classList.add("is-visible");
           modal.focus();
         });
         modal.querySelector("[data-close-image-modal]")?.addEventListener("click", closeModal);
@@ -3705,6 +3714,7 @@
     }
 
     async function enterFocusMode() {
+      window.scrollTo(0, 0);
       document.body.classList.add("is-focus-mode");
       try {
         if (!document.fullscreenElement && document.documentElement.requestFullscreen) {

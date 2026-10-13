@@ -192,6 +192,8 @@
     body.is-focus-mode .game-side .stat-grid { display: none; }
     body.is-focus-mode .main > .panel > .panel-body { min-height: 100vh; padding: 0; }
     body.is-focus-mode .question-flow, body.is-focus-mode .question-page-content, body.is-focus-mode .evidence-page, body.is-focus-mode .evidence-page > .panel, body.is-focus-mode .evidence-page > .panel > .panel-body { min-height: 100vh; margin: 0; padding: 0; border: 0; background: #08111f; }
+    body.is-focus-mode { height: 100dvh; overflow: hidden; }
+    body.is-focus-mode .question-flow { gap: 0; }
     body.is-focus-mode .experiment-game { min-height: 100vh; grid-template-columns: 1fr; gap: 0; background: #08111f; }
     body.is-focus-mode .stage { min-height: 100vh; border: 0; border-radius: 0; background: radial-gradient(circle at center, #12213a 0%, #08111f 66%); }
     body.is-focus-mode .stage-meta { top: 30px; left: 36px; right: 36px; color: #dbeafe; font-size: 20px; }
@@ -255,7 +257,6 @@
     .headband-modal.is-visible { display: grid; }
     .headband-modal-card { position: relative; width: min(920px, 92vw); max-height: 88vh; overflow: hidden; border: 1px solid var(--line); border-radius: 10px; padding: 18px; background: var(--panel); box-shadow: 0 28px 90px rgba(0,0,0,.3); }
     .headband-modal-card img { display: block; width: 100%; max-height: calc(88vh - 36px); object-fit: contain; }
-    .headband-modal-close { position: absolute; top: 10px; right: 10px; z-index: 1; width: 38px; min-width: 38px; height: 38px; padding: 0; }
 
     @keyframes question-page-fade-in { from { opacity: 0; } to { opacity: 1; } }
     @keyframes question-page-fade-out { from { opacity: 1; } to { opacity: 0; } }
@@ -418,6 +419,7 @@
   </style>
   <link rel="stylesheet" href="assets/experiment-theme.css">
   <script src="assets/experiment-theme.js"></script>
+  <script src="assets/headband-guide.js"></script>
   <link rel="stylesheet" href="assets/ai-assistant.css">
   <link rel="stylesheet" href="assets/voice-assistant.css">
   <link rel="stylesheet" href="assets/memory-partner.css">
@@ -1335,7 +1337,9 @@
           state.knowledgeQuiz = mergeKnowledgeQuiz(state.knowledgeQuiz);
           state.knowledgeQuiz.answers[input.dataset.quizQuestion] = input.value;
           saveState();
-          renderApp();
+          input.closest(".quiz-options")?.querySelectorAll(".quiz-option").forEach((option) => {
+            option.classList.toggle("is-selected", option.querySelector("input")?.checked === true);
+          });
         });
       });
     }
@@ -1399,7 +1403,9 @@
           state.surveys = mergeSurveys(state.surveys);
           state.surveys.current[surveyKey][questionKey] = Number(input.value);
           saveState();
-          renderApp();
+          input.closest(".survey-scale")?.querySelectorAll(".survey-option").forEach((option) => {
+            option.classList.toggle("is-selected", option.querySelector("input")?.checked === true);
+          });
         });
       });
     }
@@ -1615,7 +1621,7 @@
         {
           title: "实验材料四：头环使用说明",
           className: "headband-page",
-          content: () => `<article class="reading-card"><h4>头环工作原理与注意事项</h4><p>头环会在电脑上生成 3D 脑激活图。红—黄色代表脑区活动较强，蓝—冷色代表抑制或变化较弱，可辅助观察不同实验阶段的大脑活动。</p><p>使用时保持额头清洁、电极贴片贴紧；实验过程中保持专注，并记录记忆、干扰和测试阶段的颜色变化。</p><button class="btn secondary headband-guide-trigger" type="button" id="openHeadbandGuide">点击查看头环工作原理图</button></article><div class="headband-modal" id="headbandGuideModal" role="dialog" aria-modal="true" aria-label="头环工作原理" tabindex="-1"><div class="headband-modal-card"><button class="btn secondary headband-modal-close" type="button" id="closeHeadbandGuide" aria-label="关闭头环工作原理图">×</button><picture><source srcset="assets/headband-guide.webp" type="image/webp"><img src="assets/headband-guide.webp" alt="头环工作原理示意图" width="1536" height="1024" loading="lazy" decoding="async"></picture></div></div>`
+          content: () => `<article class="reading-card"><h4>头环工作原理与注意事项</h4><p>头环会在电脑上生成 3D 脑激活图。红—黄色代表脑区活动较强，蓝—冷色代表抑制或变化较弱，可辅助观察不同实验阶段的大脑活动。</p><p>使用时保持额头清洁、电极贴片贴紧；实验过程中保持专注，并记录记忆、干扰和测试阶段的颜色变化。</p><button class="btn secondary headband-guide-trigger" type="button" id="openHeadbandGuide">点击查看头环工作原理图</button></article><div class="headband-modal" id="headbandGuideModal" role="dialog" aria-modal="true" aria-label="头环工作原理" tabindex="-1"><div class="headband-modal-card"><div class="headband-modal-viewport"><img src="assets/headband-guide.webp" alt="头环工作原理示意图" width="1536" height="1024" loading="lazy" decoding="async"></div><div class="headband-modal-actions"><button class="btn secondary" type="button" data-headband-zoom="out" aria-label="缩小头环图片">−</button><button class="btn secondary" type="button" data-headband-zoom="in" aria-label="放大头环图片">＋</button><button class="btn secondary" type="button" id="closeHeadbandGuide">关闭</button></div></div></div>`
         },
         {
           title: "变量设计",
@@ -1894,10 +1900,10 @@
       const closeButton = document.getElementById("closeHeadbandGuide");
       if (!modal || !openButton || !closeButton) return;
       const closeModal = () => {
-        modal.classList.remove("is-visible");
+        window.HeadbandGuide.close(modal);
         openButton.focus();
       };
-      openButton.addEventListener("click", () => { modal.classList.add("is-visible"); modal.focus(); });
+      openButton.addEventListener("click", () => { window.HeadbandGuide.open(modal); modal.focus(); });
       closeButton.addEventListener("click", closeModal);
       modal.addEventListener("click", (event) => { if (event.target === modal) closeModal(); });
       modal.addEventListener("keydown", (event) => { if (event.key === "Escape") closeModal(); });
@@ -2212,6 +2218,7 @@
       log.innerHTML = state.records.length ? state.records.slice().reverse().map((record)=>`<tr><td>${record.round}</td><td>${escapeHtml(record.condition)}</td><td>${record.correctCount}/${record.itemCount}</td><td><span class="tag">${record.accuracy}%</span></td></tr>`).join("") : `<tr><td colspan="4">暂无记录</td></tr>`;
     }
     async function enterFocusMode() {
+      window.scrollTo(0, 0);
       document.body.classList.add("is-focus-mode");
       try { if (!document.fullscreenElement && document.documentElement.requestFullscreen) await document.documentElement.requestFullscreen(); } catch (event) {}
     }

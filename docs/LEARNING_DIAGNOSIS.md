@@ -44,6 +44,8 @@ generatedAt, createdAt, updatedAt
 - `sourceFactsHash` 未变化时直接返回当前版本；发生变化时生成新的不可变版本。
 - AI失败、来源变化或结构校验失败时不移动当前指针，也不覆盖历史诊断。
 
+新版正式提交未保存 `maxUnlockedStep` 时，诊断生成和学生端资格读取与实验记忆采用相同的读取兼容规则：只有 `submissionTime` 和三份完整实验后问卷都存在才推定七个探究环节完成；明确保存的进度字段优先。此兼容逻辑不写回历史提交。仅完成实验一时，教师后台显示 0 条学习诊断符合预期。
+
 ## 诊断维度
 
 固定包含：
@@ -69,6 +71,7 @@ tool_use
 - `getLearningDiagnosesAdmin`：要求教师CloudBase UID白名单，返回详细诊断和历史版本。
 
 `generateLearningDiagnosis` 需要 `STUDENT_SESSION_SECRET` 和 `OPENAI_API_KEY`；`getLearningDiagnosis` 需要相同的 `STUDENT_SESSION_SECRET`。
+诊断的结构化 JSON 请求使用 DeepSeek 非思考模式和 6000 token 输出上限；空内容、截断和非法 JSON 分别返回稳定错误码。仅完成实验一时不触发诊断生成，`learning_diagnoses` 为空是预期状态。
 
 ## 部署
 
@@ -78,6 +81,8 @@ tool_use
 4. 为 `generateLearningDiagnosis` 和 `getLearningDiagnosis` 配置HTTP路径。
 5. 发布静态资源。
 6. 用两个学生账号验证隔离，用教师账号验证最新版和历史版本。
+
+部署记忆兼容修复时，先更新 `generateExperimentMemory`，再更新 `generateLearningDiagnosis` 和 `getLearningDiagnosis`；四份实验记忆与最新正式提交匹配后才可生成诊断。三个云函数需单独部署，静态 Pages 构建不会包含它们。
 
 ## 本地验证
 

@@ -282,15 +282,38 @@
       return null;
     }
 
+    function positionMenu() {
+      if (!root.classList.contains("is-menu-open")) return;
+      if (window.matchMedia("(max-width: 640px)").matches) {
+        for (const property of ["left", "top", "right", "bottom"]) menu.style.removeProperty(property);
+        return;
+      }
+      const launcherRect = launcher.getBoundingClientRect();
+      const width = menu.offsetWidth;
+      const height = menu.offsetHeight;
+      const maxLeft = Math.max(DRAG_MARGIN, window.innerWidth - width - DRAG_MARGIN);
+      const maxTop = Math.max(DRAG_MARGIN, window.innerHeight - height - DRAG_MARGIN);
+      const above = launcherRect.top - height - 10;
+      const top = above >= DRAG_MARGIN ? above : launcherRect.bottom + 10;
+      menu.style.left = `${clamp(launcherRect.right - width, DRAG_MARGIN, maxLeft)}px`;
+      menu.style.top = `${clamp(top, DRAG_MARGIN, maxTop)}px`;
+      menu.style.right = "auto";
+      menu.style.bottom = "auto";
+    }
+
     function positionOpenPanel() {
       const panel = getOpenPanel();
       if (!panel) return;
+      if (window.matchMedia("(max-width: 640px)").matches) {
+        for (const property of ["left", "top", "right", "bottom"]) panel.style.removeProperty(property);
+        return;
+      }
 
       const launcherRect = launcher.getBoundingClientRect();
       const panelWidth = panel.offsetWidth || panel.getBoundingClientRect().width;
       const panelHeight = panel.offsetHeight || panel.getBoundingClientRect().height;
-      const maxLeft = window.innerWidth - panelWidth - DRAG_MARGIN;
-      const maxTop = window.innerHeight - panelHeight - DRAG_MARGIN;
+      const maxLeft = Math.max(DRAG_MARGIN, window.innerWidth - panelWidth - DRAG_MARGIN);
+      const maxTop = Math.max(DRAG_MARGIN, window.innerHeight - panelHeight - DRAG_MARGIN);
       const aboveTop = launcherRect.top - panelHeight - 12;
       const belowTop = launcherRect.bottom + 12;
       const leftSide = launcherRect.left - panelWidth - 12;
@@ -323,6 +346,7 @@
       root.style.right = "auto";
       root.style.bottom = "auto";
       positionOpenPanel();
+      positionMenu();
     }
 
     function onPointerMove(event) {
@@ -514,6 +538,7 @@
       launcher.setAttribute("aria-label", `${open ? "关闭" : "打开"}${PARTNER_NAME}`);
       menu.setAttribute("aria-hidden", String(!open));
       if (!open) showMenuView();
+      if (open) positionMenu();
       if (open && options.focus !== false) {
         window.requestAnimationFrame(() => {
           root.querySelector(".memory-partner-action:not(:disabled)")?.focus();
@@ -653,6 +678,7 @@
       if (mode === "task") renderTask();
       if (mode === "memory") renderStudentMemory();
       if (mode === "diagnosis") renderDiagnosis();
+      window.requestAnimationFrame(positionMenu);
     }
 
     document.addEventListener("student-memory:updated", () => {
@@ -781,6 +807,7 @@
       } else {
         positionOpenPanel();
       }
+      positionMenu();
     });
 
     if (aiAssistant) {

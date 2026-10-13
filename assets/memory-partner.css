@@ -371,7 +371,7 @@
 }
 
 .memory-partner-menu {
-  position: absolute;
+  position: fixed;
   right: 0;
   bottom: calc(100% + 10px);
   display: none;

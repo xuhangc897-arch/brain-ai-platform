@@ -81,12 +81,17 @@ function fullState(record) {
     const quiz = record.knowledgeQuiz || {};
     const attempts = Array.isArray(quiz.attempts) ? quiz.attempts : [];
     const last = attempts[attempts.length - 1] || {};
-    return Object.assign({}, record.experimentResults, {
+    const state = Object.assign({}, record.experimentResults, {
       fields: record.answers || {},
       knowledgeAssessment: record.knowledgeAssessment || null,
       surveys: { postMeta: record.surveys && record.surveys.meta || {}, cognitiveLoad: record.surveys && record.surveys.cognitiveLoad || {}, inquiryParticipation: record.surveys && record.surveys.inquiryParticipation || {} },
       knowledgeQuiz: Object.assign({}, quiz, { history: attempts.map((item) => Object.assign({}, item, { submittedAt: item.timestamp || item.submittedAt || "" })), submitted: attempts.length > 0, score: quiz.finalScore, correctCount: last.correctCount || 0, submittedAt: last.timestamp || "" })
     });
+    // Existing formal submissions omitted progress; their completed posttest is the retained completion evidence.
+    if (record.submissionTime && !Object.prototype.hasOwnProperty.call(record.experimentResults, "maxUnlockedStep") && surveyComplete(state)) {
+      state.maxUnlockedStep = 7;
+    }
+    return state;
   }
   const data = recordData(record);
   return data.fullState && typeof data.fullState === "object" ? data.fullState : {};
@@ -304,6 +309,22 @@ function validateSummary(value, allowedTaskIds = new Set()) {
   };
 }
 
+function parseAiResponse(responseBody) {
+  let response;
+  try { response = JSON.parse(responseBody); }
+  catch (error) { throw Object.assign(new Error("AI response invalid"), { code: "AI_INVALID_JSON" }); }
+  const choice = response && response.choices && response.choices[0];
+  if (choice && choice.finish_reason === "length") {
+    throw Object.assign(new Error("AI response truncated"), { code: "AI_RESPONSE_TRUNCATED" });
+  }
+  const content = choice && choice.message && choice.message.content;
+  if (typeof content !== "string" || !content.trim()) {
+    throw Object.assign(new Error("AI response empty"), { code: "AI_EMPTY_CONTENT" });
+  }
+  try { return JSON.parse(content); }
+  catch (error) { throw Object.assign(new Error("AI response invalid"), { code: "AI_INVALID_JSON" }); }
+}
+
 function callAi(input) {
   return new Promise((resolve, reject) => {
     if (!process.env.OPENAI_API_KEY) return reject(Object.assign(new Error("AI unavailable"), { code: "AI_NOT_CONFIGURED" }));
@@ -313,14 +334,16 @@ function callAi(input) {
       "所有判断必须引用sourceTaskIds。只返回JSON，不要Markdown。",
       "code只能使用FORM_QUESTION、DESIGN_INQUIRY、COMPARE_RESULTS、USE_EVIDENCE、FORM_CONCLUSION、REFLECT_REVISE、EXPRESS_IDEAS、INPUT_SUPPORT。",
       "nextSupport.stageId只能使用question、hypothesis、plan、evidence、analysis、conclusion、reflection、posttest。",
-      "supportType只能使用question_prompt、evidence_prompt、comparison_prompt、reflection_prompt、voice_optional。"
+      "supportType只能使用question_prompt、evidence_prompt、comparison_prompt、reflection_prompt、voice_optional。",
+      'JSON字段结构示例：{"strengths":[],"needsSupport":[],"inquiryPerformance":{},"evidenceUse":{},"reflectionPerformance":{},"inputSupport":{},"interventionResponse":{},"nextSupport":[],"changesFromPrevious":[]}。示例仅展示字段，必须按输入事实填充；sourceTaskIds只能使用studentWorkSamples中的taskId。'
     ].join("\n");
     const body = JSON.stringify({
       model: MODEL,
       messages: [{ role: "system", content: system }, { role: "user", content: JSON.stringify(input) }],
       response_format: { type: "json_object" },
+      thinking: { type: "disabled" },
       temperature: 0.1,
-      max_tokens: 1800
+      max_tokens: 4000
     });
     const request = https.request({
       hostname: "api.deepseek.com",
@@ -334,8 +357,8 @@ function callAi(input) {
       response.on("data", (chunk) => { responseBody += chunk; if (responseBody.length > 200000) request.destroy(); });
       response.on("end", () => {
         if (response.statusCode < 200 || response.statusCode >= 300) return reject(Object.assign(new Error("AI service error"), { code: `AI_HTTP_${response.statusCode}` }));
-        try { resolve(JSON.parse(JSON.parse(responseBody).choices[0].message.content)); }
-        catch (error) { reject(Object.assign(new Error("AI response invalid"), { code: "AI_INVALID_JSON" })); }
+        try { resolve(parseAiResponse(responseBody)); }
+        catch (error) { reject(error); }
       });
     });
     request.on("timeout", () => request.destroy(Object.assign(new Error("AI timeout"), { code: "AI_TIMEOUT" })));
@@ -479,10 +502,12 @@ exports.main = async (event) => {
 };
 
 exports.__test = Object.freeze({
+  fullState,
   completionFacts,
   performanceFacts,
   scorePretest,
   validateSummary,
+  parseAiResponse,
   buildOverall,
   memoryId
 });
