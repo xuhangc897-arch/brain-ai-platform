@@ -339,4 +339,5 @@
 
 - `experimentReportArchive` 的 Chromium 启动模式须与 `@sparticuz/chromium` 的 headless shell 匹配；更换浏览器版本或部署方式后，用正式测试账号验证实际 PDF 生成，不能只凭函数状态为 Active 判断成功。
 - PDF 生成与 `browser.close()` 有先后依赖：在 `try/finally` 中须先 `await page.pdf()`，再关闭浏览器；用延迟完成的 PDF Promise 回归验证这个顺序。
+- 归档云存储上传只接受 Node.js `Buffer` 或文件流；Puppeteer 返回的 `Uint8Array` 必须显式转换，并在测试中验证类型。
 - 档案列表成功与 PDF 生成成功分别验收；归档失败只向学生显示稳定错误码，排障时从云端日志读取错误类型，避免输出学生报告或令牌。

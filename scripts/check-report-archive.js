@@ -74,8 +74,10 @@ const authorized = (body) => ({ headers: { Authorization: `Bearer ${payload}.${s
   const rendering = sandbox.exports.__test.renderPdf({ experimentId: "memory" });
   await pdfStarted;
   assert.strictEqual(browserClosed, false, "browser must remain open until PDF generation finishes");
-  resolvePdf(Buffer.from("pdf"));
-  assert.strictEqual((await rendering).toString(), "pdf");
+  resolvePdf(new Uint8Array(Buffer.from("pdf")));
+  const renderedPdf = await rendering;
+  assert.strictEqual(Buffer.isBuffer(renderedPdf), true, "CloudBase upload requires a Buffer");
+  assert.strictEqual(renderedPdf.toString(), "pdf");
   assert.strictEqual(browserClosed, true);
   assert.match(source, /page\.pdf\(/);
   assert.match(source, /app\.uploadFile\(/);

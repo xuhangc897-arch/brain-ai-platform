@@ -1224,3 +1224,8 @@ GitHub 仓库 `Settings → Pages → Build and deployment → Source` 必须从
 - 学生端重试后云端仍报 `Page.printToPDF: Target closed` 与 `FUNCTIONS_INVOCATION_FAIL`。根因是 `renderPdf()` 在 `try/finally` 内直接返回 `page.pdf()` Promise，`finally` 随即关闭浏览器。
 - 改为等待 PDF Promise 完成后才关闭浏览器，并新增延迟 PDF 的回归检查。只影响报告归档，不改变实验步骤、作答、评分、正式提交或既有 PDF。
 - 修复代码已更新到 CloudBase，函数状态为 Active，原有环境变量名称保留；仍需用正式测试账号验证 PDF 文件、归档记录和站内查看。回滚仅需恢复上一版归档函数代码。
+
+# 2026-10-14｜PDF 生成后云存储上传类型修复
+
+- 学生重试后浏览器已完成 PDF 渲染，云端日志定位到 CloudBase 拒绝 `Uint8Array` 类型的 `fileContent`。将 PDF 转为 Node.js `Buffer` 后上传，并扩展归档回归测试验证返回类型。
+- 仅修改归档云函数及其测试、部署说明；不改正式提交、实验流程或已有报告。部署后仍须用正式学生账号验证云存储、归档记录和站内查看。

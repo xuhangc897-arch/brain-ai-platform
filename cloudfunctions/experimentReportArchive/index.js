@@ -95,7 +95,7 @@ async function renderPdf(submission) {
     const rendered = await page.evaluate((record) => window.BrainReportArchive?.render(record) === true, submission);
     if (!rendered) throw new Error("REPORT_RENDER_FAILED");
     await page.evaluate(() => document.fonts.ready);
-    return await page.pdf({ format: "A4", printBackground: true, preferCSSPageSize: true });
+    return Buffer.from(await page.pdf({ format: "A4", printBackground: true, preferCSSPageSize: true }));
   } finally {
     await browser.close();
   }
