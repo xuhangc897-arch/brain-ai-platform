@@ -1218,3 +1218,9 @@ GitHub 仓库 `Settings → Pages → Build and deployment → Source` 必须从
 - 案件五的“读取实验数据”入口圆标改为 0，原“制定初步方案”仍为第 1 步，步骤数量、解锁与实验数据不变。
 - 云端日志显示 PDF 生成时 Chromium 返回 `TargetCloseError`；归档函数原来以普通 headless 模式启动专用 headless shell，现按浏览器包官方用法改为 shell 模式。失败卡片显示稳定错误码以便后续定位。
 - `experimentReportArchive` 代码包已重建并更新到 CloudBase；函数状态为 Active，环境变量名称保留，匿名调用返回 `UNAUTHORIZED`。仍需用正式测试账号实际生成并在案件五查看 PDF，核对中文字体、云存储文件和归档记录。静态页面改动尚未发布：本机 GitHub CLI 凭据失效，GitHub 连接创建分支返回 403。回滚可恢复上一版函数代码及本次静态页面修改，不涉及数据迁移。
+
+# 2026-10-14｜PDF 生成时浏览器提前关闭
+
+- 学生端重试后云端仍报 `Page.printToPDF: Target closed` 与 `FUNCTIONS_INVOCATION_FAIL`。根因是 `renderPdf()` 在 `try/finally` 内直接返回 `page.pdf()` Promise，`finally` 随即关闭浏览器。
+- 改为等待 PDF Promise 完成后才关闭浏览器，并新增延迟 PDF 的回归检查。只影响报告归档，不改变实验步骤、作答、评分、正式提交或既有 PDF。
+- 修复代码已更新到 CloudBase，函数状态为 Active，原有环境变量名称保留；仍需用正式测试账号验证 PDF 文件、归档记录和站内查看。回滚仅需恢复上一版归档函数代码。

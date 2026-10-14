@@ -22,4 +22,5 @@
 
 - 档案列表能显示“正式数据已提交，PDF 待生成”，只证明查询成功；点击生成后仍需检查 `experimentReportArchive` 的云函数日志。当前 CLI 使用 `tcb logs search`，旧版 `tcb fn log` 接口已下线。
 - `@sparticuz/chromium` 提供 headless shell。Puppeteer 启动时使用 `headless: "shell"`，并以同一模式构造 `defaultArgs`；普通 `headless: true` 会造成浏览器目标关闭等错误。
+- `renderPdf()` 必须等待 `page.pdf()` 完成后再执行 `finally` 中的 `browser.close()`。直接 `return page.pdf()` 会过早关闭浏览器，引发 `Page.printToPDF: Target closed` 或 `FUNCTIONS_INVOCATION_FAIL`。
 - 更新函数代码后，确认 `STUDENT_SESSION_SECRET` 和 `REPORT_RENDER_URL` 仍存在，重试一份测试报告，再核对云存储、归档记录、中文文字和页面内 PDF 查看。静态页面的“0”步骤标识及错误提示须随整站构建发布。

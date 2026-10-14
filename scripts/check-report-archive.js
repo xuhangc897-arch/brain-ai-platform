@@ -14,6 +14,19 @@ const records = [
   { studentId: "s-2", experimentId: "memory", submissionId: "memory-s-2", uploadedAt: 3 }
 ];
 const legacyRecords = [{ studentId: "s-1", module: "nback", recordType: "submission", clientRecordId: "legacy-nback-s-1", data: { fullState: { studentName: "Student", fields: { question: "Q" } } } }];
+let resolvePdf;
+let startedPdf;
+const pdfStarted = new Promise((resolve) => { startedPdf = resolve; });
+let browserClosed = false;
+const browser = {
+  async newPage() { return {
+    async setViewport() {},
+    async goto() {},
+    async evaluate() { return true; },
+    pdf() { startedPdf(); return new Promise((resolve) => { resolvePdf = resolve; }); }
+  }; },
+  async close() { browserClosed = true; }
+};
 const app = {
   database: () => ({
     collection(name) {
@@ -35,8 +48,12 @@ const app = {
   getTempFileURL: async () => ({ fileList: [] })
 };
 const sandbox = {
-  require: (name) => name === "crypto" ? crypto : name === "@cloudbase/node-sdk" ? { init: () => app, SYMBOL_CURRENT_ENV: "test" } : require(name),
-  process: { env: { STUDENT_SESSION_SECRET: secret } },
+  require: (name) => name === "crypto" ? crypto
+    : name === "@cloudbase/node-sdk" ? { init: () => app, SYMBOL_CURRENT_ENV: "test" }
+    : name === "puppeteer-core" ? { defaultArgs: async () => [], launch: async () => browser }
+    : name === "@sparticuz/chromium" ? { args: [], executablePath: async () => "/tmp/chromium" }
+    : require(name),
+  process: { env: { STUDENT_SESSION_SECRET: secret, REPORT_RENDER_URL: "https://example.com/review.html" } },
   Buffer, URL, console,
   exports: {}
 };
@@ -54,6 +71,12 @@ const authorized = (body) => ({ headers: { Authorization: `Bearer ${payload}.${s
   assert.strictEqual(list.items[1].submitted, true, "legacy formal submissions remain available");
   assert.strictEqual(list.items[1].submissionId, "legacy-nback-s-1");
   assert.strictEqual((await sandbox.exports.main(authorized({ action: "generate", experimentId: "memory", submissionId: "memory-s-2" }))).code, "NOT_FOUND");
+  const rendering = sandbox.exports.__test.renderPdf({ experimentId: "memory" });
+  await pdfStarted;
+  assert.strictEqual(browserClosed, false, "browser must remain open until PDF generation finishes");
+  resolvePdf(Buffer.from("pdf"));
+  assert.strictEqual((await rendering).toString(), "pdf");
+  assert.strictEqual(browserClosed, true);
   assert.match(source, /page\.pdf\(/);
   assert.match(source, /app\.uploadFile\(/);
   const poster = fs.readFileSync(path.join(root, "poster.html"), "utf8");
