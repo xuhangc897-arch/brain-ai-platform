@@ -19,7 +19,7 @@ const DIMENSION_IDS = Object.freeze([
 ]);
 const LEVELS = new Set(["consistent", "developing", "support_recommended", "insufficient_data"]);
 const DIRECTIONS = new Set(["improved", "stable", "mixed", "needs_support", "insufficient_data"]);
-const MODEL = "deepseek-v4-flash";
+const MODEL = "deepseek-flash";
 const PROMPT_VERSION = 1;
 const DISCLAIMER = "本诊断仅基于本平台中的学习过程和任务表现，用于教学支持，不构成心理或医学诊断。";
 const BANNED_PHRASES = ["能力差", "不认真", "依赖AI", "依赖 AI", "心理障碍", "医学诊断", "心理诊断", "智力低", "懒惰"];

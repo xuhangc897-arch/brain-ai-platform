@@ -25,4 +25,5 @@
 - `renderPdf()` 必须等待 `page.pdf()` 完成后再执行 `finally` 中的 `browser.close()`。直接 `return page.pdf()` 会过早关闭浏览器，引发 `Page.printToPDF: Target closed` 或 `FUNCTIONS_INVOCATION_FAIL`。
 - Puppeteer 的 `page.pdf()` 结果须转换成 Node.js `Buffer` 后交给 CloudBase `uploadFile`；直接传入 `Uint8Array` 会触发 `fileContent should be instance of fs.ReadStream or Buffer`。
 - 新建的 COS 存储桶默认域名可能强制下载 PDF；不能将临时文件 URL 直接放入 iframe。案件五调用归档函数的 `view` 动作，按签名学生令牌和提交 ID 校验归属，再读取 PDF 并返回 Base64；网页转换为 `application/pdf` Blob 地址预览。函数同步响应限制为 6 MB，单份 PDF 超过 4 MB 时返回 `PDF_TOO_LARGE`，需另行选择流式查看方案。
+- 若四张卡片都显示 `PDF 打开失败（INVALID_REQUEST）`，先核对 `view` 是否接受正式提交编号中的 `|`。2026-10-14 修正版只要求提交编号非空且长度不超过 256，服务端仍须从当前学生的正式提交查询，并校验归档归属。把更新后的 `output/cloudbase/experimentReportArchive.zip` 上传到现有函数，保留原函数配置及两个环境变量；无需重新生成已有 PDF、改动存储规则或新建网关路由。
 - 更新函数代码后，确认 `STUDENT_SESSION_SECRET` 和 `REPORT_RENDER_URL` 仍存在，重试一份测试报告，再核对云存储、归档记录、中文文字和页面内 PDF 查看。静态页面的“0”步骤标识及错误提示须随整站构建发布。

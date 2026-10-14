@@ -9,9 +9,11 @@ const vm = require("vm");
 const root = path.join(__dirname, "..");
 const source = fs.readFileSync(path.join(root, "cloudfunctions", "experimentReportArchive", "index.js"), "utf8");
 const secret = "report-archive-test-secret-with-more-than-32-characters";
+const submissionId = "memory|s-1|2026-10-14T12:00:00.000Z";
+const otherSubmissionId = "memory|s-2|2026-10-14T12:00:00.000Z";
 const records = [
-  { studentId: "s-1", experimentId: "memory", submissionId: "memory-s-1", uploadedAt: 2 },
-  { studentId: "s-2", experimentId: "memory", submissionId: "memory-s-2", uploadedAt: 3 }
+  { studentId: "s-1", experimentId: "memory", submissionId, uploadedAt: 2 },
+  { studentId: "s-2", experimentId: "memory", submissionId: otherSubmissionId, uploadedAt: 3 }
 ];
 const legacyRecords = [{ studentId: "s-1", module: "nback", recordType: "submission", clientRecordId: "legacy-nback-s-1", data: { fullState: { studentName: "Student", fields: { question: "Q" } } } }];
 const archiveDocs = {};
@@ -72,23 +74,26 @@ const authorized = (body) => ({ headers: { Authorization: `Bearer ${payload}.${s
   const list = await sandbox.exports.main(authorized({ action: "list" }));
   assert.strictEqual(list.items.length, 4);
   assert.strictEqual(list.items[0].submitted, true);
+  assert.strictEqual(list.items[0].submissionId, submissionId, "the list returns the actual pipe-delimited submission ID");
   assert.strictEqual(list.items[1].submitted, true, "legacy formal submissions remain available");
   assert.strictEqual(list.items[1].submissionId, "legacy-nback-s-1");
-  assert.strictEqual((await sandbox.exports.main(authorized({ action: "generate", experimentId: "memory", submissionId: "memory-s-2" }))).code, "NOT_FOUND");
-  assert.strictEqual((await sandbox.exports.main(authorized({ action: "view", experimentId: "memory", submissionId: "memory-s-2" }))).code, "NOT_FOUND");
-  assert.strictEqual((await sandbox.exports.main(authorized({ action: "view", experimentId: "memory", submissionId: "memory-s-1" }))).code, "NOT_FOUND");
-  const ownArchiveId = sandbox.exports.__test.archiveId("s-1", "memory-s-1");
-  archiveDocs[ownArchiveId] = { studentId: "s-2", experimentId: "memory", submissionId: "memory-s-1", fileID: "cloud://private/report.pdf" };
-  assert.strictEqual((await sandbox.exports.main(authorized({ action: "view", experimentId: "memory", submissionId: "memory-s-1" }))).code, "NOT_FOUND", "a mismatched archive owner must not be served");
+  assert.strictEqual((await sandbox.exports.main(authorized({ action: "view", experimentId: "memory", submissionId: "" }))).code, "INVALID_REQUEST");
+  assert.strictEqual((await sandbox.exports.main(authorized({ action: "view", experimentId: "poster", submissionId }))).code, "INVALID_REQUEST");
+  assert.strictEqual((await sandbox.exports.main(authorized({ action: "generate", experimentId: "memory", submissionId: otherSubmissionId }))).code, "NOT_FOUND");
+  assert.strictEqual((await sandbox.exports.main(authorized({ action: "view", experimentId: "memory", submissionId: otherSubmissionId }))).code, "NOT_FOUND");
+  assert.strictEqual((await sandbox.exports.main(authorized({ action: "view", experimentId: "memory", submissionId }))).code, "NOT_FOUND");
+  const ownArchiveId = sandbox.exports.__test.archiveId("s-1", submissionId);
+  archiveDocs[ownArchiveId] = { studentId: "s-2", experimentId: "memory", submissionId, fileID: "cloud://private/report.pdf" };
+  assert.strictEqual((await sandbox.exports.main(authorized({ action: "view", experimentId: "memory", submissionId }))).code, "NOT_FOUND", "a mismatched archive owner must not be served");
   archiveDocs[ownArchiveId].studentId = "s-1";
-  const viewed = await sandbox.exports.main(authorized({ action: "view", experimentId: "memory", submissionId: "memory-s-1" }));
+  const viewed = await sandbox.exports.main(authorized({ action: "view", experimentId: "memory", submissionId }));
   assert.strictEqual(viewed.ok, true);
   assert.strictEqual(downloadedFileID, "cloud://private/report.pdf");
   assert.strictEqual(Buffer.from(viewed.pdfBase64, "base64").toString(), "%PDF-1.7 test");
   downloadedContent = Buffer.from("not a PDF");
-  assert.strictEqual((await sandbox.exports.main(authorized({ action: "view", experimentId: "memory", submissionId: "memory-s-1" }))).code, "VIEW_FAILED");
+  assert.strictEqual((await sandbox.exports.main(authorized({ action: "view", experimentId: "memory", submissionId }))).code, "VIEW_FAILED");
   downloadedContent = Buffer.concat([Buffer.from("%PDF-"), Buffer.alloc(4 * 1024 * 1024)]);
-  assert.strictEqual((await sandbox.exports.main(authorized({ action: "view", experimentId: "memory", submissionId: "memory-s-1" }))).code, "PDF_TOO_LARGE");
+  assert.strictEqual((await sandbox.exports.main(authorized({ action: "view", experimentId: "memory", submissionId }))).code, "PDF_TOO_LARGE");
   const rendering = sandbox.exports.__test.renderPdf({ experimentId: "memory" });
   await pdfStarted;
   assert.strictEqual(browserClosed, false, "browser must remain open until PDF generation finishes");

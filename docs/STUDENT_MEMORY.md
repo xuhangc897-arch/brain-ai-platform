@@ -88,8 +88,10 @@ AI输入最多选取研究问题、假设、分析、结论和反思各一段，
 6. 最后发布静态资源。旧登录会话没有签名令牌，发布后需重新登录一次。
 7. 使用两个学生账号验证互相不可读取，再使用教师白名单账号验证后台查询。
 
-修复既有正式提交的记忆缺失时，应先部署新版 `generateExperimentMemory` 云函数；GitHub Pages 发布不会部署云函数。备份并核对 `experiment_submissions` 中的正式提交后，让同一正式学生账号重新进入下一实验以触发前次记忆生成，再用教师后台查询 `student_memories`。若仍为空，按云函数返回码继续检查 AI、`learning_records` 和函数配置，不直接改写提交或记忆集合。
+修复既有正式提交的记忆缺失时，应先部署新版 `generateExperimentMemory` 云函数；静态站点发布不会部署云函数。备份并核对 `experiment_submissions` 中的正式提交后，让同一正式学生账号进入案件五或独立诊断页：两个入口都会加载 `student-memory.js`，按前四次实验的正式提交重试记忆生成。随后查看助手的“我的学习记录”及教师后台的 `student_memories`。若仍为空，按云函数返回码继续检查 AI、`learning_records` 和函数配置，不直接改写提交或记忆集合。
 2026-10-12 的线上日志显示正式提交已通过完成检查，但 DeepSeek 返回内容无法解析，报 `AI_INVALID_JSON`；是否具体由截断或空内容造成，旧日志无法区分。部署本次生成修复后，保留原正式提交，重试待处理的记忆生成，并用新错误码及集合写入结果复核。
+两个生成函数的模型名已与 DeepSeek 当前 Chat Completions 文档一致，使用 `deepseek-flash`。这项本地改动不能证明线上失败就是模型名造成；仍须按最新返回码验收。参考：https://api-docs.deepseek.com/api/create-chat-completion/
+本地上传包：`output/cloudbase/generateExperimentMemory.zip`，ZIP 根目录含 `index.js`、`package.json`、`question-answers.js`。用户可在现有同名普通云函数中上传并选择安装依赖，保留原 Node.js 20.19、60 秒超时、HTTP 路由及环境变量名称。切勿把密钥写入 ZIP、网页或截图。
 
 回滚时先回滚静态资源，再回滚云函数。已经生成的 `student_memories` 保留，不应在回滚中删除。
 

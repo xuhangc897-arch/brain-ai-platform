@@ -151,6 +151,7 @@ assert.throws(() => generator.parseAiResponse(JSON.stringify({ choices: [{ finis
 assert.throws(() => generator.parseAiResponse(JSON.stringify({ choices: [{ finish_reason: "stop", message: { content: null } }] })), { code: "AI_EMPTY_CONTENT" });
 assert.throws(() => generator.parseAiResponse(JSON.stringify({ choices: [{ finish_reason: "stop", message: { content: "{broken" } }] })), { code: "AI_INVALID_JSON" });
 assert(source("cloudfunctions/generateLearningDiagnosis/index.js").includes('thinking: { type: "disabled" }'));
+assert(source("cloudfunctions/generateLearningDiagnosis/index.js").includes('const MODEL = "deepseek-flash"'));
 assert.strictEqual(generator.validateDiagnosis({ ...validDiagnosis, dimensions: dimensions.slice(0, 4) }), null);
 assert.strictEqual(generator.validateDiagnosis({
   ...validDiagnosis,

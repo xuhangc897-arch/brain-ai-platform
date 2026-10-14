@@ -4,6 +4,7 @@
   const root = document.getElementById("diagnosisRoot");
   const printBtn = document.getElementById("printBtn");
   const retryBtn = document.getElementById("retryBtn");
+  let memoryInitialized = false;
 
   function escapeHtml(value) {
     return String(value == null ? "" : value)
@@ -83,6 +84,10 @@
       renderStatus("请先登录", "学习诊断只向已登录的学生本人开放。", false);
       return;
     }
+    if (!memoryInitialized) {
+      window.StudentMemory.init({ experimentId: "poster" });
+      memoryInitialized = true;
+    }
     window.LearningDiagnosis.init({ experimentId: "strategies" });
     const result = await window.LearningDiagnosis.refresh();
     if (!result) {
@@ -97,10 +102,13 @@
       renderStatus("诊断尚未开放", "完成全部四次记忆探究后，这里会出现你的学习诊断。", false);
       return;
     }
-    renderStatus("正在整理学习诊断", "四次实验已经完成，系统正在核对记录并生成诊断。", true);
+    renderStatus("正在整理学习诊断", result.eligibility?.generationReady
+      ? "四份实验学习记忆已齐，系统正在生成综合诊断。"
+      : "四次实验已经完成，系统正在补齐实验学习记忆。", true);
   }
 
   printBtn?.addEventListener("click", () => window.print());
+  document.addEventListener("learning-diagnosis:generated", () => load());
   retryBtn?.addEventListener("click", async () => {
     retryBtn.disabled = true;
     renderStatus("正在重新整理", "请稍候，不会影响你已经完成的实验记录。", false);

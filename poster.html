@@ -691,6 +691,7 @@
   <script src="assets/knowledge-assessment.js"></script>
   <script src="assets/experiment-submission.js"></script>
   <script src="assets/report-archive.js"></script>
+  <script src="assets/student-memory.js"></script>
   <script src="assets/learning-diagnosis.js"></script>
   <script>
     checkLogin();
@@ -1036,7 +1037,6 @@
         <section class="panel">
           <div class="panel-head">
             <h2>读取实验数据</h2>
-            <p>查看自己在前四次实验生成的侦探小结档案。此环节不占用步骤编号。</p>
           </div>
           <div class="panel-body">
             <p class="report-archive-hint">选择一份档案，即可在本页查看 PDF，并参考其中的研究问题、数据和结论制作海报。</p>
@@ -1816,6 +1816,7 @@
 
     renderApp();
     hydrateKnowledgeTimeline();
+    window.StudentMemory?.init({ experimentId: "poster" });
     window.LearningDiagnosis?.init({ experimentId: "poster" });
   </script>
   <script src="assets/ai-assistant.js?v=ai-chat-upload-20260708"></script>

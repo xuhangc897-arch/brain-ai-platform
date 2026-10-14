@@ -83,6 +83,8 @@ tool_use
 6. 用两个学生账号验证隔离，用教师账号验证最新版和历史版本。
 
 部署记忆兼容修复时，先更新 `generateExperimentMemory`，再更新 `generateLearningDiagnosis` 和 `getLearningDiagnosis`；四份实验记忆与最新正式提交匹配后才可生成诊断。三个云函数需单独部署，静态 Pages 构建不会包含它们。
+案件五和独立诊断页都会初始化学习记忆模块，为前四次实验补发生成请求。独立诊断页在完成资格通过后，按 `generationReady` 显示“补齐实验学习记忆”或“生成综合诊断”；这两个状态来自服务端读取，页面文字本身不代表生成成功。诊断生成成功后页面自动重新读取。两个生成函数使用 DeepSeek 当前 Chat Completions 文档列出的 `deepseek-flash`；上线前需分别部署云函数与静态页面，再用原正式学生账号验证四份记忆与诊断。参考：https://api-docs.deepseek.com/api/create-chat-completion/
+本地上传包：`output/cloudbase/generateLearningDiagnosis.zip`，ZIP 根目录含 `index.js` 与 `package.json`。用户可在现有同名普通云函数中上传并选择安装依赖，保留原 Node.js 20.19、60 秒超时、HTTP 路由及环境变量名称。
 
 ## 本地验证
 
