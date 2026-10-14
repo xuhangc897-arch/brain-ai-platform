@@ -81,9 +81,9 @@ async function renderPdf(submission) {
   const puppeteer = require("puppeteer-core");
   const chromium = require("@sparticuz/chromium");
   const browser = await puppeteer.launch({
-    args: chromium.args,
+    args: await puppeteer.defaultArgs({ args: chromium.args, headless: "shell" }),
     executablePath: await chromium.executablePath(),
-    headless: true
+    headless: "shell"
   });
   try {
     const page = await browser.newPage();

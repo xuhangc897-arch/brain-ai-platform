@@ -17,3 +17,9 @@
 6. 用一个正式测试学生账号逐次完成四个实验，确认报告页显示“报告已存入平台”，云存储生成四个 PDF，案件五能站内打开且原计划仍标为第 1 步。再用另一个学生账号确认无法请求或看到前一个学生的档案。
 
 本地检查：`npm run check:report-archive`、`npm run verify`、`npm run build`。这些检查验证代码契约，不能代替部署后对 CloudBase、Chromium、中文字体和 PDF 查看器的实测。
+
+## PDF 生成失败排查
+
+- 档案列表能显示“正式数据已提交，PDF 待生成”，只证明查询成功；点击生成后仍需检查 `experimentReportArchive` 的云函数日志。当前 CLI 使用 `tcb logs search`，旧版 `tcb fn log` 接口已下线。
+- `@sparticuz/chromium` 提供 headless shell。Puppeteer 启动时使用 `headless: "shell"`，并以同一模式构造 `defaultArgs`；普通 `headless: true` 会造成浏览器目标关闭等错误。
+- 更新函数代码后，确认 `STUDENT_SESSION_SECRET` 和 `REPORT_RENDER_URL` 仍存在，重试一份测试报告，再核对云存储、归档记录、中文文字和页面内 PDF 查看。静态页面的“0”步骤标识及错误提示须随整站构建发布。

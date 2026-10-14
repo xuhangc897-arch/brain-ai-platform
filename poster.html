@@ -985,7 +985,7 @@
 
     function renderProgress() {
       normalizeStepAccess();
-      progress.innerHTML = '<button class="progress-step ' + (dataReaderOpen ? 'is-active' : '') + '" type="button" id="openDataReader"><strong>资料</strong><span>读取实验数据</span></button>' + steps.map((step, index) => {
+      progress.innerHTML = '<button class="progress-step ' + (dataReaderOpen ? 'is-active' : '') + '" type="button" id="openDataReader"><strong>0</strong><span>读取实验数据</span></button>' + steps.map((step, index) => {
         const isActive = !dataReaderOpen && index === state.currentStep;
         const isDone = index < state.maxUnlockedStep;
         const isLocked = !isDeveloperMode() && index > state.maxUnlockedStep;
@@ -1078,6 +1078,10 @@
           if (!archive?.url) {
             button.disabled = false;
             button.textContent = "重试生成 PDF";
+            const message = button.closest(".report-archive-card")?.querySelector("p");
+            if (message) message.textContent = archive?.code === "UNAUTHORIZED"
+              ? "登录状态已失效，请重新登录后重试。"
+              : `PDF 生成失败（${archive?.code || "UNKNOWN_ERROR"}），请稍后重试。`;
             return;
           }
           const viewer = document.getElementById("reportArchiveViewer");

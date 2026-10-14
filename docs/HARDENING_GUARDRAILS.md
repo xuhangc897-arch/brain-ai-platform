@@ -334,3 +334,8 @@
 - 记忆生成失败不能当作正式提交丢失；先在教师后台核对 `experiment_submissions`，再查云函数返回码和 `student_memories`。不得为恢复派生记忆直接批量改写或删除历史提交。
 - 云函数与静态 Pages 分别部署；记忆和诊断修复必须分别验证学生端读取、教师端查询、未完成提交拒绝和四实验后的诊断生成。
 - DeepSeek 结构化 JSON 请求须明确非思考模式、提供输出字段示例及足够的输出额度；解析前区分空内容与 `finish_reason=length`，不得把原始模型响应或学生正文写入日志。
+
+## 二十二、实验报告 PDF 归档
+
+- `experimentReportArchive` 的 Chromium 启动模式须与 `@sparticuz/chromium` 的 headless shell 匹配；更换浏览器版本或部署方式后，用正式测试账号验证实际 PDF 生成，不能只凭函数状态为 Active 判断成功。
+- 档案列表成功与 PDF 生成成功分别验收；归档失败只向学生显示稳定错误码，排障时从云端日志读取错误类型，避免输出学生报告或令牌。
