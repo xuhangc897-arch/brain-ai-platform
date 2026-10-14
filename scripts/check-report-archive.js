@@ -14,6 +14,9 @@ const records = [
   { studentId: "s-2", experimentId: "memory", submissionId: "memory-s-2", uploadedAt: 3 }
 ];
 const legacyRecords = [{ studentId: "s-1", module: "nback", recordType: "submission", clientRecordId: "legacy-nback-s-1", data: { fullState: { studentName: "Student", fields: { question: "Q" } } } }];
+const archiveDocs = {};
+let downloadedFileID = "";
+let downloadedContent = Buffer.from("%PDF-1.7 test");
 let resolvePdf;
 let startedPdf;
 const pdfStarted = new Promise((resolve) => { startedPdf = resolve; });
@@ -40,12 +43,13 @@ const app = {
           };
         }
       };
-      if (name === "experiment_report_archives") return { doc: () => ({ get: async () => ({ data: [] }) }) };
+      if (name === "experiment_report_archives") return { doc: (id) => ({ get: async () => ({ data: archiveDocs[id] ? [archiveDocs[id]] : [] }) }) };
       if (name === "experimentRecords") return { where(condition) { return { orderBy() { return this; }, limit() { return this; }, async get() { return { data: legacyRecords.filter((record) => Object.keys(condition).every((key) => record[key] === condition[key])) }; } }; } };
       throw new Error(`Unexpected collection ${name}`);
     }
   }),
-  getTempFileURL: async () => ({ fileList: [] })
+  getTempFileURL: async () => ({ fileList: [] }),
+  downloadFile: async ({ fileID }) => { downloadedFileID = fileID; return { fileContent: downloadedContent }; }
 };
 const sandbox = {
   require: (name) => name === "crypto" ? crypto
@@ -71,6 +75,20 @@ const authorized = (body) => ({ headers: { Authorization: `Bearer ${payload}.${s
   assert.strictEqual(list.items[1].submitted, true, "legacy formal submissions remain available");
   assert.strictEqual(list.items[1].submissionId, "legacy-nback-s-1");
   assert.strictEqual((await sandbox.exports.main(authorized({ action: "generate", experimentId: "memory", submissionId: "memory-s-2" }))).code, "NOT_FOUND");
+  assert.strictEqual((await sandbox.exports.main(authorized({ action: "view", experimentId: "memory", submissionId: "memory-s-2" }))).code, "NOT_FOUND");
+  assert.strictEqual((await sandbox.exports.main(authorized({ action: "view", experimentId: "memory", submissionId: "memory-s-1" }))).code, "NOT_FOUND");
+  const ownArchiveId = sandbox.exports.__test.archiveId("s-1", "memory-s-1");
+  archiveDocs[ownArchiveId] = { studentId: "s-2", experimentId: "memory", submissionId: "memory-s-1", fileID: "cloud://private/report.pdf" };
+  assert.strictEqual((await sandbox.exports.main(authorized({ action: "view", experimentId: "memory", submissionId: "memory-s-1" }))).code, "NOT_FOUND", "a mismatched archive owner must not be served");
+  archiveDocs[ownArchiveId].studentId = "s-1";
+  const viewed = await sandbox.exports.main(authorized({ action: "view", experimentId: "memory", submissionId: "memory-s-1" }));
+  assert.strictEqual(viewed.ok, true);
+  assert.strictEqual(downloadedFileID, "cloud://private/report.pdf");
+  assert.strictEqual(Buffer.from(viewed.pdfBase64, "base64").toString(), "%PDF-1.7 test");
+  downloadedContent = Buffer.from("not a PDF");
+  assert.strictEqual((await sandbox.exports.main(authorized({ action: "view", experimentId: "memory", submissionId: "memory-s-1" }))).code, "VIEW_FAILED");
+  downloadedContent = Buffer.concat([Buffer.from("%PDF-"), Buffer.alloc(4 * 1024 * 1024)]);
+  assert.strictEqual((await sandbox.exports.main(authorized({ action: "view", experimentId: "memory", submissionId: "memory-s-1" }))).code, "PDF_TOO_LARGE");
   const rendering = sandbox.exports.__test.renderPdf({ experimentId: "memory" });
   await pdfStarted;
   assert.strictEqual(browserClosed, false, "browser must remain open until PDF generation finishes");
@@ -85,5 +103,7 @@ const authorized = (body) => ({ headers: { Authorization: `Bearer ${payload}.${s
   assert.match(poster, /<h2>读取实验数据<\/h2>/);
   assert.match(poster, /<h2>\$\{state\.currentStep \+ 1\}\. \$\{step\.title\}<\/h2>/);
   assert.match(poster, /dataReaderOpen = !state\.dataReaderSeen/);
+  assert.match(poster, /URL\.createObjectURL\(new Blob\(\[bytes\], \{ type: "application\/pdf" \}\)\)/);
+  assert.doesNotMatch(poster, /frame\.src = archive\.url/);
   console.log("Report archive student scope, four experiment list and unnumbered prep step checks passed.");
 })().catch((error) => { console.error(error); process.exitCode = 1; });

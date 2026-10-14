@@ -776,6 +776,7 @@
 
     let state = loadState();
     let dataReaderOpen = !state.dataReaderSeen && state.currentStep === 0;
+    let archiveViewerUrl = "";
     let activeScoreGroup = 1;
     const progress = document.getElementById("progress");
     const main = document.getElementById("main");
@@ -1029,6 +1030,8 @@
     }
 
     function renderDataReader() {
+      if (archiveViewerUrl) URL.revokeObjectURL(archiveViewerUrl);
+      archiveViewerUrl = "";
       main.innerHTML = `
         <section class="panel">
           <div class="panel-head">
@@ -1043,6 +1046,8 @@
           </div>
         </section>`;
       document.getElementById("beginPosterPlan").addEventListener("click", () => {
+        if (archiveViewerUrl) URL.revokeObjectURL(archiveViewerUrl);
+        archiveViewerUrl = "";
         state.dataReaderSeen = true;
         dataReaderOpen = false;
         saveState();
@@ -1074,14 +1079,15 @@
           if (!item) return;
           button.disabled = true;
           button.textContent = "正在打开…";
-          const archive = item.archived ? item : await client.generate(item.experimentId, item.submissionId);
-          if (!archive?.url) {
+          const archive = item.archived ? { ok: true } : await client.generate(item.experimentId, item.submissionId);
+          const pdf = archive?.ok ? await client.view(item.experimentId, item.submissionId) : archive;
+          if (!pdf?.ok || !pdf.pdfBase64) {
             button.disabled = false;
-            button.textContent = "重试生成 PDF";
+            button.textContent = item.archived || archive?.ok ? "重试打开 PDF" : "重试生成 PDF";
             const message = button.closest(".report-archive-card")?.querySelector("p");
-            if (message) message.textContent = archive?.code === "UNAUTHORIZED"
+            if (message) message.textContent = pdf?.code === "UNAUTHORIZED"
               ? "登录状态已失效，请重新登录后重试。"
-              : `PDF 生成失败（${archive?.code || "UNKNOWN_ERROR"}），请稍后重试。`;
+              : `PDF ${archive?.ok ? "打开" : "生成"}失败（${pdf?.code || "UNKNOWN_ERROR"}），请稍后重试。`;
             return;
           }
           const viewer = document.getElementById("reportArchiveViewer");
@@ -1090,7 +1096,10 @@
           const frame = document.createElement("iframe");
           frame.className = "report-archive-viewer";
           frame.title = `${item.label} PDF`;
-          frame.src = archive.url;
+          if (archiveViewerUrl) URL.revokeObjectURL(archiveViewerUrl);
+          const bytes = Uint8Array.from(atob(pdf.pdfBase64), (character) => character.charCodeAt(0));
+          archiveViewerUrl = URL.createObjectURL(new Blob([bytes], { type: "application/pdf" }));
+          frame.src = archiveViewerUrl;
           viewer.appendChild(frame);
           viewer.scrollIntoView({ behavior: "smooth", block: "start" });
           if (!item.archived) loadReportArchives();

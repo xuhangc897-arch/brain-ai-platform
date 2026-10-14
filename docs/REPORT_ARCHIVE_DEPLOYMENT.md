@@ -4,7 +4,7 @@
 
 1. 学生在实验一至四点击“生成报告”。正式提交写入 `experiment_submissions` 后，报告页调用 `experimentReportArchive`。
 2. 云函数按登录令牌确定学号，从正式提交重建同一版侦探小结，生成 PDF，上传到云存储 `experiment-reports/<学号哈希>/<报告 ID>.pdf`，并将文件 ID 记入 `experiment_report_archives`。重复调用复用已生成文件。
-3. 案件五的“读取实验数据”不占步骤编号。学生登录后能看到自己的四份档案并在页面内查看 PDF；历史正式提交若尚未归档，可以从这里补生成。原“制定初步方案”仍为第 1 步。
+3. 案件五的“读取实验数据”不占步骤编号。学生登录后能看到自己的四份档案并在页面内查看 PDF；历史正式提交若尚未归档，可以从这里补生成。预览时云函数再次核对学生身份和正式提交，从私有云存储读取 PDF，网页将其转换为本页的 PDF 地址后嵌入查看。原“制定初步方案”仍为第 1 步。
 4. 游客不能上传或读取云端档案。综合学习诊断与学习记忆不参与 PDF 生成。
 
 ## 管理员需要完成
@@ -24,4 +24,5 @@
 - `@sparticuz/chromium` 提供 headless shell。Puppeteer 启动时使用 `headless: "shell"`，并以同一模式构造 `defaultArgs`；普通 `headless: true` 会造成浏览器目标关闭等错误。
 - `renderPdf()` 必须等待 `page.pdf()` 完成后再执行 `finally` 中的 `browser.close()`。直接 `return page.pdf()` 会过早关闭浏览器，引发 `Page.printToPDF: Target closed` 或 `FUNCTIONS_INVOCATION_FAIL`。
 - Puppeteer 的 `page.pdf()` 结果须转换成 Node.js `Buffer` 后交给 CloudBase `uploadFile`；直接传入 `Uint8Array` 会触发 `fileContent should be instance of fs.ReadStream or Buffer`。
+- 新建的 COS 存储桶默认域名可能强制下载 PDF；不能将临时文件 URL 直接放入 iframe。案件五调用归档函数的 `view` 动作，按签名学生令牌和提交 ID 校验归属，再读取 PDF 并返回 Base64；网页转换为 `application/pdf` Blob 地址预览。函数同步响应限制为 6 MB，单份 PDF 超过 4 MB 时返回 `PDF_TOO_LARGE`，需另行选择流式查看方案。
 - 更新函数代码后，确认 `STUDENT_SESSION_SECRET` 和 `REPORT_RENDER_URL` 仍存在，重试一份测试报告，再核对云存储、归档记录、中文文字和页面内 PDF 查看。静态页面的“0”步骤标识及错误提示须随整站构建发布。

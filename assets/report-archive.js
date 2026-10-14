@@ -20,6 +20,7 @@
 
   global.BrainReportArchiveClient = Object.freeze({
     list: () => request("list"),
-    generate: (experimentId, submissionId) => request("generate", experimentId, submissionId)
+    generate: (experimentId, submissionId) => request("generate", experimentId, submissionId),
+    view: (experimentId, submissionId) => request("view", experimentId, submissionId)
   });
 })(window);
