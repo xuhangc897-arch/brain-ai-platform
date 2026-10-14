@@ -115,6 +115,13 @@ assert(studentMemory.includes("generatedSubmissionIds"));
 assert(studentMemory.includes("currentView = await loadStudentView()"));
 assert(studentMemory.includes("showMemorySupport"));
 assert(studentMemory.includes("Authorization: `Bearer"));
+const poster = source("poster.html");
+assert(poster.includes('<script src="assets/student-memory.js"></script>'));
+assert(poster.includes('StudentMemory?.init({ experimentId: "poster" })'));
+const diagnosisPage = source("diagnosis.html");
+assert(diagnosisPage.includes('<script src="assets/student-memory.js"></script>'));
+assert(diagnosisPage.indexOf('assets/student-memory.js') < diagnosisPage.indexOf('assets/learning-diagnosis.js'));
+assert(source("assets/diagnosis.js").includes('StudentMemory.init({ experimentId: "poster" })'));
 
 const partner = source("assets/memory-partner.js");
 assert(partner.includes("我的学习记录"));
@@ -195,6 +202,46 @@ async function checkSubmissionDrivenRefresh() {
   assert.strictEqual(view.completedExperiments[0].experimentId, "memory");
 }
 
+async function checkPosterBackfill() {
+  const generated = [];
+  const storage = new Map();
+  const experiments = ["memory", "nback", "interference", "strategies"].map((id, index) => ({ id, order: index + 1 }));
+  const context = {
+    window: null, console, Date, Object, Array, String, Number, Promise, setTimeout, clearTimeout,
+    document: { addEventListener() {} },
+    addEventListener() {},
+    localStorage: {
+      getItem(key) { return storage.get(key) || null; },
+      setItem(key, value) { storage.set(key, value); }
+    },
+    BrainExperimentRegistry: {
+      get(id) { return id === "poster" ? { id, order: 5 } : experiments.find((item) => item.id === id); },
+      experiments: experiments.concat({ id: "poster", order: 5 })
+    },
+    BrainPlatform: {
+      config: {
+        endpoints: { generateExperimentMemory: "/generate", getStudentMemory: "/view" },
+        storageKeys: { studentMemoryOutbox: "memory-outbox", studentMemorySupportState: "memory-support" }
+      },
+      identity: { readStudentSession: () => ({ studentId: "S001", sessionToken: "token" }) }
+    },
+    async fetch(url, options) {
+      if (url === "/generate") {
+        generated.push(JSON.parse(options.body).experimentId);
+        return { ok: true, async json() { return { ok: true, operation: "created", version: 1 }; } };
+      }
+      return { ok: true, async json() { return { ok: true, view: { completedExperiments: [] } }; } };
+    }
+  };
+  context.window = context;
+  require("vm").runInNewContext(studentMemory, context, { filename: "student-memory-poster.js" });
+  context.StudentMemory.init({ experimentId: "poster" });
+  for (let attempt = 0; attempt < 100 && generated.length < 4; attempt += 1) {
+    await new Promise((resolve) => setTimeout(resolve, 0));
+  }
+  assert.deepStrictEqual(generated, experiments.map((item) => item.id), "case five must retry memories for all four prior experiments");
+}
+
 const generator = loadGenerator().__test;
 const completeState = {
   maxUnlockedStep: 7,
@@ -249,6 +296,7 @@ assert.throws(() => generator.parseAiResponse(JSON.stringify({ choices: [{ finis
 assert.throws(() => generator.parseAiResponse(JSON.stringify({ choices: [{ finish_reason: "stop", message: { content: "  " } }] })), { code: "AI_EMPTY_CONTENT" });
 assert.throws(() => generator.parseAiResponse(JSON.stringify({ choices: [{ finish_reason: "stop", message: { content: "{broken" } }] })), { code: "AI_INVALID_JSON" });
 assert(source("cloudfunctions/generateExperimentMemory/index.js").includes('thinking: { type: "disabled" }'));
+assert(source("cloudfunctions/generateExperimentMemory/index.js").includes('const MODEL = "deepseek-flash"'));
 
 const cloudbaseConfig = JSON.parse(source("cloudbase.json"));
 for (const name of ["generateExperimentMemory", "getStudentMemory", "getStudentMemoriesAdmin"]) {
@@ -260,6 +308,7 @@ assert(source("admin/dashboard.html").includes("TEMPORARY_DASHBOARD_LOGIN_BYPASS
 
 (async () => {
   await checkSubmissionDrivenRefresh();
+  await checkPosterBackfill();
   const secret = "student-memory-test-secret-at-least-32-characters";
   process.env.STUDENT_SESSION_SECRET = secret;
   const memoryDocuments = [

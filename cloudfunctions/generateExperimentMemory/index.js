@@ -17,7 +17,7 @@ const SUMMARY_CODES = new Set([
   "FORM_CONCLUSION", "REFLECT_REVISE", "EXPRESS_IDEAS", "INPUT_SUPPORT"
 ]);
 const SUPPORT_TYPES = new Set(["question_prompt", "evidence_prompt", "comparison_prompt", "reflection_prompt", "voice_optional"]);
-const MODEL = "deepseek-v4-flash";
+const MODEL = "deepseek-flash";
 const app = cloudbase.init({ env: cloudbase.SYMBOL_CURRENT_ENV });
 const db = app.database();
 const recordsCollection = db.collection("experimentRecords");

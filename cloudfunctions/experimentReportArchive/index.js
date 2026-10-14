@@ -140,8 +140,12 @@ exports.main = async (event) => {
   if (!auth) return { ok: false, code: "UNAUTHORIZED" };
   const input = body(event);
   if (input.action === "list") return list(text(auth.studentId));
-  if (input.action === "view" && EXPERIMENTS.includes(text(input.experimentId)) && ID_PATTERN.test(text(input.submissionId))) {
-    return view(text(auth.studentId), text(input.experimentId), text(input.submissionId));
+  if (input.action === "view") {
+    const submissionId = text(input.submissionId);
+    if (!EXPERIMENTS.includes(text(input.experimentId)) || !submissionId || submissionId.length > 256) {
+      return { ok: false, code: "INVALID_REQUEST" };
+    }
+    return view(text(auth.studentId), text(input.experimentId), submissionId);
   }
   if (input.action !== "generate" || !EXPERIMENTS.includes(text(input.experimentId))) return { ok: false, code: "INVALID_REQUEST" };
   const submission = await latestSubmission(text(auth.studentId), text(input.experimentId), text(input.submissionId));
