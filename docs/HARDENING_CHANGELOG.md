@@ -1212,3 +1212,9 @@ GitHub 仓库 `Settings → Pages → Build and deployment → Source` 必须从
 - 保留现有事实计算、来源校验、答案、评分、计时、提交和数据库字段；AI 结果不满足原有结构校验时仍不写入。四个实验全部完成前，`learning_diagnoses` 为空符合资格规则。
 - 修改前两项定向检查通过；修改后增加有效、空内容、截断及非法 JSON 回归，`npm run check:student-memory`、`npm run check:learning-diagnosis`、`npm run verify`、`npm run build`、`npm run check:dist`、云函数语法检查和 `git diff --check` 通过。线上 AI 生成及集合写入需部署后验证。
 - 先更新两个生成云函数；原正式提交保留，由原学生账号触发待处理重试并检查 `student_memories`。若新错误码仍出现，依据返回码继续排查；回滚两个生成云函数即可恢复旧请求参数和解析逻辑，不迁移数据。
+
+# 2026-10-13｜实验 PDF 归档生成故障排查
+
+- 案件五的“读取实验数据”入口圆标改为 0，原“制定初步方案”仍为第 1 步，步骤数量、解锁与实验数据不变。
+- 云端日志显示 PDF 生成时 Chromium 返回 `TargetCloseError`；归档函数原来以普通 headless 模式启动专用 headless shell，现按浏览器包官方用法改为 shell 模式。失败卡片显示稳定错误码以便后续定位。
+- `experimentReportArchive` 代码包已重建并更新到 CloudBase；函数状态为 Active，环境变量名称保留，匿名调用返回 `UNAUTHORIZED`。仍需用正式测试账号实际生成并在案件五查看 PDF，核对中文字体、云存储文件和归档记录。静态页面改动尚未发布：本机 GitHub CLI 凭据失效，GitHub 连接创建分支返回 403。回滚可恢复上一版函数代码及本次静态页面修改，不涉及数据迁移。

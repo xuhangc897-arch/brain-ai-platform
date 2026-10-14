@@ -12,7 +12,7 @@
         body: JSON.stringify({ action, experimentId, submissionId })
       });
       const result = await response.json().catch(() => ({}));
-      return Object.assign({ ok: response.ok && Boolean(result.ok) }, result);
+      return Object.assign({}, result, { ok: response.ok && Boolean(result.ok), code: result.code || (response.ok ? "" : `HTTP_${response.status}`) });
     } catch (error) {
       return { ok: false, code: "NETWORK_ERROR" };
     }
