@@ -95,7 +95,7 @@ async function renderPdf(submission) {
     const rendered = await page.evaluate((record) => window.BrainReportArchive?.render(record) === true, submission);
     if (!rendered) throw new Error("REPORT_RENDER_FAILED");
     await page.evaluate(() => document.fonts.ready);
-    return page.pdf({ format: "A4", printBackground: true, preferCSSPageSize: true });
+    return Buffer.from(await page.pdf({ format: "A4", printBackground: true, preferCSSPageSize: true }));
   } finally {
     await browser.close();
   }
@@ -118,11 +118,31 @@ async function list(studentId) {
   }
   return { ok: true, items };
 }
+async function view(studentId, experimentId, submissionId) {
+  const submission = await latestSubmission(studentId, experimentId, submissionId);
+  if (!submission) return { ok: false, code: "NOT_FOUND" };
+  const archive = await archiveFor(submission);
+  if (!archive?.fileID || archive.studentId !== studentId || archive.experimentId !== experimentId || archive.submissionId !== submission.submissionId) {
+    return { ok: false, code: "NOT_FOUND" };
+  }
+  try {
+    const result = await app.downloadFile({ fileID: archive.fileID });
+    const pdf = result.fileContent;
+    if (!Buffer.isBuffer(pdf) || pdf.subarray(0, 5).toString() !== "%PDF-") return { ok: false, code: "VIEW_FAILED" };
+    if (pdf.length > 4 * 1024 * 1024) return { ok: false, code: "PDF_TOO_LARGE" };
+    return { ok: true, pdfBase64: pdf.toString("base64") };
+  } catch (error) {
+    return { ok: false, code: "VIEW_FAILED" };
+  }
+}
 exports.main = async (event) => {
   const auth = session(event);
   if (!auth) return { ok: false, code: "UNAUTHORIZED" };
   const input = body(event);
   if (input.action === "list") return list(text(auth.studentId));
+  if (input.action === "view" && EXPERIMENTS.includes(text(input.experimentId)) && ID_PATTERN.test(text(input.submissionId))) {
+    return view(text(auth.studentId), text(input.experimentId), text(input.submissionId));
+  }
   if (input.action !== "generate" || !EXPERIMENTS.includes(text(input.experimentId))) return { ok: false, code: "INVALID_REQUEST" };
   const submission = await latestSubmission(text(auth.studentId), text(input.experimentId), text(input.submissionId));
   if (!submission) return { ok: false, code: "NOT_FOUND" };
@@ -151,4 +171,4 @@ exports.main = async (event) => {
   }
 };
 
-exports.__test = { archiveId, session };
+exports.__test = { archiveId, session, renderPdf };
