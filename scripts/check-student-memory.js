@@ -14,7 +14,7 @@ function source(relativePath) {
   return fs.readFileSync(path.join(root, relativePath), "utf8");
 }
 
-function loadGenerator() {
+function loadGenerator(database) {
   const filename = path.join(root, "cloudfunctions", "generateExperimentMemory", "index.js");
   const originalLoad = Module._load;
   const collection = {
@@ -34,7 +34,7 @@ function loadGenerator() {
           return {
             database() {
               return {
-                collection() { return collection; },
+                collection(name) { return database ? database.collection(name) : collection; },
                 serverDate() { return "SERVER_DATE"; }
               };
             }
@@ -274,29 +274,10 @@ assert.strictEqual(generator.completionFacts(generator.fullState({
   ...submittedRecord, experimentResults: { maxUnlockedStep: 6 }
 }), "memory").completedTaskCount, 7, "an explicit incomplete progress marker must remain authoritative");
 
-const taskIds = new Set(["question_text", "analysis_text", "reflection_text"]);
-const validSummary = {
-  strengths: [{ code: "COMPARE_RESULTS", evidence: "能够比较结果", sourceTaskIds: ["analysis_text"] }],
-  needsSupport: [{ code: "USE_EVIDENCE", evidence: "可以进一步引用数据", sourceTaskIds: ["analysis_text"] }],
-  inquiryPerformance: { summary: "能够提出问题", evidence: "已形成研究问题", sourceTaskIds: ["question_text"] },
-  evidenceUse: { summary: "开始使用证据", evidence: "比较了实验结果", sourceTaskIds: ["analysis_text"] },
-  reflectionPerformance: { summary: "完成反思", evidence: "提出改进方向", sourceTaskIds: ["reflection_text"] },
-  inputSupport: { summary: "保持现有输入方式", evidenceCodes: ["INPUT_SUPPORT"] },
-  interventionResponse: { summary: "能够根据提示修改", evidenceCodes: ["USE_EVIDENCE"] },
-  nextSupport: [{ stageId: "conclusion", supportType: "evidence_prompt", message: "形成结论时可以引用一项数据。", evidenceCodes: ["USE_EVIDENCE"] }],
-  changesFromPrevious: []
-};
-assert(generator.validateSummary(validSummary, taskIds));
-assert.strictEqual(
-  generator.validateSummary({ ...validSummary, strengths: [{ code: "COMPARE_RESULTS", evidence: "无来源", sourceTaskIds: ["unknown"] }] }, taskIds),
-  null
-);
-assert.deepStrictEqual(generator.parseAiResponse(JSON.stringify({ choices: [{ finish_reason: "stop", message: { content: JSON.stringify(validSummary) } }] })), validSummary);
-assert.throws(() => generator.parseAiResponse(JSON.stringify({ choices: [{ finish_reason: "length", message: { content: '{"strengths":[' } }] })), { code: "AI_RESPONSE_TRUNCATED" });
-assert.throws(() => generator.parseAiResponse(JSON.stringify({ choices: [{ finish_reason: "stop", message: { content: "  " } }] })), { code: "AI_EMPTY_CONTENT" });
-assert.throws(() => generator.parseAiResponse(JSON.stringify({ choices: [{ finish_reason: "stop", message: { content: "{broken" } }] })), { code: "AI_INVALID_JSON" });
-assert(source("cloudfunctions/generateExperimentMemory/index.js").includes('thinking: { type: "disabled" }'));
-assert(source("cloudfunctions/generateExperimentMemory/index.js").includes('const MODEL = "deepseek-flash"'));
+const builtSummary = generator.buildSummary({ recordId: "submission_memory", answers: { question: "研究问题", hypothesis: "假设", analysis: "数据分析", conclusion: "结论", reflection: "反思" } }, { input: { aiUsageTaskCount: 0, voiceUsageTaskCount: 0 }, interventions: { relevancePromptCount: 0 } });
+assert(builtSummary.strengths.length >= 2);
+assert(builtSummary.strengths.every((item) => item.sourceTaskIds[0] === "submission_memory"));
+assert(!source("cloudfunctions/generateExperimentMemory/index.js").includes("OPENAI_API_KEY"));
 
 const cloudbaseConfig = JSON.parse(source("cloudbase.json"));
 for (const name of ["generateExperimentMemory", "getStudentMemory", "getStudentMemoriesAdmin"]) {
@@ -354,6 +335,49 @@ assert(source("admin/dashboard.html").includes("TEMPORARY_DASHBOARD_LOGIN_BYPASS
   assert.strictEqual(authorized.ok, true);
   assert.strictEqual(authorized.view.completedExperiments.length, 1);
   assert.strictEqual(authorized.view.completedExperiments[0].experimentId, "memory");
+
+  const written = new Map();
+  const formalSubmission = {
+    ...submittedRecord,
+    recordId: "submission_memory",
+    studentId: "S001",
+    experimentId: "memory",
+    uploadedAt: "2026-07-29T01:00:00.000Z",
+    answers: { question: "记忆容量是多少？", hypothesis: "可能是七项", analysis: "比较了各组结果", conclusion: "依据结果形成结论", reflection: "下次增加重复次数" }
+  };
+  const writerDatabase = {
+    collection(name) {
+      return {
+        where(query) {
+          const data = name === "students" ? [{ studentId: "S001", name: "测试学生" }]
+            : name === "experiment_submissions" && query.experimentId === "memory" ? [formalSubmission]
+              : name === "student_memories" ? Array.from(written.values()).filter((item) => item.studentId === query.studentId && (!query.memoryType || item.memoryType === query.memoryType)) : [];
+          return { orderBy() { return this; }, limit() { return this; }, async get() { return { data }; } };
+        },
+        doc(id) {
+          return {
+            async get() { return { data: written.has(id) ? [written.get(id)] : [] }; },
+            async set(value) { written.set(id, value); },
+            async update(value) { written.set(id, value); }
+          };
+        }
+      };
+    }
+  };
+  const previousKey = process.env.OPENAI_API_KEY;
+  delete process.env.OPENAI_API_KEY;
+  try {
+    const result = await loadGenerator(writerDatabase).main({
+      headers: { authorization: `Bearer ${signedToken("S001", secret)}` },
+      body: JSON.stringify({ experimentId: "memory" })
+    });
+    assert.strictEqual(result.ok, true, `memory write failed: ${result.code}`);
+    assert.strictEqual(Array.from(written.values()).filter((item) => item.memoryType === "experiment").length, 1);
+    assert.strictEqual(Array.from(written.values()).filter((item) => item.memoryType === "overall").length, 1);
+  } finally {
+    if (previousKey === undefined) delete process.env.OPENAI_API_KEY;
+    else process.env.OPENAI_API_KEY = previousKey;
+  }
 
   console.log("Knowledge pretest, signed session, student memory and teacher access contracts passed.");
 })().catch((error) => {

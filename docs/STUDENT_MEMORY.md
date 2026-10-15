@@ -3,10 +3,10 @@
 ## 数据边界
 
 - `experimentRecords`、`learning_records`、`agent_interventions` 继续保存原始过程记录。
-- `student_memories` 只保存服务端计算事实、有限长度AI摘要和来源记录 ID，不保存完整聊天。
+- `student_memories` 只保存服务端计算事实、规则生成的有限长度摘要和来源记录 ID，不保存完整聊天。
 - 每名学生每个实验一条 `memoryType=experiment` 文档，另有一条 `memoryType=overall` 文档。
 - 文档 ID 分别由 `studentId|experiment|experimentId` 和 `studentId|overall` 的 SHA-256 生成。
-- 生成失败、AI超时或结构校验失败时不更新现有文档。
+- 正式提交不完整或数据库写入失败时不更新现有文档。
 
 ## `student_memories` 主要字段
 
@@ -68,29 +68,28 @@ strategies_q1..q10
 
 ## 云函数
 
-- `generateExperimentMemory`：验证签名会话，从数据库读取最新 submission 和过程记录，计算事实，调用 DeepSeek 并更新实验及综合记忆。
+- `generateExperimentMemory`：验证签名会话，从数据库读取最新正式提交和过程记录，计算事实并更新实验及综合记忆；不调用 AI。
 - `getStudentMemory`：验证签名会话，只返回当前学生的简化记录和当前实验可用支持。
 - `getStudentMemoriesAdmin`：验证教师 CloudBase UID，返回教师详细视图。
 - `saveAgentIntervention`：额外接受 `interventionType=memory_support`。
 
 已保存的新版正式提交没有 `maxUnlockedStep`。记忆生成在读取时仅对具有 `submissionTime` 且三份实验后问卷完整的此类提交，推定七个探究环节已完成；若记录明确保留了 `maxUnlockedStep`，仍以该值为准。不修改数据库原记录或 `schemaVersion`。完成实验一后即可生成该实验的学习记忆；学习诊断仍需完成四个实验。
 
-AI输入最多选取研究问题、假设、分析、结论和反思各一段，每段最多800个Unicode字符、合计最多4000字符。AI输出必须通过代码枚举、长度、阶段和来源任务 ID 校验。
-结构化摘要请求使用 DeepSeek 非思考模式和 4000 token 输出上限；空内容、截断和非法 JSON 分别返回稳定错误码，均不写入不完整记忆，也不记录原始模型正文。
+摘要只根据正式提交里实际存在的研究问题、假设、分析、结论和反思字段记录可核对的观察；缺失的内容标记为证据不足，不推断学生能力。`OPENAI_API_KEY` 不再是本函数的依赖。
 
 ## 部署顺序
 
 1. 备份现有集合，并创建 `teachers`、`student_memories` 及索引。
 2. 禁止客户端直接访问 `student_memories`，确认 `teachers` 仅服务端可读写。
-3. 配置 `STUDENT_SESSION_SECRET` 和现有 `OPENAI_API_KEY`。
+3. 配置与登录函数相同的 `STUDENT_SESSION_SECRET`；本函数不需要 `OPENAI_API_KEY`。
 4. 先部署 `studentLogin`、`createStudents`、`getExperimentRecords`、`saveAgentIntervention`。
 5. 再部署 `generateExperimentMemory`、`getStudentMemory`、`getStudentMemoriesAdmin`。
 6. 最后发布静态资源。旧登录会话没有签名令牌，发布后需重新登录一次。
 7. 使用两个学生账号验证互相不可读取，再使用教师白名单账号验证后台查询。
 
-修复既有正式提交的记忆缺失时，应先部署新版 `generateExperimentMemory` 云函数；静态站点发布不会部署云函数。备份并核对 `experiment_submissions` 中的正式提交后，让同一正式学生账号进入案件五或独立诊断页：两个入口都会加载 `student-memory.js`，按前四次实验的正式提交重试记忆生成。随后查看助手的“我的学习记录”及教师后台的 `student_memories`。若仍为空，按云函数返回码继续检查 AI、`learning_records` 和函数配置，不直接改写提交或记忆集合。
-2026-10-12 的线上日志显示正式提交已通过完成检查，但 DeepSeek 返回内容无法解析，报 `AI_INVALID_JSON`；是否具体由截断或空内容造成，旧日志无法区分。部署本次生成修复后，保留原正式提交，重试待处理的记忆生成，并用新错误码及集合写入结果复核。
-两个生成函数的模型名已与 DeepSeek 当前 Chat Completions 文档一致，使用 `deepseek-flash`。这项本地改动不能证明线上失败就是模型名造成；仍须按最新返回码验收。参考：https://api-docs.deepseek.com/api/create-chat-completion/
+修复既有正式提交的记忆缺失时，应先部署新版 `generateExperimentMemory` 云函数；静态站点发布不会部署云函数。备份并核对 `experiment_submissions` 中的正式提交后，让同一正式学生账号进入案件五或独立诊断页：两个入口都会加载 `student-memory.js`，按前四次实验的正式提交重试记忆生成。随后查看助手的“我的学习记录”及教师后台的 `student_memories`。若仍为空，按云函数返回码继续检查正式提交完成状态、数据库写入和函数配置，不直接改写提交或记忆集合。
+2026-10-12 的线上日志显示旧版 AI 生成返回 `AI_INVALID_JSON`；该故障已不影响规则生成。部署后保留原正式提交，重新进入案件五或诊断页触发补发，并核对 `student_memories` 的写入结果。
+2026-10-15 起学习记忆与学习诊断改为仅依赖数据库事实的规则生成；旧版 AI 故障记录仅供历史排查。
 本地上传包：`output/cloudbase/generateExperimentMemory.zip`，ZIP 根目录含 `index.js`、`package.json`、`question-answers.js`。用户可在现有同名普通云函数中上传并选择安装依赖，保留原 Node.js 20.19、60 秒超时、HTTP 路由及环境变量名称。切勿把密钥写入 ZIP、网页或截图。
 
 回滚时先回滚静态资源，再回滚云函数。已经生成的 `student_memories` 保留，不应在回滚中删除。
