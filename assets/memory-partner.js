@@ -586,13 +586,14 @@
         const completed = Array.isArray(view?.completedExperiments) ? view.completedExperiments : [];
         const strengths = Array.isArray(view?.strengths) ? view.strengths : [];
         const suggestions = Array.isArray(view?.nextSuggestions) ? view.nextSuggestions : [];
+        const experimentLabels = { memory: "实验一", nback: "实验二", interference: "实验三", strategies: "实验四" };
         detail.innerHTML = `
           <div class="memory-partner-detail-heading">
             <span class="memory-partner-detail-label">我的学习记录</span>
             <h3>${escapeHtml(config.experimentName || "记忆侦探学习档案")}</h3>
           </div>
           <dl class="memory-partner-task">
-            <div><dt>已完成实验</dt><dd>${completed.length ? completed.map((item) => escapeHtml(item.experimentId)).join("、") : "完成一次实验后会在这里形成记录"}</dd></div>
+            <div><dt>已完成实验</dt><dd>${completed.length ? completed.map((item) => experimentLabels[item.experimentId] || "其他实验").join("、") : "完成一次实验后会在这里形成记录"}</dd></div>
           </dl>
           <div class="memory-partner-unfinished"><h4>做得好的地方</h4>${strengths.length ? `<ul>${strengths.map((item) => `<li>${escapeHtml(item.message)}</li>`).join("")}</ul>` : "<p>暂时还没有可展示的摘要。</p>"}</div>
           <div class="memory-partner-unfinished"><h4>下一次建议</h4>${suggestions.length ? `<ul>${suggestions.map((item) => `<li>${escapeHtml(item.message)}</li>`).join("")}</ul>` : "<p>继续完成探究后，我会提供与任务相关的建议。</p>"}</div>

@@ -5,9 +5,14 @@
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>我的记忆侦探诊断</title>
   <link rel="stylesheet" href="assets/diagnosis.css">
+  <script src="assets/experiment-theme.js"></script>
 </head>
 <body>
   <div class="diagnosis-toolbar" aria-label="诊断报告操作">
+    <div class="diagnosis-theme-switch" role="group" aria-label="诊断报告风格">
+      <button type="button" data-theme-option="science" aria-pressed="true">科技风</button>
+      <button type="button" data-theme-option="archive" aria-pressed="false">档案风</button>
+    </div>
     <a class="diagnosis-button secondary" href="index.html">返回首页</a>
     <button class="diagnosis-button" id="retryBtn" type="button" hidden>重新生成</button>
     <button class="diagnosis-button" id="printBtn" type="button">打印 / 保存为 PDF</button>

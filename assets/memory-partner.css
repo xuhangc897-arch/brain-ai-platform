@@ -589,6 +589,24 @@
   list-style: none;
 }
 
+.memory-partner-unfinished ul {
+  display: grid;
+  gap: 8px;
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+
+.memory-partner-unfinished ul li {
+  display: block;
+  padding: 9px 10px;
+  border: 1px solid rgba(126, 190, 255, 0.14);
+  border-radius: 10px;
+  background: rgba(255, 255, 255, 0.05);
+  line-height: 1.6;
+  overflow-wrap: anywhere;
+}
+
 .memory-partner-unfinished li {
   display: grid;
   grid-template-columns: 24px 1fr;
