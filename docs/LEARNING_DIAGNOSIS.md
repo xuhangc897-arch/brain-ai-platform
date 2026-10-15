@@ -5,7 +5,6 @@
 学习诊断只使用服务端读取的数据：
 
 - 四个实验最新正式 `submission`；
-- 四份当前 `student_memories` 实验记忆；
 - 对应的 `learning_records` 和 `agent_interventions`；
 - 实验结果、知识测验和三份实验后问卷。
 
@@ -23,7 +22,7 @@
 ```text
 schemaVersion, recordId, recordType,
 studentId, studentName, className, groupName,
-diagnosisVersion, sourceMemoryVersions, sourceFactsHash,
+diagnosisVersion, sourceFactsHash,
 completedExperiments, objectiveMetrics, dimensions,
 progressSummary, studentReport, teacherReport,
 recommendations, sourceRecordIds, promptVersion,
@@ -40,9 +39,9 @@ generatedAt, createdAt, updatedAt
 
 - 后端逐一验证 `memory`、`nback`、`interference`、`strategies` 最新提交的七个探究环节和三份实验后问卷。
 - 旧学生缺少新版知识测验时仍可生成，但相应指标标记为不可用。
-- 四份实验记忆必须与最新提交的 `recordId` 一致，否则先补生成记忆。
+- 四次正式提交完整即可生成诊断；诊断直接从正式提交读取测验、实验结果和问卷，不依赖 `student_memories`。
 - `sourceFactsHash` 未变化时直接返回当前版本；发生变化时生成新的不可变版本。
-- AI失败、来源变化或结构校验失败时不移动当前指针，也不覆盖历史诊断。
+- 来源变化或结构校验失败时不移动当前指针，也不覆盖历史诊断。
 
 新版正式提交未保存 `maxUnlockedStep` 时，诊断生成和学生端资格读取与实验记忆采用相同的读取兼容规则：只有 `submissionTime` 和三份完整实验后问卷都存在才推定七个探究环节完成；明确保存的进度字段优先。此兼容逻辑不写回历史提交。仅完成实验一时，教师后台显示 0 条学习诊断符合预期。
 
@@ -70,8 +69,8 @@ tool_use
 - `getLearningDiagnosis`：只返回当前学生的精简视图、资格和提示状态。
 - `getLearningDiagnosesAdmin`：要求教师CloudBase UID白名单，返回详细诊断和历史版本。
 
-`generateLearningDiagnosis` 需要 `STUDENT_SESSION_SECRET` 和 `OPENAI_API_KEY`；`getLearningDiagnosis` 需要相同的 `STUDENT_SESSION_SECRET`。
-诊断的结构化 JSON 请求使用 DeepSeek 非思考模式和 6000 token 输出上限；空内容、截断和非法 JSON 分别返回稳定错误码。仅完成实验一时不触发诊断生成，`learning_diagnoses` 为空是预期状态。
+`generateLearningDiagnosis` 和 `getLearningDiagnosis` 只需要与登录函数相同的 `STUDENT_SESSION_SECRET`；诊断生成不调用 AI。
+诊断依据四次正式提交和可用过程记录生成。仅完成实验一时不触发诊断生成，`learning_diagnoses` 为空是预期状态。
 
 ## 部署
 
@@ -82,9 +81,9 @@ tool_use
 5. 发布静态资源。
 6. 用两个学生账号验证隔离，用教师账号验证最新版和历史版本。
 
-部署记忆兼容修复时，先更新 `generateExperimentMemory`，再更新 `generateLearningDiagnosis` 和 `getLearningDiagnosis`；四份实验记忆与最新正式提交匹配后才可生成诊断。三个云函数需单独部署，静态 Pages 构建不会包含它们。
-案件五和独立诊断页都会初始化学习记忆模块，为前四次实验补发生成请求。独立诊断页在完成资格通过后，按 `generationReady` 显示“补齐实验学习记忆”或“生成综合诊断”；这两个状态来自服务端读取，页面文字本身不代表生成成功。诊断生成成功后页面自动重新读取。两个生成函数使用 DeepSeek 当前 Chat Completions 文档列出的 `deepseek-flash`；上线前需分别部署云函数与静态页面，再用原正式学生账号验证四份记忆与诊断。参考：https://api-docs.deepseek.com/api/create-chat-completion/
-本地上传包：`output/cloudbase/generateLearningDiagnosis.zip`，ZIP 根目录含 `index.js` 与 `package.json`。用户可在现有同名普通云函数中上传并选择安装依赖，保留原 Node.js 20.19、60 秒超时、HTTP 路由及环境变量名称。
+部署本次规则生成时，更新 `generateExperimentMemory`、`generateLearningDiagnosis` 和 `getLearningDiagnosis`；三个云函数需单独部署，静态 Pages 构建不会包含它们。
+案件五和独立诊断页都会初始化学习记忆模块，为前四次实验补发生成请求。四次正式提交完整时，独立诊断页可直接触发诊断；诊断生成成功后页面自动重新读取。上线前需分别部署云函数与静态页面，再用原正式学生账号验证四份记忆与诊断。
+本地上传包：`output/cloudbase/generateLearningDiagnosis.zip` 和 `output/cloudbase/getLearningDiagnosis.zip`，ZIP 根目录均含 `index.js` 与 `package.json`。用户可在现有同名普通云函数中上传并选择安装依赖，保留原 Node.js 20.19、60 秒超时、HTTP 路由及 `STUDENT_SESSION_SECRET`。
 
 ## 本地验证
 

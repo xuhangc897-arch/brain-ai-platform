@@ -2,7 +2,6 @@
 
 const cloudbase = require("@cloudbase/node-sdk");
 const crypto = require("crypto");
-const https = require("https");
 
 const EXPERIMENTS = Object.freeze({
   memory: { order: 1, label: "记忆容量实验" },
@@ -12,12 +11,6 @@ const EXPERIMENTS = Object.freeze({
 });
 const KNOWLEDGE_STAGE_BY_EXPERIMENT = { memory: "T1", nback: "T2", interference: "T3", strategies: "T4" };
 const STAGES = new Set(["question", "hypothesis", "plan", "evidence", "analysis", "conclusion", "reflection", "posttest"]);
-const SUMMARY_CODES = new Set([
-  "FORM_QUESTION", "DESIGN_INQUIRY", "COMPARE_RESULTS", "USE_EVIDENCE",
-  "FORM_CONCLUSION", "REFLECT_REVISE", "EXPRESS_IDEAS", "INPUT_SUPPORT"
-]);
-const SUPPORT_TYPES = new Set(["question_prompt", "evidence_prompt", "comparison_prompt", "reflection_prompt", "voice_optional"]);
-const MODEL = "deepseek-flash";
 const app = cloudbase.init({ env: cloudbase.SYMBOL_CURRENT_ENV });
 const db = app.database();
 const recordsCollection = db.collection("experimentRecords");
@@ -256,116 +249,35 @@ function textSamples(learning) {
   return samples;
 }
 
-function validEvidenceList(value, allowedTaskIds) {
-  if (!Array.isArray(value) || value.length > 5) return null;
-  const result = [];
-  for (const item of value) {
-    if (!item || !SUMMARY_CODES.has(clean(item.code, 64))) return null;
-    const evidence = clean(item.evidence, 240);
-    const sourceTaskIds = Array.isArray(item.sourceTaskIds) ? item.sourceTaskIds.map((id) => clean(id, 100)).filter(Boolean).slice(0, 5) : [];
-    if (!evidence || !sourceTaskIds.length || sourceTaskIds.some((id) => !allowedTaskIds.has(id))) return null;
-    result.push({ code: clean(item.code, 64), evidence, sourceTaskIds });
-  }
-  return result;
-}
-
-function validSection(value, allowedTaskIds) {
-  if (!value || typeof value !== "object") return null;
-  const summary = clean(value.summary, 240);
-  const evidence = clean(value.evidence, 240);
-  const sourceTaskIds = Array.isArray(value.sourceTaskIds) ? value.sourceTaskIds.map((id) => clean(id, 100)).filter(Boolean).slice(0, 5) : [];
-  return summary && evidence && sourceTaskIds.length && sourceTaskIds.every((id) => allowedTaskIds.has(id))
-    ? { summary, evidence, sourceTaskIds }
-    : null;
-}
-
-function validateSummary(value, allowedTaskIds = new Set()) {
-  if (!value || typeof value !== "object") return null;
-  const strengths = validEvidenceList(value.strengths, allowedTaskIds);
-  const needsSupport = validEvidenceList(value.needsSupport, allowedTaskIds);
-  const inquiryPerformance = validSection(value.inquiryPerformance, allowedTaskIds);
-  const evidenceUse = validSection(value.evidenceUse, allowedTaskIds);
-  const reflectionPerformance = validSection(value.reflectionPerformance, allowedTaskIds);
-  if (!strengths || !needsSupport || !inquiryPerformance || !evidenceUse || !reflectionPerformance) return null;
-  const nextSupport = Array.isArray(value.nextSupport) ? value.nextSupport.slice(0, 4).map((item) => ({
-    stageId: clean(item.stageId, 64),
-    supportType: clean(item.supportType, 64),
-    message: clean(item.message, 240),
-    evidenceCodes: Array.isArray(item.evidenceCodes) ? item.evidenceCodes.map((code) => clean(code, 64)).filter((code) => SUMMARY_CODES.has(code)).slice(0, 4) : []
-  })) : [];
-  if (nextSupport.some((item) => !STAGES.has(item.stageId) || !SUPPORT_TYPES.has(item.supportType) || !item.message || !item.evidenceCodes.length)) return null;
-  const changesFromPrevious = Array.isArray(value.changesFromPrevious) ? value.changesFromPrevious.slice(0, 4).map((item) => ({
-    code: clean(item.code, 64),
-    direction: ["improved", "stable", "needs_support"].includes(item.direction) ? item.direction : "",
-    summary: clean(item.summary, 240),
-    sourceExperimentIds: Array.isArray(item.sourceExperimentIds) ? item.sourceExperimentIds.map((id) => clean(id, 32)).filter((id) => EXPERIMENTS[id]).slice(0, 4) : []
-  })) : [];
-  if (changesFromPrevious.some((item) => !SUMMARY_CODES.has(item.code) || !item.direction || !item.summary || !item.sourceExperimentIds.length)) return null;
+function buildSummary(submission, facts) {
+  const answers = submission.answers || fullState(submission).fields || {};
+  const has = (pattern) => Object.entries(answers).some(([key, value]) => pattern.test(key) && typeof value === "string" && clean(value).length > 0);
+  const question = has(/question|research/i);
+  const hypothesis = has(/hypothesis/i);
+  const analysis = has(/analysis|finding|compare/i);
+  const conclusion = has(/conclusion/i);
+  const reflection = has(/reflection|improve|teamwork|insight/i);
+  const sourceTaskIds = [submission.recordId];
+  const strengths = [];
+  const needsSupport = [];
+  if (question && hypothesis) strengths.push({ code: "FORM_QUESTION", evidence: "正式提交保留了研究问题和假设。", sourceTaskIds });
+  if (analysis && conclusion) strengths.push({ code: "USE_EVIDENCE", evidence: "正式提交保留了分析和结论。", sourceTaskIds });
+  if (reflection) strengths.push({ code: "REFLECT_REVISE", evidence: "正式提交保留了反思或改进记录。", sourceTaskIds });
+  if (!analysis || !conclusion) needsSupport.push({ code: "USE_EVIDENCE", evidence: "正式提交中未同时找到分析和结论文本，建议核对证据与结论的联系。", sourceTaskIds });
+  const section = (summary) => ({ summary, evidence: summary, sourceTaskIds });
   return {
-    strengths, needsSupport, inquiryPerformance, evidenceUse, reflectionPerformance,
-    inputSupport: { summary: clean(value.inputSupport && value.inputSupport.summary, 240), evidenceCodes: (Array.isArray(value.inputSupport && value.inputSupport.evidenceCodes) ? value.inputSupport.evidenceCodes : []).filter((code) => SUMMARY_CODES.has(code)).slice(0, 4) },
-    interventionResponse: { summary: clean(value.interventionResponse && value.interventionResponse.summary, 240), evidenceCodes: (Array.isArray(value.interventionResponse && value.interventionResponse.evidenceCodes) ? value.interventionResponse.evidenceCodes : []).filter((code) => SUMMARY_CODES.has(code)).slice(0, 4) },
-    nextSupport, changesFromPrevious
+    strengths,
+    needsSupport,
+    inquiryPerformance: section(question && hypothesis ? "已记录研究问题与假设。" : "正式提交的研究问题或假设文本不足，暂不评价其质量。"),
+    evidenceUse: section(analysis && conclusion ? "已记录分析与结论，可据原文核对证据使用。" : "分析或结论文本不足，暂不判断证据使用水平。"),
+    reflectionPerformance: section(reflection ? "已记录反思或改进内容。" : "未找到反思文本，暂不判断反思水平。"),
+    inputSupport: { summary: `记录到 ${facts.input.aiUsageTaskCount} 次 AI 使用任务、${facts.input.voiceUsageTaskCount} 次语音使用任务。`, evidenceCodes: [] },
+    interventionResponse: { summary: `记录到 ${facts.interventions.relevancePromptCount} 次任务相关提示。`, evidenceCodes: [] },
+    nextSupport: !analysis || !conclusion
+      ? [{ stageId: "conclusion", supportType: "evidence_prompt", message: "写结论时先选一项实验结果，再说明它如何支持你的观点。", evidenceCodes: ["USE_EVIDENCE"] }]
+      : [{ stageId: "reflection", supportType: "reflection_prompt", message: "回看结论和实验结果，记录下一次想调整的一步。", evidenceCodes: ["REFLECT_REVISE"] }],
+    changesFromPrevious: []
   };
-}
-
-function parseAiResponse(responseBody) {
-  let response;
-  try { response = JSON.parse(responseBody); }
-  catch (error) { throw Object.assign(new Error("AI response invalid"), { code: "AI_INVALID_JSON" }); }
-  const choice = response && response.choices && response.choices[0];
-  if (choice && choice.finish_reason === "length") {
-    throw Object.assign(new Error("AI response truncated"), { code: "AI_RESPONSE_TRUNCATED" });
-  }
-  const content = choice && choice.message && choice.message.content;
-  if (typeof content !== "string" || !content.trim()) {
-    throw Object.assign(new Error("AI response empty"), { code: "AI_EMPTY_CONTENT" });
-  }
-  try { return JSON.parse(content); }
-  catch (error) { throw Object.assign(new Error("AI response invalid"), { code: "AI_INVALID_JSON" }); }
-}
-
-function callAi(input) {
-  return new Promise((resolve, reject) => {
-    if (!process.env.OPENAI_API_KEY) return reject(Object.assign(new Error("AI unavailable"), { code: "AI_NOT_CONFIGURED" }));
-    const system = [
-      "你是中学科学探究学习记录摘要器。只根据给定事实与学生文本生成结构化支持摘要。",
-      "不得评价人格，不得使用能力差、不认真等固定标签；不得给标准答案；不得猜测事实。",
-      "所有判断必须引用sourceTaskIds。只返回JSON，不要Markdown。",
-      "code只能使用FORM_QUESTION、DESIGN_INQUIRY、COMPARE_RESULTS、USE_EVIDENCE、FORM_CONCLUSION、REFLECT_REVISE、EXPRESS_IDEAS、INPUT_SUPPORT。",
-      "nextSupport.stageId只能使用question、hypothesis、plan、evidence、analysis、conclusion、reflection、posttest。",
-      "supportType只能使用question_prompt、evidence_prompt、comparison_prompt、reflection_prompt、voice_optional。",
-      'JSON字段结构示例：{"strengths":[],"needsSupport":[],"inquiryPerformance":{},"evidenceUse":{},"reflectionPerformance":{},"inputSupport":{},"interventionResponse":{},"nextSupport":[],"changesFromPrevious":[]}。示例仅展示字段，必须按输入事实填充；sourceTaskIds只能使用studentWorkSamples中的taskId。'
-    ].join("\n");
-    const body = JSON.stringify({
-      model: MODEL,
-      messages: [{ role: "system", content: system }, { role: "user", content: JSON.stringify(input) }],
-      response_format: { type: "json_object" },
-      thinking: { type: "disabled" },
-      temperature: 0.1,
-      max_tokens: 4000
-    });
-    const request = https.request({
-      hostname: "api.deepseek.com",
-      path: "/chat/completions",
-      method: "POST",
-      timeout: 20000,
-      headers: { "Content-Type": "application/json", "Content-Length": Buffer.byteLength(body), Authorization: `Bearer ${process.env.OPENAI_API_KEY}` }
-    }, (response) => {
-      let responseBody = "";
-      response.setEncoding("utf8");
-      response.on("data", (chunk) => { responseBody += chunk; if (responseBody.length > 200000) request.destroy(); });
-      response.on("end", () => {
-        if (response.statusCode < 200 || response.statusCode >= 300) return reject(Object.assign(new Error("AI service error"), { code: `AI_HTTP_${response.statusCode}` }));
-        try { resolve(parseAiResponse(responseBody)); }
-        catch (error) { reject(error); }
-      });
-    });
-    request.on("timeout", () => request.destroy(Object.assign(new Error("AI timeout"), { code: "AI_TIMEOUT" })));
-    request.on("error", reject);
-    request.write(body);
-    request.end();
-  });
 }
 
 function buildOverall(student, experimentMemories) {
@@ -409,21 +321,34 @@ function buildOverall(student, experimentMemories) {
 
 exports.main = async (event) => {
   const session = verifySession(event);
-  if (!session) return { ok: false, code: "UNAUTHORIZED", message: "登录会话无效或已过期。", retryable: false };
+  if (!session) {
+    console.warn("generateExperimentMemory outcome", { code: "UNAUTHORIZED" });
+    return { ok: false, code: "UNAUTHORIZED", message: "登录会话无效或已过期。", retryable: false };
+  }
   const payload = parsePayload(event);
   const experimentId = clean(payload.experimentId, 32);
-  if (!EXPERIMENTS[experimentId]) return { ok: false, code: "INVALID_EXPERIMENT", message: "实验标识无效。", retryable: false };
+  if (!EXPERIMENTS[experimentId]) {
+    console.warn("generateExperimentMemory outcome", { code: "INVALID_EXPERIMENT" });
+    return { ok: false, code: "INVALID_EXPERIMENT", message: "实验标识无效。", retryable: false };
+  }
   const studentId = clean(session.studentId, 100);
 
   try {
     const studentResult = await studentsCollection.where({ studentId }).limit(1).get();
     const student = Array.isArray(studentResult.data) ? studentResult.data[0] : null;
-    if (!student) return { ok: false, code: "STUDENT_NOT_FOUND", message: "学生账号不存在。", retryable: false };
+    if (!student) {
+      console.warn("generateExperimentMemory outcome", { code: "STUDENT_NOT_FOUND", experimentId });
+      return { ok: false, code: "STUDENT_NOT_FOUND", message: "学生账号不存在。", retryable: false };
+    }
     const submission = await latestSubmission(studentId, experimentId);
-    if (!submission) return { ok: false, code: "SUBMISSION_NOT_FOUND", message: "尚未找到实验提交记录。", retryable: true };
+    if (!submission) {
+      console.warn("generateExperimentMemory outcome", { code: "SUBMISSION_NOT_FOUND", experimentId });
+      return { ok: false, code: "SUBMISSION_NOT_FOUND", message: "尚未找到实验提交记录。", retryable: true };
+    }
     const state = fullState(submission);
     const completion = completionFacts(state, experimentId);
     if (completion.completedTaskCount < 8) {
+      console.warn("generateExperimentMemory outcome", { code: "EXPERIMENT_INCOMPLETE", experimentId });
       return { ok: false, code: "EXPERIMENT_INCOMPLETE", message: "实验必要环节尚未完成。", retryable: false, completion };
     }
     const [learningResult, interventionResult, screening, existingMemoriesResult] = await Promise.all([
@@ -440,23 +365,14 @@ exports.main = async (event) => {
     const sourceFactsHash = hash({ facts, samples: textSamples(learning), sourceRecordIds });
     const id = memoryId(studentId, "experiment", experimentId);
     const existing = await readDocument(id);
-    if (existing && existing.sourceFactsHash === sourceFactsHash) {
+    if (existing && existing.sourceFactsHash === sourceFactsHash && existing.promptVersion === 0) {
+      console.info("generateExperimentMemory outcome", { code: "UNCHANGED", experimentId });
       return { ok: true, recordId: id, operation: "unchanged", version: existing.version };
     }
-    const aiValue = await callAi({
-      experiment: { experimentId, name: EXPERIMENTS[experimentId].label, order: EXPERIMENTS[experimentId].order },
-      objectiveFacts: facts,
-      studentWorkSamples: textSamples(learning),
-      previousExperimentMemories: previousMemories.filter((item) => Number(item.experimentOrder) < EXPERIMENTS[experimentId].order).map((item) => ({
-        experimentId: item.experimentId,
-        strengths: item.summary && item.summary.strengths || [],
-        needsSupport: item.summary && item.summary.needsSupport || []
-      }))
-    });
-    const summary = validateSummary(aiValue, new Set(learning.map((item) => clean(item.taskId, 100)).filter(Boolean)));
-    if (!summary) return { ok: false, code: "AI_INVALID_STRUCTURE", message: "学习摘要暂时无法生成。", retryable: true };
+    const summary = buildSummary(submission, facts);
     const latestBeforeWrite = await latestSubmission(studentId, experimentId);
     if (!latestBeforeWrite || latestBeforeWrite.recordId !== submission.recordId) {
+      console.warn("generateExperimentMemory outcome", { code: "STALE_SUBMISSION", experimentId });
       return { ok: false, code: "STALE_SUBMISSION", message: "检测到更新的实验提交，将重新生成。", retryable: true };
     }
     const document = {
@@ -476,7 +392,7 @@ exports.main = async (event) => {
       sourceSubmissionRecordId: submission.recordId,
       sourceFactsHash,
       version: (Number(existing && existing.version) || 0) + 1,
-      promptVersion: 1,
+      promptVersion: 0,
       generatedAt: db.serverDate(),
       updatedAt: db.serverDate()
     };
@@ -494,6 +410,7 @@ exports.main = async (event) => {
       overall.createdAt = db.serverDate();
       await memoriesCollection.doc(overall.recordId).set(overall);
     }
+    console.info("generateExperimentMemory outcome", { code: "WRITTEN", experimentId, operation: existing ? "updated" : "created" });
     return { ok: true, recordId: id, operation: existing ? "updated" : "created", version: document.version };
   } catch (error) {
     console.error("generateExperimentMemory failed", { code: error.code || error.errCode || "UNKNOWN" });
@@ -506,8 +423,7 @@ exports.__test = Object.freeze({
   completionFacts,
   performanceFacts,
   scorePretest,
-  validateSummary,
-  parseAiResponse,
+  buildSummary,
   buildOverall,
   memoryId
 });

@@ -2,7 +2,6 @@
 
 const cloudbase = require("@cloudbase/node-sdk");
 const crypto = require("crypto");
-const https = require("https");
 
 const EXPERIMENTS = Object.freeze([
   { id: "memory", order: 1, label: "记忆容量实验" },
@@ -19,8 +18,7 @@ const DIMENSION_IDS = Object.freeze([
 ]);
 const LEVELS = new Set(["consistent", "developing", "support_recommended", "insufficient_data"]);
 const DIRECTIONS = new Set(["improved", "stable", "mixed", "needs_support", "insufficient_data"]);
-const MODEL = "deepseek-flash";
-const PROMPT_VERSION = 1;
+const PROMPT_VERSION = 0;
 const DISCLAIMER = "本诊断仅基于本平台中的学习过程和任务表现，用于教学支持，不构成心理或医学诊断。";
 const BANNED_PHRASES = ["能力差", "不认真", "依赖AI", "依赖 AI", "心理障碍", "医学诊断", "心理诊断", "智力低", "懒惰"];
 
@@ -30,7 +28,6 @@ const recordsCollection = db.collection("experimentRecords");
 const submissionsCollection = db.collection("experiment_submissions");
 const learningCollection = db.collection("learning_records");
 const interventionsCollection = db.collection("agent_interventions");
-const memoriesCollection = db.collection("student_memories");
 const diagnosesCollection = db.collection("learning_diagnoses");
 const studentsCollection = db.collection("students");
 
@@ -215,34 +212,71 @@ function interventionMetrics(records) {
   });
 }
 
-function knowledgeMetrics(memory) {
-  const knowledge = memory && memory.objectiveFacts && memory.objectiveFacts.knowledge || {};
-  const pretest = knowledge.pretest || {};
-  const posttest = knowledge.posttest || {};
+function knowledgeMetrics(state, experimentId) {
+  const pretest = state.knowledgeAssessment?.T0?.categoryScores?.[experimentId] || {};
+  const stage = { memory: "T1", nback: "T2", interference: "T3", strategies: "T4" }[experimentId];
+  const assessment = state.knowledgeAssessment?.[stage];
+  const quiz = state.knowledgeQuiz || {};
+  const score = assessment?.score ?? quiz.score;
+  const posttest = score != null && Number.isFinite(Number(score))
+    ? { available: true, firstScore: score, latestScore: score, highestScore: score }
+    : {};
+  const pretestAvailable = pretest.score != null && Number.isFinite(Number(pretest.score));
   return {
-    pretestAvailable: Boolean(pretest.available),
-    pretestScore: pretest.available ? Number(pretest.score) : null,
+    pretestAvailable,
+    pretestScore: pretestAvailable ? Number(pretest.score) : null,
     posttestAvailable: Boolean(posttest.available),
     posttestFirstScore: posttest.available ? Number(posttest.firstScore) : null,
     posttestLatestScore: posttest.available ? Number(posttest.latestScore) : null,
     posttestHighestScore: posttest.available ? Number(posttest.highestScore) : null,
-    changeFromPretest: Number.isFinite(Number(knowledge.changeFromPretest)) ? Number(knowledge.changeFromPretest) : null
+    changeFromPretest: pretestAvailable && posttest.available ? Number(posttest.latestScore) - Number(pretest.score) : null
   };
 }
 
-function buildObjectiveMetrics(submissions, memories, learningByExperiment, interventionsByExperiment, posterSubmission = null) {
+function performanceFromState(state) {
+  const records = Array.isArray(state.records) ? state.records : Array.isArray(state.testRuns) ? state.testRuns : [];
+  const groups = new Map();
+  for (const record of records) {
+    const key = clean(record.condition || record.direction || record.n || record.strategy || "overall", 80);
+    const group = groups.get(key) || { key, count: 0, scoreTotal: 0, accuracyTotal: 0 };
+    group.count += 1;
+    group.scoreTotal += Number(record.score ?? record.correctCount) || 0;
+    group.accuracyTotal += Number(record.accuracy) || 0;
+    groups.set(key, group);
+  }
+  return Array.from(groups.values()).map((group) => ({
+    key: group.key,
+    count: group.count,
+    averageScore: Number((group.scoreTotal / group.count).toFixed(2)),
+    averageAccuracy: Number((group.accuracyTotal / group.count).toFixed(2))
+  }));
+}
+
+function answerCoverage(submission) {
+  const answers = submission.answers || fullState(submission).fields || {};
+  const has = (pattern) => Object.entries(answers).some(([key, value]) => pattern.test(key) && typeof value === "string" && clean(value).length > 0);
+  return {
+    question: has(/question|research/i),
+    hypothesis: has(/hypothesis/i),
+    analysis: has(/analysis|finding|compare/i),
+    conclusion: has(/conclusion/i),
+    reflection: has(/reflection|improve|teamwork|insight/i)
+  };
+}
+
+function buildObjectiveMetrics(submissions, learningByExperiment, interventionsByExperiment, posterSubmission = null) {
   const experiments = EXPERIMENTS.map((experiment) => {
     const submission = submissions[experiment.id];
-    const memory = memories[experiment.id];
     const state = fullState(submission);
     return {
       experimentId: experiment.id,
       experimentName: experiment.label,
       experimentOrder: experiment.order,
-      submittedAt: memory.completedAt || submission.uploadedAt || recordData(submission).createdAt || "",
+      submittedAt: submission.uploadedAt || recordData(submission).createdAt || "",
       completion: completionFacts(state),
-      performance: memory.objectiveFacts && memory.objectiveFacts.performance || [],
-      knowledge: knowledgeMetrics(memory),
+      performance: performanceFromState(state),
+      knowledge: knowledgeMetrics(state, experiment.id),
+      answerCoverage: answerCoverage(submission),
       surveys: surveyMetrics(state),
       input: learningMetrics(learningByExperiment[experiment.id] || []),
       interventions: interventionMetrics(interventionsByExperiment[experiment.id] || [])
@@ -361,81 +395,50 @@ function validateDiagnosis(value) {
   };
 }
 
-function parseAiResponse(responseBody) {
-  let response;
-  try { response = JSON.parse(responseBody); }
-  catch (error) { throw Object.assign(new Error("AI response invalid"), { code: "AI_INVALID_JSON" }); }
-  const choice = response && response.choices && response.choices[0];
-  if (choice && choice.finish_reason === "length") {
-    throw Object.assign(new Error("AI response truncated"), { code: "AI_RESPONSE_TRUNCATED" });
-  }
-  const content = choice && choice.message && choice.message.content;
-  if (typeof content !== "string" || !content.trim()) {
-    throw Object.assign(new Error("AI response empty"), { code: "AI_EMPTY_CONTENT" });
-  }
-  try { return JSON.parse(content); }
-  catch (error) { throw Object.assign(new Error("AI response invalid"), { code: "AI_INVALID_JSON" }); }
-}
-
-function callAi(input) {
-  return new Promise((resolve, reject) => {
-    if (!process.env.OPENAI_API_KEY) return reject(Object.assign(new Error("AI unavailable"), { code: "AI_NOT_CONFIGURED" }));
-    const system = [
-      "你是面向5—9年级学生的学习过程诊断摘要器，只能使用输入中的四次实验事实和结构化记忆。",
-      "只描述当前学习表现和支持需要，不评价人格，不进行心理或医学诊断，不判断智力。",
-      "不得使用“能力差”“不认真”“依赖AI”等固定标签，不得提供标准答案，不得补猜缺失数据。",
-      "学生报告不得出现知识测评的分数、正确题数、正确答案或错题；这些数值只保留在教师侧客观指标中。",
-      "AI或语音使用次数少不能解释为工具使用能力不足。所有证据和变化必须列出sourceExperimentIds。",
-      `dimensions必须且只能依次覆盖：${DIMENSION_IDS.join("、")}。`,
-      "level只能为consistent、developing、support_recommended、insufficient_data。",
-      "progress.direction只能为improved、stable、mixed、needs_support、insufficient_data。",
-      "studentReport.nextActions最多3条，使用友好、清晰、可执行的中文。只返回JSON，不要Markdown。",
-      'JSON字段结构示例：{"dimensions":[],"progressSummary":"","studentReport":{"strengths":[],"progress":[],"growthAreas":[],"nextActions":[]},"teacherReport":{"completionSummary":"","processSummary":"","interventionSummary":"","toolUsageSummary":"","changeSummary":"","recommendations":[]},"recommendations":[]}。示例仅展示字段，必须按四次实验事实填充；来源实验ID只能来自输入。'
-    ].join("\n");
-    const body = JSON.stringify({
-      model: MODEL,
-      messages: [{ role: "system", content: system }, { role: "user", content: JSON.stringify(input) }],
-      response_format: { type: "json_object" },
-      thinking: { type: "disabled" },
-      temperature: 0.1,
-      max_tokens: 6000
-    });
-    const request = https.request({
-      hostname: "api.deepseek.com",
-      path: "/chat/completions",
-      method: "POST",
-      timeout: 25000,
-      headers: {
-        "Content-Type": "application/json",
-        "Content-Length": Buffer.byteLength(body),
-        Authorization: `Bearer ${process.env.OPENAI_API_KEY}`
-      }
-    }, (response) => {
-      let responseBody = "";
-      response.setEncoding("utf8");
-      response.on("data", (chunk) => {
-        responseBody += chunk;
-        if (responseBody.length > 250000) request.destroy();
-      });
-      response.on("end", () => {
-        if (response.statusCode < 200 || response.statusCode >= 300) {
-          return reject(Object.assign(new Error("AI service error"), { code: `AI_HTTP_${response.statusCode}` }));
-        }
-        try { resolve(parseAiResponse(responseBody)); }
-        catch (error) { reject(error); }
-      });
-    });
-    request.on("timeout", () => request.destroy(Object.assign(new Error("AI timeout"), { code: "AI_TIMEOUT" })));
-    request.on("error", reject);
-    request.write(body);
-    request.end();
+function buildDiagnosis(metrics) {
+  const ids = EXPERIMENTS.map((item) => item.id);
+  const withKnowledge = metrics.experiments.filter((item) => item.knowledge.posttestAvailable).length;
+  const withResults = metrics.experiments.filter((item) => item.performance.length > 0).length;
+  const withEvidenceWriting = metrics.experiments.filter((item) => item.answerCoverage.analysis && item.answerCoverage.conclusion).length;
+  const withReflection = metrics.experiments.filter((item) => item.answerCoverage.reflection).length;
+  const toolTasks = metrics.totals.input.aiUsageTaskCount + metrics.totals.input.voiceUsageTaskCount;
+  const dimension = (dimensionId, level, summary, suggestion) => ({
+    dimensionId,
+    level,
+    evidence: [{ summary, sourceExperimentIds: ids }],
+    progress: { direction: "insufficient_data", summary: "现有记录不足以可靠判断跨实验变化。", sourceExperimentIds: ids },
+    suggestion
   });
+  return {
+    dimensions: [
+      dimension("memory_knowledge", withKnowledge ? "developing" : "insufficient_data", `四次实验中有 ${withKnowledge} 次保存了知识测验结果。`, "复习每次实验的知识题，并核对自己的解释。"),
+      dimension("scientific_inquiry", "consistent", "四次实验均有完整正式提交和实验后问卷。", "继续按研究问题、假设、数据和结论的顺序整理探究。"),
+      dimension("evidence_use", withEvidenceWriting ? "developing" : "insufficient_data", `四次实验中有 ${withResults} 次保留了可汇总的实验结果，${withEvidenceWriting} 次同时记录了分析和结论。`, "写结论时引用一项具体实验结果。"),
+      dimension("metacognitive_regulation", withReflection ? "developing" : "insufficient_data", `四次实验后均填写了自评问卷，其中 ${withReflection} 次保留了反思文本。`, "对照实验结果与反思记录，写出下一次要调整的一步。"),
+      dimension("tool_use", toolTasks ? "developing" : "insufficient_data", toolTasks ? "过程记录中保存了 AI 或语音工具的使用。" : "过程记录未保存 AI 或语音工具使用；不能据此评价工具使用水平。", "按任务需要选择工具，并核对工具给出的内容。")
+    ],
+    progressSummary: "已完成四次记忆探究。以下观察只依据平台保存的正式提交、测验和过程记录。",
+    studentReport: {
+      strengths: [`四次探究均已形成正式提交，其中 ${withEvidenceWriting} 次同时记录了分析和结论。`],
+      progress: ["四次实验的记录已汇总；现有数据不足时不推断个人能力变化。"],
+      growthAreas: ["可以继续练习把实验结果与结论逐项对应。"],
+      nextActions: ["下一次写结论时，先选出一项最能支持观点的数据。"]
+    },
+    teacherReport: {
+      completionSummary: "四次实验均有完整正式提交。",
+      processSummary: `其中 ${withResults} 次保留了可汇总的实验结果，${withReflection} 次保留了反思文本。`,
+      interventionSummary: `记录到 ${metrics.totals.interventions.relevancePromptCount} 次任务相关提示。`,
+      toolUsageSummary: `记录到 ${metrics.totals.input.aiUsageTaskCount} 次 AI 使用任务、${metrics.totals.input.voiceUsageTaskCount} 次语音使用任务。`,
+      changeSummary: "跨实验变化仅在有可比指标时判断；当前报告不作无证据推断。",
+      recommendations: ["教学中继续引导学生用具体实验数据支持结论。"]
+    },
+    recommendations: [{ action: "在结论中引用一项实验数据。", rationale: "让观点与已保存的证据建立可核对的联系。", dimensionIds: ["evidence_use"] }]
+  };
 }
 
 async function readSources(studentId) {
-  const [submissionList, memoryResult, learningList, interventionList, posterSubmission] = await Promise.all([
+  const [submissionList, learningList, interventionList, posterSubmission] = await Promise.all([
     Promise.all(EXPERIMENTS.map(async (experiment) => [experiment.id, await latestSubmission(studentId, experiment.id)])),
-    memoriesCollection.where({ studentId, memoryType: "experiment" }).limit(10).get(),
     Promise.all(EXPERIMENTS.map(async (experiment) => {
       const result = await learningCollection.where({ studentId, experimentId: experiment.id }).limit(100).get();
       return [experiment.id, Array.isArray(result.data) ? result.data : []];
@@ -447,12 +450,9 @@ async function readSources(studentId) {
     latestSubmission(studentId, "poster")
   ]);
   const submissions = Object.fromEntries(submissionList);
-  const memoryRecords = Array.isArray(memoryResult.data) ? memoryResult.data : [];
-  const memories = Object.fromEntries(memoryRecords.map((record) => [record.experimentId, record]));
   return {
     submissions,
     posterSubmission,
-    memories,
     learningByExperiment: Object.fromEntries(learningList),
     interventionsByExperiment: Object.fromEntries(interventionList)
   };
@@ -461,7 +461,6 @@ async function readSources(studentId) {
 function evaluateReadiness(sources) {
   const missingExperimentIds = [];
   const incompleteExperimentIds = [];
-  const staleMemoryExperimentIds = [];
   for (const experiment of EXPERIMENTS) {
     const submission = sources.submissions[experiment.id];
     if (!submission) {
@@ -469,38 +468,28 @@ function evaluateReadiness(sources) {
       continue;
     }
     if (!completionFacts(fullState(submission)).completed) incompleteExperimentIds.push(experiment.id);
-    const memory = sources.memories[experiment.id];
-    if (!memory || memory.sourceSubmissionRecordId !== submission.recordId) staleMemoryExperimentIds.push(experiment.id);
   }
   return {
     eligible: missingExperimentIds.length === 0 && incompleteExperimentIds.length === 0,
-    generationReady: missingExperimentIds.length === 0 && incompleteExperimentIds.length === 0 && staleMemoryExperimentIds.length === 0,
+    generationReady: missingExperimentIds.length === 0 && incompleteExperimentIds.length === 0,
     missingExperimentIds,
     incompleteExperimentIds,
-    staleMemoryExperimentIds
+    staleMemoryExperimentIds: []
   };
 }
 
 function sourceSignature(sources, objectiveMetrics) {
-  const sourceMemoryVersions = {};
   const sourceRecordIds = [];
   for (const experiment of EXPERIMENTS) {
-    const memory = sources.memories[experiment.id];
     const submission = sources.submissions[experiment.id];
-    sourceMemoryVersions[experiment.id] = {
-      recordId: memory.recordId,
-      version: Number(memory.version) || 1,
-      sourceFactsHash: memory.sourceFactsHash,
-      sourceSubmissionRecordId: memory.sourceSubmissionRecordId
-    };
-    sourceRecordIds.push(memory.recordId, submission.recordId);
+    sourceRecordIds.push(submission.recordId);
     for (const item of sources.learningByExperiment[experiment.id] || []) if (item.recordId) sourceRecordIds.push(item.recordId);
     for (const item of sources.interventionsByExperiment[experiment.id] || []) if (item.recordId) sourceRecordIds.push(item.recordId);
   }
   if (sources.posterSubmission?.recordId) sourceRecordIds.push(sources.posterSubmission.recordId);
   const uniqueSourceRecordIds = Array.from(new Set(sourceRecordIds.filter(Boolean))).sort().slice(0, 300);
-  const sourceFactsHash = hash({ sourceMemoryVersions, objectiveMetrics, sourceRecordIds: uniqueSourceRecordIds });
-  return { sourceMemoryVersions, sourceRecordIds: uniqueSourceRecordIds, sourceFactsHash };
+  const sourceFactsHash = hash({ objectiveMetrics, sourceRecordIds: uniqueSourceRecordIds });
+  return { sourceRecordIds: uniqueSourceRecordIds, sourceFactsHash };
 }
 
 async function persistVersion(student, pointer, document) {
@@ -552,12 +541,8 @@ exports.main = async (event) => {
     if (!readiness.eligible) {
       return { ok: false, code: "EXPERIMENTS_INCOMPLETE", message: "四次实验尚未全部完成。", retryable: false, readiness };
     }
-    if (!readiness.generationReady) {
-      return { ok: false, code: "MEMORIES_NOT_READY", message: "正在整理四次实验记忆。", retryable: true, readiness };
-    }
     const objectiveMetrics = buildObjectiveMetrics(
       sources.submissions,
-      sources.memories,
       sources.learningByExperiment,
       sources.interventionsByExperiment,
       sources.posterSubmission
@@ -567,28 +552,9 @@ exports.main = async (event) => {
     if (pointer && pointer.currentSourceFactsHash === signature.sourceFactsHash) {
       return { ok: true, operation: "unchanged", recordId: pointer.currentRecordId, diagnosisVersion: pointer.currentVersion };
     }
-    const aiValue = await callAi({
-      completedExperiments: EXPERIMENTS.map((experiment) => ({ experimentId: experiment.id, experimentName: experiment.label })),
-      objectiveMetrics,
-      experimentMemories: EXPERIMENTS.map((experiment) => {
-        const memory = sources.memories[experiment.id];
-        return {
-          experimentId: experiment.id,
-          version: memory.version,
-          strengths: memory.summary && memory.summary.strengths || [],
-          needsSupport: memory.summary && memory.summary.needsSupport || [],
-          inquiryPerformance: memory.summary && memory.summary.inquiryPerformance || {},
-          evidenceUse: memory.summary && memory.summary.evidenceUse || {},
-          reflectionPerformance: memory.summary && memory.summary.reflectionPerformance || {},
-          inputSupport: memory.summary && memory.summary.inputSupport || {},
-          interventionResponse: memory.summary && memory.summary.interventionResponse || {},
-          changesFromPrevious: memory.summary && memory.summary.changesFromPrevious || []
-        };
-      })
-    });
-    const diagnosis = validateDiagnosis(aiValue);
+    const diagnosis = validateDiagnosis(buildDiagnosis(objectiveMetrics));
     if (!diagnosis || !diagnosis.progressSummary) {
-      return { ok: false, code: "AI_INVALID_STRUCTURE", message: "学习诊断暂时无法生成。", retryable: true };
+      return { ok: false, code: "INVALID_STRUCTURE", message: "学习诊断暂时无法生成。", retryable: true };
     }
     const latestSources = await readSources(studentId);
     const latestReadiness = evaluateReadiness(latestSources);
@@ -597,7 +563,6 @@ exports.main = async (event) => {
     }
     const latestMetrics = buildObjectiveMetrics(
       latestSources.submissions,
-      latestSources.memories,
       latestSources.learningByExperiment,
       latestSources.interventionsByExperiment,
       latestSources.posterSubmission
@@ -620,7 +585,6 @@ exports.main = async (event) => {
       className: clean(student.class, 100),
       groupName: clean(student.group, 100),
       diagnosisVersion,
-      sourceMemoryVersions: signature.sourceMemoryVersions,
       sourceFactsHash: signature.sourceFactsHash,
       completedExperiments: objectiveMetrics.experiments.map((item) => ({
         experimentId: item.experimentId,
@@ -659,7 +623,7 @@ exports.__test = Object.freeze({
   buildObjectiveMetrics,
   evaluateReadiness,
   validateDiagnosis,
-  parseAiResponse,
+  buildDiagnosis,
   pointerId,
   versionId
 });

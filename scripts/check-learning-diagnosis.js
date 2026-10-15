@@ -4,6 +4,7 @@ const assert = require("assert");
 const fs = require("fs");
 const path = require("path");
 const Module = require("module");
+const crypto = require("crypto");
 
 const root = path.resolve(__dirname, "..");
 
@@ -11,7 +12,7 @@ function source(relativePath) {
   return fs.readFileSync(path.join(root, relativePath), "utf8");
 }
 
-function loadFunction(name) {
+function loadFunction(name, database) {
   const filename = path.join(root, "cloudfunctions", name, "index.js");
   const originalLoad = Module._load;
   const collection = {
@@ -31,7 +32,7 @@ function loadFunction(name) {
           return {
             database() {
               return {
-                collection() { return collection; },
+                collection(collectionName) { return database ? database.collection(collectionName) : collection; },
                 serverDate() { return "SERVER_DATE"; }
               };
             }
@@ -42,12 +43,12 @@ function loadFunction(name) {
     return originalLoad.apply(this, arguments);
   };
   delete require.cache[require.resolve(filename)];
-  try { return require(filename).__test; }
+  try { return require(filename); }
   finally { Module._load = originalLoad; }
 }
 
-const generator = loadFunction("generateLearningDiagnosis");
-const reader = loadFunction("getLearningDiagnosis");
+const generator = loadFunction("generateLearningDiagnosis").__test;
+const reader = loadFunction("getLearningDiagnosis").__test;
 const completeState = {
   maxUnlockedStep: 7,
   surveys: {
@@ -87,27 +88,19 @@ const readySources = {
   submissions: Object.fromEntries(experimentIds.map((id) => [id, {
     recordId: `submission_${id}`,
     data: { fullState: completeState }
-  }])),
-  memories: Object.fromEntries(experimentIds.map((id) => [id, {
-    recordId: `memory_${id}`,
-    sourceSubmissionRecordId: `submission_${id}`
   }]))
 };
-const objectiveMetrics = generator.buildObjectiveMetrics(readySources.submissions, readySources.memories, {}, {});
+const objectiveMetrics = generator.buildObjectiveMetrics(readySources.submissions, {}, {});
 assert(objectiveMetrics.experiments.every((item) => item.surveys.metacognitionAverage === 4), "legacy q6 must not affect metacognition averages");
 assert.strictEqual(generator.evaluateReadiness(readySources).generationReady, true);
 const normalizedSources = {
-  submissions: Object.fromEntries(experimentIds.map((id) => [id, { ...submittedRecord, recordId: `submission_${id}` }])),
-  memories: readySources.memories
+  submissions: Object.fromEntries(experimentIds.map((id) => [id, { ...submittedRecord, recordId: `submission_${id}` }]))
 };
 assert.strictEqual(generator.evaluateReadiness(normalizedSources).generationReady, true,
-  "four completed normalized submissions and matching memories must qualify for diagnosis");
-const missingMemory = {
-  submissions: readySources.submissions,
-  memories: { ...readySources.memories }
-};
-delete missingMemory.memories.nback;
-assert.deepStrictEqual(generator.evaluateReadiness(missingMemory).staleMemoryExperimentIds, ["nback"]);
+  "four completed normalized submissions must qualify for diagnosis");
+const withoutMemories = generator.buildObjectiveMetrics(readySources.submissions, {}, {});
+assert(generator.validateDiagnosis(generator.buildDiagnosis(withoutMemories)),
+  "completed submissions alone must produce a valid diagnosis");
 
 const dimensions = [
   "memory_knowledge",
@@ -146,12 +139,10 @@ const validDiagnosis = {
   }]
 };
 assert(generator.validateDiagnosis(validDiagnosis));
-assert.deepStrictEqual(generator.parseAiResponse(JSON.stringify({ choices: [{ finish_reason: "stop", message: { content: JSON.stringify(validDiagnosis) } }] })), validDiagnosis);
-assert.throws(() => generator.parseAiResponse(JSON.stringify({ choices: [{ finish_reason: "length", message: { content: '{"dimensions":[' } }] })), { code: "AI_RESPONSE_TRUNCATED" });
-assert.throws(() => generator.parseAiResponse(JSON.stringify({ choices: [{ finish_reason: "stop", message: { content: null } }] })), { code: "AI_EMPTY_CONTENT" });
-assert.throws(() => generator.parseAiResponse(JSON.stringify({ choices: [{ finish_reason: "stop", message: { content: "{broken" } }] })), { code: "AI_INVALID_JSON" });
-assert(source("cloudfunctions/generateLearningDiagnosis/index.js").includes('thinking: { type: "disabled" }'));
-assert(source("cloudfunctions/generateLearningDiagnosis/index.js").includes('const MODEL = "deepseek-flash"'));
+const builtDiagnosis = generator.validateDiagnosis(generator.buildDiagnosis(objectiveMetrics));
+assert(builtDiagnosis);
+assert.strictEqual(builtDiagnosis.dimensions.length, 5);
+assert(!source("cloudfunctions/generateLearningDiagnosis/index.js").includes("OPENAI_API_KEY"));
 assert.strictEqual(generator.validateDiagnosis({ ...validDiagnosis, dimensions: dimensions.slice(0, 4) }), null);
 assert.strictEqual(generator.validateDiagnosis({
   ...validDiagnosis,
@@ -192,4 +183,45 @@ for (const name of ["generateLearningDiagnosis", "getLearningDiagnosis", "getLea
   assert(cloudbaseConfig.functions.some((item) => item.name === name), `cloudbase config missing ${name}`);
 }
 
-console.log("Learning diagnosis eligibility, validation, versioning, UI and access contracts passed.");
+(async () => {
+  const secret = "learning-diagnosis-test-secret-at-least-32-characters";
+  process.env.STUDENT_SESSION_SECRET = secret;
+  const payload = Buffer.from(JSON.stringify({ version: 1, studentId: "S001", expiresAt: Math.floor(Date.now() / 1000) + 3600 })).toString("base64url");
+  const token = `${payload}.${crypto.createHmac("sha256", secret).update(payload).digest("base64url")}`;
+  const written = new Map();
+  const submissions = experimentIds.map((id) => ({ ...submittedRecord, recordId: `submission_${id}`, studentId: "S001", experimentId: id, uploadedAt: "2026-07-29T01:00:00.000Z" }));
+  const database = {
+    collection(name) {
+      return {
+        where(query) {
+          const data = name === "students" ? [{ studentId: "S001", name: "测试学生" }]
+            : name === "experiment_submissions" ? submissions.filter((item) => item.experimentId === query.experimentId)
+              : [];
+          return { orderBy() { return this; }, limit() { return this; }, async get() { return { data }; } };
+        },
+        doc(id) {
+          return {
+            async get() { return { data: written.has(id) ? [written.get(id)] : [] }; },
+            async set(value) { written.set(id, value); },
+            async update(value) { written.set(id, value); }
+          };
+        }
+      };
+    }
+  };
+  const previousKey = process.env.OPENAI_API_KEY;
+  delete process.env.OPENAI_API_KEY;
+  try {
+    const result = await loadFunction("generateLearningDiagnosis", database).main({ headers: { authorization: `Bearer ${token}` } });
+    assert.strictEqual(result.ok, true, `diagnosis write failed: ${result.code}`);
+    assert.strictEqual(Array.from(written.values()).filter((item) => item.recordType === "version").length, 1);
+    assert.strictEqual(Array.from(written.values()).filter((item) => item.recordType === "pointer").length, 1);
+  } finally {
+    if (previousKey === undefined) delete process.env.OPENAI_API_KEY;
+    else process.env.OPENAI_API_KEY = previousKey;
+  }
+  console.log("Learning diagnosis eligibility, validation, versioning, UI and access contracts passed.");
+})().catch((error) => {
+  console.error(error);
+  process.exitCode = 1;
+});

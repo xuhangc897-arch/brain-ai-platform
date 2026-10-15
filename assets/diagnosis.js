@@ -102,9 +102,7 @@
       renderStatus("诊断尚未开放", "完成全部四次记忆探究后，这里会出现你的学习诊断。", false);
       return;
     }
-    renderStatus("正在整理学习诊断", result.eligibility?.generationReady
-      ? "四份实验学习记忆已齐，系统正在生成综合诊断。"
-      : "四次实验已经完成，系统正在补齐实验学习记忆。", true);
+    renderStatus("正在整理学习诊断", "四次正式实验已经完成，系统正在根据已保存的数据生成综合诊断。", true);
   }
 
   printBtn?.addEventListener("click", () => window.print());

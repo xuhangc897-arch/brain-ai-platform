@@ -22,7 +22,6 @@ const app = cloudbase.init({ env: cloudbase.SYMBOL_CURRENT_ENV });
 const db = app.database();
 const records = db.collection("experimentRecords");
 const submissions = db.collection("experiment_submissions");
-const memories = db.collection("student_memories");
 const diagnoses = db.collection("learning_diagnoses");
 const students = db.collection("students");
 
@@ -130,14 +129,9 @@ async function latestSubmission(studentId, experimentId) {
 }
 
 async function readiness(studentId) {
-  const [submissions, memoryResult] = await Promise.all([
-    Promise.all(EXPERIMENTS.map((experimentId) => latestSubmission(studentId, experimentId))),
-    memories.where({ studentId, memoryType: "experiment" }).limit(10).get()
-  ]);
-  const memoryMap = Object.fromEntries((Array.isArray(memoryResult.data) ? memoryResult.data : []).map((item) => [item.experimentId, item]));
+  const submissions = await Promise.all(EXPERIMENTS.map((experimentId) => latestSubmission(studentId, experimentId)));
   const missingExperimentIds = [];
   const incompleteExperimentIds = [];
-  const staleMemoryExperimentIds = [];
   EXPERIMENTS.forEach((experimentId, index) => {
     const submission = submissions[index];
     if (!submission) {
@@ -145,16 +139,13 @@ async function readiness(studentId) {
       return;
     }
     if (!completed(fullState(submission))) incompleteExperimentIds.push(experimentId);
-    if (!memoryMap[experimentId] || memoryMap[experimentId].sourceSubmissionRecordId !== submission.recordId) {
-      staleMemoryExperimentIds.push(experimentId);
-    }
   });
   return {
     eligible: !missingExperimentIds.length && !incompleteExperimentIds.length,
-    generationReady: !missingExperimentIds.length && !incompleteExperimentIds.length && !staleMemoryExperimentIds.length,
+    generationReady: !missingExperimentIds.length && !incompleteExperimentIds.length,
     missingExperimentIds,
     incompleteExperimentIds,
-    staleMemoryExperimentIds
+    staleMemoryExperimentIds: []
   };
 }
 
