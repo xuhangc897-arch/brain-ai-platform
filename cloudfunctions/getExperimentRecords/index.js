@@ -108,7 +108,7 @@ exports.main = async (event) => {
   const payload = parsePayload(event);
   const condition = {};
 
-  ["module", "recordType", "studentId", "className", "groupName"].forEach((key) => {
+  ["module", "recordType", "studentId", "studentName", "className", "groupName"].forEach((key) => {
     const value = normalizeText(payload[key]);
     if (value) condition[key] = value;
   });

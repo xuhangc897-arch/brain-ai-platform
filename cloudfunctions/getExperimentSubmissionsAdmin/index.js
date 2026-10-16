@@ -30,7 +30,7 @@ exports.main = async (event) => {
   const newCondition = {}; const legacyCondition = { recordType: "submission" };
   if (text(input.studentId)) { newCondition.studentId = text(input.studentId); legacyCondition.studentId = text(input.studentId); }
   if (text(input.module)) { newCondition.experimentId = text(input.module); legacyCondition.module = text(input.module); }
-  ["className", "groupName"].forEach((key) => { if (text(input[key])) { newCondition[key] = text(input[key]); legacyCondition[key] = text(input[key]); } });
+  ["studentName", "className", "groupName"].forEach((key) => { if (text(input[key])) { newCondition[key] = text(input[key]); legacyCondition[key] = text(input[key]); } });
   const [newResult, legacyResult] = await Promise.all([
     submissions.where(newCondition).orderBy("uploadedAt", "desc").limit(limit).get(),
     legacyRecords.where(legacyCondition).orderBy("uploadedAt", "desc").limit(limit).get()
