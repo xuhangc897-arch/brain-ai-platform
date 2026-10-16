@@ -245,6 +245,28 @@
       letter-spacing: 0.08em;
     }
 
+    .login-role-options {
+      display: flex;
+      gap: 10px;
+      margin-bottom: 24px;
+    }
+
+    .login-role-options button {
+      flex: 1;
+      min-height: 42px;
+      border: 1px solid rgba(212, 175, 106, 0.38);
+      border-radius: 3px;
+      color: rgba(238, 218, 178, 0.82);
+      background: rgba(23, 17, 11, 0.46);
+      cursor: pointer;
+    }
+
+    .login-role-options button[aria-pressed="true"] {
+      border-color: #e0bd76;
+      color: #21160d;
+      background: linear-gradient(180deg, #ddbd77, #bd9352);
+    }
+
     .field {
       margin-bottom: 18px;
     }
@@ -595,16 +617,21 @@
           <p>请出示账号凭证，完成侦探资格核验。</p>
         </header>
 
+        <div class="login-role-options" aria-label="登录身份">
+          <button id="studentRole" type="button" aria-pressed="true">学生登录</button>
+          <button id="teacherRole" type="button" aria-pressed="false">教师登录</button>
+        </div>
+
         <form id="loginForm">
           <div class="field">
-            <label for="account">侦探账号 / 学号</label>
+            <label for="account" id="accountLabel">学号</label>
             <div class="input-frame">
               <svg class="field-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" aria-hidden="true">
                 <circle cx="12" cy="8" r="3.4"></circle>
                 <path d="M5.5 19c.7-3.3 3-5 6.5-5s5.8 1.7 6.5 5"></path>
                 <path d="M3.5 4.5h3m11 0h3M3.5 19.5h3m11 0h3"></path>
               </svg>
-              <input id="account" name="account" type="text" autocomplete="username" placeholder="请输入账号 / 学号" required />
+              <input id="account" name="account" type="text" autocomplete="username" placeholder="请输入学号" required />
             </div>
           </div>
 
@@ -625,12 +652,12 @@
             </div>
           </div>
 
-          <button class="submit-btn" id="submitBtn" type="submit">开启侦探社</button>
+          <button class="submit-btn" id="submitBtn" type="submit">学生登录</button>
           <p class="message" id="message" role="alert"></p>
         </form>
 
         <div class="guest-entry" aria-label="游客入口">
-          <button class="guest-btn" id="guestBtn" type="button">以游客身份查阅档案</button>
+          <button class="guest-btn" id="guestBtn" type="button">游客登录</button>
           <p class="guest-note">游客可以完成实验并生成报告，但实验记录不会上传后台。</p>
         </div>
 
@@ -655,6 +682,8 @@
 
   <script src="assets/experiment-registry.js"></script>
   <script src="assets/platform-core.js"></script>
+  <script src="https://static.cloudbase.net/cloudbase-js-sdk/3.0.0/cloudbase.full.js"></script>
+  <script src="cloudbase.js"></script>
   <script>
     const STUDENT_LOGIN_URL = window.BrainPlatform.config.endpoints.studentLogin;
     const loginForm = document.getElementById("loginForm");
@@ -664,6 +693,10 @@
     const submitBtn = document.getElementById("submitBtn");
     const guestBtn = document.getElementById("guestBtn");
     const message = document.getElementById("message");
+    const studentRole = document.getElementById("studentRole");
+    const teacherRole = document.getElementById("teacherRole");
+    const accountLabel = document.getElementById("accountLabel");
+    let selectedRole = "student";
     const redirectTarget = new URLSearchParams(window.location.search).get("redirect") || "index.html";
     const GUEST_SESSION = {
       isGuest: true,
@@ -692,6 +725,22 @@
       window.BrainPlatform.identity.clearStudentSession();
     }
 
+    function selectRole(role) {
+      if (selectedRole === role) return;
+      selectedRole = role;
+      accountInput.value = "";
+      passwordInput.value = "";
+      studentRole.setAttribute("aria-pressed", String(role === "student"));
+      teacherRole.setAttribute("aria-pressed", String(role === "teacher"));
+      accountLabel.textContent = role === "teacher" ? "教师账号" : "学号";
+      accountInput.placeholder = role === "teacher" ? "请输入教师账号" : "请输入学号";
+      submitBtn.textContent = role === "teacher" ? "教师登录" : "学生登录";
+      message.textContent = "";
+    }
+
+    studentRole.addEventListener("click", () => selectRole("student"));
+    teacherRole.addEventListener("click", () => selectRole("teacher"));
+
     passwordToggle.addEventListener("click", () => {
       const showPassword = passwordInput.type === "password";
       passwordInput.type = showPassword ? "text" : "password";
@@ -717,10 +766,21 @@
       }
 
       submitBtn.disabled = true;
+      studentRole.disabled = true;
+      teacherRole.disabled = true;
+      guestBtn.disabled = true;
       submitBtn.textContent = "档案核验中…";
       message.textContent = "";
 
       try {
+        if (selectedRole === "teacher") {
+          if (!window.BrainCloudBase) throw new Error("教师登录服务暂时不可用，请稍后重试。");
+          await window.BrainCloudBase.loginTeacher(account, password);
+          window.BrainPlatform.identity.clearStudentSession();
+          window.location.href = "index.html";
+          return;
+        }
+
         const response = await fetch(STUDENT_LOGIN_URL, {
           method: "POST",
           headers: {
@@ -753,7 +813,10 @@
         message.textContent = getErrorMessage(error) || "登录失败";
       } finally {
         submitBtn.disabled = false;
-        submitBtn.textContent = "开启侦探社";
+        studentRole.disabled = false;
+        teacherRole.disabled = false;
+        guestBtn.disabled = false;
+        submitBtn.textContent = selectedRole === "teacher" ? "教师登录" : "学生登录";
       }
     });
   </script>

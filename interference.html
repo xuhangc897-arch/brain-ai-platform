@@ -85,6 +85,8 @@
     .reading-card { border: 1px solid #e5edf7; border-radius: 8px; padding: 16px; background: #fbfdff; }
     .reading-card h4 { margin: 0 0 8px; color: #1e3a8a; font-size: 16px; }
     .reading-card p { margin: 0 0 14px; color: #344054; font-size: 16px; line-height: 1.8; }
+    .reading-list .reading-card h4 { font-size: 20px; line-height: 1.5; }
+    .reading-list .reading-card p { font-size: 18px; line-height: 1.8; }
     .reading-card p:last-child { margin-bottom: 0; }
     .question-intro-strip { grid-column: 1 / -1; border: 1px solid #bfdbfe; border-radius: 8px; padding: 18px 20px; background: linear-gradient(135deg, #eff6ff, #f8fbff); box-shadow: 0 12px 28px rgba(37,99,235,.08); }
     .question-intro-strip p { margin: 0 0 12px; color: #24364f; font-size: 15px; line-height: 1.8; }
@@ -225,8 +227,8 @@
     .question-page-material { display: grid; align-items: center; width: min(980px, 100%); height: 100%; margin: 0 auto; }
     .question-materials-combined { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 14px; align-content: center; width: 100%; height: 100%; }
     .question-materials-combined .reading-card { padding: 18px; }
-    .question-materials-combined .reading-card h4 { font-size: 19px; line-height: 1.5; }
-    .question-materials-combined .reading-card p { font-size: 16px; line-height: 1.9; }
+    .question-materials-combined .reading-card h4 { font-size: 20px; line-height: 1.5; }
+    .question-materials-combined .reading-card p { font-size: 18px; line-height: 1.8; }
     .question-page-cases .case-list { grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 8px 12px; margin-top: 0; }
     .question-page-cases .template-card { grid-column: 1 / -1; padding: 11px 14px; }
     .question-page-cases .case-card summary { padding: 9px 12px; }
@@ -1559,7 +1561,7 @@
     function renderPagedQuestionStep() {
       const pages = [
         { title: "生活中的长时记忆干扰", className: "question-page-form", content: () => `<div class="question-intro-strip"><p>你有没有这样的经历：在回忆一篇课文时，开头和结尾记得很清楚，中间部分却比较模糊？长时记忆可能受到了干扰。</p><p>请先独立思考，再与小组讨论生活中可能干扰长时记忆的因素。</p>${renderPairedField("生活中想到的干扰因素", `<textarea data-field="lifeFactors" placeholder="请写下你想到的干扰因素">${escapeHtml(state.fields.lifeFactors)}</textarea>`, renderGroupTextarea("lifeFactors_group"))}</div>` },
-        { title: "阅读材料：长时记忆的三种干扰因素", className: "question-page-material", content: () => `<div class="question-materials-combined"><article class="reading-card"><h4>材料一</h4><p>在接受新信息时，大脑还储存着以前学习的信息。旧记忆对新记忆的干扰叫“前摄干扰”，新记忆对旧记忆的干扰叫“倒摄干扰”。</p><p>连续学习多个内容时，旧内容可能妨碍后续学习；学习新环境或新知识后，也可能更难回忆旧环境或旧知识的细节。</p></article><article class="reading-card"><h4>材料二</h4><p>回忆信息时，如果大脑中存在许多相似记忆，更容易发生干扰。平常的一顿午餐可能很难回忆，而一次独特的饭菜往往更容易记住。</p><p>请思考：记忆材料和随后出现的材料越相似，回忆成绩可能发生什么变化？</p></article><article class="reading-card"><h4>材料三</h4><p>情绪状态会影响注意、编码与提取。过度紧张、悲伤或兴奋时，人可能把更多注意资源用于情绪体验，从而影响对材料的记忆。</p><p>通过比较不同情绪条件下的回忆结果，可以检验情绪状态是否造成长时记忆干扰。</p></article></div>` },
+        { title: "阅读材料：长时记忆的三种干扰因素", className: "question-page-material", content: () => `<div class="question-materials-combined"><article class="reading-card"><h4>材料一</h4><p>学习新内容时，大脑里还保存着以前学过的内容。旧记忆干扰新记忆，叫作“前摄干扰”；新记忆干扰旧记忆，叫作“倒摄干扰”。</p><p>比如，连续学习多个内容时，先学的知识可能影响后面的学习；学了新知识后，也可能更难想起旧知识的细节。</p></article><article class="reading-card"><h4>材料二</h4><p>回忆一件事时，如果脑海里有很多相似的记忆，它们就容易互相干扰。比如，平时普通的一顿午餐可能很难想起来，但一顿特别的饭菜往往更容易记住。</p><p>请思考：要记住的材料和之后出现的材料越相似，回忆成绩可能会发生什么变化？</p></article><article class="reading-card"><h4>材料三</h4><p>情绪会影响我们集中注意力、记住信息和回忆信息。比如，太紧张、难过或兴奋时，我们可能把更多注意力放在自己的情绪上，从而影响记忆。</p><p>比较不同情绪状态下的回忆结果，可以帮助我们判断情绪是否会干扰长时记忆。</p></article></div>` },
         { title: "整理材料中的干扰因素", className: "question-page-form", content: () => renderPairedField("材料中列出的干扰因素", `<textarea data-field="materialFactors" placeholder="请根据阅读材料自行填写">${escapeHtml(state.fields.materialFactors)}</textarea>`, renderGroupTextarea("materialFactors_group")) },
         { title: "提出研究问题", className: "question-page-form", content: () => `<div class="panel"><div class="panel-head"><h3>确定小组研究问题</h3><p>从刚才整理的干扰因素中选择一个可测量的因素。</p></div><div class="panel-body"><div class="field"><label>研究问题（小组）</label><div class="form-grid"><input type="text" data-field="questionFactor" value="${escapeHtml(state.fields.questionFactor)}" placeholder="请输入干扰因素"><div class="readonly-value">会对长时记忆造成干扰吗？</div></div></div></div></div>${renderInquiryScaffold("question")}` }
       ];
@@ -1577,19 +1579,13 @@
         <div class="panel"><div class="panel-head"><h3>阅读材料</h3><p>下面是三则关于长时记忆干扰的材料，请阅读以下材料，想一想还有什么因素会干扰长时记忆。</p></div><div class="panel-body reading-list">
           <article class="reading-card">
             <h4>材料一</h4>
-            <p>在接受新信息的同时，我们的脑海还储存着以前学习的信息，这些新旧记忆具有相似之处，会相互干扰导致遗忘。其中，旧记忆对新记忆的干扰叫做“前摄干扰”，新记忆对旧记忆的干扰叫做“倒摄干扰”。</p>
-            <p>在连续学习多个内容时，常常发生前摄干扰。想一想你背诵过的课文，是不是对开头几段的记忆最为深刻，后面就越来越难背了呢？</p>
-            <p>而倒摄干扰就像是你学到的新知识“覆盖”了旧知识，会让旧的记忆变得模糊不清，甚至完全遗忘。这就是为什么在换到全新的教室之后，你更难以记起旧教室的种种细节：除了时间长导致的淡忘，这些记忆还可能是受到有关新教室记忆的干扰。</p>
-          </article>
+            <p>学习新内容时，大脑里还保存着以前学过的内容。旧记忆干扰新记忆，叫作“前摄干扰”；新记忆干扰旧记忆，叫作“倒摄干扰”。</p><p>比如，连续学习多个内容时，先学的知识可能影响后面的学习；学了新知识后，也可能更难想起旧知识的细节。</p></article>
           <article class="reading-card">
             <h4>材料二</h4>
-            <p>当回忆信息时，如果我们的大脑中存在许多相似的记忆，更容易发生干扰。你昨天中午的午餐吃了什么？如果这个问题发生在平常的一天，你可能一时半会回忆不起来，因为你对其他的饭菜有很多相似的记忆；但如果昨天中午你恰好吃了一顿独一无二的饭菜，就会记得更清楚些。</p>
-          </article>
+            <p>回忆一件事时，如果脑海里有很多相似的记忆，它们就容易互相干扰。比如，平时普通的一顿午餐可能很难想起来，但一顿特别的饭菜往往更容易记住。</p><p>请思考：要记住的材料和之后出现的材料越相似，回忆成绩可能会发生什么变化？</p></article>
           <article class="reading-card">
             <h4>材料三</h4>
-            <p>我们的情绪状态也会影响记忆。当我们处于开心、紧张、难过或者害怕的状态时，大脑对信息的处理会发生变化。</p>
-            <p>在那些情绪激动的时刻，比如观看一场精彩的球赛或者第一次见到震撼人心的美景时，你是否会印象更深刻？或者，你有没有过表演前太紧张，感到大脑一片空白的经历？情绪状态不同，对记忆的干扰程度也不同。你认为什么样的情绪会减轻记忆的干扰、什么样的情绪会加重记忆的干扰呢？</p>
-          </article>
+            <p>情绪会影响我们集中注意力、记住信息和回忆信息。比如，太紧张、难过或兴奋时，我们可能把更多注意力放在自己的情绪上，从而影响记忆。</p><p>比较不同情绪状态下的回忆结果，可以帮助我们判断情绪是否会干扰长时记忆。</p></article>
         </div></div>
         <div class="panel"><div class="panel-head"><h3>提出研究问题</h3></div><div class="panel-body">
           ${renderInquiryCases()}${renderInquiryScaffold("question")}${renderPairedField("材料中列出的干扰因素", `<textarea data-field="materialFactors" placeholder="请根据阅读材料自行填写">${escapeHtml(state.fields.materialFactors)}</textarea>`, renderGroupTextarea("materialFactors_group"))}<div class="field"><label>研究问题（小组）</label><p class="hint">写下小组讨论后确定的探究因素：</p><div class="form-grid"><input type="text" data-field="questionFactor" value="${escapeHtml(state.fields.questionFactor)}" placeholder="请输入干扰因素"><p class="hint" style="align-self:center;margin:0;">会对长时记忆造成干扰吗？</p></div></div>

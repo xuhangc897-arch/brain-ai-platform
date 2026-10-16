@@ -1249,3 +1249,11 @@ GitHub 仓库 `Settings → Pages → Build and deployment → Source` 必须从
 - `generateExperimentMemory` 和 `generateLearningDiagnosis` 的模型名从 `deepseek-v4-flash` 改为当前 DeepSeek Chat Completions 文档列出的 `deepseek-flash`。历史日志记录过 `AI_INVALID_JSON`，但没有本次线上函数返回码，不能把模型名判定为线上故障的唯一原因。
 - 不改变知识题、成绩、实验流程、提交、数据结构或已有档案。两个生成云函数和静态站点须由用户分别部署；重新进入案件五或诊断页后核对 `student_memories` 四份记录，再核对 `learning_diagnoses`。回滚本次两个页面脚本与两个云函数的模型常量即可，不迁移数据。
 - 本地生成两个单独上传的云函数 ZIP，未连接 GitHub 或腾讯云。`npm run check:student-memory`、`npm run verify`、`npm run build`、`npm run check:dist`、`git diff --check` 均通过；真实 AI 与 CloudBase 结果仍须部署后验证。
+
+## 2026-10-16｜前四个实验阅读材料修订
+
+- 按《网站阅读材料汇总修改（1013）.xlsx》E 列替换实验一至四的 20 条阅读内容，并在重复展示位置保持一致；实验四沿用网页现有编号，四则策略匹配材料的正文未改。
+- 四个实验阅读正文统一以 18px／1.8 行高为基准，材料标题以 20px／1.5 行高为基准；N-back 说明表格保留 17px／1.7 行高以容纳密集单元格。
+- 保留修订稿分段及原有标题、图片、来源和练习入口。未修改步骤、计时、随机化、评分、作答、存储、历史数据或云函数。
+- 验证：逐条核对 20 条修订稿；`npm run verify`、`npm run build`、`npm run check:dist` 通过；1440×900 桌面及 390×844 手机视口抽查阅读页无内容裁切和横向溢出。部署后仍需在真实学生会话中回归页面导航、实验操作与报告生成。
+- 回滚：恢复四个实验 HTML、两项排版契约测试和本次文档变更；不涉及数据迁移。

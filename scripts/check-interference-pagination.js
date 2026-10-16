@@ -29,7 +29,7 @@ for (const title of ["材料一", "材料二", "材料三"]) {
 assert((question.match(/className: "question-page-material"/g) || []).length === 1, "reading materials must not render as separate pages");
 assert(!question.includes('title: "科学探究案例"') && !question.includes("renderInquiryCases()"), "question pagination must not contain an inquiry-cases page");
 assert(question.lastIndexOf('renderInquiryScaffold("question")') > question.indexOf('title: "提出研究问题"'), "research-question prompts must appear at the bottom of the final question page");
-assert(source.includes(".question-materials-combined .reading-card p { font-size: 16px; line-height: 1.9; }"), "combined reading material text must use the enlarged font and line spacing");
+assert(source.includes(".question-materials-combined .reading-card p { font-size: 18px; line-height: 1.8; }"), "combined reading material text must use the shared reading font and line spacing");
 assert(source.includes('plan: renderPagedPlanStep'), "plan step must use pagination");
 assert(source.includes('evidence: renderPagedEvidenceStep'), "evidence step must use pagination");
 
