@@ -20,20 +20,29 @@ async function readAll(collection, condition) { const items = []; const pageSize
 exports.main = async (event) => {
   if (!await isTeacher()) return { ok: false, code: "FORBIDDEN", records: [] };
   const input = body(event); const limit = Math.max(1, Math.min(500, Number(input.limit) || 100)); const condition = {};
-  ["studentId", "className", "groupName"].forEach((key) => { if (text(input[key])) condition[key] = text(input[key]); }); if (text(input.sourceModule)) condition.experimentId = text(input.sourceModule);
-  const legacyCondition = { module: "aiChat", recordType: "submission" }; if (condition.studentId) legacyCondition.studentId = condition.studentId;
+  ["studentId", "studentName", "className", "groupName"].forEach((key) => { if (text(input[key])) condition[key] = text(input[key]); }); if (text(input.sourceModule)) condition.experimentId = text(input.sourceModule);
+  const legacyCondition = { module: "aiChat", recordType: "submission" };
+  if (condition.studentId) legacyCondition.studentId = condition.studentId;
   const exportAll = Boolean(input.exportAll);
-  const [currentItems, legacyItems] = exportAll
-    ? await Promise.all([readAll(records, condition), readAll(legacyRecords, legacyCondition)])
-    : await Promise.all([
-      records.where(condition).orderBy("uploadedAt", "desc").limit(limit).get().then((result) => Array.isArray(result.data) ? result.data : []),
-      legacyRecords.where(legacyCondition).orderBy("uploadedAt", "desc").limit(limit).get().then((result) => Array.isArray(result.data) ? result.data : [])
-    ]);
+  const scanLegacy = exportAll || ["studentName", "className", "groupName", "sourceModule"].some((key) => text(input[key]));
+  const [currentItems, legacyItems] = await Promise.all([
+    exportAll
+      ? readAll(records, condition)
+      : records.where(condition).orderBy("uploadedAt", "desc").limit(limit).get().then((result) => Array.isArray(result.data) ? result.data : []),
+    scanLegacy
+      ? readAll(legacyRecords, legacyCondition)
+      : legacyRecords.where(legacyCondition).orderBy("uploadedAt", "desc").limit(limit).get().then((result) => Array.isArray(result.data) ? result.data : [])
+  ]);
   const combined = currentItems.map((item) => wrapper(item, "ai_chat_records")).concat(legacyItems.flatMap(flattenLegacy));
   const seen = new Set(); const deduped = combined.filter((item) => { const key = fingerprint(item.data.logs[0]); if (seen.has(key)) return false; seen.add(key); return true; });
   const from = text(input.dateFrom) ? Date.parse(`${text(input.dateFrom)}T00:00:00+08:00`) : 0; const to = text(input.dateTo) ? Date.parse(`${text(input.dateTo)}T23:59:59.999+08:00`) : Number.MAX_SAFE_INTEGER; const skip = Math.max(0, Number(input.skip) || 0);
   deduped.sort((left, right) => timeValue(right.uploadedAt || right.createdAt) - timeValue(left.uploadedAt || left.createdAt));
-  const filtered = deduped.filter((record) => { const value = timeValue(record.uploadedAt || record.createdAt); return value >= from && value <= to; });
+  const filtered = deduped.filter((record) => {
+    const value = timeValue(record.uploadedAt || record.createdAt);
+    return value >= from && value <= to
+      && (!text(input.sourceModule) || record.data.sourceModule === text(input.sourceModule))
+      && ["studentName", "className", "groupName"].every((key) => !text(input[key]) || text(record[key]) === text(input[key]));
+  });
   return { ok: true, records: exportAll ? filtered : filtered.slice(skip, skip + limit) };
 };
 

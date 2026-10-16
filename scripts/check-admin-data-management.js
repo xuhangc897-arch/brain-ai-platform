@@ -86,6 +86,15 @@ function baseData() {
       { _id: "s1", studentId: "001", name: "王同学", class: "一班", group: "1组", password: "secret-1" }
     ],
     experiment_submissions: [],
+    ai_chat_records: [
+      { _id: "ai-1", studentId: "001", studentName: "王同学", className: "一班", groupName: "1组", experimentId: "memory", question: "测试", answer: "回答", timestamp: "2026-08-08T10:30:00.000Z" }
+    ],
+    student_memories: [
+      { _id: "memory-1", studentId: "001", studentName: "王同学", className: "一班", groupName: "1组", experimentId: "memory", updatedAt: "2026-08-08T10:30:00.000Z" }
+    ],
+    learning_diagnoses: [
+      { _id: "diagnosis-1", recordType: "version", studentId: "001", studentName: "王同学", className: "一班", groupName: "1组", generatedAt: "2026-08-08T10:30:00.000Z" }
+    ],
     experimentRecords: [
       { _id: "legacy-good", recordType: "submission", module: "memory" },
       { _id: "legacy-ai", recordType: "submission", module: "aiChat" }
@@ -119,13 +128,21 @@ function baseData() {
   assert.strictEqual(stored.adminCreated, true);
   assert.strictEqual(stored.createdByUid, "teacher-1");
 
+  const submissionAdmin = load("cloudfunctions/getExperimentSubmissionsAdmin/index.js", mock.sdk);
+  assert.strictEqual((await submissionAdmin.main({ studentName: "王同学", groupName: "1组" })).records.length, 1);
+  assert.strictEqual((await submissionAdmin.main({ studentName: "其他同学" })).records.length, 0);
+  const aiAdmin = load("cloudfunctions/getAiChatRecordsAdmin/index.js", mock.sdk);
+  assert.strictEqual((await aiAdmin.main({ studentName: "王同学", sourceModule: "memory" })).records.length, 1);
+  assert.strictEqual((await aiAdmin.main({ studentName: "王同学", sourceModule: "nback" })).records.length, 0);
+  const memoryAdmin = load("cloudfunctions/getStudentMemoriesAdmin/index.js", mock.sdk);
+  assert.strictEqual((await memoryAdmin.main({ studentName: "王同学", groupName: "1组" })).records.length, 1);
+  const diagnosisAdmin = load("cloudfunctions/getLearningDiagnosesAdmin/index.js", mock.sdk);
+  assert.strictEqual((await diagnosisAdmin.main({ studentName: "王同学", groupName: "1组" })).records.length, 1);
   const deleteRecord = load("cloudfunctions/deleteExperimentRecordAdmin/index.js", mock.sdk);
   assert.strictEqual((await deleteRecord.main({ sourceCollection: "student_memories", recordId: "x" })).code, "INVALID_COLLECTION");
   assert.strictEqual((await deleteRecord.main({ sourceCollection: "experimentRecords", recordId: "legacy-ai" })).code, "NOT_FORMAL_SUBMISSION");
   assert.strictEqual((await deleteRecord.main({ sourceCollection: "experimentRecords", recordId: "legacy-good" })).code, "DELETED");
   assert.strictEqual((await deleteRecord.main({ sourceCollection: "experiment_submissions", recordId: created.recordId })).code, "DELETED");
-
-  const submissionAdmin = load("cloudfunctions/getExperimentSubmissionsAdmin/index.js", mock.sdk);
   const legacyView = submissionAdmin.__test.asLegacyDashboardRecord({ _id: "legacy-id", recordType: "submission", module: "memory" });
   assert.strictEqual(legacyView.recordId, "legacy-id");
   assert.strictEqual(legacyView.sourceCollection, "experimentRecords");

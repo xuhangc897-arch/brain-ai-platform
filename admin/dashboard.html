@@ -94,6 +94,12 @@
       gap: 6px;
     }
 
+    .field[hidden],
+    .history-option[hidden],
+    .actions .btn[hidden] {
+      display: none;
+    }
+
     .field label {
       color: var(--muted);
       font-size: 13px;
@@ -661,16 +667,6 @@
       transform: translate(7px, 7px) rotate(45deg);
     }
 
-    #memoryBtn::before {
-      content: "⌁";
-      font: 800 19px/1 Georgia, serif;
-    }
-
-    #diagnosisBtn::before {
-      content: "▤";
-      font-size: 14px;
-    }
-
     #resetBtn::before {
       content: "↺";
       font-size: 17px;
@@ -966,7 +962,6 @@
       <div class="header">
         <div>
           <h1>实验数据后台</h1>
-          <p class="intro">查看学生实验记录、结构化学习记忆和四次实验后的学习诊断。</p>
         </div>
         <a class="btn secondary" href="../index.html">返回首页</a>
       </div>
@@ -978,12 +973,25 @@
 
       <div class="filters">
         <div class="field">
-          <label for="moduleFilter">实验模块</label>
+          <label for="searchTypeFilter">搜索内容</label>
+          <select id="searchTypeFilter">
+            <option value="records">实验记录</option>
+            <option value="aiChat">AI对话</option>
+            <option value="memories">学习记忆</option>
+            <option value="diagnoses">学习反馈</option>
+          </select>
+        </div>
+        <div class="field" id="moduleField">
+          <label for="moduleFilter" id="moduleFilterLabel">实验记录</label>
           <select id="moduleFilter"></select>
         </div>
         <div class="field">
           <label for="studentIdFilter">学号</label>
           <input id="studentIdFilter" placeholder="例如：001">
+        </div>
+        <div class="field">
+          <label for="studentNameFilter">姓名</label>
+          <input id="studentNameFilter" placeholder="例如：张三">
         </div>
         <div class="field">
           <label for="classNameFilter">班级</label>
@@ -993,35 +1001,11 @@
           <label for="groupNameFilter">小组</label>
           <input id="groupNameFilter" placeholder="例如：1组">
         </div>
-        <div class="field">
-          <label for="limitFilter">读取条数</label>
-          <select id="limitFilter">
-            <option value="100">100</option>
-            <option value="200">200</option>
-            <option value="500">500</option>
-          </select>
-        </div>
-        <div class="field">
-          <label for="dateFromFilter">开始日期</label>
-          <input id="dateFromFilter" type="date">
-        </div>
-        <div class="field">
-          <label for="dateToFilter">结束日期</label>
-          <input id="dateToFilter" type="date">
-        </div>
-        <div class="field">
-          <label for="sourceModuleFilter">AI 来源模块</label>
-          <select id="sourceModuleFilter">
-            <option value="">全部</option>
-          </select>
-        </div>
       </div>
 
       <div class="actions">
         <button class="btn" id="queryBtn" type="button">查询记录</button>
-        <button class="btn secondary" id="memoryBtn" type="button">学习记忆</button>
-        <button class="btn secondary" id="diagnosisBtn" type="button">学习诊断</button>
-        <label class="history-option"><input id="diagnosisHistory" type="checkbox">诊断全部历史版本</label>
+        <label class="history-option" id="diagnosisHistoryOption" hidden><input id="diagnosisHistory" type="checkbox">诊断全部历史版本</label>
         <button class="btn secondary" id="resetBtn" type="button">清空筛选</button>
         <button class="btn secondary" id="exportBtn" type="button">导出 Excel</button>
         <button class="btn secondary" id="addRecordBtn" type="button">添加实验记录</button>
@@ -1084,12 +1068,6 @@
     const experimentRegistry = window.BrainExperimentRegistry;
     const experimentIntegration = window.BrainExperimentIntegration;
 
-    experimentRegistry.entries.forEach((entry) => {
-      document.getElementById("moduleFilter").add(new Option(entry.label, entry.id));
-    });
-    experimentRegistry.experiments.forEach((entry) => {
-      document.getElementById("sourceModuleFilter").add(new Option(entry.label, entry.id));
-    });
     experimentRegistry.entries.filter((entry) => ["experiment", "screening"].includes(entry.kind)).forEach((entry) => {
       document.getElementById("recordExperimentId").add(new Option(entry.label, entry.id));
     });
@@ -1098,9 +1076,11 @@
     const statusEl = document.getElementById("status");
     const tableWrap = document.getElementById("tableWrap");
     const queryBtn = document.getElementById("queryBtn");
-    const memoryBtn = document.getElementById("memoryBtn");
-    const diagnosisBtn = document.getElementById("diagnosisBtn");
+    const searchTypeFilter = document.getElementById("searchTypeFilter");
+    const moduleField = document.getElementById("moduleField");
+    const moduleFilterLabel = document.getElementById("moduleFilterLabel");
     const diagnosisHistory = document.getElementById("diagnosisHistory");
+    const diagnosisHistoryOption = document.getElementById("diagnosisHistoryOption");
     const resetBtn = document.getElementById("resetBtn");
     const exportBtn = document.getElementById("exportBtn");
     const addRecordBtn = document.getElementById("addRecordBtn");
@@ -1117,13 +1097,33 @@
     const filters = {
       module: document.getElementById("moduleFilter"),
       studentId: document.getElementById("studentIdFilter"),
+      studentName: document.getElementById("studentNameFilter"),
       className: document.getElementById("classNameFilter"),
-      groupName: document.getElementById("groupNameFilter"),
-      dateFrom: document.getElementById("dateFromFilter"),
-      dateTo: document.getElementById("dateToFilter"),
-      sourceModule: document.getElementById("sourceModuleFilter"),
-      limit: document.getElementById("limitFilter")
+      groupName: document.getElementById("groupNameFilter")
     };
+
+    function updateModuleOptions() {
+      const type = searchTypeFilter.value;
+      moduleField.hidden = type === "diagnoses";
+      diagnosisHistoryOption.hidden = type !== "diagnoses";
+      exportBtn.hidden = type === "memories" || type === "diagnoses";
+      addRecordBtn.hidden = type !== "records";
+      moduleFilterLabel.textContent = searchTypeFilter.selectedOptions[0].textContent;
+      filters.module.replaceChildren(new Option("全部模块", ""));
+      const entries = type === "records"
+        ? experimentRegistry.entries.filter((entry) => ["screening", "experiment"].includes(entry.kind))
+        : type === "aiChat"
+          ? experimentRegistry.experiments.slice()
+          : type === "memories"
+            ? experimentRegistry.experiments.filter((entry) => entry.order <= 4)
+            : [];
+      entries.sort((left, right) => left.order - right.order).forEach((entry) => {
+        filters.module.add(new Option(`${String(entry.order).padStart(2, "0")} ${entry.label}`, entry.id));
+      });
+    }
+
+    searchTypeFilter.addEventListener("change", updateModuleOptions);
+    updateModuleOptions();
 
     /*
      * 临时维护开关（2026-07-21）：教师近期需要直接读取已上传数据。
@@ -1202,16 +1202,16 @@
     }
 
     function buildQueryPayload(recordType = "submission") {
+      const isAiChat = searchTypeFilter.value === "aiChat";
       return {
-        module: filters.module.value.trim(),
+        module: isAiChat ? "aiChat" : filters.module.value.trim(),
         recordType,
         studentId: filters.studentId.value.trim(),
+        studentName: filters.studentName.value.trim(),
         className: filters.className.value.trim(),
         groupName: filters.groupName.value.trim(),
-        dateFrom: filters.dateFrom.value,
-        dateTo: filters.dateTo.value,
-        sourceModule: filters.sourceModule.value.trim(),
-        limit: Number(filters.limit.value) || 100,
+        sourceModule: isAiChat ? filters.module.value.trim() : "",
+        limit: 100,
         skip: 0
       };
     }
@@ -1433,16 +1433,18 @@
     async function loadMemoryRecords() {
       if (!isLoggedIn) return;
       currentRecordView = "memories";
-      memoryBtn.disabled = true;
+      queryBtn.disabled = true;
       setStatus("正在读取结构化学习记忆...");
       try {
         const response = await window.app.callFunction({
           name: "getStudentMemoriesAdmin",
           data: {
             studentId: filters.studentId.value.trim(),
+            studentName: filters.studentName.value.trim(),
             className: filters.className.value.trim(),
+            groupName: filters.groupName.value.trim(),
             experimentId: filters.module.value.trim(),
-            limit: Number(filters.limit.value) || 100
+            limit: 100
           }
         });
         const result = response && (response.result || response);
@@ -1455,7 +1457,7 @@
         renderMemoryTable();
         setStatus(error.message || "读取学习记忆失败。");
       } finally {
-        memoryBtn.disabled = false;
+        queryBtn.disabled = false;
       }
     }
 
@@ -1484,16 +1486,18 @@
     async function loadDiagnosisRecords() {
       if (!isLoggedIn) return;
       currentRecordView = "diagnoses";
-      diagnosisBtn.disabled = true;
+      queryBtn.disabled = true;
       setStatus("正在读取学习诊断...");
       try {
         const response = await window.app.callFunction({
           name: "getLearningDiagnosesAdmin",
           data: {
             studentId: filters.studentId.value.trim(),
+            studentName: filters.studentName.value.trim(),
             className: filters.className.value.trim(),
+            groupName: filters.groupName.value.trim(),
             latestOnly: !diagnosisHistory.checked,
-            limit: Number(filters.limit.value) || 100
+            limit: 100
           }
         });
         const result = response && (response.result || response);
@@ -1506,7 +1510,7 @@
         renderDiagnosisTable();
         setStatus(error.message || "读取学习诊断失败。");
       } finally {
-        diagnosisBtn.disabled = false;
+        queryBtn.disabled = false;
       }
     }
 
@@ -2648,7 +2652,7 @@
 
       let sheets = [];
       try {
-        const isAiChatExport = filters.module.value.trim() === "aiChat";
+        const isAiChatExport = searchTypeFilter.value === "aiChat";
         const exportSourceRecords = isAiChatExport
           ? await fetchRecords(Object.assign({}, buildQueryPayload("submission"), { exportAll: true, skip: 0 }))
           : records;
@@ -2764,8 +2768,6 @@
         addRecordDialog.close();
         filters.studentId.value = studentId;
         filters.module.value = experimentId;
-        filters.dateFrom.value = "";
-        filters.dateTo.value = "";
         await loadRecords();
         setStatus("实验记录已新增，并已按该学生和实验重新查询。");
       } catch (error) {
@@ -2797,19 +2799,22 @@
       }
     });
 
-    queryBtn.addEventListener("click", loadRecords);
-    memoryBtn.addEventListener("click", loadMemoryRecords);
-    diagnosisBtn.addEventListener("click", loadDiagnosisRecords);
+    function loadSelectedRecords() {
+      if (searchTypeFilter.value === "memories") return loadMemoryRecords();
+      if (searchTypeFilter.value === "diagnoses") return loadDiagnosisRecords();
+      return loadRecords();
+    }
+
+    queryBtn.addEventListener("click", loadSelectedRecords);
     exportBtn.addEventListener("click", exportExcel);
     resetBtn.addEventListener("click", () => {
       filters.studentId.value = "";
+      filters.studentName.value = "";
       filters.className.value = "";
       filters.groupName.value = "";
-      filters.dateFrom.value = "";
-      filters.dateTo.value = "";
-      filters.sourceModule.value = "";
-      filters.limit.value = "100";
-      loadRecords();
+      searchTypeFilter.value = "records";
+      updateModuleOptions();
+      loadSelectedRecords();
     });
     closeDialogBtn.addEventListener("click", () => detailDialog.close());
 

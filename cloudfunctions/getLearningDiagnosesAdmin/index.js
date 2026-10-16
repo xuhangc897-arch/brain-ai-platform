@@ -31,7 +31,7 @@ exports.main = async (event) => {
   if (!teacher) return { ok: false, code: "FORBIDDEN", message: "当前账号没有教师查看权限。", records: [] };
   const payload = event && typeof event === "object" ? event : {};
   const condition = { recordType: "version" };
-  ["studentId", "className"].forEach((key) => {
+  ["studentId", "studentName", "className", "groupName"].forEach((key) => {
     const value = String(payload[key] || "").trim();
     if (value) condition[key] = value;
   });

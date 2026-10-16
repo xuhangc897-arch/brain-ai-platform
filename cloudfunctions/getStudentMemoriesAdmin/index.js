@@ -31,7 +31,7 @@ exports.main = async (event) => {
   if (!teacher) return { ok: false, code: "FORBIDDEN", message: "当前账号没有教师查看权限。", records: [] };
   const payload = event && typeof event === "object" ? event : {};
   const condition = {};
-  ["studentId", "className", "experimentId", "memoryType"].forEach((key) => {
+  ["studentId", "studentName", "className", "groupName", "experimentId", "memoryType"].forEach((key) => {
     const value = String(payload[key] || "").trim();
     if (value) condition[key] = value;
   });

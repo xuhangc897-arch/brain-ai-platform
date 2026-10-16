@@ -3,7 +3,7 @@
 <head>
   <meta charset="utf-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1" />
-  <title>学生账号初始化 - 教师工具</title>
+  <title>学生账号导入 - 教师工具</title>
   <style>
     :root {
       --night: #090b0c;
@@ -227,6 +227,18 @@
       font-family: var(--serif);
       line-height: 1.65;
       letter-spacing: 0.03em;
+    }
+
+    .upload-controls {
+      display: flex;
+      align-items: center;
+      flex-wrap: wrap;
+      gap: 12px 20px;
+    }
+
+    .upload-controls input[type="file"] {
+      flex: 1 1 260px;
+      min-width: 0;
     }
 
     input[type="file"] {
@@ -787,11 +799,7 @@
     <section class="panel" aria-labelledby="pageTitle">
       <div class="page-header">
         <div>
-          <h1 id="pageTitle">学生账号初始化</h1>
-          <p class="intro">
-            教师上传包含“学号、姓名、班级、小组”的 Excel 后，系统会导入学生资料。
-            学生资料已导入，可使用学号和默认密码登录。
-          </p>
+          <h1 id="pageTitle">学生账号导入</h1>
         </div>
         <a class="btn" href="../index.html">返回首页</a>
       </div>
@@ -803,27 +811,14 @@
 
       <div class="upload-box">
         <strong>Excel 表头必须包含：学号、姓名、班级、小组；可选包含：密码</strong>
-        <input id="excelFile" type="file" accept=".xlsx,.xls" />
+        <div class="upload-controls">
+          <input id="excelFile" type="file" accept=".xlsx,.xls" />
+          <button class="btn" id="importBtn" type="button">开始导入</button>
+        </div>
       </div>
 
       <div class="actions">
-        <button class="btn" id="importBtn" type="button">开始导入</button>
         <span class="status" id="statusText">请选择 Excel 文件。</span>
-      </div>
-
-      <div class="summary" aria-label="导入统计">
-        <div class="stat success">
-          <span>成功</span>
-          <strong id="successCount">0</strong>
-        </div>
-        <div class="stat skipped">
-          <span>跳过</span>
-          <strong id="skippedCount">0</strong>
-        </div>
-        <div class="stat failed">
-          <span>失败</span>
-          <strong id="failedCount">0</strong>
-        </div>
       </div>
 
       <table aria-label="导入结果">
@@ -872,6 +867,27 @@
       </section>
     </section>
   </main>
+
+  <dialog id="importResultDialog" aria-labelledby="importResultTitle">
+    <div class="dialog-head"><h2 id="importResultTitle">导入结果</h2></div>
+    <div class="dialog-body">
+      <div class="summary" aria-label="导入统计">
+        <div class="stat success">
+          <span>成功</span>
+          <strong id="successCount">0</strong>
+        </div>
+        <div class="stat skipped">
+          <span>跳过</span>
+          <strong id="skippedCount">0</strong>
+        </div>
+        <div class="stat failed">
+          <span>失败</span>
+          <strong id="failedCount">0</strong>
+        </div>
+      </div>
+      <div class="dialog-actions"><button class="btn" id="closeImportResultBtn" type="button">关闭</button></div>
+    </div>
+  </dialog>
 
   <dialog id="addStudentDialog" aria-labelledby="addStudentTitle">
     <div class="dialog-head"><h2 id="addStudentTitle">添加学生账号</h2></div>
@@ -937,6 +953,8 @@
     const successCount = document.getElementById("successCount");
     const skippedCount = document.getElementById("skippedCount");
     const failedCount = document.getElementById("failedCount");
+    const importResultDialog = document.getElementById("importResultDialog");
+    document.getElementById("closeImportResultBtn").addEventListener("click", () => importResultDialog.close());
     const authGate = document.getElementById("authGate");
     const errorDetails = document.getElementById("errorDetails");
     const errorDetailsContent = document.getElementById("errorDetailsContent");
@@ -1498,6 +1516,7 @@
           renderResults(results);
           updateCounts(results);
           setStatus(NO_STUDENTS_MESSAGE);
+          importResultDialog.showModal();
           return;
         }
 
@@ -1522,7 +1541,8 @@
         renderResults(results);
         updateCounts(results);
 
-        setStatus(`导入结束：成功 ${cloudImportResult.success} 人，跳过 ${cloudImportResult.skipped} 人，失败 ${cloudImportResult.failed} 人。学生资料已导入，可使用学号和默认密码登录。`);
+        setStatus("导入结束，详细结果见下表。");
+        importResultDialog.showModal();
         studentPageSkip = 0;
         await loadStudents();
       } catch (error) {
