@@ -78,7 +78,7 @@ assert.deepStrictEqual(nbackConditions("关卡数量"), [15, 20, 25, 30, 35].map
 assert(!/survey-items\s*\{\s*grid-template-columns:\s*repeat\(3/.test(nback), "N-back survey questions must not use narrow three-column cards");
 assert(nback.includes("question: 5") && nback.includes('if (stepId === "question") return 4'), "N-back question pagination must contain five pages");
 assert(nback.includes('title: "材料三与材料四：控制变量和头环"') && nback.includes("merged-reading-page"), "N-back materials three and four must share one page");
-assert(nback.includes(".reading-page .page-card p") && nback.includes("font-size: 16px") && nback.includes("line-height: 1.8"), "N-back reading pages must use readable typography");
+assert(nback.includes(".reading-page .page-card p { margin: 0 0 14px; font-size: 18px; line-height: 1.8; }"), "N-back reading pages must use shared reading typography");
 
 const interference = source("interference.html");
 const interferencePlan = interference.slice(interference.indexOf("function renderPagedPlanStep()"), interference.indexOf("function renderPlanStep()"));
@@ -89,7 +89,7 @@ assert(interference.includes(".time-parameter-grid") && interference.includes("g
 
 const strategies = source("strategies.html");
 assert(strategies.includes("plan: 7") && !strategies.includes('title: "材料五：突袭测试与结果"'), "strategy plan pagination must contain seven pages with one material-five page");
-assert(strategies.includes(".plan-reading-page { font-size: 16px; line-height: 1.8; }") && strategies.includes(".strategy-guide-grid .strategy-info-card p") && strategies.includes(".material-match-page .reading-card p"), "strategy reading sections must use readable typography");
+assert(strategies.includes(".plan-reading-page { font-size: 18px; line-height: 1.8; }") && strategies.includes(".strategy-guide-grid .strategy-info-card p { font-size: 18px; line-height: 1.8; }") && strategies.includes(".material-match-page .reading-card > p { font-size: 18px; line-height: 1.8; }"), "strategy reading sections must use shared reading typography");
 assert(strategies.includes("accent-color: var(--primary)") && strategies.includes("::-webkit-slider-thumb") && strategies.includes("::-moz-range-thumb"), "strategy difficulty sliders must use the active theme color");
 assert(strategies.includes("思考：为什么有的材料适合一种策略，而有的材料适合另一种策略？"), "strategy recommendation must include the reflection prompt");
 assert(strategies.includes("中文释义用于辅助记忆，回忆时不需要写出中文。") && strategies.match(/回忆时需要按顺序写出。/g)?.length >= 2, "strategy memory and recall must explain ordered English-only responses");

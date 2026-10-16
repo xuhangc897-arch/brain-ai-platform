@@ -295,6 +295,19 @@
     }
   }
 
+  async function getTeacherLoginState() {
+    const session = await getRawCloudBaseLoginState();
+    if (!session) return null;
+    const response = await app.callFunction({
+      name: "getStudentMemoriesAdmin",
+      data: { limit: 1 }
+    });
+    const result = response && (response.result || response);
+    if (!result || !result.ok) return null;
+    const user = await getCurrentUser().catch(() => null);
+    return { username: getUserDisplayName(user, "教师") };
+  }
+
   /*
    * 退出登录。
    * 直接调用 CloudBase Auth signOut，清除真实会话和本地登录态。
@@ -403,6 +416,7 @@
     db,
     login,
     loginTeacher,
+    getTeacherLoginState,
     logout,
     ensureCloudBaseLogin,
     getCurrentUser,

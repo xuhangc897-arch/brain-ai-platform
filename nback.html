@@ -1383,7 +1383,10 @@
     .page-card h4 { margin: 0 0 8px; color: var(--primary-dark); }
     .page-card p { margin: 0 0 8px; color: #344054; font-size: 14px; }
     .page-card p:last-child { margin-bottom: 0; }
-    .reading-page .page-card p { margin: 0 0 14px; font-size: 18px; line-height: 1.85; }
+    .reading-page .page-card p { margin: 0 0 14px; font-size: 18px; line-height: 1.8; }
+    .reading-page .page-card h4,
+    .reading-list .reading-card h4 { font-size: 20px; line-height: 1.5; }
+    .reading-list .reading-card p { font-size: 18px; line-height: 1.8; }
     .reading-page .memory-table { font-size: 17px; line-height: 1.7; }
     .reading-page .memory-table th,
     .reading-page .memory-table td { padding: 13px 16px; }
@@ -2552,9 +2555,7 @@
             <div class="panel-body reading-list">
               <article class="reading-card">
                 <h4>材料一：工作记忆</h4>
-                <p>工作记忆是指对信息进行暂时存储和加工的容量有限的记忆系统。工作记忆对信息的加工主要体现在维持和更新这两个方面。</p>
-                <p>例如，要完成口算任务2×4×5×6，你首先必须记住2×4等于8；接着还必须记住8×5等于40，这样才能顺利进行下一步的计算，这里需要在工作记忆中维持和更新每一步的计算结果，如8和40。假如工作记忆出了问题，就不可能计算成功。</p>
-                <div class="memory-table-wrap">
+                <p>工作记忆是大脑暂时保存和处理信息的能力，但它的容量有限。它不仅要记住信息，还要不断更新信息。</p><p>比如计算2×4×5×6：先算出2×4=8，并记住8；再算出8×5=40，并记住40，才能继续计算。这个过程中，大脑要不断保存和更新计算结果。如果工作记忆不能正常发挥作用，就很难完成计算。</p><div class="memory-table-wrap">
                   <table class="memory-table" aria-label="工作记忆特点说明">
                     <thead>
                       <tr>
@@ -2577,9 +2578,7 @@
               </article>
               <article class="reading-card">
                 <h4>材料二：N-back任务</h4>
-                <p>N-back任务是一种常用的工作记忆任务。在N-back任务中，人们需要根据当前的刺激（比如字母、数字、算式或图形及图形的位置）来判断是否与该刺激的第前n个刺激相同。这种任务要求被试者不仅要记住当前刺激，还要持续关注前面的刺激序列，以便做出正确的反应。</p>
-                <p>例如，假设n=2，屏幕上显示的数字是：7，5，6，5，8，3...当你看到数字6时，需回想：数字6的前2个数字是什么？是7，所以不一样，按否；下一个数字是5，你继续回想，数字5的前2个数字也是5，一致，按是。</p>
-                <div class="nback-example">
+                <p>N-back是一种常见的工作记忆任务。你需要判断屏幕上现在出现的数字、字母或图形，是否与它前面第N个出现的内容相同。因此，你要一边记住前面的内容，一边不断更新记忆。</p><p>例如，在2-back任务中，数字依次出现：7、5、6、5、8、3……看到6时，要和它前面第2个数字7比较：不同，选择“否”。看到下一个5时，要和它前面第2个数字5比较：相同，选择“是”。</p><div class="nback-example">
                   <svg class="nback-example-svg" viewBox="0 0 720 320" role="img" aria-labelledby="nbackExampleTitle nbackExampleDesc">
                     <title id="nbackExampleTitle">N-back活动举例：2-back数字实验</title>
                     <desc id="nbackExampleDesc">数字序列7、5、6、5、8、3中，从第三个数字开始与前两个数字比较。</desc>
@@ -2635,11 +2634,11 @@
               </article>
               <article class="reading-card">
                 <h4>材料三：控制变量</h4>
-                <p>控制变量是指在实验的过程中需要控制那些除了自变量以外的所有影响实验结果的变量，这些变量不是本实验所要研究的变量，所以又称无关变量。只有将自变量以外的所有无关变量控制好，才能弄清实验中的因果关系。</p>
+                <p>做实验时，除了我们想研究的因素（自变量），还有其他因素可能影响结果。这些其他因素叫作“无关变量”。</p><p>控制变量，就是尽量让这些无关变量保持一致，避免它们影响实验结果。这样，我们才能更清楚地判断：实验结果的变化是不是由自变量引起的。</p>
               </article>
               <article class="reading-card">
                 <h4>材料四：头环</h4>
-                <p>头环是我们用来测量N-back活动中大脑前额叶活动水平的工具。头环就像一个特殊的“脑力探测器”，只要把头环戴在头上就可以可以收集信息，并且可以在电脑显示屏上生成一幅3D的脑激活图，展示大脑在执行特定任务或接受刺激时，不同脑区神经活动的空间分布状态。这张图可以直观呈现被激活脑区的位置、范围和强度，它会用颜色告诉你，在实验过程中大脑中哪些地方被激活，用红-黄色表示激活强度高，蓝-冷色表示抑制或无变化。也就是说，图中的某个脑区越红说明越活跃，在努力“思考”。假设3-back比2-back需要消耗更多的大脑资源，导致前额叶的激活水平更高，那么头环收集信息生成的结果图中，3-back的结果图中某个区域的颜色应该比2-back的结果图中相应区域的颜色更红，说明在玩更难的3-back游戏时，大脑需要花比玩2-back多得多的“力气”。</p>
+                <p>头环可以帮助我们观察做N-back任务时，大脑前额叶的活动。它就像一个“脑力探测器”：戴上后，可以收集大脑活动的数据，并在电脑上生成3D脑激活图。</p><p>脑图用颜色显示不同脑区的活动情况。红色、黄色通常表示活动较强；蓝色等冷色表示活动较弱或变化不大。某个区域越红，通常说明它在这项任务中越活跃。</p><p>假如3-back比2-back更难，需要大脑投入更多精力，那么3-back脑图中前额叶的某些区域可能比2-back更红。这就说明，做更难的任务时，这些脑区可能更加活跃。</p>
                 <div class="headband-image-container">
                   <picture>
                     <source srcset="assets/headband-guide.webp" type="image/webp">
@@ -2952,9 +2951,9 @@
 
     function renderQuestionStep() {
       const pages = [
-        { title: "材料一：工作记忆", className: "reading-page", content: () => `<article class="page-card"><h4>材料一：工作记忆</h4><p>工作记忆是指对信息进行暂时存储和加工的容量有限的记忆系统。工作记忆对信息的加工主要体现在维持和更新这两个方面。</p><p>例如，要完成口算任务2×4×5×6，你首先必须记住2×4等于8；接着还必须记住8×5等于40，这样才能顺利进行下一步的计算，这里需要在工作记忆中维持和更新每一步的计算结果，如8和40。假如工作记忆出了问题，就不可能计算成功。</p><div class="memory-table-wrap"><table class="memory-table" aria-label="工作记忆特点说明"><thead><tr><th>工作记忆特点</th><th>在 N-back 任务中的体现</th></tr></thead><tbody><tr><td>维持</td><td>指个体在工作记忆中持续保存最近呈现的数字信息，以便将其与第 N 个数字进行对比。随着 N 的增加，个体需要在大脑中记忆的数字数量增加，维持信息的时间变长。</td></tr><tr><td>更新</td><td>指个体在每次新数字出现时，动态替换记忆中最旧的数字。随着关卡数的增加，个体需要更新信息的次数增加。</td></tr></tbody></table></div></article>` },
-        { title: "材料二：N-back任务", className: "reading-page", content: () => `<article class="page-card"><h4>材料二：N-back任务</h4><p>N-back任务是一种常用的工作记忆任务。在N-back任务中，人们需要根据当前的刺激（比如字母、数字、算式或图形及图形的位置）来判断是否与该刺激的第前n个刺激相同。这种任务要求被试者不仅要记住当前刺激，还要持续关注前面的刺激序列，以便做出正确的反应。</p><p>例如，假设n=2，屏幕上显示的数字是：7，5，6，5，8，3...当你看到数字6时，需回想：数字6的前2个数字是什么？是7，所以不一样，按否；下一个数字是5，你继续回想，数字5的前2个数字也是5，一致，按是。</p><button class="btn secondary illustration-trigger" type="button" data-open-image-modal="questionNbackModal">点击查看 N-back 活动示意图</button> <button class="btn illustration-trigger" id="openPracticeBtn" type="button">体验 N-back</button></article>${renderNbackIllustrationModal("questionNbackModal", "N-back活动示意图")}${renderPracticeModal()}` },
-        { title: "材料三与材料四：控制变量和头环", className: "reading-page", content: () => `<article class="page-card merged-reading-page"><section class="merged-reading-section"><h4>材料三：控制变量</h4><p>控制变量是指在实验的过程中需要控制那些除了自变量以外的所有影响实验结果的变量，这些变量不是本实验所要研究的变量，所以又称无关变量。只有将自变量以外的所有无关变量控制好，才能弄清实验中的因果关系。</p></section><section class="merged-reading-section"><h4>材料四：头环</h4><p>头环是我们用来测量N-back活动中大脑前额叶活动水平的工具。头环就像一个特殊的“脑力探测器”，只要把头环戴在头上就可以可以收集信息，并且可以在电脑显示屏上生成一幅3D的脑激活图，展示大脑在执行特定任务或接受刺激时，不同脑区神经活动的空间分布状态。这张图可以直观呈现被激活脑区的位置、范围和强度，它会用颜色告诉你，在实验过程中大脑中哪些地方被激活，用红-黄色表示激活强度高，蓝-冷色表示抑制或无变化。也就是说，图中的某个脑区越红说明越活跃，在努力“思考”。假设3-back比2-back需要消耗更多的大脑资源，导致前额叶的激活水平更高，那么头环收集信息生成的结果图中，3-back的结果图中某个区域的颜色应该比2-back的结果图中相应区域的颜色更红，说明在玩更难的3-back游戏时，大脑需要花比玩2-back多得多的“力气”。</p><button class="btn secondary illustration-trigger" type="button" data-open-image-modal="headbandGuideModal">点击查看头环工作原理</button></section></article>${renderHeadbandModal()}` },
+        { title: "材料一：工作记忆", className: "reading-page", content: () => `<article class="page-card"><h4>材料一：工作记忆</h4><p>工作记忆是大脑暂时保存和处理信息的能力，但它的容量有限。它不仅要记住信息，还要不断更新信息。</p><p>比如计算2×4×5×6：先算出2×4=8，并记住8；再算出8×5=40，并记住40，才能继续计算。这个过程中，大脑要不断保存和更新计算结果。如果工作记忆不能正常发挥作用，就很难完成计算。</p><div class="memory-table-wrap"><table class="memory-table" aria-label="工作记忆特点说明"><thead><tr><th>工作记忆特点</th><th>在 N-back 任务中的体现</th></tr></thead><tbody><tr><td>维持</td><td>指个体在工作记忆中持续保存最近呈现的数字信息，以便将其与第 N 个数字进行对比。随着 N 的增加，个体需要在大脑中记忆的数字数量增加，维持信息的时间变长。</td></tr><tr><td>更新</td><td>指个体在每次新数字出现时，动态替换记忆中最旧的数字。随着关卡数的增加，个体需要更新信息的次数增加。</td></tr></tbody></table></div></article>` },
+        { title: "材料二：N-back任务", className: "reading-page", content: () => `<article class="page-card"><h4>材料二：N-back任务</h4><p>N-back是一种常见的工作记忆任务。你需要判断屏幕上现在出现的数字、字母或图形，是否与它前面第N个出现的内容相同。因此，你要一边记住前面的内容，一边不断更新记忆。</p><p>例如，在2-back任务中，数字依次出现：7、5、6、5、8、3……看到6时，要和它前面第2个数字7比较：不同，选择“否”。看到下一个5时，要和它前面第2个数字5比较：相同，选择“是”。</p><button class="btn secondary illustration-trigger" type="button" data-open-image-modal="questionNbackModal">点击查看 N-back 活动示意图</button> <button class="btn illustration-trigger" id="openPracticeBtn" type="button">体验 N-back</button></article>${renderNbackIllustrationModal("questionNbackModal", "N-back活动示意图")}${renderPracticeModal()}` },
+        { title: "材料三与材料四：控制变量和头环", className: "reading-page", content: () => `<article class="page-card merged-reading-page"><section class="merged-reading-section"><h4>材料三：控制变量</h4><p>做实验时，除了我们想研究的因素（自变量），还有其他因素可能影响结果。这些其他因素叫作“无关变量”。</p><p>控制变量，就是尽量让这些无关变量保持一致，避免它们影响实验结果。这样，我们才能更清楚地判断：实验结果的变化是不是由自变量引起的。</p></section><section class="merged-reading-section"><h4>材料四：头环</h4><p>头环可以帮助我们观察做N-back任务时，大脑前额叶的活动。它就像一个“脑力探测器”：戴上后，可以收集大脑活动的数据，并在电脑上生成3D脑激活图。</p><p>脑图用颜色显示不同脑区的活动情况。红色、黄色通常表示活动较强；蓝色等冷色表示活动较弱或变化不大。某个区域越红，通常说明它在这项任务中越活跃。</p><p>假如3-back比2-back更难，需要大脑投入更多精力，那么3-back脑图中前额叶的某些区域可能比2-back更红。这就说明，做更难的任务时，这些脑区可能更加活跃。</p><button class="btn secondary illustration-trigger" type="button" data-open-image-modal="headbandGuideModal">点击查看头环工作原理</button></section></article>${renderHeadbandModal()}` },
         { title: "科学探究案例", className: "case-page", content: () => `<div class="page-card">${renderInquiryCases()}${renderInquiryScaffold("question")}</div>` },
         { title: "提出研究问题", className: "question-form-page", content: () => `<div class="page-card"><div class="page-form-grid"><div class="field"><label>自变量</label><div class="choice-group"><label class="choice"><input type="radio" name="independentVariable" data-field="independentVariable" value="N的大小" ${checked("independentVariable", "N的大小")}>N-back 活动中 N 的大小</label><label class="choice"><input type="radio" name="independentVariable" data-field="independentVariable" value="关卡数量" ${checked("independentVariable", "关卡数量")}>N-back 活动中关卡的数量</label></div></div><div class="field"><label>因变量</label><div class="choice-group"><label class="choice"><input type="checkbox" data-field="dependentMemory" ${state.fields.dependentMemory ? "checked" : ""}>工作记忆表现（N-back 正确率）</label><label class="choice"><input type="checkbox" data-field="dependentBrain" ${state.fields.dependentBrain ? "checked" : ""}>大脑活动水平（前额叶激活水平）</label></div></div></div><div class="field"><label>控制变量</label><div class="choice-group"><label class="choice"><input type="checkbox" data-field="controlContentType" ${state.fields.controlContentType ? "checked" : ""}>N-back 任务中记忆内容的类型</label></div><input type="text" data-field="controlOther" value="${escapeHtml(state.fields.controlOther)}" placeholder="其他控制变量"></div>${renderPairedField("研究问题", `<textarea data-field="researchQuestion" placeholder="写下你自己真正想探究的问题">${escapeHtml(state.fields.researchQuestion)}</textarea>`, renderGroupTextarea("researchQuestion_group"))}</div>` }
       ];

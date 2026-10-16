@@ -1217,7 +1217,7 @@
   <main class="experience" id="experience">
     <div class="auth-hud top-actions" aria-label="登录状态">
       <span class="auth-status" id="welcomeUser">身份核验中</span>
-      <div class="teacher-menu" id="teacherMenu">
+      <div class="teacher-menu" id="teacherMenu" hidden>
         <button class="auth-logout teacher-menu-button" id="teacherMenuButton" type="button" aria-expanded="false" aria-haspopup="true" aria-controls="teacherMenuPanel">
           教师端 <span class="teacher-menu-caret" aria-hidden="true">⌄</span>
         </button>
@@ -1341,42 +1341,65 @@
   <script src="assets/experiment-registry.js"></script>
   <script src="assets/platform-core.js"></script>
   <script src="auth.js"></script>
+  <script src="https://static.cloudbase.net/cloudbase-js-sdk/3.0.0/cloudbase.full.js"></script>
+  <script src="cloudbase.js"></script>
   <script src="assets/case-stories.js"></script>
   <script src="assets/case-intro.js"></script>
   <script>
-    (() => {
+    (async () => {
       "use strict";
 
-      const currentStudent = checkLogin();
-      if (!currentStudent) return;
-
       const platform = window.BrainPlatform;
-      const experience = document.getElementById("experience");
-      const identity = platform.identity.getStudentIdentityFields(currentStudent);
-      const welcomeUser = document.getElementById("welcomeUser");
-      welcomeUser.textContent = currentStudent.isGuest
-        ? "游客模式"
-        : `学生 · ${currentStudent.name || currentStudent.studentId || "已登录"}`;
-
-      const contextKey = platform.storage.migrateScopedJson(platform.config.storageKeys.inquiryContext);
-      let savedContext = {};
-      try {
-        savedContext = JSON.parse(localStorage.getItem(contextKey) || "null") || {};
-      } catch (error) {
-        localStorage.removeItem(contextKey);
+      let currentStudent = platform.identity.readStudentSession();
+      if (currentStudent && !currentStudent.isGuest && !currentStudent.sessionToken) {
+        platform.identity.clearStudentSession();
+        currentStudent = null;
+      }
+      let currentTeacher = null;
+      if (currentStudent) {
+        checkLogin();
+      } else {
+        try {
+          currentTeacher = await window.BrainCloudBase?.getTeacherLoginState();
+        } catch (error) {
+          currentTeacher = null;
+        }
+        if (!currentTeacher) {
+          window.location.replace("login.html");
+          return;
+        }
       }
 
-      const sameStudentContext = !savedContext.studentId || savedContext.studentId === identity.studentId;
-      const compatibleContext = sameStudentContext ? savedContext : {};
-      const groupId = identity.groupName || compatibleContext.groupId || compatibleContext.groupName || "";
-      localStorage.setItem(contextKey, JSON.stringify({
-        ...compatibleContext,
-        studentName: identity.studentName || compatibleContext.studentName || "",
-        studentId: identity.studentId,
-        groupId,
-        groupName: groupId,
-        savedAt: new Date().toISOString()
-      }));
+      const experience = document.getElementById("experience");
+      const welcomeUser = document.getElementById("welcomeUser");
+      welcomeUser.textContent = currentTeacher
+        ? `教师 · ${currentTeacher.username}`
+        : currentStudent.isGuest
+          ? "游客模式"
+          : `学生 · ${currentStudent.name || currentStudent.studentId || "已登录"}`;
+
+      if (currentStudent) {
+        const identity = platform.identity.getStudentIdentityFields(currentStudent);
+        const contextKey = platform.storage.migrateScopedJson(platform.config.storageKeys.inquiryContext);
+        let savedContext = {};
+        try {
+          savedContext = JSON.parse(localStorage.getItem(contextKey) || "null") || {};
+        } catch (error) {
+          localStorage.removeItem(contextKey);
+        }
+
+        const sameStudentContext = !savedContext.studentId || savedContext.studentId === identity.studentId;
+        const compatibleContext = sameStudentContext ? savedContext : {};
+        const groupId = identity.groupName || compatibleContext.groupId || compatibleContext.groupName || "";
+        localStorage.setItem(contextKey, JSON.stringify({
+          ...compatibleContext,
+          studentName: identity.studentName || compatibleContext.studentName || "",
+          studentId: identity.studentId,
+          groupId,
+          groupName: groupId,
+          savedAt: new Date().toISOString()
+        }));
+      }
 
       const scenes = Array.from(document.querySelectorAll("[data-scene]"));
       const videos = [
@@ -1386,8 +1409,19 @@
       const sceneStatus = document.getElementById("sceneStatus");
       const replayButton = document.getElementById("replayButton");
       const teacherMenu = document.getElementById("teacherMenu");
+      teacherMenu.hidden = !currentTeacher;
       const teacherMenuButton = document.getElementById("teacherMenuButton");
       const teacherMenuPanel = document.getElementById("teacherMenuPanel");
+      if (currentTeacher) {
+        document.getElementById("logoutBtn").addEventListener("click", async () => {
+          try {
+            await window.BrainCloudBase.logout();
+            window.location.href = "login.html";
+          } catch (error) {
+            welcomeUser.textContent = "退出失败，请重试";
+          }
+        });
+      }
       const caseDeck = document.querySelector(".case-deck");
       const caseCards = Array.from(document.querySelectorAll("[data-case-route]"));
       const prevCaseButton = document.getElementById("prevCaseButton");
