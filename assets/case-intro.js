@@ -38,6 +38,10 @@
         <p class="case-intro-number"></p>
         <h2 class="case-intro-title" id="caseIntroTitle"></h2>
       </header>
+      <div class="case-intro-student" aria-hidden="true">
+        <span class="case-intro-student-pose case-intro-student-pose--normal"></span>
+        <span class="case-intro-student-pose case-intro-student-pose--thinking"></span>
+      </div>
       <div class="case-intro-avatar" aria-hidden="true">
         <span class="case-intro-pose case-intro-pose--normal"></span>
         <span class="case-intro-pose case-intro-pose--thinking"></span>
@@ -45,7 +49,6 @@
       <section class="case-intro-log" aria-label="案件剧情记录">
         <div class="case-intro-copy">
           <p class="case-intro-kicker">MEMORY DETECTIVE LOG</p>
-          <p class="case-intro-speaker">记忆侦探助手：</p>
           <div class="case-intro-dialog" aria-hidden="true"></div>
           <p class="case-intro-live" aria-live="polite"></p>
         </div>
@@ -58,7 +61,6 @@
 
     const caseNumber = root.querySelector(".case-intro-number");
     const title = root.querySelector(".case-intro-title");
-    const speaker = root.querySelector(".case-intro-speaker");
     const dialog = root.querySelector(".case-intro-dialog");
     const live = root.querySelector(".case-intro-live");
     const returnButton = root.querySelector(".case-intro-return");
@@ -71,6 +73,11 @@
     let waitTimer = null;
     let waitResolver = null;
     let backdropWasInert = false;
+    let activeLineIndex = 0;
+
+    function isInteractiveStory() {
+      return Boolean(activeStory?.dialog[0]?.speaker);
+    }
 
     function getStorageKey() {
       return platform.storage.scopedKey(SEEN_STORAGE_KEY);
@@ -107,8 +114,8 @@
     }
 
     function setEntry(entry) {
-      root.dataset.avatar = entry?.avatar || activeStory.avatar;
-      speaker.textContent = entry?.speaker ? `${entry.speaker}：` : "记忆侦探助手：";
+      root.classList.toggle("is-student-speaking", isInteractiveStory() && entry?.avatar !== "detective");
+      root.classList.toggle("is-student-thinking", entry?.pose === "thinking");
       setPose(entry?.pose);
     }
 
@@ -154,9 +161,36 @@
       startButton.focus({ preventScroll: true });
     }
 
+    function finishLine() {
+      if (activeLineIndex === activeStory.dialog.length - 1) {
+        finishStory();
+      } else {
+        startButton.disabled = false;
+        startButton.textContent = "继续对话";
+        startButton.focus({ preventScroll: true });
+      }
+    }
+
+    function renderLine(index) {
+      const entry = activeStory.dialog[index];
+      activeLineIndex = index;
+      dialog.replaceChildren();
+      setEntry(entry);
+      const line = document.createElement("p");
+      line.className = "case-intro-line";
+      line.textContent = linePrefix(entry) + entry.text;
+      dialog.appendChild(line);
+      live.textContent = line.textContent;
+      finishLine();
+    }
+
     function renderFullStory() {
       if (!activeStory) return;
       cancelPlayback();
+      if (isInteractiveStory()) {
+        renderLine(activeStory.dialog.length - 1);
+        return;
+      }
       dialog.replaceChildren();
       activeStory.dialog.forEach((entry) => {
         const line = document.createElement("p");
@@ -170,11 +204,12 @@
       finishStory();
     }
 
-    async function playStory() {
+    async function playStory(startIndex = 0) {
       const token = ++runToken;
-      for (let index = 0; index < activeStory.dialog.length; index += 1) {
+      for (let index = startIndex; index < activeStory.dialog.length; index += 1) {
         if (token !== runToken) return;
         const entry = activeStory.dialog[index];
+        activeLineIndex = index;
         setEntry(entry);
         const line = document.createElement("p");
         line.className = "case-intro-line is-typing";
@@ -191,6 +226,10 @@
 
         line.classList.remove("is-typing");
         live.textContent = linePrefix(entry) + entry.text;
+        if (isInteractiveStory()) {
+          finishLine();
+          return;
+        }
         if (index < activeStory.dialog.length - 1) {
           const shouldContinue = await wait(PARAGRAPH_DELAY_MS, token);
           if (!shouldContinue) return;
@@ -209,7 +248,7 @@
       if (root.hidden) return;
       cancelPlayback();
       root.hidden = true;
-      root.classList.remove("is-thinking");
+      root.classList.remove("is-thinking", "is-student-speaking", "is-student-thinking", "has-student");
       restorePage();
       const target = returnFocus;
       activeStory = null;
@@ -232,8 +271,11 @@
       cancelPlayback();
       activeStory = story;
       activeRoute = route;
+      activeLineIndex = 0;
       returnFocus = config.returnFocus || document.activeElement;
       root.dataset.caseId = story.id;
+      root.dataset.avatar = story.avatar;
+      root.classList.toggle("has-student", isInteractiveStory());
       caseNumber.textContent = story.caseNumber;
       title.textContent = story.title;
       dialog.replaceChildren();
@@ -250,7 +292,8 @@
       returnButton.focus({ preventScroll: true });
       if (typeof settings.onOpen === "function") settings.onOpen(story);
 
-      if (reduceMotion.matches) renderFullStory();
+      if (reduceMotion.matches && isInteractiveStory()) renderLine(0);
+      else if (reduceMotion.matches) renderFullStory();
       else playStory();
       return true;
     }
@@ -267,6 +310,15 @@
     skipButton.addEventListener("click", renderFullStory);
     startButton.addEventListener("click", () => {
       if (!activeStory || !activeRoute || startButton.disabled) return;
+      if (isInteractiveStory() && activeLineIndex < activeStory.dialog.length - 1) {
+        cancelPlayback();
+        dialog.replaceChildren();
+        startButton.disabled = true;
+        startButton.textContent = "对话进行中…";
+        if (reduceMotion.matches) renderLine(activeLineIndex + 1);
+        else playStory(activeLineIndex + 1);
+        return;
+      }
       markSeen(activeStory.id);
       navigate(activeRoute);
     });

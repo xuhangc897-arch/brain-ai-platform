@@ -139,6 +139,53 @@
   animation: caseIntroAvatarIn 850ms cubic-bezier(0.22, 1, 0.36, 1) 180ms both;
 }
 
+.case-intro-student {
+  display: none;
+  position: absolute;
+  left: clamp(28px, 7vw, 128px);
+  bottom: clamp(260px, 34vh, 360px);
+  z-index: 3;
+  width: min(22vw, 320px);
+  aspect-ratio: 384 / 460;
+  pointer-events: none;
+  transition: transform 360ms ease, filter 360ms ease, opacity 360ms ease;
+}
+
+.case-intro.has-student .case-intro-student { display: block; }
+
+.case-intro.has-student .case-intro-avatar {
+  bottom: clamp(260px, 34vh, 360px);
+  width: min(22vw, 320px);
+  transition: transform 360ms ease, filter 360ms ease, opacity 360ms ease;
+}
+
+.case-intro.has-student.is-student-speaking .case-intro-avatar,
+.case-intro.has-student:not(.is-student-speaking) .case-intro-student {
+  transform: scale(0.78);
+  filter: brightness(0.45) saturate(0.7);
+  opacity: 0.72;
+}
+
+.case-intro-student-pose {
+  position: absolute;
+  inset: 0;
+  background-position-y: center;
+  background-repeat: no-repeat;
+  background-size: 200% 100%;
+  filter: drop-shadow(0 22px 38px rgba(0, 0, 0, 0.58));
+  transition: opacity 360ms ease;
+}
+
+.case-intro-student-pose--normal { background-position-x: left; }
+.case-intro-student-pose--thinking { background-position-x: right; opacity: 0; }
+.case-intro.is-student-thinking .case-intro-student-pose--normal { opacity: 0; }
+.case-intro.is-student-thinking .case-intro-student-pose--thinking { opacity: 1; }
+
+.case-intro[data-avatar="xiaohe"] .case-intro-student-pose { background-image: url("case-characters/xiaohe.webp"); }
+.case-intro[data-avatar="xiaoming"] .case-intro-student-pose { background-image: url("case-characters/xiaoming.webp"); }
+.case-intro[data-avatar="xiaoyu"] .case-intro-student-pose { background-image: url("case-characters/xiaoyu.webp"); }
+.case-intro[data-avatar="xiaolan"] .case-intro-student-pose { background-image: url("case-characters/xiaolan.webp"); }
+
 .case-intro-pose {
   position: absolute;
   inset: 0;
@@ -149,18 +196,6 @@
   filter: drop-shadow(0 22px 38px rgba(0, 0, 0, 0.58));
   transition: opacity 360ms ease, transform 420ms cubic-bezier(0.22, 1, 0.36, 1);
 }
-
-.case-intro[data-avatar="xiaohe"] .case-intro-avatar,
-.case-intro[data-avatar="xiaoming"] .case-intro-avatar,
-.case-intro[data-avatar="xiaoyu"] .case-intro-avatar,
-.case-intro[data-avatar="xiaolan"] .case-intro-avatar {
-  aspect-ratio: 384 / 460;
-}
-
-.case-intro[data-avatar="xiaohe"] .case-intro-pose { background-image: url("case-characters/xiaohe.webp"); }
-.case-intro[data-avatar="xiaoming"] .case-intro-pose { background-image: url("case-characters/xiaoming.webp"); }
-.case-intro[data-avatar="xiaoyu"] .case-intro-pose { background-image: url("case-characters/xiaoyu.webp"); }
-.case-intro[data-avatar="xiaolan"] .case-intro-pose { background-image: url("case-characters/xiaolan.webp"); }
 
 .case-intro-pose--normal {
   background-position-x: left;
@@ -207,6 +242,11 @@
   animation: caseIntroRise 750ms cubic-bezier(0.22, 1, 0.36, 1) 240ms both;
 }
 
+.case-intro.has-student .case-intro-log {
+  height: clamp(260px, 32vh, 330px);
+  min-height: 0;
+}
+
 .case-intro-log::before {
   position: absolute;
   inset: 8px;
@@ -238,13 +278,6 @@
   height: 1px;
   background: rgba(220, 181, 109, 0.4);
   content: "";
-}
-
-.case-intro-speaker {
-  margin: 0 0 9px;
-  color: rgba(241, 211, 151, 0.9);
-  font-size: 13px;
-  letter-spacing: 0.12em;
 }
 
 .case-intro-dialog {
@@ -378,6 +411,16 @@ body.case-intro-open {
     opacity: 0.78;
   }
 
+  .case-intro.has-student .case-intro-student,
+  .case-intro.has-student .case-intro-avatar {
+    bottom: 49dvh;
+    width: min(44vw, 185px);
+    opacity: 1;
+  }
+
+  .case-intro.has-student .case-intro-student { left: 2vw; }
+  .case-intro.has-student .case-intro-avatar { right: 2vw; }
+
   .case-intro-log {
     right: 12px;
     bottom: max(12px, env(safe-area-inset-bottom));
@@ -389,6 +432,11 @@ body.case-intro-open {
     height: 55vh;
     grid-template-rows: minmax(0, 1fr) auto;
     padding: 20px;
+  }
+
+  .case-intro.has-student .case-intro-log {
+    height: 48dvh;
+    max-height: none;
   }
 
   .case-intro-copy {
@@ -420,6 +468,12 @@ body.case-intro-open {
   .case-intro-avatar {
     bottom: 86px;
     width: min(27vw, 330px);
+  }
+
+  .case-intro.has-student .case-intro-student,
+  .case-intro.has-student .case-intro-avatar {
+    bottom: 230px;
+    width: min(22vw, 270px);
   }
 
   .case-intro-log {
