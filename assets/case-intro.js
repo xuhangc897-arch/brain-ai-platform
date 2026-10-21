@@ -58,6 +58,7 @@
 
     const caseNumber = root.querySelector(".case-intro-number");
     const title = root.querySelector(".case-intro-title");
+    const speaker = root.querySelector(".case-intro-speaker");
     const dialog = root.querySelector(".case-intro-dialog");
     const live = root.querySelector(".case-intro-live");
     const returnButton = root.querySelector(".case-intro-return");
@@ -105,6 +106,20 @@
       root.classList.toggle("is-thinking", pose === "thinking");
     }
 
+    function setEntry(entry) {
+      root.dataset.avatar = entry?.avatar || activeStory.avatar;
+      speaker.textContent = entry?.speaker ? `${entry.speaker}：` : "记忆侦探助手：";
+      setPose(entry?.pose);
+    }
+
+    function linePrefix(entry) {
+      return entry.speaker ? `${entry.speaker}：` : "";
+    }
+
+    function followLatestLine() {
+      dialog.scrollTop = dialog.scrollHeight;
+    }
+
     function cancelPlayback() {
       runToken += 1;
       if (waitTimer !== null) {
@@ -146,11 +161,12 @@
       activeStory.dialog.forEach((entry) => {
         const line = document.createElement("p");
         line.className = "case-intro-line";
-        line.textContent = entry.text;
+        line.textContent = linePrefix(entry) + entry.text;
         dialog.appendChild(line);
       });
-      setPose(activeStory.dialog.at(-1)?.pose);
-      live.textContent = activeStory.dialog.map((entry) => entry.text).join(" ");
+      setEntry(activeStory.dialog.at(-1));
+      followLatestLine();
+      live.textContent = activeStory.dialog.map((entry) => linePrefix(entry) + entry.text).join(" ");
       finishStory();
     }
 
@@ -159,20 +175,22 @@
       for (let index = 0; index < activeStory.dialog.length; index += 1) {
         if (token !== runToken) return;
         const entry = activeStory.dialog[index];
-        setPose(entry.pose);
+        setEntry(entry);
         const line = document.createElement("p");
         line.className = "case-intro-line is-typing";
+        line.textContent = linePrefix(entry);
         dialog.appendChild(line);
 
         for (const character of Array.from(entry.text)) {
           if (token !== runToken) return;
           line.textContent += character;
+          followLatestLine();
           const shouldContinue = await wait(CHARACTER_DELAY_MS, token);
           if (!shouldContinue) return;
         }
 
         line.classList.remove("is-typing");
-        live.textContent = entry.text;
+        live.textContent = linePrefix(entry) + entry.text;
         if (index < activeStory.dialog.length - 1) {
           const shouldContinue = await wait(PARAGRAPH_DELAY_MS, token);
           if (!shouldContinue) return;
@@ -216,7 +234,6 @@
       activeRoute = route;
       returnFocus = config.returnFocus || document.activeElement;
       root.dataset.caseId = story.id;
-      root.dataset.avatar = story.avatar;
       caseNumber.textContent = story.caseNumber;
       title.textContent = story.title;
       dialog.replaceChildren();
@@ -224,7 +241,7 @@
       startButton.disabled = true;
       startButton.textContent = "档案解密中…";
       skipButton.hidden = !hasSeen(caseId);
-      setPose(story.dialog[0]?.pose);
+      setEntry(story.dialog[0]);
 
       backdropWasInert = Boolean(backdropRoot?.inert);
       if (backdropRoot) backdropRoot.inert = true;

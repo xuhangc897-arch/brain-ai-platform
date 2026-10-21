@@ -26,13 +26,20 @@ const registry = browserWindow.BrainExperimentRegistry;
 const stories = browserWindow.MemoryCaseStories;
 const index = read("index.html");
 const introSource = read("assets/case-intro.js");
+const introStyle = read("assets/case-intro.css");
 const expectedCases = [
   ["screening", "pretest.html", "侦探资格审查", "开始资格审查"],
-  ["memory", "memory.html", "消失的数字档案", "调查记忆容量"],
-  ["nback", "nback.html", "动态记忆文件", "追踪工作记忆"],
-  ["interference", "interference.html", "被污染的记忆现场", "调查遗忘原因"],
-  ["strategies", "strategies.html", "破解记忆密码", "破解记忆策略"],
+  ["memory", "memory.html", "少拿的美术材料", "调查记忆容量"],
+  ["nback", "nback.html", "跟丢的口算接龙", "追踪工作记忆"],
+  ["interference", "interference.html", "串在一起的古诗", "调查遗忘原因"],
+  ["strategies", "strategies.html", "看熟了却写不出", "破解记忆策略"],
   ["poster", "poster.html", "重建记忆档案", "提交调查报告"]
+];
+const studentCases = [
+  ["memory", "xiaohe", "小禾", "彩纸、胶棒、剪刀"],
+  ["nback", "xiaoming", "小明", "从 12 开始"],
+  ["interference", "xiaoyu", "小雨", "第二首的句子"],
+  ["strategies", "xiaolan", "小岚", "合上书自己测"]
 ];
 
 assert(registry && stories, "案件注册表或剧情配置未加载。");
@@ -57,6 +64,20 @@ expectedCases.forEach(([id, route, title, buttonText], indexPosition) => {
   assert(cardTag.includes(`data-case-route="${route}"`), `${id} 的卡片路由必须保持为 ${route}`);
 });
 
+studentCases.forEach(([id, avatar, speaker, storyDetail]) => {
+  const story = stories.get(id);
+  assert(story.avatar === avatar && story.dialog.length === 4, `${id} 必须使用对应学生和四句对话。`);
+  assert(story.dialog.slice(0, 3).every((line) => line.speaker === speaker && !line.avatar), `${id} 前三句必须由学生讲述。`);
+  assert(story.dialog[3].speaker === "侦探" && story.dialog[3].avatar === "detective", `${id} 末句必须切回侦探。`);
+  assert(story.dialog.some((line) => line.text.includes(storyDetail)), `${id} 缺少情境关键内容。`);
+  const sprite = `assets/case-characters/${avatar}.webp`;
+  assert(fs.existsSync(path.join(root, sprite)), `${id} 缺少学生双表情立绘。`);
+  assert(fs.statSync(path.join(root, sprite)).size < 200000, `${id} 立绘必须保持轻量。`);
+  assert(introStyle.includes(`case-characters/${avatar}.webp`), `${id} 的立绘未接入样式。`);
+});
+
+assert(stories.get("screening").avatar === "detective" && stories.get("poster").avatar === "detective", "资格审查与最终报告应保留侦探形象。");
+
 [
   'href="assets/case-intro.css"',
   'src="assets/case-stories.js"',
@@ -76,6 +97,8 @@ assert(!index.includes("caseDialog"), "旧案件确认弹窗仍然存在。");
 assert(introSource.includes('scopedKey(SEEN_STORAGE_KEY)'), "剧情观看记录必须使用用户作用域存储。");
 assert(introSource.includes("markSeen(activeStory.id)"), "点击开始调查时必须记录已观看案件。");
 assert(introSource.includes("skipButton.hidden = !hasSeen(caseId)"), "首次进入必须隐藏跳过按钮，第二次起才能显示。");
+assert(introSource.includes("setEntry(entry)"), "剧情播放必须按说话者切换角色。 ");
+assert(introSource.includes("followLatestLine()"), "长台词播放时必须保持最新文字可见。");
 assert(!introSource.includes("!route || hasSeen(caseId)"), "已观看案件仍应再次进入剧情场景。");
 assert(introSource.includes("return Object.freeze({ open, close, isOpen, hasSeen })"), "CaseIntro 控制器公共接口不完整。");
 
