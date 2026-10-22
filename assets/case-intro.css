@@ -296,6 +296,10 @@
   text-shadow: 0 2px 15px rgba(0, 0, 0, 0.76);
 }
 
+.case-intro.has-student .case-intro-dialog {
+  max-width: none;
+}
+
 .case-intro-line {
   margin: 0;
 }
