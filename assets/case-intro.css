@@ -143,9 +143,9 @@
   display: none;
   position: absolute;
   left: clamp(28px, 7vw, 128px);
-  bottom: clamp(260px, 34vh, 360px);
+  bottom: clamp(215px, 27vh, 290px);
   z-index: 3;
-  width: min(22vw, 320px);
+  width: min(27vw, 365px);
   aspect-ratio: 384 / 460;
   pointer-events: none;
   transition: transform 360ms ease, filter 360ms ease, opacity 360ms ease;
@@ -154,14 +154,22 @@
 .case-intro.has-student .case-intro-student { display: block; }
 
 .case-intro.has-student .case-intro-avatar {
-  bottom: clamp(260px, 34vh, 360px);
-  width: min(22vw, 320px);
+  bottom: clamp(215px, 27vh, 290px);
+  width: min(27vw, 365px);
+  animation: none;
   transition: transform 360ms ease, filter 360ms ease, opacity 360ms ease;
+}
+
+.case-intro.has-student.is-student-speaking .case-intro-student,
+.case-intro.has-student:not(.is-student-speaking) .case-intro-avatar {
+  transform: scale(1.05);
+  filter: brightness(1);
+  opacity: 1;
 }
 
 .case-intro.has-student.is-student-speaking .case-intro-avatar,
 .case-intro.has-student:not(.is-student-speaking) .case-intro-student {
-  transform: scale(0.78);
+  transform: scale(0.72);
   filter: brightness(0.45) saturate(0.7);
   opacity: 0.72;
 }
@@ -178,6 +186,9 @@
 
 .case-intro-student-pose--normal { background-position-x: left; }
 .case-intro-student-pose--thinking { background-position-x: right; opacity: 0; }
+.case-intro[data-avatar="xiaoyu"] .case-intro-student-pose--thinking {
+  clip-path: polygon(16% 0, 16% 55%, 9% 67%, 10% 75%, 15% 81%, 12% 89%, 9% 93%, 0 96%, 0 100%, 100% 100%, 100% 0);
+}
 .case-intro.is-student-thinking .case-intro-student-pose--normal { opacity: 0; }
 .case-intro.is-student-thinking .case-intro-student-pose--thinking { opacity: 1; }
 
@@ -243,7 +254,9 @@
 }
 
 .case-intro.has-student .case-intro-log {
-  height: clamp(260px, 32vh, 330px);
+  grid-template-columns: minmax(0, 1fr);
+  grid-template-rows: minmax(0, 1fr) auto;
+  height: clamp(205px, 24vh, 250px);
   min-height: 0;
 }
 
@@ -297,7 +310,17 @@
 }
 
 .case-intro.has-student .case-intro-dialog {
+  width: 100%;
+  flex: 1;
+  min-height: 0;
+  max-height: none;
   max-width: none;
+}
+
+.case-intro.has-student .case-intro-copy {
+  display: flex;
+  flex-direction: column;
+  min-height: 0;
 }
 
 .case-intro-line {
@@ -417,9 +440,8 @@ body.case-intro-open {
 
   .case-intro.has-student .case-intro-student,
   .case-intro.has-student .case-intro-avatar {
-    bottom: 49dvh;
-    width: min(44vw, 185px);
-    opacity: 1;
+    bottom: 43dvh;
+    width: min(46vw, 205px);
   }
 
   .case-intro.has-student .case-intro-student { left: 2vw; }
@@ -439,7 +461,7 @@ body.case-intro-open {
   }
 
   .case-intro.has-student .case-intro-log {
-    height: 48dvh;
+    height: 42dvh;
     max-height: none;
   }
 
@@ -476,8 +498,8 @@ body.case-intro-open {
 
   .case-intro.has-student .case-intro-student,
   .case-intro.has-student .case-intro-avatar {
-    bottom: 230px;
-    width: min(22vw, 270px);
+    bottom: 210px;
+    width: min(27vw, 340px);
   }
 
   .case-intro-log {
