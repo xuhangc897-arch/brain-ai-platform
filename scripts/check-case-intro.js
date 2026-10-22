@@ -104,6 +104,7 @@ assert(!introSource.includes("case-intro-speaker"), "英文标题下方不得重
 assert(introSource.includes("if (isInteractiveStory()) {") && introSource.includes("finishLine();") && introSource.includes('startButton.textContent = "继续对话"'), "实验对话必须逐句等待操作者推进。");
 assert(introSource.includes("dialog.replaceChildren();") && introSource.includes("playStory(activeLineIndex + 1)"), "推进时必须只显示当前一句。");
 assert(introStyle.includes(".case-intro.has-student .case-intro-log") && introStyle.includes("height: clamp(260px, 32vh, 330px)"), "实验字幕框高度必须固定。");
+assert(introStyle.includes(".case-intro.has-student .case-intro-dialog {\n  max-width: none;"), "实验字幕须使用对话栏的可用宽度，不能被固定最大宽度提前断行。");
 assert(introStyle.includes(".case-intro.has-student.is-student-speaking .case-intro-avatar") && introStyle.includes("filter: brightness(0.45)"), "非说话角色必须缩小并变暗。");
 assert(!introSource.includes("!route || hasSeen(caseId)"), "已观看案件仍应再次进入剧情场景。");
 assert(introSource.includes("return Object.freeze({ open, close, isOpen, hasSeen })"), "CaseIntro 控制器公共接口不完整。");
