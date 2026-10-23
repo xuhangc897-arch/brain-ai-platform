@@ -107,7 +107,7 @@ const authorized = (body) => ({ headers: { Authorization: `Bearer ${payload}.${s
   const poster = fs.readFileSync(path.join(root, "poster.html"), "utf8");
   assert.match(poster, /<h3>读取实验数据<\/h3>/);
   assert.match(poster, /<h2>\$\{state\.currentStep \+ 1\}\. \$\{step\.title\}<\/h2>/);
-  assert.match(poster, /if \(step\.id === "plan" && page === 0\) loadReportArchives\(\)/);
+  assert.match(poster, /if \(step\.id === "plan" && page < getArchivePageCount\(\)\) loadReportArchives\(\)/);
   assert.match(poster, /<span>接受校园委托<\/span>/);
   assert.match(poster, /URL\.createObjectURL\(new Blob\(\[bytes\], \{ type: "application\/pdf" \}\)\)/);
   assert.doesNotMatch(poster, /frame\.src = archive\.url/);

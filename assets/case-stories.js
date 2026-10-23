@@ -73,7 +73,7 @@
     {
       id: "poster",
       caseNumber: "CASE 05",
-      title: "记忆侦探社：校园委托行动",
+      title: "校园委托行动",
       avatar: "detective",
       dialog: freezeDialog([
         { text: "四次实验历练已经完成，记忆侦探社开始接受校园里的委托。", pose: "normal" },
