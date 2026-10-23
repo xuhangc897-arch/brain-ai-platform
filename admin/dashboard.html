@@ -1405,6 +1405,11 @@
           <table><thead><tr><th>阶段</th><th>状态</th><th>得分</th><th>正确题数</th><th>提交时间</th></tr></thead>
           <tbody>${rows.map((row) => `<tr>${row.map((cell) => `<td>${escapeHtml(cell)}</td>`).join("")}</tr>`).join("")}</tbody></table>
           <details><summary>查看完整记录</summary><pre>${escapeHtml(JSON.stringify(record, null, 2))}</pre></details>`;
+      } else if (["memory", "nback", "interference", "strategies"].includes(record?.module)) {
+        const answers = record.data?.fullState?.surveys?.inquiryParticipation || record.data?.surveys?.inquiryParticipation || record.data?.fullState?.surveys?.current?.inquiryParticipation || {};
+        const answer = answers.q10;
+        const status = Number(answer) > 0 ? (Number(answer) === 4 ? "通过" : "未通过") : "未采集";
+        detailContent.innerHTML = `<h3>科学探究问卷注意力核验：${status}</h3><p>学生答案：${escapeHtml(answer || "未采集")}；指定答案：4</p><pre>${escapeHtml(JSON.stringify(record, null, 2))}</pre>`;
       } else {
         detailContent.textContent = JSON.stringify(record, null, 2);
       }
@@ -1755,12 +1760,15 @@
       const total = values.reduce((sum, value) => sum + value, 0);
       const average = values.length ? Number((total / values.length).toFixed(2)) : "";
 
+      const attentionAnswer = answers.q10;
+      const attentionStatus = Number(attentionAnswer) > 0 ? (Number(attentionAnswer) === 4 ? "通过" : "未通过") : "未采集";
       return [`${studentLabel}-${def.title}`, [
         ["题号", "题目", "得分", "选项含义"],
         ...def.items.map((item, index) => {
           const score = answers[`q${index + 1}`] || "";
           return [String(index + 1), item, score, score ? def.labels[score] || "" : ""];
         }),
+        ...(surveyKey === "inquiryParticipation" ? [[Number.isInteger(answers.attentionPosition) ? `核验题（第${answers.attentionPosition + 1}题）` : "核验题", "该题请选择【4】", attentionAnswer || "", attentionStatus]] : []),
         ["合计", "总分", total, ""],
         ["合计", "均分", average, ""],
         ["合计", "已答题数", values.length, ""]

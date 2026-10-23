@@ -1331,21 +1331,11 @@
 
     .inquiry-helper { display: grid; gap: 14px; margin-top: 16px; }
     .helper-grid { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 12px; }
-    .helper-card, .template-card, .case-card { border: 1px solid #e5edf7; border-radius: 14px; background: linear-gradient(135deg, #ffffff, #f8fbff); box-shadow: 0 10px 24px rgba(23, 32, 51, 0.05); }
+    .helper-card { border: 1px solid #e5edf7; border-radius: 14px; background: linear-gradient(135deg, #ffffff, #f8fbff); box-shadow: 0 10px 24px rgba(23, 32, 51, 0.05); }
     .helper-card { padding: 14px; }
-    .helper-card h4, .template-card h4 { margin: 0 0 10px; color: #1e3a8a; font-size: 15px; }
+    .helper-card h4 { margin: 0 0 10px; color: #1e3a8a; font-size: 15px; }
     .helper-card ul { margin: 0; padding-left: 18px; color: #344054; font-size: 14px; }
-    .template-card { padding: 14px; background: linear-gradient(135deg, #f8fbff, #eef6ff); }
-    .case-list { display: grid; gap: 10px; margin-top: 16px; }
-    .case-card { overflow: hidden; }
-    .case-card summary { display: flex; align-items: center; justify-content: space-between; gap: 12px; padding: 13px 14px; color: #172033; cursor: pointer; font-weight: 900; }
-    .case-card summary::after { content: "+"; display: inline-grid; place-items: center; width: 24px; height: 24px; border-radius: 999px; background: #eef4ff; color: #2563eb; }
-    .case-card[open] summary::after { content: "-"; }
-    .case-body { padding: 0 14px 14px; color: #344054; font-size: 14px; }
-    .case-body p { margin: 8px 0; }
-    .case-tags { display: flex; flex-wrap: wrap; gap: 8px; margin-top: 10px; }
-    .case-tag { padding: 5px 9px; border-radius: 999px; background: #eefbf6; color: #0f766e; font-size: 12px; font-weight: 900; }
-    @media (max-width: 760px) { .helper-grid { grid-template-columns: 1fr; } .case-card summary { align-items: flex-start; } }
+    @media (max-width: 760px) { .helper-grid { grid-template-columns: 1fr; } }
 
     .step-page-flow {
       display: grid;
@@ -1369,6 +1359,7 @@
     .step-page-content.is-leaving { animation: step-page-fade-out 150ms ease both; }
     .step-page-actions { display: flex; justify-content: space-between; gap: 12px; padding-top: 10px; border-top: 1px solid var(--line); }
     .step-page-actions.is-first { justify-content: flex-end; }
+    .step-page-actions #stepNextPage { margin-left: auto; }
     .step-page-actions .btn { min-width: 108px; }
 
     .page-card {
@@ -1446,12 +1437,6 @@
     .run-trials th, .run-trials td { padding: 6px 8px; }
     .result-page-tools { display: flex; justify-content: flex-end; margin-bottom: 8px; }
 
-    .case-page .case-list { grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 7px; margin-top: 8px; }
-    .case-page .template-card { grid-column: 1 / -1; padding: 9px 12px; }
-    .case-page .template-card p { margin: 0; }
-    .case-page .case-card summary { min-height: 44px; padding: 8px 10px; font-size: 13px; }
-    .case-page .inquiry-helper { margin-top: 8px; }
-    .case-page .helper-card { padding: 10px 12px; }
     .question-form-page .page-card { display: grid; grid-template-columns: 1fr; gap: 10px; }
     .question-form-page .page-form-grid { grid-column: auto; grid-template-columns: 1fr; gap: 10px; }
     .question-form-page .choice-group { grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 10px; margin-top: 6px; }
@@ -1560,7 +1545,6 @@
       .plan-summary,
       .run-meta-grid,
       .evidence-start-grid { grid-template-columns: 1fr; }
-      .case-page .case-list,
       .question-form-page .page-card { grid-template-columns: 1fr; }
       .question-form-page .page-form-grid { grid-column: auto; }
       .question-form-page .choice-group { grid-template-columns: 1fr; }
@@ -2073,6 +2057,7 @@
 
     function getFirstUnansweredSurveyQuestion(surveyKey, itemCount) {
       const answers = state.surveys?.current?.[surveyKey] || {};
+      if (surveyKey === "inquiryParticipation") return getSurveyItems(surveyKey, "inquiry").findIndex((item) => !Number(answers[item.key]));
       for (let index = 0; index < itemCount; index += 1) {
         if (!Number(answers[`q${index + 1}`])) return index;
       }
@@ -2096,7 +2081,7 @@
 
     function getIncompleteStepPage(stepId) {
       const fields = state.fields || {};
-      if (stepId === "question") return 4;
+      if (stepId === "question") return 3;
       if (stepId === "hypothesis") return 0;
       if (stepId === "plan") return 1;
       if (stepId === "evidence") return 0;
@@ -2218,7 +2203,7 @@
 
     function getStepPageCount(stepId) {
       const fixedCounts = {
-        question: 5,
+        question: 4,
         hypothesis: 1,
         plan: 2,
         analysis: 3,
@@ -2235,7 +2220,7 @@
       const pageIndex = Math.min(Math.max(getStepPageIndex(stepId), 0), pageCount - 1);
       setStepPageIndex(stepId, pageIndex);
       const page = pages[pageIndex];
-      const pageClass = page.className || (stepId === "question" && pageIndex === 5 ? "question-form-page" : "");
+      const pageClass = page.className || "";
       const isFirstExperimentPage = state.currentStep === 0 && pageIndex === 0;
       const isFinalExperimentPage = state.currentStep === steps.length - 1 && pageIndex === pageCount - 1;
       return `
@@ -2325,16 +2310,29 @@
       return '<div class="actions" style="justify-content:flex-end;"><button class="btn secondary" type="button" id="reviewReportBtn">生成记忆侦探报告</button></div>';
     }
 
+    function getSurveyItems(surveyKey, defKey) {
+      const items = SURVEY_DEFS[defKey].items.map((text, index) => ({ text, key: 'q' + (index + 1) }));
+      if (defKey === "inquiry") {
+        const answers = state.surveys.current.inquiryParticipation;
+        if (!Number.isInteger(answers.attentionPosition) || answers.attentionPosition < 0 || answers.attentionPosition > items.length) {
+          answers.attentionPosition = Math.floor(Math.random() * (items.length + 1));
+          saveState();
+        }
+        items.splice(answers.attentionPosition, 0, { text: "该题请选择【4】", key: "q10" });
+      }
+      return items;
+    }
+
     function renderSurveyForm(surveyKey, defKey) {
       const def = SURVEY_DEFS[defKey];
       const answers = state.surveys?.current?.[surveyKey] || {};
       return '<section class="survey-card">' +
         '<div class="survey-card-head"><h4>' + def.title + '</h4><p class="survey-card-note">' + def.note + '</p></div>' +
         '<div class="survey-items">' +
-          def.items.map((item, index) => {
-            const itemKey = 'q' + (index + 1);
-            return '<div class="survey-item"><p>' + (index + 1) + '. ' + escapeHtml(item) + '</p>' +
-              '<div class="survey-scale" role="radiogroup" aria-label="' + escapeHtml(item) + '">' +
+          getSurveyItems(surveyKey, defKey).map((item, index) => {
+            const itemKey = item.key;
+            return '<div class="survey-item"><p>' + (index + 1) + '. ' + escapeHtml(item.text) + '</p>' +
+              '<div class="survey-scale" role="radiogroup" aria-label="' + escapeHtml(item.text) + '">' +
                 def.scale.map((score) => {
                   const checked = Number(answers[itemKey]) === score;
                   const label = def.labels?.[score] || '';
@@ -2354,7 +2352,7 @@
       return '<div class="survey-summary">' +
         '<div><strong>' + post.answered + ' / ' + SURVEY_DEFS.meta.items.length + '</strong><span>学习收获调查完成进度</span></div>' +
         '<div><strong>' + load.answered + ' / ' + SURVEY_DEFS.load.items.length + '</strong><span>认知负荷完成进度</span></div>' +
-        '<div><strong>' + inquiry.answered + ' / ' + SURVEY_DEFS.inquiry.items.length + '</strong><span>探究参与完成进度</span></div>' +
+        '<div><strong>' + (inquiry.answered + Number(Boolean(state.surveys?.current?.inquiryParticipation?.q10))) + ' / ' + getSurveyItems("inquiryParticipation", "inquiry").length + '</strong><span>探究参与完成进度</span></div>' +
       '</div>';
     }
 
@@ -2482,7 +2480,7 @@
       const answers = state.surveys?.current?.[surveyKey] || {};
       const values = def.items.map((_, index) => Number(answers['q' + (index + 1)] || 0)).filter(Boolean);
       const total = values.reduce((sum, value) => sum + value, 0);
-      return { answered: values.length, total, average: values.length ? Number((total / values.length).toFixed(2)) : 0, complete: values.length === def.items.length };
+      return { answered: values.length, total, average: values.length ? Number((total / values.length).toFixed(2)) : 0, complete: values.length === def.items.length && (defKey !== "inquiry" || Number(answers.q10) > 0) };
     }
 
     function isSurveyStepComplete(stepId) {
@@ -2496,8 +2494,9 @@
         const answers = state.surveys?.current?.[surveyKey] || {};
         const summary = summarizeSurvey(surveyKey, defKey);
         return [title, [
-          ["题号", "题目", "得分"],
+          ["题号", "题目", "得分", "核验结果"],
           ...def.items.map((item, index) => [String(index + 1), item, answers['q' + (index + 1)] || ""]),
+          ...(defKey === "inquiry" ? [[Number.isInteger(answers.attentionPosition) ? `核验题（第${answers.attentionPosition + 1}题）` : "核验题", "该题请选择【4】", answers.q10 || "", Number(answers.q10) > 0 ? (Number(answers.q10) === 4 ? "通过" : "未通过") : "未采集"]] : []),
           ["合计", "总分", summary.total],
           ["合计", "均分", summary.average]
         ]];
@@ -2527,20 +2526,6 @@
       }
       return '<div class="inquiry-helper">' +
         '<div class="helper-card"><h4>\u7814\u7a76\u95ee\u9898\u601d\u8003\u70b9</h4><ul><li>\u4f60\u4eec\u60f3\u89c2\u5bdf\u6216\u6bd4\u8f83\u7684\u73b0\u8c61\u662f\u4ec0\u4e48\uff1f</li><li>\u95ee\u9898\u4e2d\u7684\u53d8\u91cf\u662f\u5426\u6bd4\u8f83\u6e05\u695a\uff1f</li><li>\u662f\u5426\u80fd\u901a\u8fc7\u5b9e\u9a8c\u8bb0\u5f55\u6216\u6570\u636e\u6765\u5bfb\u627e\u8bc1\u636e\uff1f</li></ul></div>' +
-      '</div>';
-    }
-
-    function renderInquiryCases() {
-      const cases = [
-        { title: "\u5de7\u514b\u529b\u4e0e\u8bb0\u5fc6", question: "\u6444\u5165\u5c11\u91cf\u5de7\u514b\u529b\u662f\u5426\u4f1a\u5f71\u54cd\u5b66\u751f\u5bf9\u8bcd\u8bed\u7684\u56de\u5fc6\u6570\u91cf\uff1f", hypothesis: "\u76f8\u6bd4\u4e8e\u672a\u6444\u5165\u5de7\u514b\u529b\uff0c\u6444\u5165\u5c11\u91cf\u5de7\u514b\u529b\u53ef\u80fd\u4f1a\u6539\u53d8\u8bcd\u8bed\u56de\u5fc6\u6570\u91cf\u3002" },
-        { title: "\u7761\u7720\u4e0e\u5b66\u4e60\u6548\u679c", question: "\u4e0d\u540c\u7761\u7720\u65f6\u957f\u662f\u5426\u4f1a\u5f71\u54cd\u7b2c\u4e8c\u5929\u7684\u5355\u8bcd\u6d4b\u9a8c\u6210\u7ee9\uff1f", hypothesis: "\u76f8\u6bd4\u4e8e\u7761\u7720\u65f6\u95f4\u8f83\u77ed\uff0c\u7761\u7720\u65f6\u95f4\u8f83\u5145\u8db3\u53ef\u80fd\u4f1a\u5bfc\u81f4\u6d4b\u9a8c\u6210\u7ee9\u66f4\u9ad8\u3002" },
-        { title: "\u97f3\u4e50\u4e0e\u4e13\u6ce8\u529b", question: "\u80cc\u666f\u97f3\u4e50\u662f\u5426\u4f1a\u5f71\u54cd\u5b66\u751f\u5b8c\u6210\u9605\u8bfb\u4efb\u52a1\u7684\u4e13\u6ce8\u8868\u73b0\uff1f", hypothesis: "\u76f8\u6bd4\u4e8e\u5b89\u9759\u73af\u5883\uff0c\u6709\u80cc\u666f\u97f3\u4e50\u65f6\u5b66\u751f\u7684\u4e13\u6ce8\u8868\u73b0\u53ef\u80fd\u4f1a\u53d1\u751f\u53d8\u5316\u3002" },
-        { title: "\u827e\u5bbe\u6d69\u65af\u9057\u5fd8\u5b9e\u9a8c", question: "\u5b66\u4e60\u540e\u7ecf\u8fc7\u7684\u65f6\u95f4\u662f\u5426\u4f1a\u5f71\u54cd\u65e0\u610f\u4e49\u97f3\u8282\u7684\u4fdd\u6301\u7387\uff1f", hypothesis: "\u76f8\u6bd4\u4e8e\u5b66\u4e60\u540e\u7acb\u5373\u6d4b\u8bd5\uff0c\u95f4\u9694\u65f6\u95f4\u66f4\u957f\u53ef\u80fd\u4f1a\u5bfc\u81f4\u4fdd\u6301\u7387\u4e0b\u964d\u3002" },
-        { title: "\u7c73\u52d2\u8bb0\u5fc6\u5bb9\u91cf\u5b9e\u9a8c", question: "\u4fe1\u606f\u5355\u4f4d\u6570\u91cf\u662f\u5426\u4f1a\u5f71\u54cd\u53c2\u4e0e\u8005\u51c6\u786e\u590d\u8ff0\u7684\u8868\u73b0\uff1f", hypothesis: "\u76f8\u6bd4\u4e8e\u4fe1\u606f\u5355\u4f4d\u8f83\u5c11\u65f6\uff0c\u4fe1\u606f\u5355\u4f4d\u8f83\u591a\u53ef\u80fd\u4f1a\u5bfc\u81f4\u51c6\u786e\u590d\u8ff0\u7387\u4e0b\u964d\u3002" },
-        { title: "\u65af\u7279\u9c81\u666e\u5b9e\u9a8c", question: "\u989c\u8272\u8bcd\u7684\u8bcd\u4e49\u4e0e\u58a8\u8272\u662f\u5426\u4e00\u81f4\u4f1a\u5f71\u54cd\u989c\u8272\u547d\u540d\u901f\u5ea6\uff1f", hypothesis: "\u76f8\u6bd4\u4e8e\u8bcd\u4e49\u4e0e\u58a8\u8272\u4e00\u81f4\u65f6\uff0c\u4e0d\u4e00\u81f4\u6761\u4ef6\u53ef\u80fd\u4f1a\u5bfc\u81f4\u547d\u540d\u65f6\u95f4\u53d8\u957f\u3002" }
-      ];
-      return '<div class="case-list"><div class="template-card"><h4>\u79d1\u5b66\u63a2\u7a76\u6848\u4f8b</h4><p>\u4ee5\u4e0b\u6848\u4f8b\u53ea\u4f5c\u4e3a\u7075\u611f\u53c2\u8003\uff0c\u53ef\u4ee5\u5b66\u4e60\u601d\u8003\u65b9\u5f0f\uff0c\u4e0d\u9700\u8981\u7167\u7740\u53e5\u5f0f\u5199\u3002</p></div>' +
-        cases.map((item) => '<details class="case-card"><summary>' + item.title + '</summary><div class="case-body"><p><strong>\u7814\u7a76\u95ee\u9898\uff1a</strong>' + item.question + '</p><p><strong>\u7814\u7a76\u5047\u8bbe\uff1a</strong>' + item.hypothesis + '</p><div class="case-tags"><span class="case-tag">\u2713 \u6709\u660e\u786e\u53d8\u91cf</span><span class="case-tag">\u2713 \u53ef\u4ee5\u9a8c\u8bc1</span><span class="case-tag">\u2713 \u6709\u53ef\u6d4b\u91cf\u7ed3\u679c</span></div></div></details>').join('') +
       '</div>';
     }
 
@@ -2648,16 +2633,7 @@
               </article>
             </div>
           </div>
-          <div class="panel">
-            <div class="panel-head">
-              <h3>科学探究案例</h3>
-              <p>先参考案例和思考点，再形成自己的研究问题。</p>
-            </div>
-            <div class="panel-body">
-              ${renderInquiryCases()}
-              ${renderInquiryScaffold("question")}
-            </div>
-          </div>
+          <div class="panel"><div class="panel-body">${renderInquiryScaffold("question")}</div></div>
           <div class="panel">
             <div class="panel-head">
               <h3>提出研究问题</h3>
@@ -2720,7 +2696,6 @@
             </div>
             <div class="panel-body">
               ${renderInquiryScaffold("hypothesis")}
-              ${renderInquiryCases()}
             </div>
           </div>
           <div class="panel">
@@ -2954,8 +2929,7 @@
         { title: "材料一：工作记忆", className: "reading-page", content: () => `<article class="page-card"><h4>材料一：工作记忆</h4><p>工作记忆是大脑暂时保存和处理信息的能力，但它的容量有限。它不仅要记住信息，还要不断更新信息。</p><p>比如计算2×4×5×6：先算出2×4=8，并记住8；再算出8×5=40，并记住40，才能继续计算。这个过程中，大脑要不断保存和更新计算结果。如果工作记忆不能正常发挥作用，就很难完成计算。</p><div class="memory-table-wrap"><table class="memory-table" aria-label="工作记忆特点说明"><thead><tr><th>工作记忆特点</th><th>在 N-back 任务中的体现</th></tr></thead><tbody><tr><td>维持</td><td>指个体在工作记忆中持续保存最近呈现的数字信息，以便将其与第 N 个数字进行对比。随着 N 的增加，个体需要在大脑中记忆的数字数量增加，维持信息的时间变长。</td></tr><tr><td>更新</td><td>指个体在每次新数字出现时，动态替换记忆中最旧的数字。随着关卡数的增加，个体需要更新信息的次数增加。</td></tr></tbody></table></div></article>` },
         { title: "材料二：N-back任务", className: "reading-page", content: () => `<article class="page-card"><h4>材料二：N-back任务</h4><p>N-back是一种常见的工作记忆任务。你需要判断屏幕上现在出现的数字、字母或图形，是否与它前面第N个出现的内容相同。因此，你要一边记住前面的内容，一边不断更新记忆。</p><p>例如，在2-back任务中，数字依次出现：7、5、6、5、8、3……看到6时，要和它前面第2个数字7比较：不同，选择“否”。看到下一个5时，要和它前面第2个数字5比较：相同，选择“是”。</p><button class="btn secondary illustration-trigger" type="button" data-open-image-modal="questionNbackModal">点击查看 N-back 活动示意图</button> <button class="btn illustration-trigger" id="openPracticeBtn" type="button">体验 N-back</button></article>${renderNbackIllustrationModal("questionNbackModal", "N-back活动示意图")}${renderPracticeModal()}` },
         { title: "材料三与材料四：控制变量和头环", className: "reading-page", content: () => `<article class="page-card merged-reading-page"><section class="merged-reading-section"><h4>材料三：控制变量</h4><p>做实验时，除了我们想研究的因素（自变量），还有其他因素可能影响结果。这些其他因素叫作“无关变量”。</p><p>控制变量，就是尽量让这些无关变量保持一致，避免它们影响实验结果。这样，我们才能更清楚地判断：实验结果的变化是不是由自变量引起的。</p></section><section class="merged-reading-section"><h4>材料四：头环</h4><p>头环可以帮助我们观察做N-back任务时，大脑前额叶的活动。它就像一个“脑力探测器”：戴上后，可以收集大脑活动的数据，并在电脑上生成3D脑激活图。</p><p>脑图用颜色显示不同脑区的活动情况。红色、黄色通常表示活动较强；蓝色等冷色表示活动较弱或变化不大。某个区域越红，通常说明它在这项任务中越活跃。</p><p>假如3-back比2-back更难，需要大脑投入更多精力，那么3-back脑图中前额叶的某些区域可能比2-back更红。这就说明，做更难的任务时，这些脑区可能更加活跃。</p><button class="btn secondary illustration-trigger" type="button" data-open-image-modal="headbandGuideModal">点击查看头环工作原理</button></section></article>${renderHeadbandModal()}` },
-        { title: "科学探究案例", className: "case-page", content: () => `<div class="page-card">${renderInquiryCases()}${renderInquiryScaffold("question")}</div>` },
-        { title: "提出研究问题", className: "question-form-page", content: () => `<div class="page-card"><div class="page-form-grid"><div class="field"><label>自变量</label><div class="choice-group"><label class="choice"><input type="radio" name="independentVariable" data-field="independentVariable" value="N的大小" ${checked("independentVariable", "N的大小")}>N-back 活动中 N 的大小</label><label class="choice"><input type="radio" name="independentVariable" data-field="independentVariable" value="关卡数量" ${checked("independentVariable", "关卡数量")}>N-back 活动中关卡的数量</label></div></div><div class="field"><label>因变量</label><div class="choice-group"><label class="choice"><input type="checkbox" data-field="dependentMemory" ${state.fields.dependentMemory ? "checked" : ""}>工作记忆表现（N-back 正确率）</label><label class="choice"><input type="checkbox" data-field="dependentBrain" ${state.fields.dependentBrain ? "checked" : ""}>大脑活动水平（前额叶激活水平）</label></div></div></div><div class="field"><label>控制变量</label><div class="choice-group"><label class="choice"><input type="checkbox" data-field="controlContentType" ${state.fields.controlContentType ? "checked" : ""}>N-back 任务中记忆内容的类型</label></div><input type="text" data-field="controlOther" value="${escapeHtml(state.fields.controlOther)}" placeholder="其他控制变量"></div>${renderPairedField("研究问题", `<textarea data-field="researchQuestion" placeholder="写下你自己真正想探究的问题">${escapeHtml(state.fields.researchQuestion)}</textarea>`, renderGroupTextarea("researchQuestion_group"))}</div>` }
+        { title: "提出研究问题", className: "question-form-page", content: () => `<div class="page-card">${renderInquiryScaffold("question")}<div class="page-form-grid"><div class="field"><label>自变量</label><div class="choice-group"><label class="choice"><input type="radio" name="independentVariable" data-field="independentVariable" value="N的大小" ${checked("independentVariable", "N的大小")}>N-back 活动中 N 的大小</label><label class="choice"><input type="radio" name="independentVariable" data-field="independentVariable" value="关卡数量" ${checked("independentVariable", "关卡数量")}>N-back 活动中关卡的数量</label></div></div><div class="field"><label>因变量</label><div class="choice-group"><label class="choice"><input type="checkbox" data-field="dependentMemory" ${state.fields.dependentMemory ? "checked" : ""}>工作记忆表现（N-back 正确率）</label><label class="choice"><input type="checkbox" data-field="dependentBrain" ${state.fields.dependentBrain ? "checked" : ""}>大脑活动水平（前额叶激活水平）</label></div></div></div><div class="field"><label>控制变量</label><div class="choice-group"><label class="choice"><input type="checkbox" data-field="controlContentType" ${state.fields.controlContentType ? "checked" : ""}>N-back 任务中记忆内容的类型</label></div><input type="text" data-field="controlOther" value="${escapeHtml(state.fields.controlOther)}" placeholder="其他控制变量"></div>${renderPairedField("研究问题", `<textarea data-field="researchQuestion" placeholder="写下你自己真正想探究的问题">${escapeHtml(state.fields.researchQuestion)}</textarea>`, renderGroupTextarea("researchQuestion_group"))}</div>` }
       ];
       return renderPagedStep("question", pages);
     }

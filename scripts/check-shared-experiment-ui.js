@@ -36,6 +36,48 @@ for (const file of experimentFiles) {
   assert(page.includes("window.TypingSupport?.beforePageChange();"), `${file}: typing support pre-page hook missing`);
   assert(page.includes("window.TaskRelevance?.afterPageRender();"), `${file}: relevance post-render hook missing`);
   assert(page.includes("window.TypingSupport?.afterPageRender();"), `${file}: typing support post-render hook missing`);
+
+  const itemSource = page.slice(page.indexOf("function getSurveyItems(surveyKey, defKey)"), page.indexOf("function renderSurveyForm(surveyKey, defKey)") > 0 ? page.indexOf("function renderSurveyForm(surveyKey, defKey)") : page.indexOf("function renderSurveyForm(surveyKey, defKey, startIndex"));
+  const summarySource = page.slice(page.indexOf("function summarizeSurvey(surveyKey, defKey)"), page.indexOf("function isSurveyStepComplete(stepId)"));
+  assert(itemSource.startsWith("function getSurveyItems"), `${file}: inquiry attention item helper missing`);
+  const answers = Object.fromEntries(Array.from({ length: 9 }, (_, index) => [`q${index + 1}`, 3]));
+  const context = {
+    state: { surveys: { current: { inquiryParticipation: answers } } },
+    SURVEY_DEFS: { inquiry: { items: Array.from({ length: 9 }, (_, index) => `原题${index + 1}`) } },
+    Math: Object.assign(Object.create(Math), { random: () => 0 }),
+    saveState: () => { context.saves += 1; },
+    saves: 0
+  };
+  vm.runInNewContext(itemSource + summarySource, context);
+  let items = vm.runInNewContext('getSurveyItems("inquiryParticipation", "inquiry")', context);
+  assert.strictEqual(items.length, 10, `${file}: attention item must be added once`);
+  assert.strictEqual(items[0].key, "q10", `${file}: attention item must support the first position`);
+  assert.strictEqual(context.saves, 1, `${file}: insertion position must be saved once`);
+  context.Math.random = () => 0.99;
+  items = vm.runInNewContext('getSurveyItems("inquiryParticipation", "inquiry")', context);
+  assert.strictEqual(items[0].key, "q10", `${file}: position must survive rerenders`);
+  assert.strictEqual(context.saves, 1, `${file}: rerender must not resave a position`);
+  answers.attentionPosition = 9;
+  items = vm.runInNewContext('getSurveyItems("inquiryParticipation", "inquiry")', context);
+  assert.strictEqual(items[9].key, "q10", `${file}: attention item must support a final page`);
+  assert.strictEqual(items[8].key, "q9", `${file}: original answer keys must remain stable`);
+  assert.strictEqual(context.saves, 1);
+  assert.strictEqual(vm.runInNewContext('summarizeSurvey("inquiryParticipation", "inquiry").complete', context), false);
+  answers.q10 = 2;
+  assert.strictEqual(vm.runInNewContext('summarizeSurvey("inquiryParticipation", "inquiry").complete', context), true, `${file}: wrong attention answer must still allow completion`);
+  assert.strictEqual(vm.runInNewContext('summarizeSurvey("inquiryParticipation", "inquiry").total', context), 27, `${file}: attention answer must not affect the scale total`);
+}
+
+const dashboard = source("admin/dashboard.html");
+const sheetSource = dashboard.slice(dashboard.indexOf("function buildSurveySheet(studentLabel"), dashboard.indexOf("function buildKnowledgeQuizSheet(studentLabel"));
+const sheetContext = { MEMORY_SURVEY_DEFS: { inquiryParticipation: { title: "探究参与", items: Array(9).fill("原题"), labels: { 3: "一般" } } } };
+vm.runInNewContext(sheetSource, sheetContext);
+for (const [answer, expected] of [[undefined, "未采集"], [4, "通过"], [2, "未通过"]]) {
+  const values = Object.fromEntries(Array.from({ length: 9 }, (_, index) => [`q${index + 1}`, 3]));
+  if (answer !== undefined) values.q10 = answer;
+  const sheet = vm.runInNewContext('buildSurveySheet("学生", state, "inquiryParticipation")', { ...sheetContext, state: { surveys: { inquiryParticipation: values } } })[1];
+  assert.strictEqual(sheet[10][3], expected, `teacher export must show ${expected}`);
+  assert.strictEqual(sheet[11][2], 27, "teacher export must exclude attention answer from total");
 }
 
 const theme = source("assets/experiment-theme.css");
@@ -76,16 +118,29 @@ function nbackConditions(experimentDesign) {
 assert.deepStrictEqual(nbackConditions("N的大小"), [2, 3, 4, 5, 6].map((n) => ({ value: `${n}-20`, label: `N=${n}，关卡数=20` })));
 assert.deepStrictEqual(nbackConditions("关卡数量"), [15, 20, 25, 30, 35].map((total) => ({ value: `3-${total}`, label: `N=3，关卡数=${total}` })));
 assert(!/survey-items\s*\{\s*grid-template-columns:\s*repeat\(3/.test(nback), "N-back survey questions must not use narrow three-column cards");
-assert(nback.includes("question: 5") && nback.includes('if (stepId === "question") return 4'), "N-back question pagination must contain five pages");
+assert(nback.includes("question: 4") && nback.includes('if (stepId === "question") return 3'), "N-back question pagination must contain four pages");
+const nbackQuestion = nback.slice(nback.lastIndexOf("function renderQuestionStep()"), nback.lastIndexOf("function renderHypothesisStep()"));
+assert(!nbackQuestion.includes('title: "科学探究案例"') && !nbackQuestion.includes("renderInquiryCases()"), "N-back active question pages must omit inquiry cases");
+assert(nbackQuestion.includes('title: "提出研究问题"') && nbackQuestion.includes('renderInquiryScaffold("question")'), "N-back final question page must retain research prompts");
+const memoryQuestion = source("memory.html");
+const memoryPages = memoryQuestion.slice(memoryQuestion.indexOf("const QUESTION_PAGES = ["), memoryQuestion.indexOf("function renderQuestionStep()"));
+assert(memoryQuestion.includes("question: 3") && !memoryPages.includes('title: "科学探究案例"'), "memory question pagination must contain three pages without inquiry cases");
 assert(nback.includes('title: "材料三与材料四：控制变量和头环"') && nback.includes("merged-reading-page"), "N-back materials three and four must share one page");
 assert(nback.includes(".reading-page .page-card p { margin: 0 0 14px; font-size: 18px; line-height: 1.8; }"), "N-back reading pages must use shared reading typography");
 
 const interference = source("interference.html");
 const interferencePlan = interference.slice(interference.indexOf("function renderPagedPlanStep()"), interference.indexOf("function renderPlanStep()"));
-assert(interference.includes("plan: 6"), "interference plan pagination must contain six pages");
+assert(interference.includes("plan: 5"), "interference plan pagination must contain five pages");
 assert(!interferencePlan.includes("interferenceStagePlan") && !interferencePlan.includes("参与者编号") && !interferencePlan.includes("固定材料条件数"), "interference plan must omit removed controls");
 assert(interference.includes("interferenceStagePlan: \"\"") && !interference.includes('["干扰阶段补全文字",state.fields.interferenceStagePlan]'), "interference must read legacy stage text without exporting it");
 assert(interference.includes(".time-parameter-grid") && interference.includes("grid-template-columns: repeat(3, minmax(0, 1fr))"), "interference time controls must use three desktop columns");
+for (const [file, selector] of [["memory.html", ".question-page-actions"], ["nback.html", ".step-page-actions"], ["interference.html", ".question-page-actions"], ["strategies.html", ".question-page-actions"]]) {
+  assert(new RegExp(`${selector.replaceAll(".", "\\.")} #stepNextPage\\s*\\{\\s*margin-left:\\s*auto;`).test(source(file)), `${file}: next-page button must stay at the right edge`);
+}
+assert(!memoryQuestion.includes("padding-right: 112px"), "memory pagination must not shift the next button left at desktop widths");
+const sharedExperimentTheme = source("assets/experiment-theme.css");
+assert(!sharedExperimentTheme.includes("has-virtual-agent .question-page-actions") && !sharedExperimentTheme.includes("has-virtual-agent .step-page-actions"), "shared virtual-agent styles must not shift pagination controls left");
+assert(sharedExperimentTheme.includes("has-virtual-agent .evidence-page .actions"), "evidence actions must retain their existing virtual-agent spacing");
 
 const strategies = source("strategies.html");
 assert(strategies.includes("plan: 7") && !strategies.includes('title: "材料五：突袭测试与结果"'), "strategy plan pagination must contain seven pages with one material-five page");
