@@ -228,8 +228,8 @@
       border-bottom: 0;
     }
 
-    .poster-plan-item label {
-      margin-bottom: 4px;
+    .poster-plan-item h4 {
+      margin: 0 0 4px;
       color: var(--ink);
       font-size: 16px;
       font-weight: 900;
@@ -241,6 +241,25 @@
       font-size: 13px;
       line-height: 1.65;
     }
+
+    .poster-page-head { margin-bottom: 16px; color: var(--primary-dark); font-weight: 800; }
+    .record-actions { display: flex; gap: 8px; margin-top: 10px; }
+    .record-actions .btn, .qa-record-card .btn { min-height: 34px; }
+    .score-record-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap: 12px; }
+    .score-record-card { padding: 16px; border: 1px solid var(--line); border-radius: 8px; background: var(--panel); }
+    .score-record-card h4 { margin: 0; }
+    .score-record-card p { margin: 6px 0 12px; color: var(--muted); }
+    .score-rubric-list { display: grid; gap: 10px; }
+    .record-dialog { width: min(620px, calc(100vw - 28px)); max-height: calc(100dvh - 28px); padding: 0; border: 1px solid var(--line); border-radius: 10px; background: var(--panel); color: var(--ink); box-shadow: var(--shadow); }
+    .record-dialog::backdrop { background: rgba(20, 24, 30, .55); }
+    .record-form { max-height: calc(100dvh - 30px); overflow-y: auto; padding: 22px; }
+    .record-dialog-head, .record-dialog-actions { display: flex; align-items: center; justify-content: space-between; gap: 12px; }
+    .record-dialog-head h3 { margin: 0; }
+    .record-dialog-head { margin-bottom: 16px; }
+    .record-dialog-actions { justify-content: flex-end; margin-top: 18px; }
+    .score-modal-list { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 10px; }
+    .score-modal-list .score-rule { margin-top: 5px; }
+    @media (max-width: 560px) { .score-modal-list { grid-template-columns: 1fr; } }
 
     .poster-example-image-wrap {
       margin: 24px auto;
@@ -548,48 +567,15 @@
 
 
     .score-workspace { display: grid; gap: 18px; }
-    .score-hero { position: relative; overflow: hidden; padding: 22px; border: 1px solid rgba(219, 227, 239, 0.9); border-radius: 24px; background: linear-gradient(135deg, rgba(255,255,255,.96), rgba(238,246,255,.92)); box-shadow: 0 18px 48px rgba(37, 99, 235, 0.10); }
-    .score-hero::after { content: ""; position: absolute; right: -60px; top: -70px; width: 220px; height: 220px; border-radius: 50%; background: radial-gradient(circle, rgba(37, 99, 235, 0.18), transparent 68%); pointer-events: none; }
-    .score-hero-top { position: relative; z-index: 1; display: flex; justify-content: space-between; gap: 18px; align-items: flex-start; margin-bottom: 18px; }
-    .score-kicker { margin: 0 0 4px; color: var(--primary); font-size: 13px; font-weight: 900; }
-    .score-hero h3 { margin: 0; font-size: 24px; line-height: 1.25; letter-spacing: 0; }
-    .score-hero p { margin: 8px 0 0; color: var(--muted); }
-    .score-progress-card { min-width: 190px; padding: 14px; border: 1px solid rgba(37, 99, 235, 0.16); border-radius: 18px; background: rgba(255,255,255,.72); box-shadow: 0 12px 28px rgba(23,32,51,.07); }
-    .score-progress-card strong { display: block; color: var(--primary); font-size: 24px; line-height: 1; }
-    .score-progress-card span { color: var(--muted); font-size: 12px; font-weight: 700; }
-    .score-progress-track { height: 8px; margin-top: 10px; overflow: hidden; border-radius: 999px; background: #e7eefb; }
-    .score-progress-fill { height: 100%; border-radius: inherit; background: linear-gradient(90deg, var(--primary), #7fd1ae); }
-    .score-tabs-row { position: relative; z-index: 1; display: flex; flex-wrap: wrap; align-items: center; gap: 10px; }
-    .score-group-tabs, .best-poster-picker { position: relative; z-index: 1; display: flex; flex-wrap: wrap; gap: 10px; }
-    .score-group-actions { display: flex; flex-wrap: wrap; gap: 10px; }
+    .score-group-actions, .best-poster-picker { display: flex; flex-wrap: wrap; gap: 10px; }
     .score-delete-btn { background: #fee2e2; color: #b91c1c; }
     .score-delete-btn:hover { background: #fecaca; }
-    .score-group-btn, .best-poster-btn { min-height: 42px; padding: 0 15px; border: 1px solid var(--line); border-radius: 999px; background: rgba(255,255,255,.88); color: var(--ink); box-shadow: 0 8px 18px rgba(23,32,51,.05); transition: transform .16s ease, border-color .16s ease, box-shadow .16s ease, background .16s ease, color .16s ease; }
-    .score-group-btn:hover, .best-poster-btn:hover { transform: translateY(-2px); border-color: rgba(37, 99, 235, 0.36); box-shadow: 0 12px 24px rgba(37, 99, 235, 0.12); }
-    .score-group-btn.is-active, .best-poster-btn.is-active { border-color: var(--primary); background: linear-gradient(135deg, var(--primary), #4f7cff); color: #fff; box-shadow: 0 14px 28px rgba(37, 99, 235, 0.22); }
-    .score-dimensions { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 16px; }
-    .score-dimension-card { border: 1px solid rgba(219, 227, 239, 0.92); border-radius: 22px; background: rgba(255,255,255,.96); box-shadow: 0 16px 38px rgba(23,32,51,.07); overflow: hidden; }
-    .score-dimension-head { padding: 18px 18px 14px; background: linear-gradient(135deg, #fff, #f7fbff); border-bottom: 1px solid var(--line); }
-    .score-dimension-head h4 { margin: 0; font-size: 19px; }
-    .score-dimension-head p { margin: 5px 0 0; color: var(--muted); font-size: 13px; }
-    .score-indicator { padding: 18px; border-bottom: 1px solid var(--line); }
-    .score-indicator:last-child { border-bottom: 0; }
-    .score-indicator-top { display: flex; justify-content: space-between; align-items: center; gap: 12px; margin-bottom: 12px; }
-    .score-indicator h5 { margin: 0; font-size: 16px; }
-    .score-current-value { display: inline-flex; align-items: center; justify-content: center; min-width: 46px; height: 30px; padding: 0 10px; border-radius: 999px; background: #eef4ff; color: var(--primary-dark); font-size: 13px; font-weight: 900; white-space: nowrap; }
-    .score-buttons { display: grid; grid-template-columns: repeat(4, minmax(0, 1fr)); gap: 9px; }
-    .score-value-btn { min-height: 46px; border: 1px solid var(--line); border-radius: 14px; background: #fff; color: var(--ink); box-shadow: 0 8px 18px rgba(23,32,51,.04); font-size: 17px; transition: transform .16s ease, border-color .16s ease, box-shadow .16s ease, background .16s ease, color .16s ease; }
-    .score-value-btn:hover { transform: translateY(-2px); border-color: rgba(37, 99, 235, 0.38); box-shadow: 0 12px 22px rgba(37, 99, 235, 0.12); }
-    .score-value-btn.is-selected { border-color: var(--primary); background: linear-gradient(135deg, var(--primary), #4f7cff); color: #fff; box-shadow: 0 14px 28px rgba(37, 99, 235, 0.22); }
-    .score-rule { margin-top: 12px; border-radius: 14px; background: #f8fbff; border: 1px solid var(--line); }
+    .best-poster-btn { min-height: 42px; padding: 0 15px; border: 1px solid var(--line); border-radius: 999px; background: var(--panel); color: var(--ink); }
+    .best-poster-btn.is-active { border-color: var(--primary); background: var(--primary); color: #fff; }
+    .score-rule { margin-top: 12px; border-radius: 8px; background: #f8fbff; border: 1px solid var(--line); }
     .score-rule summary { padding: 10px 12px; color: var(--primary-dark); cursor: pointer; font-size: 13px; font-weight: 900; }
     .score-rule p { margin: 0; padding: 0 12px 12px; color: var(--muted); font-size: 13px; }
-    .score-footer-card { padding: 18px; border: 1px solid rgba(219, 227, 239, 0.9); border-radius: 22px; background: rgba(255,255,255,.96); box-shadow: 0 16px 38px rgba(23,32,51,.06); }
-    .score-footer-card h4 { margin: 0 0 4px; font-size: 18px; }
-    .score-footer-card p { margin: 0 0 12px; color: var(--muted); }
-    @media (max-width: 900px) { .score-hero-top, .score-dimensions { grid-template-columns: 1fr; } .score-hero-top { flex-direction: column; } .score-progress-card { width: 100%; } }
-    @media (max-width: 560px) { .score-hero, .score-footer-card { border-radius: 18px; padding: 16px; } .score-dimension-card { border-radius: 18px; } .score-buttons { grid-template-columns: repeat(2, minmax(0, 1fr)); } }
-
+    .score-footer-card { padding: 18px; border: 1px solid var(--line); border-radius: 8px; background: var(--panel); }
     @media (max-width: 900px) {
       .step-layout,
       .form-grid,
@@ -651,6 +637,45 @@
 
   </style>
   <link rel="stylesheet" href="assets/experiment-theme.css">
+  <style>
+    html[data-theme="archive"] .btn.ghost,
+    html[data-theme="archive"] .progress-step,
+    html[data-theme="archive"] .progress-step strong,
+    html[data-theme="archive"] .panel-head,
+    html[data-theme="archive"] .tip-box,
+    html[data-theme="archive"] th,
+    html[data-theme="archive"] .score-rule,
+    html[data-theme="archive"] .knowledge-option.is-selected {
+      background: #f4ead8;
+      color: #65471f;
+      border-color: #d8bd91;
+    }
+    html[data-theme="archive"] .task-card,
+    html[data-theme="archive"] .qa-record-card,
+    html[data-theme="archive"] .score-record-card,
+    html[data-theme="archive"] .reading-card,
+    html[data-theme="archive"] .knowledge-card,
+    html[data-theme="archive"] .summary-card,
+    html[data-theme="archive"] table {
+      background: #fffaf2;
+      border-color: #d8bd91;
+      color: #33271c;
+    }
+    html[data-theme="archive"] .task-card p,
+    html[data-theme="archive"] .task-card li,
+    html[data-theme="archive"] .tip-box { color: #33271c; }
+    html[data-theme="archive"] .poster-page-head,
+    html[data-theme="archive"] .task-hero h3,
+    html[data-theme="archive"] .score-rule summary,
+    html[data-theme="archive"] .summary-card strong { color: #65471f; }
+    html[data-theme="archive"] .record-dialog { background: #fffaf2; border-color: #d8bd91; color: #33271c; }
+    html[data-theme="archive"] input:focus,
+    html[data-theme="archive"] textarea:focus,
+    html[data-theme="archive"] select:focus {
+      border-color: #9b7135;
+      box-shadow: 0 0 0 3px rgba(155, 113, 53, .16);
+    }
+  </style>
   <script src="assets/experiment-theme.js"></script>
   <link rel="stylesheet" href="assets/ai-assistant.css">
   <link rel="stylesheet" href="assets/voice-assistant.css">
@@ -679,6 +704,7 @@
   </header>
 
   <main id="main" class="main"></main>
+  <dialog id="recordDialog" class="record-dialog" aria-labelledby="recordDialogTitle"></dialog>
 
   <script src="assets/experiment-registry.js"></script>
   <script src="assets/platform-core.js"></script>
@@ -703,7 +729,7 @@
     const DEV_MODE_KEY = "devMode";
 
     const steps = [
-      { id: "plan", title: "制定初步方案", minutes: "15分钟", taskDescription: "依次阅读每一项说明，并直接在对应位置完成海报初步方案。" },
+      { id: "plan", title: "制定初步方案", minutes: "15分钟", taskDescription: "阅读海报应包含的内容，在纸上完成初步方案。" },
       { id: "make", title: "制作海报", minutes: "30分钟", taskDescription: "根据第一步的初步方案完成正式海报，保持整洁美观。" },
       { id: "share", title: "分享交流", minutes: "10分钟", taskDescription: "指派一位小小讲解员介绍海报，并记录交流中的问题和回答。" },
       { id: "questions", title: "提问交流", minutes: "15分钟", taskDescription: "认真观看其他小组的科学海报，提出问题并记录对方的回答。" },
@@ -735,12 +761,13 @@
       groupId: "",
       currentStep: 0,
       maxUnlockedStep: 0,
+      stepPages: {},
       dataReaderSeen: false,
       fields: {
         researchQuestion: "",
         hypothesis: "",
         researchPlan: "",
-        dataDisplay: "柱状图",
+        dataDisplay: "",
         conclusion: "",
         limitation: "",
         lifeApplication: "",
@@ -760,14 +787,8 @@
         teamReflection: "",
         nextUse: ""
       },
-      qaRecords: [
-        { question: "", answer: "" }
-      ],
-      questions: [
-        { group: "", type: "研究问题", question: "", answer: "" },
-        { group: "", type: "实验数据", question: "", answer: "" },
-        { group: "", type: "反思不足", question: "", answer: "" }
-      ],
+      qaRecords: [],
+      questions: [],
       scores: {},
       posterGroups: groupLabels.slice(),
       knowledgeAssessment: knowledgeAssessmentApi.emptyTimeline(),
@@ -778,7 +799,6 @@
     let state = loadState();
     let dataReaderOpen = !state.dataReaderSeen && state.currentStep === 0;
     let archiveViewerUrl = "";
-    let activeScoreGroup = 1;
     const progress = document.getElementById("progress");
     const main = document.getElementById("main");
     const identityPill = document.getElementById("identityPill");
@@ -800,8 +820,10 @@
       const merged = structuredClone(base);
       Object.assign(merged, incoming);
       merged.fields = Object.assign({}, base.fields, incoming.fields || {});
-      if (Array.isArray(incoming.qaRecords) && incoming.qaRecords.length) {
-        merged.qaRecords = incoming.qaRecords.map((item) => ({
+      const legacyQuestion = String(incoming.fields?.askedQuestions ?? "");
+      const legacyAnswer = String(incoming.fields?.answers ?? "");
+      if (Array.isArray(incoming.qaRecords) && (incoming.qaRecords.length || (!legacyQuestion && !legacyAnswer))) {
+        merged.qaRecords = incoming.qaRecords.filter((item) => hasText(item?.question) || hasText(item?.answer)).map((item) => ({
           question: String(item?.question ?? ""),
           answer: String(item?.answer ?? ""),
           studentId: item?.studentId || "",
@@ -811,11 +833,12 @@
           createdAt: item?.createdAt || ""
         }));
       } else {
-        const legacyQuestion = String(incoming.fields?.askedQuestions ?? "");
-        const legacyAnswer = String(incoming.fields?.answers ?? "");
-        merged.qaRecords = [{ question: legacyQuestion, answer: legacyAnswer }];
+        merged.qaRecords = legacyQuestion || legacyAnswer ? [{ question: legacyQuestion, answer: legacyAnswer }] : [];
       }
-      merged.questions = Array.isArray(incoming.questions) && incoming.questions.length ? incoming.questions : base.questions;
+      merged.questions = Array.isArray(incoming.questions)
+        ? incoming.questions.filter((item) => hasText(item?.group) || hasText(item?.question) || hasText(item?.answer))
+        : base.questions;
+      merged.stepPages = Object.assign({}, incoming.stepPages || {});
       merged.scores = Object.assign({}, base.scores, incoming.scores || {});
       merged.posterGroups = Array.isArray(incoming.posterGroups) && incoming.posterGroups.length ? incoming.posterGroups : base.posterGroups.slice();
       merged.knowledgeAssessment = knowledgeAssessmentApi.mergeTimelines(incoming.knowledgeAssessment, knowledgeAssessmentApi.readTimeline());
@@ -836,10 +859,6 @@
         .replaceAll("'", "&#039;");
     }
 
-    function selected(field, value) {
-      return state.fields[field] === value ? "selected" : "";
-    }
-
     function getPosterGroups() {
       if (!Array.isArray(state.posterGroups) || !state.posterGroups.length) {
         state.posterGroups = groupLabels.slice();
@@ -851,7 +870,6 @@
       const groups = getPosterGroups();
       const nextNumber = groups.length + 1;
       groups.push(`第${nextNumber}组`);
-      activeScoreGroup = groups.length;
       saveState();
       renderApp();
     }
@@ -867,10 +885,10 @@
       indicators.forEach((indicator) => {
         delete state.scores[`${indicator.key}_${deletedGroupNumber}`];
       });
+      state.scoreRecords = (state.scoreRecords || []).filter((item) => item.targetGroup !== deletedGroup);
       if (state.fields.bestPoster === deletedGroup) {
         state.fields.bestPoster = "";
       }
-      activeScoreGroup = Math.min(activeScoreGroup, groups.length);
       saveState();
       renderApp();
     }
@@ -943,6 +961,7 @@
       state.dataReaderSeen = true;
       if (!isDeveloperMode()) saveState();
       renderApp();
+      window.scrollTo(0, 0);
     }
 
     function goNextStep() {
@@ -955,6 +974,7 @@
         state.currentStep += 1;
         if (!isDeveloperMode()) saveState();
         renderApp();
+        window.scrollTo(0, 0);
       }
     }
 
@@ -965,13 +985,12 @@
     function validateStep(stepId) {
       if (isDeveloperMode()) return true;
       const fields = state.fields || {};
-      if (stepId === "plan") return ["researchQuestion", "hypothesis", "researchPlan", "conclusion", "limitation", "lifeApplication", "division"].every((key) => hasText(fields[key]));
+      if (stepId === "plan") return true;
       if (stepId === "make") return true;
       if (stepId === "share") {
         return ["presenter", "presenterStudentId", "speakingPoints"].every((key) => hasText(fields[key]))
           && Array.isArray(state.qaRecords)
-          && state.qaRecords.length > 0
-          && state.qaRecords.every((item) => hasText(item.question) && hasText(item.answer));
+          && state.qaRecords.some((item) => hasText(item.question) && hasText(item.answer));
       }
       if (stepId === "questions") return Array.isArray(state.questions) && state.questions.some((item) => hasText(item.group) && hasText(item.type) && hasText(item.question) && hasText(item.answer));
       if (stepId === "score") {
@@ -1009,6 +1028,9 @@
         return;
       }
       const step = steps[state.currentStep];
+      const pageCount = getPageCount(step.id);
+      const page = Math.min(Math.max(Number(state.stepPages[step.id]) || 0, 0), pageCount - 1);
+      state.stepPages[step.id] = page;
       main.innerHTML = `
         <section class="panel">
           <div class="panel-head">
@@ -1016,8 +1038,9 @@
             <p>建议时长：${step.minutes}</p>
           </div>
           <div class="panel-body">
-            ${getStepHtml(step.id)}
-            ${renderNavigation()}
+            <div class="poster-page-head" aria-live="polite">${step.title} ${page + 1}/${pageCount}</div>
+            ${getStepHtml(step.id, page)}
+            ${renderNavigation(page, pageCount)}
           </div>
         </section>
       `;
@@ -1042,7 +1065,7 @@
             <p class="report-archive-hint">选择一份档案，即可在本页查看 PDF，并参考其中的研究问题、数据和结论制作海报。</p>
             <div id="reportArchiveList" class="report-archive-grid" role="status">正在读取档案…</div>
             <div id="reportArchiveViewer"></div>
-            <div class="actions"><button class="btn" type="button" id="beginPosterPlan">进入第 1 步：制定初步方案</button></div>
+            <div class="actions"><button class="btn" type="button" id="beginPosterPlan">下一页</button></div>
           </div>
         </section>`;
       document.getElementById("beginPosterPlan").addEventListener("click", () => {
@@ -1052,6 +1075,7 @@
         dataReaderOpen = false;
         saveState();
         renderApp();
+        window.scrollTo(0, 0);
       });
       loadReportArchives();
     }
@@ -1108,19 +1132,23 @@
       });
     }
 
-    function renderNavigation() {
+    function getPageCount(stepId) {
+      return { plan: 2, make: 2, share: 2, questions: 2, score: 2, reflection: 3, posttest: 20 }[stepId] || 1;
+    }
+
+    function renderNavigation(page, pageCount) {
       const isFinalStep = state.currentStep === steps.length - 1;
       return `
         <div class="actions">
-          <button class="btn ghost" type="button" id="prevStep">上一步</button>
-          ${isFinalStep
-            ? `<button class="btn secondary final-step-action" type="button" id="reviewReportBtn" ${state.knowledgeAssessment?.T5 ? "" : "disabled"}>生成记忆侦探报告</button>`
-            : '<button class="btn" type="button" id="nextStep">下一步</button>'}
+          <button class="btn ghost" type="button" id="prevStep">上一页</button>
+          ${isFinalStep && page === pageCount - 1
+            ? (state.knowledgeAssessment?.T5 ? '<button class="btn secondary final-step-action" type="button" id="reviewReportBtn">生成记忆侦探报告</button>' : '<button class="btn" type="button" id="posttestSubmit">提交侦探小结</button>')
+            : '<button class="btn" type="button" id="nextStep">下一页</button>'}
         </div>
       `;
     }
 
-    function getStepHtml(stepId) {
+    function getStepHtml(stepId, page) {
       return {
         plan: renderPlanStep,
         make: renderMakeStep,
@@ -1129,22 +1157,21 @@
         score: renderScoreStep,
         reflection: renderReflectionStep,
         posttest: renderPosttestStep
-      }[stepId]();
+      }[stepId](page);
     }
 
-    function renderPosttestStep() {
+    function renderPosttestStep(page) {
       const record = state.knowledgeAssessment?.T5;
       if (record) {
         return `<div class="knowledge-complete"><h3>侦探小结已完成</h3><p>作答已提交并锁定，现在可以生成最终报告。</p></div>`;
       }
       const draft = state.knowledgeDraftT5;
-      const page = Math.min(1, Math.max(0, Number(draft.currentPage) || 0));
-      const pageIds = draft.questionOrder.slice(page * 10, page * 10 + 10);
+      const pageIds = draft.questionOrder.slice(page, page + 1);
       const cards = pageIds.map((questionId, pageIndex) => {
         const question = knowledgeAssessmentApi.getQuestion(knowledgeQuestions, questionId);
         const selectedAnswer = draft.answers[questionId] || "";
         return `<article class="knowledge-card">
-          <h4>第 ${page * 10 + pageIndex + 1} 题</h4>
+          <h4>第 ${page + pageIndex + 1} 题</h4>
           <p>${escapeHtml(question.question)}</p>
           <div class="knowledge-options">${Object.entries(question.options).map(([key, value]) => `
             <label class="knowledge-option ${selectedAnswer === key ? "is-selected" : ""}">
@@ -1153,77 +1180,28 @@
             </label>`).join("")}</div>
         </article>`;
       }).join("");
-      return `<div class="task-hero"><h3>侦探小结 · 知识后测</h3><p>共 20 题，分两页完成。提交后答案将锁定，学生端不显示分数、答案或解析。</p></div>
-        <div class="knowledge-page" style="margin-top:16px;">${cards}</div>
-        <div class="actions">
-          ${page === 1 ? '<button class="btn ghost" type="button" id="posttestPrevPage">上一页题目</button>' : ""}
-          ${page === 0 ? '<button class="btn" type="button" id="posttestNextPage">下一页题目</button>' : '<button class="btn" type="button" id="posttestSubmit">提交侦探小结</button>'}
-        </div>`;
+      return `<div class="task-hero"><h3>侦探小结 · 知识后测</h3><p>共 20 题，每页一题。提交后答案将锁定，学生端不显示分数、答案或解析。</p></div>
+        <div class="knowledge-page" style="margin-top:16px;">${cards}</div>`;
     }
 
-    function renderPlanStep() {
-      return `
-        <div class="task-hero">
-          <h3>分享交流大会</h3>
-          <p>小科学家们，请用海报展示你们的探究成果吧！<br>这节课我们将：① 合作创作科学海报，分享研究问题、证据和发现；② 化身小评委与提问官，交流观点、互相学习！</p>
-        </div>
-        <div class="poster-step-stack" style="margin-top:16px;">
-          <div class="panel">
-            <div class="panel-head"><h3>一、制定初步方案</h3><p>依次阅读每一项说明，并直接在对应位置完成初步方案。</p></div>
-            <div class="panel-body poster-plan-fields">
-              <div class="poster-plan-item">
-                <label>研究问题</label>
-                <p>写清楚你们小组想探究的问题。</p>
-                <textarea data-field="researchQuestion">${escapeHtml(state.fields.researchQuestion)}</textarea>
-              </div>
-              <div class="poster-plan-item">
-                <label>研究假设</label>
-                <p>写出你们对研究结果的预测。</p>
-                <textarea data-field="hypothesis">${escapeHtml(state.fields.hypothesis)}</textarea>
-              </div>
-              <div class="poster-plan-item">
-                <label>研究计划</label>
-                <p>简单描述实验步骤。</p>
-                <textarea data-field="researchPlan">${escapeHtml(state.fields.researchPlan)}</textarea>
-              </div>
-              <div class="poster-plan-item">
-                <label>实验数据呈现方式</label>
-                <p>可以采用表格、柱状图、折线图等形式，图表要标清标题和单位。</p>
-                <select data-field="dataDisplay">
-                  <option ${selected("dataDisplay", "表格")}>表格</option>
-                  <option ${selected("dataDisplay", "柱状图")}>柱状图</option>
-                  <option ${selected("dataDisplay", "折线图")}>折线图</option>
-                  <option ${selected("dataDisplay", "图文结合")}>图文结合</option>
-                </select>
-              </div>
-              <div class="poster-plan-item">
-                <label>研究结论</label>
-                <p>根据证据概括结论，并说明是否支持假设。</p>
-                <textarea data-field="conclusion">${escapeHtml(state.fields.conclusion)}</textarea>
-              </div>
-              <div class="poster-plan-item">
-                <label>反思不足</label>
-                <p>可以从实验设计、数据呈现、结论分析和团队合作等方面反思。</p>
-                <textarea data-field="limitation">${escapeHtml(state.fields.limitation)}</textarea>
-              </div>
-              <div class="poster-plan-item">
-                <label>启示</label>
-                <p>联系生活实际，说明本研究可以如何应用于生活。</p>
-                <textarea data-field="lifeApplication">${escapeHtml(state.fields.lifeApplication)}</textarea>
-              </div>
-              <div class="poster-plan-item">
-                <label>小组分工</label>
-                <p>写出每个成员的姓名和任务。</p>
-                <textarea data-field="division">${escapeHtml(state.fields.division)}</textarea>
-              </div>
-            </div>
-          </div>
-        </div>
-      `;
+    function renderPlanStep(page) {
+      const items = [
+        ["研究问题", "写清楚你们小组想探究的问题。"],
+        ["研究假设", "写出你们对研究结果的预测。"],
+        ["研究计划", "简单描述实验步骤。"],
+        ["实验数据呈现方式", "可以采用表格、柱状图、折线图等形式，图表要标清标题和单位。"],
+        ["研究结论", "根据证据概括结论，并说明是否支持假设。"],
+        ["反思不足", "可以从实验设计、数据呈现、结论分析和团队合作等方面反思。"],
+        ["启示", "联系生活实际，说明本研究可以如何应用于生活。"],
+        ["小组分工", "写出每个成员的姓名和任务。"]
+      ];
+      return `<div class="panel"><div class="panel-head"><h3>制定初步方案</h3><p>在纸上规划海报，确保包含以下内容。</p></div>
+        <div class="panel-body poster-plan-fields">${items.slice(page * 4, page * 4 + 4).map(([title, description]) =>
+          `<div class="poster-plan-item"><h4>${title}</h4><p>${description}</p></div>`).join("")}</div></div>`;
     }
 
-    function renderMakeStep() {
-      return `
+    function renderMakeStep(page) {
+      return page === 0 ? `
         <div class="poster-step-stack">
           <div class="panel">
             <div class="panel-head"><h3>二、制作海报</h3><p>根据第一步的初步方案完成正式海报。</p></div>
@@ -1233,7 +1211,7 @@
               <div class="tip-box">提示：海报初步方案要简单清晰，确保所有内容都能放进去。</div>
             </div>
           </div>
-          <div class="panel">
+        </div>` : `<div class="poster-step-stack"><div class="panel">
             <div class="panel-head"><h3>参考海报</h3><p>以下为参考海报，同学们可以根据自己的探究内容进行调整。</p></div>
             <div class="panel-body">
               <div class="poster-example-image-wrap">
@@ -1248,8 +1226,8 @@
       `;
     }
 
-    function renderShareStep() {
-      return `
+    function renderShareStep(page) {
+      return page === 0 ? `
         <div class="single-step-layout">
           <div class="panel">
             <div class="panel-body">
@@ -1267,6 +1245,10 @@
                 <label>讲解要点</label>
                 <textarea data-field="speakingPoints">${escapeHtml(state.fields.speakingPoints)}</textarea>
               </div>
+            </div>
+          </div>
+        </div>` : `
+        <div class="single-step-layout"><div class="panel"><div class="panel-body">
               <section class="qa-records-section">
                 <div class="qa-records-head">
                   <h4>问题与回答记录</h4>
@@ -1274,21 +1256,13 @@
                 </div>
                 ${(state.qaRecords || []).map((item, index) => `
                   <article class="qa-record-card">
-                    <p class="qa-record-number">第 ${index + 1} 组</p>
-                    <button class="btn danger delete-qa-btn" type="button" data-delete-qa="${index}" ${state.qaRecords.length === 1 ? "disabled" : ""} aria-label="删除第 ${index + 1} 组问题与回答">删除</button>
-                    <div class="qa-record-grid">
-                      <div class="field">
-                        <label>被问到的问题</label>
-                        <textarea data-qa-index="${index}" data-qa-field="question">${escapeHtml(item.question)}</textarea>
-                      </div>
-                      <div class="field">
-                        <label>回答摘要</label>
-                        <textarea data-qa-index="${index}" data-qa-field="answer">${escapeHtml(item.answer)}</textarea>
-                      </div>
-                    </div>
+                    <strong>第 ${index + 1} 条：${escapeHtml(item.question || "未填写问题")}</strong>
+                    <p>${escapeHtml(item.answer || "未填写回答")}</p>
+                    <button class="btn ghost" type="button" data-edit-qa="${index}">编辑</button>
+                    <button class="btn danger" type="button" data-delete-qa="${index}">删除</button>
                   </article>
                 `).join("")}
-                <button class="btn secondary" type="button" id="addQaRecordBtn">+ 添加一组问题与回答</button>
+                <button class="btn secondary" type="button" id="addQaRecordBtn">＋添加问题与回答</button>
               </section>
             </div>
           </div>
@@ -1296,8 +1270,8 @@
       `;
     }
 
-    function renderQuestionsStep() {
-      return `
+    function renderQuestionsStep(page) {
+      return page === 0 ? `
         <div class="panel">
           <div class="panel-head"><p>请认真观看其他小组的科学海报，并围绕研究问题、研究假设、研究计划、实验数据、研究结论和反思不足等方面提出问题。每提出一个问题后，请将问题记录在下方表格中，并简要记录对方的回答。</p></div>
           <div class="panel-body">
@@ -1314,6 +1288,8 @@
                 <li>创造性：①为了让海报更吸引人、更好懂，你们用了哪些特别的表达方式？</li>
               </ul>
             </div>
+          </div>
+        </div>` : `<div class="panel"><div class="panel-head"><h3>提问交流记录</h3></div><div class="panel-body">
             <div class="table-wrap">
               <table>
                 <thead><tr><th>序号</th><th>提问对象</th><th>问题类型</th><th>具体问题</th><th>对方回答摘要</th></tr></thead>
@@ -1321,122 +1297,54 @@
                   ${state.questions.map((item, index) => `
                     <tr>
                       <td>${index + 1}</td>
-                      <td><select data-question-index="${index}" data-question-field="group">${groupOptions(item.group)}</select></td>
-                      <td><select data-question-index="${index}" data-question-field="type">${typeOptions(item.type)}</select></td>
-                      <td><textarea data-question-index="${index}" data-question-field="question">${escapeHtml(item.question)}</textarea></td>
-                      <td><textarea data-question-index="${index}" data-question-field="answer">${escapeHtml(item.answer)}</textarea></td>
+                      <td>${escapeHtml(item.group)}</td>
+                      <td>${escapeHtml(item.type)}</td>
+                      <td>${escapeHtml(item.question)}</td>
+                      <td>${escapeHtml(item.answer)}<div class="record-actions"><button class="btn ghost" type="button" data-edit-question="${index}">编辑</button><button class="btn danger" type="button" data-delete-question="${index}">删除</button></div></td>
                     </tr>
                   `).join("")}
                 </tbody>
               </table>
             </div>
-            <button class="btn ghost" type="button" id="addQuestionBtn" style="margin-top:14px">新增一条提问</button>
+            <button class="btn secondary" type="button" id="addQuestionBtn" style="margin-top:14px">＋添加提问</button>
           </div>
         </div>
       `;
     }
 
-    function renderScoreStep() {
-      const posterGroups = getPosterGroups();
-      activeScoreGroup = Math.min(Math.max(Number(activeScoreGroup) || 1, 1), posterGroups.length);
+    function renderScoreStep(page) {
+      if (page === 0) {
+        return `<div class="panel"><div class="panel-head"><h3>海报评分标准</h3><p>按四个维度、八项指标给每组海报评分，每项 1—4 分。</p></div>
+          <div class="panel-body score-rubric-list">${indicators.map((item) => `<details class="score-rule"><summary>${escapeHtml(item.dimension)} · ${escapeHtml(item.title)}</summary><p>${escapeHtml(item.rule)}</p></details>`).join("")}</div></div>`;
+      }
+      const groups = getPosterGroups();
       const summary = summarizeScores();
-      const currentDone = indicators.filter((indicator) => getScore(indicator.key, activeScoreGroup)).length;
-      const overallDone = posterGroups.reduce((total, group, groupIndex) => {
-        const groupNumber = groupIndex + 1;
-        return total + indicators.filter((indicator) => getScore(indicator.key, groupNumber)).length;
-      }, 0);
-      const totalItems = indicators.length;
-      const overallItems = indicators.length * posterGroups.length;
-      const progressPercent = Math.round((currentDone / totalItems) * 100);
-      const dimensions = [...new Set(indicators.map((indicator) => indicator.dimension))];
-      return '<div class="score-workspace">' +
-        '<section class="task-hero"><p>每位同学根据“海报评分表”的四个维度对每组海报评分，将分数记录在“海报评分表”上。并根据评分表，给你心中最优的海报点赞。</p></section>' +
-        '<section class="score-hero">' +
-          '<div class="score-hero-top">' +
-            '<div><p class="score-kicker">\u5f53\u524d\u8bc4\u5206\u9636\u6bb5</p>' +
-              '<h3>\u6b63\u5728\u8bc4\u4ef7 ' + posterGroups[activeScoreGroup - 1] + '</h3>' +
-              '<p>\u5148\u9009\u62e9\u8981\u8bc4\u4ef7\u7684\u5c0f\u7ec4\uff0c\u518d\u9010\u9879\u70b9\u51fb 1-4 \u5206\u3002\u957f\u6bb5\u8bc4\u5206\u6807\u51c6\u9ed8\u8ba4\u6536\u8d77\uff0c\u9700\u8981\u65f6\u5c55\u5f00\u67e5\u770b\u3002</p></div>' +
-            '<div class="score-progress-card"><strong>' + currentDone + ' / ' + totalItems + '</strong>' +
-              '<span>\u5f53\u524d\u5c0f\u7ec4\u5df2\u5b8c\u6210\u8bc4\u5206</span>' +
-              '<div class="score-progress-track"><div class="score-progress-fill" style="width:' + progressPercent + '%"></div></div>' +
-              '<span>\u6574\u4f53\u5b8c\u6210 ' + overallDone + ' / ' + overallItems + ' \u9879</span></div>' +
-          '</div>' +
-          '<div class="score-tabs-row"><div class="score-group-tabs" aria-label="\u9009\u62e9\u8bc4\u5206\u5c0f\u7ec4">' +
-            posterGroups.map((group, index) => {
-              const groupNumber = index + 1;
-              const done = indicators.filter((indicator) => getScore(indicator.key, groupNumber)).length;
-              return '<button class="score-group-btn ' + (activeScoreGroup === groupNumber ? 'is-active' : '') + '" type="button" data-score-group="' + groupNumber + '">' + group + ' | ' + done + '/' + totalItems + '</button>';
-            }).join('') +
-          '</div><div class="score-group-actions"><button class="btn ghost" type="button" id="addPosterGroupBtn">+ 添加组别</button><button class="btn score-delete-btn" type="button" id="deletePosterGroupBtn">－ 删除组别</button></div></div>' +
-        '</section>' +
-        '<section class="score-dimensions">' +
-          dimensions.map((dimension) => {
-            const dimensionIndicators = indicators.filter((indicator) => indicator.dimension === dimension);
-            return '<article class="score-dimension-card">' +
-              '<div class="score-dimension-head"><h4>' + dimension + '</h4><p>' + getDimensionDescription(dimensionIndicators) + '</p></div>' +
-              dimensionIndicators.map((indicator) => {
-                const value = getScore(indicator.key, activeScoreGroup);
-                return '<div class="score-indicator">' +
-                  '<div class="score-indicator-top"><h5>' + indicator.title + '</h5><span class="score-current-value">' + (value ? value + ' \u5206' : '\u672a\u8bc4\u5206') + '</span></div>' +
-                  '<div class="score-buttons" role="radiogroup" aria-label="' + escapeHtml(indicator.title) + '">' +
-                    [1, 2, 3, 4].map((score) => '<button class="score-value-btn ' + (value === score ? 'is-selected' : '') + '" type="button" data-score="' + indicator.key + '" data-group="' + activeScoreGroup + '" data-value="' + score + '" aria-pressed="' + (value === score ? 'true' : 'false') + '">' + score + '</button>').join('') +
-                  '</div>' +
-                  '<details class="score-rule"><summary>\u67e5\u770b\u8bc4\u5206\u6807\u51c6</summary><p>' + escapeHtml(indicator.rule) + '</p></details>' +
-                '</div>';
-              }).join('') +
-            '</article>';
-          }).join('') +
-        '</section>' +
-        '<section class="score-footer-card"><h4>\u6211\u5fc3\u4e2d\u7684\u6700\u4f18\u6d77\u62a5</h4>' +
-          '<p>\u8bf7\u9009\u62e9\u4f60\u8ba4\u4e3a\u6574\u4f53\u8868\u73b0\u6700\u597d\u7684\u5c0f\u7ec4\uff0c\u5bfc\u51fa\u65f6\u4ecd\u5199\u5165\u539f\u6709\u5b57\u6bb5\u3002</p>' +
-          '<div class="best-poster-picker" aria-label="\u9009\u62e9\u6700\u4f18\u6d77\u62a5">' +
-            posterGroups.map((group) => '<button class="best-poster-btn ' + (state.fields.bestPoster === group ? 'is-active' : '') + '" type="button" data-best-poster="' + escapeHtml(group) + '">' + group + '</button>').join('') +
-          '</div></section>' +
-        '<div class="summary-grid">' +
-          summary.map((item) => '<div class="summary-card"><strong>' + item.total + '</strong><span>' + item.group + ' \u603b\u5206</span></div>').join('') +
-        '</div>' +
-      '</div>';
+      return `<div class="score-workspace">
+        <section class="task-hero"><p>点击“＋添加评分”，在弹窗中一次完成一个小组的八项评分。点击已评分小组可修改。</p></section>
+        <div class="score-group-actions"><button class="btn secondary" type="button" id="addScoreBtn">＋添加评分</button><button class="btn ghost" type="button" id="addPosterGroupBtn">＋添加组别</button><button class="btn score-delete-btn" type="button" id="deletePosterGroupBtn">－ 删除组别</button></div>
+        <div class="score-record-grid">${groups.map((group, index) => {
+          const done = indicators.filter((indicator) => getScore(indicator.key, index + 1)).length;
+          return `<article class="score-record-card"><h4>${escapeHtml(group)}</h4><p>${done}/8 项已评分 · 总分 ${summary[index].total}</p><button class="btn ghost" type="button" data-edit-score="${index + 1}">${done ? "查看或修改" : "开始评分"}</button></article>`;
+        }).join("")}</div>
+        <section class="score-footer-card"><h4>我心中的最优海报</h4><p>请选择你认为整体表现最好的小组。</p>
+          <div class="best-poster-picker" aria-label="选择最优海报">${groups.map((group) => `<button class="best-poster-btn ${state.fields.bestPoster === group ? "is-active" : ""}" type="button" data-best-poster="${escapeHtml(group)}">${escapeHtml(group)}</button>`).join("")}</div></section>
+      </div>`;
     }
-
-    function getDimensionDescription(items) {
-      const keys = items.map((item) => item.key);
-      if (keys.includes('question')) return '\u5173\u6ce8\u7814\u7a76\u95ee\u9898\u3001\u8bc1\u636e\u548c\u7ed3\u8bba\u4e4b\u95f4\u7684\u79d1\u5b66\u5173\u7cfb\u3002';
-      if (keys.includes('layout')) return '\u5173\u6ce8\u4fe1\u606f\u6392\u7248\u3001\u89c6\u89c9\u79e9\u5e8f\u548c\u6574\u4f53\u89c2\u611f\u3002';
-      if (keys.includes('formCreative')) return '\u5173\u6ce8\u8868\u8fbe\u5f62\u5f0f\u4e0e\u5185\u5bb9\u7ec4\u7ec7\u662f\u5426\u6709\u65b0\u610f\u3002';
-      if (keys.includes('expression')) return '\u5173\u6ce8\u8bb2\u89e3\u8868\u8fbe\u548c\u95ee\u7b54\u4e92\u52a8\u7684\u8d28\u91cf\u3002';
-      return '\u8bf7\u6839\u636e\u6d77\u62a5\u8868\u73b0\u5b8c\u6210\u672c\u7ef4\u5ea6\u8bc4\u5206\u3002';
+    function renderReflectionStep(page) {
+      if (page === 0) {
+        return `<div class="panel"><div class="panel-head"><h3>评分结果</h3><p>根据当前评分自动汇总。</p></div>
+          <div class="panel-body reflection-score-list"><div class="reading-card"><h4>当前总分最高</h4><p>${escapeHtml(getTopGroup() || "待完成评分")}</p></div>
+          <div class="reading-card"><h4>最优海报点赞</h4><p>${escapeHtml(state.fields.bestPoster || "尚未选择")}</p></div></div></div>`;
+      }
+      const prompts = [
+        ["reflectionGain", "本次交流最大的收获", "可以从倾听他人观点、改进自己表达、理解研究内容等方面总结。"],
+        ["reflectionImprove", "海报还可以怎样改进", "可以从内容结构、图表清晰度、文字表达和视觉设计等方面思考。"],
+        ["teamReflection", "小组合作反思", "可以从分工、沟通、成员参与和遇到的问题等方面反思。"],
+        ["nextUse", "今后如何应用探究成果", "可以思考探究发现如何用于学习、科学表达或日常生活。"]
+      ];
+      return `<div class="panel"><div class="panel-head"><h3>总结反思</h3></div>
+        <div class="panel-body reflection-fields-stack reflection-prompt">${prompts.slice((page - 1) * 2, (page - 1) * 2 + 2).map(([key, label, hint]) => field(key, label, "textarea", hint)).join("")}</div></div>`;
     }
-
-    function renderReflectionStep() {
-      const topGroup = getTopGroup();
-      const reflectionPrompts = {
-        reflectionGain: "可以从倾听他人观点、改进自己表达、理解研究内容、发现新的问题或获得新的想法等方面总结。",
-        reflectionImprove: "可以从内容结构、证据呈现、图表清晰度、文字表达、视觉设计和观众理解等方面思考。",
-        teamReflection: "可以从分工是否合理、沟通是否顺畅、任务完成情况、成员参与程度和合作中遇到的问题等方面反思。",
-        nextUse: "可以思考本次探究得到的发现如何用于学习、记忆、复习安排、科学表达或日常生活。"
-      };
-      return `
-        <div class="reflection-page-stack">
-          <div class="panel">
-            <div class="panel-head"><h3>评分结果</h3><p>根据当前评分自动汇总。</p></div>
-            <div class="panel-body reflection-score-list">
-              <div class="reading-card"><h4>当前总分最高</h4><p>${topGroup || "待完成评分"}</p></div>
-              <div class="reading-card"><h4>最优海报点赞</h4><p>${state.fields.bestPoster || "尚未选择"}</p></div>
-            </div>
-          </div>
-          <div class="panel">
-            <div class="panel-head"><h3>总结反思</h3></div>
-            <div class="panel-body reflection-fields-stack reflection-prompt">
-              ${field("reflectionGain", "本次交流最大的收获", "textarea", reflectionPrompts.reflectionGain)}
-              ${field("reflectionImprove", "海报还可以怎样改进", "textarea", reflectionPrompts.reflectionImprove)}
-              ${field("teamReflection", "小组合作反思", "textarea", reflectionPrompts.teamReflection)}
-              ${field("nextUse", "今后如何应用探究成果", "textarea", reflectionPrompts.nextUse)}
-            </div>
-          </div>
-        </div>
-      `;
-    }
-
     function field(key, label, type, placeholder = "") {
       const placeholderAttr = placeholder ? ` placeholder="${escapeHtml(placeholder)}"` : "";
       if (type === "input") {
@@ -1459,53 +1367,22 @@
         element.addEventListener("input", () => updateField(element));
         element.addEventListener("change", () => updateField(element));
       });
-      main.querySelectorAll("[data-qa-index]").forEach((element) => {
-        element.addEventListener("input", () => updateQaRecord(element));
-      });
-      main.querySelectorAll("[data-delete-qa]").forEach((button) => {
-        button.addEventListener("click", () => deleteQaRecord(Number(button.dataset.deleteQa)));
-      });
-      const addQaRecordButton = document.getElementById("addQaRecordBtn");
-      if (addQaRecordButton) addQaRecordButton.addEventListener("click", addQaRecord);
-      main.querySelectorAll("[data-question-index]").forEach((element) => {
-        element.addEventListener("input", () => updateQuestion(element));
-        element.addEventListener("change", () => updateQuestion(element));
-      });
-      main.querySelectorAll("[data-score]").forEach((element) => {
-        element.addEventListener("click", () => {
-          const key = element.dataset.score + "_" + element.dataset.group;
-          const value = Number(element.dataset.value || element.value || 0);
-          state.scores[key] = value || "";
-          savePosterScoreRecord(element.dataset.score, element.dataset.group, value);
-          saveState();
-          const indicator = element.closest(".score-indicator");
-          indicator.querySelectorAll(".score-value-btn").forEach((button) => {
-            const selected = button === element;
-            button.classList.toggle("is-selected", selected);
-            button.setAttribute("aria-pressed", String(selected));
-          });
-          indicator.querySelector(".score-current-value").textContent = `${value} 分`;
-          const currentDone = indicators.filter((item) => getScore(item.key, activeScoreGroup)).length;
-          const groups = getPosterGroups();
-          const overallDone = groups.reduce((total, _, index) => total + indicators.filter((item) => getScore(item.key, index + 1)).length, 0);
-          const progress = main.querySelector(".score-progress-card");
-          progress.querySelector("strong").textContent = `${currentDone} / ${indicators.length}`;
-          progress.querySelector(".score-progress-fill").style.width = `${Math.round(currentDone / indicators.length * 100)}%`;
-          progress.querySelectorAll("span")[1].textContent = `整体完成 ${overallDone} / ${indicators.length * groups.length} 项`;
-          const groupButton = main.querySelector(`[data-score-group="${activeScoreGroup}"]`);
-          groupButton.textContent = `${groups[activeScoreGroup - 1]} | ${currentDone}/${indicators.length}`;
-          const summary = summarizeScores();
-          main.querySelectorAll(".summary-grid .summary-card strong").forEach((total, index) => {
-            total.textContent = summary[index].total;
-          });
-        });
-      });
-      main.querySelectorAll("[data-score-group]").forEach((element) => {
-        element.addEventListener("click", () => {
-          activeScoreGroup = Number(element.dataset.scoreGroup) || 1;
-          renderApp();
-        });
-      });
+      main.querySelector("#addQaRecordBtn")?.addEventListener("click", () => openRecordDialog("qa"));
+      main.querySelectorAll("[data-edit-qa]").forEach((button) => button.addEventListener("click", () => openRecordDialog("qa", Number(button.dataset.editQa))));
+      main.querySelectorAll("[data-delete-qa]").forEach((button) => button.addEventListener("click", () => {
+        state.qaRecords.splice(Number(button.dataset.deleteQa), 1);
+        saveState();
+        renderApp();
+      }));
+      main.querySelector("#addQuestionBtn")?.addEventListener("click", () => openRecordDialog("question"));
+      main.querySelectorAll("[data-edit-question]").forEach((button) => button.addEventListener("click", () => openRecordDialog("question", Number(button.dataset.editQuestion))));
+      main.querySelectorAll("[data-delete-question]").forEach((button) => button.addEventListener("click", () => {
+        state.questions.splice(Number(button.dataset.deleteQuestion), 1);
+        saveState();
+        renderApp();
+      }));
+      main.querySelector("#addScoreBtn")?.addEventListener("click", () => openRecordDialog("score"));
+      main.querySelectorAll("[data-edit-score]").forEach((button) => button.addEventListener("click", () => openRecordDialog("score", Number(button.dataset.editScore))));
       const addPosterGroupButton = document.getElementById("addPosterGroupBtn");
       if (addPosterGroupButton) addPosterGroupButton.addEventListener("click", addPosterGroup);
       const deletePosterGroupButton = document.getElementById("deletePosterGroupBtn");
@@ -1517,14 +1394,6 @@
           main.querySelectorAll("[data-best-poster]").forEach((button) => button.classList.toggle("is-active", button === element));
         });
       });
-      const addQuestion = document.getElementById("addQuestionBtn");
-      if (addQuestion) {
-        addQuestion.addEventListener("click", () => {
-          state.questions.push({ group: "", type: "研究问题", question: "", answer: "", ...getStudentIdentityFields() });
-          saveState();
-          renderApp();
-        });
-      }
     }
 
     function updateField(element) {
@@ -1532,44 +1401,108 @@
       saveState();
     }
 
-    function updateQaRecord(element) {
-      const index = Number(element.dataset.qaIndex);
-      const field = element.dataset.qaField;
-      if (!Number.isInteger(index) || !state.qaRecords[index] || !["question", "answer"].includes(field)) return;
-      state.qaRecords[index][field] = element.value;
-      Object.assign(state.qaRecords[index], getStudentIdentityFields());
-      saveState();
+    const recordDialog = document.getElementById("recordDialog");
+    let dialogReturnFocus = null;
+
+    function openRecordDialog(kind, index = -1) {
+      dialogReturnFocus = document.activeElement;
+      const qa = kind === "qa";
+      const score = kind === "score";
+      const current = qa ? state.qaRecords[index] : score ? null : state.questions[index];
+      const title = score ? "海报评分" : qa ? "问题与回答记录" : "提问交流";
+      const firstIncompleteGroup = score ? getPosterGroups().findIndex((_, i) => !indicators.every((item) => getScore(item.key, i + 1))) : -1;
+      const groupNumber = score ? (index > 0 ? index : Math.max(1, firstIncompleteGroup + 1)) : 0;
+      recordDialog.innerHTML = `<form id="recordForm" class="record-form">
+        <div class="record-dialog-head"><h3 id="recordDialogTitle">${title}</h3><button class="btn ghost" type="button" id="cancelRecordTop" aria-label="关闭弹窗">×</button></div>
+        ${score ? `<div class="field"><label for="scoreTarget">被评分小组</label><select id="scoreTarget" required>${getPosterGroups().map((group, i) => `<option value="${i + 1}" ${i + 1 === groupNumber ? "selected" : ""}>${escapeHtml(group)}</option>`).join("")}</select></div>
+          <div class="score-modal-list">${indicators.map((item) => `<div class="field"><label for="score-${item.key}">${escapeHtml(item.dimension)} · ${escapeHtml(item.title)}</label><select id="score-${item.key}" data-modal-score="${item.key}" required>
+          <option value="">请选择分数</option>${[1, 2, 3, 4].map((value) => `<option value="${value}">${value} 分</option>`).join("")}</select>
+          <details class="score-rule"><summary>查看评分标准</summary><p>${escapeHtml(item.rule)}</p></details></div>`).join("")}</div>`
+          : qa ? `<div class="field"><label for="qaQuestion">被问到的问题</label><textarea id="qaQuestion" required>${escapeHtml(current?.question || "")}</textarea></div>
+            <div class="field"><label for="qaAnswer">回答摘要</label><textarea id="qaAnswer" required>${escapeHtml(current?.answer || "")}</textarea></div>`
+          : `<div class="field"><label for="questionGroup">提问对象</label><select id="questionGroup" required>${groupOptions(current?.group || "")}</select></div>
+            <div class="field"><label for="questionType">问题类型</label><select id="questionType" required>${typeOptions(current?.type || "研究问题")}</select></div>
+            <div class="field"><label for="questionText">具体问题</label><textarea id="questionText" required>${escapeHtml(current?.question || "")}</textarea></div>
+            <div class="field"><label for="questionAnswer">对方回答摘要</label><textarea id="questionAnswer" required>${escapeHtml(current?.answer || "")}</textarea></div>`}
+        <div class="record-dialog-actions"><button class="btn ghost" type="button" id="cancelRecord">取消</button><button class="btn" type="submit">保存记录</button></div>
+      </form>`;
+      const fillScores = () => {
+        const target = Number(recordDialog.querySelector("#scoreTarget").value);
+        recordDialog.querySelectorAll("[data-modal-score]").forEach((select) => {
+          select.value = String(getScore(select.dataset.modalScore, target) || "");
+        });
+      };
+      if (score) {
+        recordDialog.querySelector("#scoreTarget").addEventListener("change", fillScores);
+        fillScores();
+      }
+      recordDialog.querySelector("#cancelRecord").addEventListener("click", () => recordDialog.close());
+      recordDialog.querySelector("#cancelRecordTop").addEventListener("click", () => recordDialog.close());
+      recordDialog.querySelector("#recordForm").addEventListener("submit", (event) => {
+        event.preventDefault();
+        if (score) {
+          const target = Number(recordDialog.querySelector("#scoreTarget").value);
+          recordDialog.querySelectorAll("[data-modal-score]").forEach((select) => {
+            const value = Number(select.value);
+            state.scores[`${select.dataset.modalScore}_${target}`] = value;
+            savePosterScoreRecord(select.dataset.modalScore, target, value);
+          });
+        } else if (qa) {
+          const item = { ...(current || {}), question: recordDialog.querySelector("#qaQuestion").value.trim(), answer: recordDialog.querySelector("#qaAnswer").value.trim(), ...getStudentIdentityFields() };
+          if (!item.question || !item.answer) { alert("请完整填写问题和回答。"); return; }
+          if (index < 0) state.qaRecords.push(item); else state.qaRecords[index] = item;
+        } else {
+          const item = { ...(current || {}), group: recordDialog.querySelector("#questionGroup").value, type: recordDialog.querySelector("#questionType").value, question: recordDialog.querySelector("#questionText").value.trim(), answer: recordDialog.querySelector("#questionAnswer").value.trim(), ...getStudentIdentityFields() };
+          if (!item.group || !item.question || !item.answer) { alert("请完整填写提问对象、问题和回答。"); return; }
+          if (index < 0) state.questions.push(item); else state.questions[index] = item;
+        }
+        saveState();
+        recordDialog.close();
+        renderApp();
+      });
+      recordDialog.showModal();
+      recordDialog.querySelector("select, textarea")?.focus();
     }
 
-    function addQaRecord() {
-      state.qaRecords.push({ question: "", answer: "", ...getStudentIdentityFields() });
-      saveState();
-      renderApp();
-    }
-
-    function deleteQaRecord(index) {
-      if (!Number.isInteger(index) || state.qaRecords.length <= 1 || !state.qaRecords[index]) return;
-      state.qaRecords.splice(index, 1);
-      saveState();
-      renderApp();
-    }
-
-    function updateQuestion(element) {
-      const index = Number(element.dataset.questionIndex);
-      const field = element.dataset.questionField;
-      state.questions[index][field] = element.value;
-      Object.assign(state.questions[index], getStudentIdentityFields());
-      saveState();
-    }
-
+    recordDialog.addEventListener("close", () => requestAnimationFrame(() => {
+      const target = dialogReturnFocus?.isConnected ? dialogReturnFocus : main.querySelector("#addQaRecordBtn, #addQuestionBtn, #addScoreBtn");
+      target?.focus();
+    }));
     function bindStepEvents() {
       const prev = document.getElementById("prevStep");
       const next = document.getElementById("nextStep");
       if (prev) prev.addEventListener("click", () => {
-        if (state.currentStep > 0) goToStep(state.currentStep - 1);
-        else openDataReader();
+        const stepId = steps[state.currentStep].id;
+        const page = state.stepPages[stepId] || 0;
+        if (page > 0) {
+          state.stepPages[stepId] = page - 1;
+          saveState();
+          renderStep();
+          window.scrollTo(0, 0);
+        } else if (state.currentStep > 0) {
+          const previousId = steps[state.currentStep - 1].id;
+          state.stepPages[previousId] = getPageCount(previousId) - 1;
+          saveState();
+          goToStep(state.currentStep - 1);
+        } else openDataReader();
       });
-      if (next) next.addEventListener("click", goNextStep);
+      if (next) next.addEventListener("click", () => {
+        const stepId = steps[state.currentStep].id;
+        const page = state.stepPages[stepId] || 0;
+        if (stepId === "posttest" && !state.knowledgeDraftT5.answers[state.knowledgeDraftT5.questionOrder[page]]) {
+          showStepMessage("请先完成本页题目。");
+          return;
+        }
+        if (page < getPageCount(stepId) - 1) {
+          state.stepPages[stepId] = page + 1;
+          saveState();
+          renderStep();
+          window.scrollTo(0, 0);
+        } else {
+          state.stepPages[steps[state.currentStep + 1].id] = 0;
+          goNextStep();
+        }
+      });
       const reviewReport = document.getElementById("reviewReportBtn");
       if (reviewReport) reviewReport.addEventListener("click", () => generateReviewReport("poster"));
       main.querySelectorAll("[data-knowledge-answer]").forEach((input) => {
@@ -1580,23 +1513,6 @@
             option.classList.toggle("is-selected", option.querySelector("input")?.checked === true);
           });
         });
-      });
-      const previousPosttestPage = document.getElementById("posttestPrevPage");
-      if (previousPosttestPage) previousPosttestPage.addEventListener("click", () => {
-        state.knowledgeDraftT5.currentPage = 0;
-        saveState();
-        renderStep();
-      });
-      const nextPosttestPage = document.getElementById("posttestNextPage");
-      if (nextPosttestPage) nextPosttestPage.addEventListener("click", () => {
-        const firstPageComplete = state.knowledgeDraftT5.questionOrder.slice(0, 10).every((id) => state.knowledgeDraftT5.answers[id]);
-        if (!firstPageComplete) {
-          showStepMessage("请先完成本页全部题目。");
-          return;
-        }
-        state.knowledgeDraftT5.currentPage = 1;
-        saveState();
-        renderStep();
       });
       const submitPosttest = document.getElementById("posttestSubmit");
       if (submitPosttest) submitPosttest.addEventListener("click", submitPosttestOnce);
