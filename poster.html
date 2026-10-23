@@ -249,17 +249,23 @@
     .score-record-card { padding: 16px; border: 1px solid var(--line); border-radius: 8px; background: var(--panel); }
     .score-record-card h4 { margin: 0; }
     .score-record-card p { margin: 6px 0 12px; color: var(--muted); }
-    .score-rubric-list { display: grid; gap: 10px; }
     .record-dialog { width: min(620px, calc(100vw - 28px)); max-height: calc(100dvh - 28px); padding: 0; border: 1px solid var(--line); border-radius: 10px; background: var(--panel); color: var(--ink); box-shadow: var(--shadow); }
+    .record-dialog.is-score { width: min(1080px, calc(100vw - 32px)); }
     .record-dialog::backdrop { background: rgba(20, 24, 30, .55); }
     .record-form { max-height: calc(100dvh - 30px); overflow-y: auto; padding: 22px; }
     .record-dialog-head, .record-dialog-actions { display: flex; align-items: center; justify-content: space-between; gap: 12px; }
     .record-dialog-head h3 { margin: 0; }
     .record-dialog-head { margin-bottom: 16px; }
     .record-dialog-actions { justify-content: flex-end; margin-top: 18px; }
-    .score-modal-list { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 10px; }
-    .score-modal-list .score-rule { margin-top: 5px; }
-    @media (max-width: 560px) { .score-modal-list { grid-template-columns: 1fr; } }
+    .score-modal-list { display: grid; grid-template-columns: 1fr; gap: 18px; margin-top: 22px; }
+    .score-modal-list .field { margin: 0; padding: 18px 20px; border: 1px solid var(--line); border-radius: 10px; background: var(--panel); }
+    .score-modal-list label { display: block; margin-bottom: 12px; }
+    .score-modal-list select { width: 100%; min-height: 54px; padding: 10px 14px; }
+    .record-dialog.is-score .record-form { padding: 30px 36px; }
+    @media (max-width: 560px) {
+      .record-dialog.is-score .record-form { padding: 20px; }
+      .score-modal-list .field { padding: 14px; }
+    }
 
     .poster-example-image-wrap {
       margin: 24px auto;
@@ -572,9 +578,6 @@
     .score-delete-btn:hover { background: #fecaca; }
     .best-poster-btn { min-height: 42px; padding: 0 15px; border: 1px solid var(--line); border-radius: 999px; background: var(--panel); color: var(--ink); }
     .best-poster-btn.is-active { border-color: var(--primary); background: var(--primary); color: #fff; }
-    .score-rule { margin-top: 12px; border-radius: 8px; background: #f8fbff; border: 1px solid var(--line); }
-    .score-rule summary { padding: 10px 12px; color: var(--primary-dark); cursor: pointer; font-size: 13px; font-weight: 900; }
-    .score-rule p { margin: 0; padding: 0 12px 12px; color: var(--muted); font-size: 13px; }
     .score-footer-card { padding: 18px; border: 1px solid var(--line); border-radius: 8px; background: var(--panel); }
     @media (max-width: 900px) {
       .step-layout,
@@ -644,7 +647,6 @@
     html[data-theme="archive"] .panel-head,
     html[data-theme="archive"] .tip-box,
     html[data-theme="archive"] th,
-    html[data-theme="archive"] .score-rule,
     html[data-theme="archive"] .knowledge-option.is-selected {
       background: #f4ead8;
       color: #65471f;
@@ -666,7 +668,6 @@
     html[data-theme="archive"] .tip-box { color: #33271c; }
     html[data-theme="archive"] .poster-page-head,
     html[data-theme="archive"] .task-hero h3,
-    html[data-theme="archive"] .score-rule summary,
     html[data-theme="archive"] .summary-card strong { color: #65471f; }
     html[data-theme="archive"] .record-dialog { background: #fffaf2; border-color: #d8bd91; color: #33271c; }
     html[data-theme="archive"] input:focus,
@@ -1133,7 +1134,7 @@
     }
 
     function getPageCount(stepId) {
-      return { plan: 2, make: 2, share: 2, questions: 2, score: 2, reflection: 3, posttest: 20 }[stepId] || 1;
+      return { plan: 2, make: 2, share: 2, questions: 2, score: 1, reflection: 3, posttest: 20 }[stepId] || 1;
     }
 
     function renderNavigation(page, pageCount) {
@@ -1312,11 +1313,7 @@
       `;
     }
 
-    function renderScoreStep(page) {
-      if (page === 0) {
-        return `<div class="panel"><div class="panel-head"><h3>海报评分标准</h3><p>按四个维度、八项指标给每组海报评分，每项 1—4 分。</p></div>
-          <div class="panel-body score-rubric-list">${indicators.map((item) => `<details class="score-rule"><summary>${escapeHtml(item.dimension)} · ${escapeHtml(item.title)}</summary><p>${escapeHtml(item.rule)}</p></details>`).join("")}</div></div>`;
-      }
+    function renderScoreStep() {
       const groups = getPosterGroups();
       const summary = summarizeScores();
       return `<div class="score-workspace">
@@ -1412,12 +1409,12 @@
       const title = score ? "海报评分" : qa ? "问题与回答记录" : "提问交流";
       const firstIncompleteGroup = score ? getPosterGroups().findIndex((_, i) => !indicators.every((item) => getScore(item.key, i + 1))) : -1;
       const groupNumber = score ? (index > 0 ? index : Math.max(1, firstIncompleteGroup + 1)) : 0;
+      recordDialog.classList.toggle("is-score", score);
       recordDialog.innerHTML = `<form id="recordForm" class="record-form">
         <div class="record-dialog-head"><h3 id="recordDialogTitle">${title}</h3><button class="btn ghost" type="button" id="cancelRecordTop" aria-label="关闭弹窗">×</button></div>
         ${score ? `<div class="field"><label for="scoreTarget">被评分小组</label><select id="scoreTarget" required>${getPosterGroups().map((group, i) => `<option value="${i + 1}" ${i + 1 === groupNumber ? "selected" : ""}>${escapeHtml(group)}</option>`).join("")}</select></div>
           <div class="score-modal-list">${indicators.map((item) => `<div class="field"><label for="score-${item.key}">${escapeHtml(item.dimension)} · ${escapeHtml(item.title)}</label><select id="score-${item.key}" data-modal-score="${item.key}" required>
-          <option value="">请选择分数</option>${[1, 2, 3, 4].map((value) => `<option value="${value}">${value} 分</option>`).join("")}</select>
-          <details class="score-rule"><summary>查看评分标准</summary><p>${escapeHtml(item.rule)}</p></details></div>`).join("")}</div>`
+          <option value="">请选择最符合表现的评分描述</option>${item.rule.split("；").map((description, index) => `<option value="${index + 1}">${escapeHtml(description.trim())}</option>`).join("")}</select></div>`).join("")}</div>`
           : qa ? `<div class="field"><label for="qaQuestion">被问到的问题</label><textarea id="qaQuestion" required>${escapeHtml(current?.question || "")}</textarea></div>
             <div class="field"><label for="qaAnswer">回答摘要</label><textarea id="qaAnswer" required>${escapeHtml(current?.answer || "")}</textarea></div>`
           : `<div class="field"><label for="questionGroup">提问对象</label><select id="questionGroup" required>${groupOptions(current?.group || "")}</select></div>
