@@ -3,7 +3,7 @@
 <head>
   <meta charset="utf-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1" />
-  <title>海报制作与分享交流</title>
+  <title>记忆侦探社：校园委托行动</title>
   <style>
     :root {
       --bg: #f6f8fb;
@@ -637,6 +637,22 @@
     .report-archive-card button { width: 100%; }
     .report-archive-viewer { width: 100%; height: min(75vh, 900px); border: 1px solid var(--line); border-radius: 12px; background: #fff; }
     .report-archive-hint { color: var(--muted); }
+    .commission-tasks { display: grid; gap: 12px; margin: 18px 0; padding-left: 24px; }
+    .commission-tasks li { padding-left: 4px; }
+    .commission-note { margin: 18px 0 0; color: var(--muted); }
+    .commission-form { display: grid; gap: 16px; }
+    .commission-form textarea { min-height: 90px; }
+    .commission-actions { margin-top: 18px; }
+    .commission-dialog { width: min(760px, calc(100vw - 28px)); max-height: calc(100dvh - 28px); padding: 0; border: 1px solid var(--line); border-radius: 10px; background: var(--panel); color: var(--ink); box-shadow: var(--shadow); }
+    .commission-dialog::backdrop { background: rgba(20, 24, 30, .55); }
+    .commission-dialog-body { padding: 24px; max-height: calc(100dvh - 30px); overflow-y: auto; }
+    .commission-dialog-head { display: flex; justify-content: space-between; align-items: flex-start; gap: 12px; }
+    .commission-dialog-head h3 { margin: 0; }
+    .commission-dialog-count { color: var(--muted); margin: 4px 0 0; }
+    .commission-dialog-quote { margin: 22px 0; padding: 18px; border: 1px solid var(--line); border-radius: 8px; line-height: 1.8; background: var(--bg); }
+    .commission-dialog-actions { display: flex; flex-wrap: wrap; gap: 10px; justify-content: space-between; }
+    .commission-dialog-actions .btn:disabled { opacity: .45; cursor: not-allowed; }
+    @media (max-width: 560px) { .commission-dialog-body { padding: 18px; } .commission-dialog-actions .btn { flex: 1 1 auto; } }
 
   </style>
   <link rel="stylesheet" href="assets/experiment-theme.css">
@@ -670,6 +686,8 @@
     html[data-theme="archive"] .task-hero h3,
     html[data-theme="archive"] .summary-card strong { color: #65471f; }
     html[data-theme="archive"] .record-dialog { background: #fffaf2; border-color: #d8bd91; color: #33271c; }
+    html[data-theme="archive"] .commission-dialog { background: #fffaf2; border-color: #d8bd91; color: #33271c; }
+    html[data-theme="archive"] .commission-dialog-quote { background: #f4ead8; border-color: #d8bd91; }
     html[data-theme="archive"] input:focus,
     html[data-theme="archive"] textarea:focus,
     html[data-theme="archive"] select:focus {
@@ -687,7 +705,7 @@
     <div class="topbar-inner">
       <div class="brand-row">
         <div class="brand-title">
-          <h1>海报制作与分享交流</h1>
+          <h1>记忆侦探社：校园委托行动</h1>
           <span id="identityPill" class="identity-pill"></span>
         </div>
         <div class="top-actions">
@@ -706,6 +724,7 @@
 
   <main id="main" class="main"></main>
   <dialog id="recordDialog" class="record-dialog" aria-labelledby="recordDialogTitle"></dialog>
+  <dialog id="commissionDialog" class="commission-dialog" aria-labelledby="commissionDialogTitle"></dialog>
 
   <script src="assets/experiment-registry.js"></script>
   <script src="assets/platform-core.js"></script>
@@ -730,7 +749,7 @@
     const DEV_MODE_KEY = "devMode";
 
     const steps = [
-      { id: "plan", title: "制定初步方案", minutes: "15分钟", taskDescription: "阅读海报应包含的内容，在纸上完成初步方案。" },
+      { id: "plan", title: "制定初步方案", minutes: "15分钟", taskDescription: "回看四份实验档案，阅读委托海报应包含的内容，在纸上完成初步方案。" },
       { id: "make", title: "制作海报", minutes: "30分钟", taskDescription: "根据第一步的初步方案完成正式海报，保持整洁美观。" },
       { id: "share", title: "分享交流", minutes: "10分钟", taskDescription: "指派一位小小讲解员介绍海报，并记录交流中的问题和回答。" },
       { id: "questions", title: "提问交流", minutes: "15分钟", taskDescription: "认真观看其他小组的科学海报，提出问题并记录对方的回答。" },
@@ -755,6 +774,15 @@
 
     const groupLabels = ["第1组", "第2组", "第3组", "第4组", "第5组", "第6组"];
 
+    const backupCommissions = [
+      { title: "开放日小向导", text: "三天后我要带家长参观校园，介绍六个地点。我常把科学教室和科技活动室的介绍说混。带队时还要记住家长刚问的问题；如果某个教室临时不能参观，我得马上调整路线。怎样准备，才能讲清楚又不带错路？", task: "三天后带家长参观校园，介绍六个地点并回答问题。", difficulty: "科学教室与科技活动室的介绍容易说混，临时调整路线时可能带错路。", limits: "三天准备时间；带队时会被提问；教室可能临时不能参观。" },
+      { title: "运动会检录助手", text: "我负责提醒同学参加检录。上午有几个名称相近的项目，检录时间也很接近。现场不断有人来问时间；刚刚又通知其中一个项目推迟了。我怕按旧时间通知，或把同学带到错误地点。请帮我设计值班时能用的办法。", task: "在运动会现场提醒同学按时到正确地点检录。", difficulty: "相近项目、临近时间容易混淆；项目推迟后可能仍按旧时间通知。", limits: "现场持续有人询问；项目时间可能临时改变。" },
+      { title: "科学节展台讲解员", text: "下周我要向低年级同学演示一个实验。我需要记住讲解要点和操作顺序，但一被提问就可能忘记讲到哪一步。有两个概念很相似，我也容易说反。若当天演示材料临时替换，我还得调整讲解。请帮我准备。", task: "下周向低年级同学演示实验，按顺序完成操作和讲解。", difficulty: "被提问后可能忘记进度；两个相似概念容易说反。", limits: "演示材料可能临时替换，需要现场调整。" },
+      { title: "校园剧舞台提醒员", text: "周五演出时，我要提醒演员按顺序上场、拿道具。两场戏的道具很像，排练时就拿错过。正式演出不能一直翻完整剧本；如果前一场提前结束，我还要及时改变提醒顺序。怎样减少漏提醒和拿错道具？", task: "周五演出时提醒演员按顺序上场并拿对道具。", difficulty: "两场戏的道具相似，容易漏提醒或拿错。", limits: "演出时不能一直翻完整剧本；前一场可能提前结束。" },
+      { title: "图书漂流管理员", text: "我下周负责登记借还书。几本书的书名很像，借阅规则也有两种。午休时几位同学可能接连来借书、还书，中途还会改选另一本。我常记不清刚才谁借了什么，也怕几天后把规则记混。请帮我设计登记与核对办法。", task: "下周午休登记同学借还书，并在之后核对记录。", difficulty: "书名和借阅规则容易混淆，连续接待时记不清谁借了什么。", limits: "多位同学接连办理借还；中途可能改选书。" },
+      { title: "小组展示负责人", text: "下周我们要做课堂展示。我需要记住自己的讲解内容，还要根据前一位组员实际讲了什么，调整接下来的话。有两张图表很相似，排练时我已经解释错过一次。如果老师临时缩短展示时间，我们还得决定保留哪些内容。请帮我们设计准备和现场应对方案。", task: "下周带领小组完成课堂展示并衔接组员讲解。", difficulty: "两张相似图表曾解释错；需要根据前一位组员的内容调整接下来的话。", limits: "老师可能临时缩短展示时间。" }
+    ];
+
     const defaultState = {
       studentName: "",
       studentAge: "",
@@ -763,7 +791,8 @@
       currentStep: 0,
       maxUnlockedStep: 0,
       stepPages: {},
-      dataReaderSeen: false,
+      currentView: "commission",
+      commission: { source: "", client: "", original: "", task: "", difficulty: "", limits: "" },
       fields: {
         researchQuestion: "",
         hypothesis: "",
@@ -798,7 +827,8 @@
     };
 
     let state = loadState();
-    let dataReaderOpen = !state.dataReaderSeen && state.currentStep === 0;
+    let commissionOpen = state.currentStep === 0 && state.currentView === "commission";
+    let backupCommissionIndex = 0;
     let archiveViewerUrl = "";
     const progress = document.getElementById("progress");
     const main = document.getElementById("main");
@@ -840,6 +870,7 @@
         ? incoming.questions.filter((item) => hasText(item?.group) || hasText(item?.question) || hasText(item?.answer))
         : base.questions;
       merged.stepPages = Object.assign({}, incoming.stepPages || {});
+      merged.commission = Object.assign({}, base.commission, incoming.commission || {});
       merged.scores = Object.assign({}, base.scores, incoming.scores || {});
       merged.posterGroups = Array.isArray(incoming.posterGroups) && incoming.posterGroups.length ? incoming.posterGroups : base.posterGroups.slice();
       merged.knowledgeAssessment = knowledgeAssessmentApi.mergeTimelines(incoming.knowledgeAssessment, knowledgeAssessmentApi.readTimeline());
@@ -953,13 +984,17 @@
 
     function goToStep(targetStep) {
       const target = clampStepIndex(targetStep);
+      if (commissionOpen && !commissionIsComplete() && !isDeveloperMode()) {
+        showStepMessage("请先完成校园委托档案，再进入下一步。");
+        return;
+      }
       if (!isDeveloperMode() && target > state.maxUnlockedStep) {
         showStepMessage("请先完成前一步内容，再进入下一步。");
         return;
       }
       state.currentStep = target;
-      dataReaderOpen = false;
-      state.dataReaderSeen = true;
+      commissionOpen = false;
+      state.currentView = "step";
       if (!isDeveloperMode()) saveState();
       renderApp();
       window.scrollTo(0, 0);
@@ -981,6 +1016,10 @@
 
     function hasText(value) {
       return String(value ?? "").trim().length > 0;
+    }
+
+    function commissionIsComplete() {
+      return ["task", "difficulty", "limits"].every((key) => hasText(state.commission?.[key]));
     }
 
     function validateStep(stepId) {
@@ -1007,15 +1046,15 @@
 
     function renderProgress() {
       normalizeStepAccess();
-      progress.innerHTML = '<button class="progress-step ' + (dataReaderOpen ? 'is-active' : '') + '" type="button" id="openDataReader"><strong>0</strong><span>读取实验数据</span></button>' + steps.map((step, index) => {
-        const isActive = !dataReaderOpen && index === state.currentStep;
+      progress.innerHTML = '<button class="progress-step ' + (commissionOpen ? 'is-active' : '') + '" type="button" id="openCommission"><strong>0</strong><span>接受校园委托</span></button>' + steps.map((step, index) => {
+        const isActive = !commissionOpen && index === state.currentStep;
         const isDone = index < state.maxUnlockedStep;
         const isLocked = !isDeveloperMode() && index > state.maxUnlockedStep;
         const cls = isActive ? "is-active" : isDone ? "is-done" : isLocked ? "is-locked" : "";
         const lockedAttrs = isLocked ? ' aria-disabled="true" title="请先完成前一步内容，再进入下一步。"' : '';
         return `<button class="progress-step ${cls}" type="button" data-step="${index}"${lockedAttrs}><strong>${index + 1}</strong><span>${step.title}</span></button>`;
       }).join("");
-      progress.querySelector("#openDataReader").addEventListener("click", openDataReader);
+      progress.querySelector("#openCommission").addEventListener("click", openCommission);
       progress.querySelectorAll("[data-step]").forEach((button) => {
         button.addEventListener("click", () => {
           goToStep(Number(button.dataset.step));
@@ -1024,8 +1063,10 @@
     }
 
     function renderStep() {
-      if (dataReaderOpen) {
-        renderDataReader();
+      if (archiveViewerUrl) URL.revokeObjectURL(archiveViewerUrl);
+      archiveViewerUrl = "";
+      if (commissionOpen) {
+        renderCommissionStep();
         return;
       }
       const step = steps[state.currentStep];
@@ -1047,45 +1088,114 @@
       `;
       bindInputs();
       bindStepEvents();
+      if (step.id === "plan" && page === 0) loadReportArchives();
     }
 
-    function openDataReader() {
-      dataReaderOpen = true;
+    function openCommission() {
+      commissionOpen = true;
+      state.currentStep = 0;
+      state.currentView = "commission";
+      saveState();
       renderApp();
     }
 
-    function renderDataReader() {
-      if (archiveViewerUrl) URL.revokeObjectURL(archiveViewerUrl);
-      archiveViewerUrl = "";
+    function renderCommissionStep() {
+      const page = Math.min(Math.max(Number(state.stepPages.commission) || 0, 0), 1);
+      state.stepPages.commission = page;
       main.innerHTML = `
         <section class="panel">
           <div class="panel-head">
-            <h2>读取实验数据</h2>
+            <h2>0. 接受校园委托</h2>
           </div>
           <div class="panel-body">
-            <p class="report-archive-hint">选择一份档案，即可在本页查看 PDF，并参考其中的研究问题、数据和结论制作海报。</p>
-            <div id="reportArchiveList" class="report-archive-grid" role="status">正在读取档案…</div>
-            <div id="reportArchiveViewer"></div>
-            <div class="actions"><button class="btn" type="button" id="beginPosterPlan">下一页</button></div>
+            <div class="poster-page-head" aria-live="polite">接受校园委托 ${page + 1}/2</div>
+            ${page === 0 ? `<div class="panel"><div class="panel-head"><h3>校园里的新委托</h3></div><div class="panel-body">
+              <p>完成四次实验历练后，记忆侦探社开始接受校园内的委托。每组先寻找一位在学习或校园活动中遇到记忆难题的同学，了解他具体要完成什么、在哪一步出错、有哪些时间和条件限制。</p>
+              <ol class="commission-tasks">
+                <li><strong>建立委托档案：</strong>记录一件真实发生或即将发生的事，而不是只写“记性不好”。</li>
+                <li><strong>分析线索：</strong>结合前四个实验的知识与本组数据，判断问题可能出在暂时记住信息、处理变化、信息干扰或提前学习的哪个环节。</li>
+                <li><strong>设计行动方案：</strong>提出这位同学能够实际采用的办法，并解释每个关键办法的依据。</li>
+                <li><strong>交付侦探海报：</strong>让委托人看懂“问题是什么、为什么会发生、下次具体怎么做”。</li>
+                <li><strong>验证并修改：</strong>请委托人尝试按海报处理一次类似任务或一个临时变化，再根据反馈改进方案。</li>
+              </ol>
+              <p class="commission-note">最终成果：一张交给委托人使用的“记忆难题解决海报”。</p>
+              <p class="commission-note">暂时找不到身边的委托人？可以查看六份备选委托。</p>
+              <div class="commission-actions"><button class="btn secondary" id="showBackupCommissions" type="button">查看六份备选委托</button></div>
+            </div></div>` : `<div class="panel"><div class="panel-head"><h3>建立委托档案</h3><p>请记录一件具体的事，写清任务、出错环节和限制条件。</p></div><div class="panel-body">
+              ${state.commission.source ? `<p class="report-archive-hint">已采用备选委托：${escapeHtml(state.commission.source)}</p>` : ""}
+              <div class="commission-form">
+                <div class="field"><label for="commissionClient">委托人称呼（可用昵称）</label><input id="commissionClient" data-commission-field="client" value="${escapeHtml(state.commission.client)}"></div>
+                <div class="field"><label for="commissionOriginal">真实事件或委托人的原话</label><textarea id="commissionOriginal" data-commission-field="original">${escapeHtml(state.commission.original)}</textarea></div>
+                <div class="field"><label for="commissionTask">具体要完成的任务与时间</label><textarea id="commissionTask" data-commission-field="task" required>${escapeHtml(state.commission.task)}</textarea></div>
+                <div class="field"><label for="commissionDifficulty">在哪一步出错或可能出错</label><textarea id="commissionDifficulty" data-commission-field="difficulty" required>${escapeHtml(state.commission.difficulty)}</textarea></div>
+                <div class="field"><label for="commissionLimits">时间、条件或工具限制</label><textarea id="commissionLimits" data-commission-field="limits" required>${escapeHtml(state.commission.limits)}</textarea></div>
+              </div>
+              <div class="commission-actions"><button class="btn secondary" id="showBackupCommissions" type="button">查看六份备选委托</button></div>
+            </div></div>`}
+            <div class="actions">${page === 1 ? '<button class="btn ghost" type="button" id="previousCommissionPage">上一页</button>' : '<span></span>'}<button class="btn" type="button" id="nextCommissionPage">下一页</button></div>
           </div>
         </section>`;
-      document.getElementById("beginPosterPlan").addEventListener("click", () => {
-        if (archiveViewerUrl) URL.revokeObjectURL(archiveViewerUrl);
-        archiveViewerUrl = "";
-        state.dataReaderSeen = true;
-        dataReaderOpen = false;
+      main.querySelectorAll("[data-commission-field]").forEach((input) => input.addEventListener("input", () => {
+        state.commission[input.dataset.commissionField] = input.value;
+        saveState();
+      }));
+      document.getElementById("showBackupCommissions").addEventListener("click", openBackupCommissions);
+      document.getElementById("previousCommissionPage")?.addEventListener("click", () => {
+        state.stepPages.commission = 0;
         saveState();
         renderApp();
         window.scrollTo(0, 0);
       });
-      loadReportArchives();
+      document.getElementById("nextCommissionPage").addEventListener("click", () => {
+        if (page === 0) state.stepPages.commission = 1;
+        else {
+          if (!commissionIsComplete()) { showStepMessage("请填写具体任务、出错环节和限制条件。"); return; }
+          commissionOpen = false;
+          state.currentView = "step";
+          state.stepPages.plan = 0;
+        }
+        saveState();
+        renderApp();
+        window.scrollTo(0, 0);
+      });
+    }
+
+    function openBackupCommissions() {
+      backupCommissionIndex = Math.max(0, backupCommissions.findIndex((item) => item.title === state.commission.source));
+      renderBackupCommission();
+      document.getElementById("commissionDialog").showModal();
+      document.getElementById("closeCommissionDialog").focus();
+    }
+
+    function renderBackupCommission() {
+      const item = backupCommissions[backupCommissionIndex];
+      const dialog = document.getElementById("commissionDialog");
+      dialog.innerHTML = `<div class="commission-dialog-body">
+        <div class="commission-dialog-head"><div><h3 id="commissionDialogTitle">${escapeHtml(item.title)}</h3><p class="commission-dialog-count">备选委托 ${backupCommissionIndex + 1}/6</p></div><button class="btn ghost" id="closeCommissionDialog" type="button" aria-label="关闭备选委托">关闭</button></div>
+        <p class="commission-dialog-quote">“${escapeHtml(item.text)}”</p>
+        <div class="commission-dialog-actions">
+          <button class="btn ghost" id="previousBackupCommission" type="button" ${backupCommissionIndex === 0 ? "disabled" : ""}>上一位</button>
+          <button class="btn ghost" id="nextBackupCommission" type="button" ${backupCommissionIndex === backupCommissions.length - 1 ? "disabled" : ""}>下一位</button>
+          <button class="btn" id="useBackupCommission" type="button">采用这份委托</button>
+        </div></div>`;
+      dialog.querySelector("#closeCommissionDialog").addEventListener("click", () => dialog.close());
+      dialog.querySelector("#previousBackupCommission").addEventListener("click", () => { backupCommissionIndex -= 1; renderBackupCommission(); dialog.querySelector("#previousBackupCommission").focus(); });
+      dialog.querySelector("#nextBackupCommission").addEventListener("click", () => { backupCommissionIndex += 1; renderBackupCommission(); dialog.querySelector("#nextBackupCommission").focus(); });
+      dialog.querySelector("#useBackupCommission").addEventListener("click", () => {
+        state.commission = { source: item.title, client: item.title, original: item.text, task: item.task, difficulty: item.difficulty, limits: item.limits };
+        state.stepPages.commission = 1;
+        saveState();
+        dialog.close();
+        renderApp();
+        document.getElementById("commissionTask")?.focus();
+      });
     }
 
     async function loadReportArchives() {
       const list = document.getElementById("reportArchiveList");
       const client = window.BrainReportArchiveClient;
       const result = client && await client.list();
-      if (!list || !dataReaderOpen) return;
+      if (!list || !list.isConnected) return;
       if (!result?.ok) {
         list.textContent = "暂时无法读取云端档案，请检查网络或登录状态后重试。";
         return;
@@ -1134,7 +1244,7 @@
     }
 
     function getPageCount(stepId) {
-      return { plan: 2, make: 2, share: 2, questions: 2, score: 1, reflection: 3, posttest: 20 }[stepId] || 1;
+      return { plan: 3, make: 2, share: 2, questions: 2, score: 1, reflection: 3, posttest: 20 }[stepId] || 1;
     }
 
     function renderNavigation(page, pageCount) {
@@ -1186,18 +1296,21 @@
     }
 
     function renderPlanStep(page) {
+      if (page === 0) return `<div class="panel"><div class="panel-head"><h3>读取实验数据</h3><p>回看四份实验档案，把研究问题、数据和结论作为分析委托的线索。</p></div>
+        <div class="panel-body"><p class="report-archive-hint">留意暂时记住信息、处理变化、信息干扰和提前学习这四类线索。选择档案，可在本页查看 PDF。</p>
+        <div id="reportArchiveList" class="report-archive-grid" role="status">正在读取档案…</div><div id="reportArchiveViewer"></div></div></div>`;
       const items = [
-        ["研究问题", "写清楚你们小组想探究的问题。"],
-        ["研究假设", "写出你们对研究结果的预测。"],
-        ["研究计划", "简单描述实验步骤。"],
-        ["实验数据呈现方式", "可以采用表格、柱状图、折线图等形式，图表要标清标题和单位。"],
-        ["研究结论", "根据证据概括结论，并说明是否支持假设。"],
-        ["反思不足", "可以从实验设计、数据呈现、结论分析和团队合作等方面反思。"],
-        ["启示", "联系生活实际，说明本研究可以如何应用于生活。"],
-        ["小组分工", "写出每个成员的姓名和任务。"]
+        ["具体任务", "委托人要在什么时候、什么场合完成什么事？海报要让他一眼看懂任务。"],
+        ["关键出错点", "标出委托人在哪一步容易忘记、混淆或跟不上变化。"],
+        ["时间与条件限制", "写出准备时间、现场变化、可用工具等限制，避免提出用不上的办法。"],
+        ["可能原因", "对照前四个实验和本组数据，判断问题与暂时记住信息、处理变化、信息干扰或提前学习有什么关系。"],
+        ["具体行动步骤", "告诉委托人准备时、任务进行中和出现变化时分别怎么做。"],
+        ["办法的依据", "为关键办法配上实验线索或本组数据，解释为什么这样做。"],
+        ["临时变化应对", "预想一处现场变化，说明委托人如何核对信息并调整行动。"],
+        ["验证与修改", "请委托人尝试一次类似任务，记录反馈，再指出海报中需要修改的地方。"]
       ];
-      return `<div class="panel"><div class="panel-head"><h3>制定初步方案</h3><p>在纸上规划海报，确保包含以下内容。</p></div>
-        <div class="panel-body poster-plan-fields">${items.slice(page * 4, page * 4 + 4).map(([title, description]) =>
+      return `<div class="panel"><div class="panel-head"><h3>制定初步方案</h3><p>在纸上规划交给委托人使用的海报，确保包含以下内容。</p></div>
+        <div class="panel-body poster-plan-fields">${items.slice((page - 1) * 4, page * 4).map(([title, description]) =>
           `<div class="poster-plan-item"><h4>${title}</h4><p>${description}</p></div>`).join("")}</div></div>`;
     }
 
@@ -1481,7 +1594,14 @@
           state.stepPages[previousId] = getPageCount(previousId) - 1;
           saveState();
           goToStep(state.currentStep - 1);
-        } else openDataReader();
+        } else {
+          commissionOpen = true;
+          state.currentView = "commission";
+          state.stepPages.commission = 1;
+          saveState();
+          renderApp();
+          window.scrollTo(0, 0);
+        }
       });
       if (next) next.addEventListener("click", () => {
         const stepId = steps[state.currentStep].id;
@@ -1642,6 +1762,15 @@
           ["小组编号", state.groupId],
           ["导出时间", new Date().toLocaleString()]
         ]],
+        ["校园委托档案", [
+          ["字段", "内容"],
+          ["备选委托", state.commission.source],
+          ["委托人称呼", state.commission.client],
+          ["真实事件或委托人的原话", state.commission.original],
+          ["具体任务与时间", state.commission.task],
+          ["出错环节", state.commission.difficulty],
+          ["时间与条件限制", state.commission.limits]
+        ]],
         ["海报初步方案", [
           ["字段", "内容"],
           ["研究问题", state.fields.researchQuestion],
@@ -1723,7 +1852,7 @@
       if (!confirm("确定要清空本模块在当前浏览器中保存的数据吗？")) return;
       localStorage.removeItem(STORAGE_KEY);
       state = loadState();
-      dataReaderOpen = true;
+      commissionOpen = true;
       renderApp();
     });
 

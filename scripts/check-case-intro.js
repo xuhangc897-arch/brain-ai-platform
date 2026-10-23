@@ -33,7 +33,7 @@ const expectedCases = [
   ["nback", "nback.html", "跟丢的口算接龙", "追踪工作记忆"],
   ["interference", "interference.html", "串在一起的古诗", "调查遗忘原因"],
   ["strategies", "strategies.html", "看熟了却写不出", "破解记忆策略"],
-  ["poster", "poster.html", "重建记忆档案", "提交调查报告"]
+  ["poster", "poster.html", "记忆侦探社：校园委托行动", "接受校园委托"]
 ];
 const studentCases = [
   ["memory", "xiaohe", "小禾", "彩纸、胶棒、剪刀"],

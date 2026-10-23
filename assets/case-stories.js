@@ -73,14 +73,15 @@
     {
       id: "poster",
       caseNumber: "CASE 05",
-      title: "重建记忆档案",
+      title: "记忆侦探社：校园委托行动",
       avatar: "detective",
       dialog: freezeDialog([
-        { text: "四份调查报告已经完成。", pose: "normal" },
-        { text: "现在需要整理所有证据。", pose: "normal" },
-        { text: "制作最终调查报告，向记忆侦探总部提交你的发现。", pose: "thinking" }
+        { text: "四次实验历练已经完成，记忆侦探社开始接受校园里的委托。", pose: "normal" },
+        { text: "请寻找一位在学习或校园活动中遇到具体记忆难题的同学。", pose: "normal" },
+        { text: "查清他要完成什么、在哪一步出错，以及时间和条件限制。", pose: "thinking" },
+        { text: "接下来，回看四份实验报告，为这位同学规划能实际使用的海报。", pose: "normal" }
       ]),
-      buttonText: "提交调查报告"
+      buttonText: "接受校园委托"
     }
   ].map((entry) => Object.freeze(entry));
 
