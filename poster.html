@@ -268,14 +268,15 @@
     }
 
     .poster-example-image-wrap {
-      margin: 24px auto;
+      margin: 12px auto;
       text-align: center;
     }
 
     .poster-example-image {
       display: block;
-      width: 100%;
-      max-width: 900px;
+      width: auto;
+      max-width: min(100%, 900px);
+      max-height: 55dvh;
       height: auto;
       margin: 0 auto;
       border-radius: 16px;
@@ -387,6 +388,8 @@
       border-radius: 14px;
       background: #f8fbff;
     }
+    .qa-record-card strong, .qa-record-card p { display: -webkit-box; -webkit-box-orient: vertical; -webkit-line-clamp: 2; line-clamp: 2; overflow: hidden; overflow-wrap: anywhere; }
+    .qa-record-card p { margin: 8px 0; }
 
     .qa-record-card .delete-qa-btn {
       position: absolute;
@@ -511,40 +514,6 @@
       border-top: 1px solid var(--line);
     }
 
-    .table-wrap {
-      overflow: auto;
-      border: 1px solid var(--line);
-      border-radius: 8px;
-    }
-
-    table {
-      width: 100%;
-      min-width: 820px;
-      border-collapse: collapse;
-      background: #fff;
-    }
-
-    th,
-    td {
-      border-bottom: 1px solid var(--line);
-      padding: 9px;
-      text-align: left;
-      vertical-align: top;
-      font-size: 13px;
-    }
-
-    th {
-      background: #f8fbff;
-      color: #344054;
-      font-weight: 900;
-    }
-
-    td select,
-    td input {
-      min-width: 82px;
-      padding: 7px 8px;
-    }
-
     .summary-grid {
       display: grid;
       grid-template-columns: repeat(auto-fit, minmax(130px, 1fr));
@@ -573,11 +542,9 @@
 
 
     .score-workspace { display: grid; gap: 18px; }
-    .score-group-actions, .best-poster-picker { display: flex; flex-wrap: wrap; gap: 10px; }
+    .score-group-actions { display: flex; flex-wrap: wrap; gap: 10px; }
     .score-delete-btn { background: #fee2e2; color: #b91c1c; }
     .score-delete-btn:hover { background: #fecaca; }
-    .best-poster-btn { min-height: 42px; padding: 0 15px; border: 1px solid var(--line); border-radius: 999px; background: var(--panel); color: var(--ink); }
-    .best-poster-btn.is-active { border-color: var(--primary); background: var(--primary); color: #fff; }
     .score-footer-card { padding: 18px; border: 1px solid var(--line); border-radius: 8px; background: var(--panel); }
     @media (max-width: 900px) {
       .step-layout,
@@ -587,7 +554,7 @@
       }
 
       .progress {
-        grid-template-columns: repeat(7, 132px);
+        grid-template-columns: repeat(8, 132px);
         justify-content: start;
       }
 
@@ -635,13 +602,18 @@
     .report-archive-card h3 { margin: 0 0 8px; font-size: 17px; }
     .report-archive-card p { min-height: 2.5em; color: var(--muted); }
     .report-archive-card button { width: 100%; }
-    .report-archive-viewer { width: 100%; height: min(75vh, 900px); border: 1px solid var(--line); border-radius: 12px; background: #fff; }
+    .report-archive-viewer { display: block; width: 100%; height: calc(100dvh - 110px); border: 0; border-radius: 8px; background: #fff; }
+    .archive-dialog { width: min(1100px, calc(100vw - 24px)); height: calc(100dvh - 24px); max-height: none; padding: 12px; border: 1px solid var(--line); border-radius: 10px; background: var(--panel); color: var(--ink); }
+    .archive-dialog::backdrop { background: rgba(20, 24, 30, .65); }
+    .archive-dialog-head { display: flex; align-items: center; justify-content: space-between; gap: 12px; margin-bottom: 8px; }
+    .archive-dialog-head h3 { margin: 0; font-size: 17px; }
+    .archive-dialog-head .btn { flex: 0 0 auto; }
     .report-archive-hint { color: var(--muted); }
-    .commission-tasks { display: grid; gap: 12px; margin: 18px 0; padding-left: 24px; }
+    .commission-tasks { display: grid; gap: 8px; margin: 12px 0; padding-left: 24px; }
     .commission-tasks li { padding-left: 4px; }
     .commission-note { margin: 18px 0 0; color: var(--muted); }
-    .commission-form { display: grid; gap: 16px; }
-    .commission-form textarea { min-height: 90px; }
+    .commission-form { display: grid; gap: 12px; }
+    .commission-form textarea { min-height: 74px; }
     .commission-actions { margin-top: 18px; }
     .commission-dialog { width: min(760px, calc(100vw - 28px)); max-height: calc(100dvh - 28px); padding: 0; border: 1px solid var(--line); border-radius: 10px; background: var(--panel); color: var(--ink); box-shadow: var(--shadow); }
     .commission-dialog::backdrop { background: rgba(20, 24, 30, .55); }
@@ -653,6 +625,28 @@
     .commission-dialog-actions { display: flex; flex-wrap: wrap; gap: 10px; justify-content: space-between; }
     .commission-dialog-actions .btn:disabled { opacity: .45; cursor: not-allowed; }
     @media (max-width: 560px) { .commission-dialog-body { padding: 18px; } .commission-dialog-actions .btn { flex: 1 1 auto; } }
+    @media (max-width: 680px) {
+      .topbar-inner { padding: 8px 12px; }
+      .brand-row { gap: 6px; margin-bottom: 6px; }
+      .brand-title h1 { font-size: 17px; }
+      .identity-pill { font-size: 11px; }
+      .top-actions { gap: 5px; }
+      .top-actions .btn, .top-actions .theme-option { min-height: 34px; padding: 0 8px; font-size: 12px; }
+      .progress-step { min-height: 38px; padding: 5px 8px; }
+      .main { padding: 12px 10px 24px; }
+      .panel-head, .panel-body { padding: 12px; }
+      .poster-page-head { margin-bottom: 9px; }
+      .poster-plan-item { padding: 10px 0; }
+      .poster-plan-item p { margin-bottom: 0; }
+      .actions { margin-top: 12px; padding-top: 12px; }
+      .report-archive-grid { margin: 12px 0; }
+      .report-archive-card { padding: 12px; }
+      .poster-example-image { max-height: 40dvh; }
+      .reflection-fields-stack textarea { min-height: 100px; }
+      .score-record-grid { grid-template-columns: 1fr; }
+      .archive-dialog { width: calc(100vw - 12px); height: calc(100dvh - 12px); padding: 8px; }
+      .report-archive-viewer { height: calc(100dvh - 95px); }
+    }
 
   </style>
   <link rel="stylesheet" href="assets/experiment-theme.css">
@@ -662,7 +656,6 @@
     html[data-theme="archive"] .progress-step strong,
     html[data-theme="archive"] .panel-head,
     html[data-theme="archive"] .tip-box,
-    html[data-theme="archive"] th,
     html[data-theme="archive"] .knowledge-option.is-selected {
       background: #f4ead8;
       color: #65471f;
@@ -674,7 +667,7 @@
     html[data-theme="archive"] .reading-card,
     html[data-theme="archive"] .knowledge-card,
     html[data-theme="archive"] .summary-card,
-    html[data-theme="archive"] table {
+    html[data-theme="archive"] .score-footer-card {
       background: #fffaf2;
       border-color: #d8bd91;
       color: #33271c;
@@ -688,6 +681,7 @@
     html[data-theme="archive"] .record-dialog { background: #fffaf2; border-color: #d8bd91; color: #33271c; }
     html[data-theme="archive"] .commission-dialog { background: #fffaf2; border-color: #d8bd91; color: #33271c; }
     html[data-theme="archive"] .commission-dialog-quote { background: #f4ead8; border-color: #d8bd91; }
+    html[data-theme="archive"] .archive-dialog { background: #fffaf2; border-color: #d8bd91; }
     html[data-theme="archive"] input:focus,
     html[data-theme="archive"] textarea:focus,
     html[data-theme="archive"] select:focus {
@@ -725,6 +719,7 @@
   <main id="main" class="main"></main>
   <dialog id="recordDialog" class="record-dialog" aria-labelledby="recordDialogTitle"></dialog>
   <dialog id="commissionDialog" class="commission-dialog" aria-labelledby="commissionDialogTitle"></dialog>
+  <dialog id="archiveDialog" class="archive-dialog" aria-labelledby="archiveDialogTitle"></dialog>
 
   <script src="assets/experiment-registry.js"></script>
   <script src="assets/platform-core.js"></script>
@@ -902,6 +897,7 @@
       const groups = getPosterGroups();
       const nextNumber = groups.length + 1;
       groups.push(`第${nextNumber}组`);
+      state.stepPages.score = getPageCount("score") - 1;
       saveState();
       renderApp();
     }
@@ -1063,8 +1059,10 @@
     }
 
     function renderStep() {
-      if (archiveViewerUrl) URL.revokeObjectURL(archiveViewerUrl);
-      archiveViewerUrl = "";
+      if (!document.getElementById("archiveDialog").open) {
+        if (archiveViewerUrl) URL.revokeObjectURL(archiveViewerUrl);
+        archiveViewerUrl = "";
+      }
       if (commissionOpen) {
         renderCommissionStep();
         return;
@@ -1088,7 +1086,7 @@
       `;
       bindInputs();
       bindStepEvents();
-      if (step.id === "plan" && page === 0) loadReportArchives();
+      if (step.id === "plan" && page < getArchivePageCount()) loadReportArchives();
     }
 
     function openCommission() {
@@ -1097,10 +1095,11 @@
       state.currentView = "commission";
       saveState();
       renderApp();
+      window.scrollTo(0, 0);
     }
 
     function renderCommissionStep() {
-      const page = Math.min(Math.max(Number(state.stepPages.commission) || 0, 0), 1);
+      const page = Math.min(Math.max(Number(state.stepPages.commission) || 0, 0), 3);
       state.stepPages.commission = page;
       main.innerHTML = `
         <section class="panel">
@@ -1108,12 +1107,14 @@
             <h2>0. 接受校园委托</h2>
           </div>
           <div class="panel-body">
-            <div class="poster-page-head" aria-live="polite">接受校园委托 ${page + 1}/2</div>
+            <div class="poster-page-head" aria-live="polite">接受校园委托 ${page + 1}/4</div>
             ${page === 0 ? `<div class="panel"><div class="panel-head"><h3>校园里的新委托</h3></div><div class="panel-body">
               <p>完成四次实验历练后，记忆侦探社开始接受校园内的委托。每组先寻找一位在学习或校园活动中遇到记忆难题的同学，了解他具体要完成什么、在哪一步出错、有哪些时间和条件限制。</p>
               <ol class="commission-tasks">
                 <li><strong>建立委托档案：</strong>记录一件真实发生或即将发生的事，而不是只写“记性不好”。</li>
                 <li><strong>分析线索：</strong>结合前四个实验的知识与本组数据，判断问题可能出在暂时记住信息、处理变化、信息干扰或提前学习的哪个环节。</li>
+              </ol>
+            </div></div>` : page === 1 ? `<div class="panel"><div class="panel-head"><h3>从线索到行动</h3></div><div class="panel-body"><ol class="commission-tasks" start="3">
                 <li><strong>设计行动方案：</strong>提出这位同学能够实际采用的办法，并解释每个关键办法的依据。</li>
                 <li><strong>交付侦探海报：</strong>让委托人看懂“问题是什么、为什么会发生、下次具体怎么做”。</li>
                 <li><strong>验证并修改：</strong>请委托人尝试按海报处理一次类似任务或一个临时变化，再根据反馈改进方案。</li>
@@ -1121,33 +1122,35 @@
               <p class="commission-note">最终成果：一张交给委托人使用的“记忆难题解决海报”。</p>
               <p class="commission-note">暂时找不到身边的委托人？可以查看六份备选委托。</p>
               <div class="commission-actions"><button class="btn secondary" id="showBackupCommissions" type="button">查看六份备选委托</button></div>
-            </div></div>` : `<div class="panel"><div class="panel-head"><h3>建立委托档案</h3><p>请记录一件具体的事，写清任务、出错环节和限制条件。</p></div><div class="panel-body">
+            </div></div>` : page === 2 ? `<div class="panel"><div class="panel-head"><h3>建立委托档案 · 任务</h3><p>记录委托人和一件真实发生或即将发生的事。</p></div><div class="panel-body">
               ${state.commission.source ? `<p class="report-archive-hint">已采用备选委托：${escapeHtml(state.commission.source)}</p>` : ""}
               <div class="commission-form">
                 <div class="field"><label for="commissionClient">委托人称呼（可用昵称）</label><input id="commissionClient" data-commission-field="client" value="${escapeHtml(state.commission.client)}"></div>
                 <div class="field"><label for="commissionOriginal">真实事件或委托人的原话</label><textarea id="commissionOriginal" data-commission-field="original">${escapeHtml(state.commission.original)}</textarea></div>
                 <div class="field"><label for="commissionTask">具体要完成的任务与时间</label><textarea id="commissionTask" data-commission-field="task" required>${escapeHtml(state.commission.task)}</textarea></div>
+              </div>
+            </div></div>` : `<div class="panel"><div class="panel-head"><h3>建立委托档案 · 难点</h3><p>写清出错环节和现实限制，便于设计可用的办法。</p></div><div class="panel-body">
+              <div class="commission-form">
                 <div class="field"><label for="commissionDifficulty">在哪一步出错或可能出错</label><textarea id="commissionDifficulty" data-commission-field="difficulty" required>${escapeHtml(state.commission.difficulty)}</textarea></div>
                 <div class="field"><label for="commissionLimits">时间、条件或工具限制</label><textarea id="commissionLimits" data-commission-field="limits" required>${escapeHtml(state.commission.limits)}</textarea></div>
               </div>
-              <div class="commission-actions"><button class="btn secondary" id="showBackupCommissions" type="button">查看六份备选委托</button></div>
             </div></div>`}
-            <div class="actions">${page === 1 ? '<button class="btn ghost" type="button" id="previousCommissionPage">上一页</button>' : '<span></span>'}<button class="btn" type="button" id="nextCommissionPage">下一页</button></div>
+            <div class="actions">${page > 0 ? '<button class="btn ghost" type="button" id="previousCommissionPage">上一页</button>' : '<span></span>'}<button class="btn" type="button" id="nextCommissionPage">下一页</button></div>
           </div>
         </section>`;
       main.querySelectorAll("[data-commission-field]").forEach((input) => input.addEventListener("input", () => {
         state.commission[input.dataset.commissionField] = input.value;
         saveState();
       }));
-      document.getElementById("showBackupCommissions").addEventListener("click", openBackupCommissions);
+      document.getElementById("showBackupCommissions")?.addEventListener("click", openBackupCommissions);
       document.getElementById("previousCommissionPage")?.addEventListener("click", () => {
-        state.stepPages.commission = 0;
+        state.stepPages.commission = page - 1;
         saveState();
         renderApp();
         window.scrollTo(0, 0);
       });
       document.getElementById("nextCommissionPage").addEventListener("click", () => {
-        if (page === 0) state.stepPages.commission = 1;
+        if (page < 3) state.stepPages.commission = page + 1;
         else {
           if (!commissionIsComplete()) { showStepMessage("请填写具体任务、出错环节和限制条件。"); return; }
           commissionOpen = false;
@@ -1183,7 +1186,7 @@
       dialog.querySelector("#nextBackupCommission").addEventListener("click", () => { backupCommissionIndex += 1; renderBackupCommission(); dialog.querySelector("#nextBackupCommission").focus(); });
       dialog.querySelector("#useBackupCommission").addEventListener("click", () => {
         state.commission = { source: item.title, client: item.title, original: item.text, task: item.task, difficulty: item.difficulty, limits: item.limits };
-        state.stepPages.commission = 1;
+        state.stepPages.commission = 2;
         saveState();
         dialog.close();
         renderApp();
@@ -1200,7 +1203,9 @@
         list.textContent = "暂时无法读取云端档案，请检查网络或登录状态后重试。";
         return;
       }
-      list.innerHTML = (result.items || []).map((item) => `
+      const archivePage = state.stepPages.plan || 0;
+      const visibleItems = (result.items || []).slice(archivePage * getArchivePageSize(), (archivePage + 1) * getArchivePageSize());
+      list.innerHTML = visibleItems.map((item) => `
         <article class="report-archive-card">
           <h3>${escapeHtml(item.label)}</h3>
           <p>${item.archived ? "PDF 已存入平台" : item.submitted ? "正式数据已提交，PDF 待生成" : "尚未找到正式提交"}</p>
@@ -1225,9 +1230,8 @@
               : `PDF ${archive?.ok ? "打开" : "生成"}失败（${pdf?.code || "UNKNOWN_ERROR"}），请稍后重试。`;
             return;
           }
-          const viewer = document.getElementById("reportArchiveViewer");
-          if (!viewer) return;
-          viewer.innerHTML = `<h3>${escapeHtml(item.label)} · 侦探小结档案</h3>`;
+          const viewer = document.getElementById("archiveDialog");
+          viewer.innerHTML = `<div class="archive-dialog-head"><h3 id="archiveDialogTitle">${escapeHtml(item.label)} · 侦探小结档案</h3><button class="btn ghost" type="button" id="closeArchiveDialog">关闭</button></div>`;
           const frame = document.createElement("iframe");
           frame.className = "report-archive-viewer";
           frame.title = `${item.label} PDF`;
@@ -1236,15 +1240,32 @@
           archiveViewerUrl = URL.createObjectURL(new Blob([bytes], { type: "application/pdf" }));
           frame.src = archiveViewerUrl;
           viewer.appendChild(frame);
-          viewer.scrollIntoView({ behavior: "smooth", block: "start" });
+          viewer.querySelector("#closeArchiveDialog").addEventListener("click", () => viewer.close());
+          viewer.showModal();
           if (!item.archived) loadReportArchives();
           else { button.disabled = false; button.textContent = "在平台内查看"; }
         });
       });
     }
 
+    document.getElementById("archiveDialog").addEventListener("close", () => {
+      if (archiveViewerUrl) URL.revokeObjectURL(archiveViewerUrl);
+      archiveViewerUrl = "";
+      if (!commissionOpen && steps[state.currentStep]?.id === "plan" && (state.stepPages.plan || 0) < getArchivePageCount()) renderApp();
+    });
+
+    function getArchivePageSize() { return window.innerWidth <= 680 ? 1 : 4; }
+    function getArchivePageCount() { return 4 / getArchivePageSize(); }
+    function getPlanCardPageSize() { return window.innerWidth <= 680 ? 2 : 4; }
+    function getRecordPageSize() { return window.innerWidth <= 680 ? 1 : 2; }
+
     function getPageCount(stepId) {
-      return { plan: 3, make: 2, share: 2, questions: 2, score: 1, reflection: 3, posttest: 20 }[stepId] || 1;
+      if (stepId === "plan") return getArchivePageCount() + 8 / getPlanCardPageSize();
+      if (stepId === "share") return 1 + Math.max(1, Math.ceil(state.qaRecords.length / getRecordPageSize()));
+      if (stepId === "questions") return 4 + Math.max(1, Math.ceil(state.questions.length / getRecordPageSize()));
+      if (stepId === "score") return Math.ceil(getPosterGroups().length / (window.innerWidth <= 680 ? 1 : 4));
+      if (stepId === "reflection") return window.innerWidth <= 680 ? 5 : 3;
+      return { make: 2, posttest: 20 }[stepId] || 1;
     }
 
     function renderNavigation(page, pageCount) {
@@ -1296,9 +1317,9 @@
     }
 
     function renderPlanStep(page) {
-      if (page === 0) return `<div class="panel"><div class="panel-head"><h3>读取实验数据</h3><p>回看四份实验档案，把研究问题、数据和结论作为分析委托的线索。</p></div>
-        <div class="panel-body"><p class="report-archive-hint">留意暂时记住信息、处理变化、信息干扰和提前学习这四类线索。选择档案，可在本页查看 PDF。</p>
-        <div id="reportArchiveList" class="report-archive-grid" role="status">正在读取档案…</div><div id="reportArchiveViewer"></div></div></div>`;
+      if (page < getArchivePageCount()) return `<div class="panel"><div class="panel-head"><h3>读取实验数据</h3><p>回看四份实验档案，把研究问题、数据和结论作为分析委托的线索。选择档案，可在本页查看 PDF。</p></div>
+        <div class="panel-body">
+        <div id="reportArchiveList" class="report-archive-grid" role="status">正在读取档案…</div></div></div>`;
       const items = [
         ["具体任务", "委托人要在什么时候、什么场合完成什么事？海报要让他一眼看懂任务。"],
         ["关键出错点", "标出委托人在哪一步容易忘记、混淆或跟不上变化。"],
@@ -1309,8 +1330,10 @@
         ["临时变化应对", "预想一处现场变化，说明委托人如何核对信息并调整行动。"],
         ["验证与修改", "请委托人尝试一次类似任务，记录反馈，再指出海报中需要修改的地方。"]
       ];
+      const contentPage = page - getArchivePageCount();
+      const start = contentPage * getPlanCardPageSize();
       return `<div class="panel"><div class="panel-head"><h3>制定初步方案</h3><p>在纸上规划交给委托人使用的海报，确保包含以下内容。</p></div>
-        <div class="panel-body poster-plan-fields">${items.slice((page - 1) * 4, page * 4).map(([title, description]) =>
+        <div class="panel-body poster-plan-fields">${items.slice(start, start + getPlanCardPageSize()).map(([title, description]) =>
           `<div class="poster-plan-item"><h4>${title}</h4><p>${description}</p></div>`).join("")}</div></div>`;
     }
 
@@ -1368,14 +1391,17 @@
                   <h4>问题与回答记录</h4>
                   <p>记录交流过程中收到的问题以及对应回答。</p>
                 </div>
-                ${(state.qaRecords || []).map((item, index) => `
+                ${(state.qaRecords || []).slice((page - 1) * getRecordPageSize(), page * getRecordPageSize()).map((item, offset) => {
+                  const index = (page - 1) * getRecordPageSize() + offset;
+                  return `
                   <article class="qa-record-card">
                     <strong>第 ${index + 1} 条：${escapeHtml(item.question || "未填写问题")}</strong>
                     <p>${escapeHtml(item.answer || "未填写回答")}</p>
                     <button class="btn ghost" type="button" data-edit-qa="${index}">编辑</button>
                     <button class="btn danger" type="button" data-delete-qa="${index}">删除</button>
-                  </article>
-                `).join("")}
+                  </article>`;
+                }).join("")}
+                ${state.qaRecords.length ? "" : '<p class="report-archive-hint">暂无记录。点击下方按钮添加。</p>'}
                 <button class="btn secondary" type="button" id="addQaRecordBtn">＋添加问题与回答</button>
               </section>
             </div>
@@ -1385,59 +1411,55 @@
     }
 
     function renderQuestionsStep(page) {
-      return page === 0 ? `
+      const examples = [
+        "研究问题：①你们小组的研究问题是什么？②为什么会提出这个问题？",
+        "研究假设：①你们的假设是什么？②为什么你们会提出这样的假设？",
+        "研究计划：①在执行研究计划的过程中遇到过什么困难？②你们的研究计划执行顺利吗？",
+        "实验数据：①图表的横纵坐标分别代表什么意思？",
+        "实验结论：①你们的实验结论和假设一致吗？",
+        "反思不足：①你们的实验可以从哪些方面改进提升？",
+        "小组分工：①在你们的小组合作过程中有发生矛盾吗？是怎么解决的呢？",
+        "创造性：①为了让海报更吸引人、更好懂，你们用了哪些特别的表达方式？"
+      ];
+      if (page < 4) return `
         <div class="panel">
           <div class="panel-head"><p>请认真观看其他小组的科学海报，并围绕研究问题、研究假设、研究计划、实验数据、研究结论和反思不足等方面提出问题。每提出一个问题后，请将问题记录在下方表格中，并简要记录对方的回答。</p></div>
           <div class="panel-body">
             <div class="task-card">
               <h4>示例如下：</h4>
-              <ul>
-                <li>研究问题：①你们小组的研究问题是什么？②为什么会提出这个问题？</li>
-                <li>研究假设：①你们的假设是什么？②为什么你们会提出这样的假设？</li>
-                <li>研究计划：①在执行研究计划的过程中遇到过什么困难？②你们的研究计划执行顺利吗？</li>
-                <li>实验数据：①图表的横纵坐标分别代表什么意思？</li>
-                <li>实验结论：①你们的实验结论和假设一致吗？</li>
-                <li>反思不足：①你们的实验可以从哪些方面改进提升？</li>
-                <li>小组分工：①在你们的小组合作过程中有发生矛盾吗？是怎么解决的呢？</li>
-                <li>创造性：①为了让海报更吸引人、更好懂，你们用了哪些特别的表达方式？</li>
-              </ul>
+              <ul>${examples.slice(page * 2, page * 2 + 2).map((item) => `<li>${item}</li>`).join("")}</ul>
             </div>
           </div>
-        </div>` : `<div class="panel"><div class="panel-head"><h3>提问交流记录</h3></div><div class="panel-body">
-            <div class="table-wrap">
-              <table>
-                <thead><tr><th>序号</th><th>提问对象</th><th>问题类型</th><th>具体问题</th><th>对方回答摘要</th></tr></thead>
-                <tbody>
-                  ${state.questions.map((item, index) => `
-                    <tr>
-                      <td>${index + 1}</td>
-                      <td>${escapeHtml(item.group)}</td>
-                      <td>${escapeHtml(item.type)}</td>
-                      <td>${escapeHtml(item.question)}</td>
-                      <td>${escapeHtml(item.answer)}<div class="record-actions"><button class="btn ghost" type="button" data-edit-question="${index}">编辑</button><button class="btn danger" type="button" data-delete-question="${index}">删除</button></div></td>
-                    </tr>
-                  `).join("")}
-                </tbody>
-              </table>
-            </div>
+        </div>`;
+      const start = (page - 4) * getRecordPageSize();
+      return `<div class="panel"><div class="panel-head"><h3>提问交流记录</h3></div><div class="panel-body qa-records-section">
+            ${state.questions.slice(start, start + getRecordPageSize()).map((item, offset) => `<article class="qa-record-card">
+              <strong>第 ${start + offset + 1} 条 · ${escapeHtml(item.group)} · ${escapeHtml(item.type)}</strong>
+              <p>问题：${escapeHtml(item.question)}</p><p>回答：${escapeHtml(item.answer)}</p>
+              <div class="record-actions"><button class="btn ghost" type="button" data-edit-question="${start + offset}">编辑</button><button class="btn danger" type="button" data-delete-question="${start + offset}">删除</button></div>
+            </article>`).join("")}
+            ${state.questions.length ? "" : '<p class="report-archive-hint">暂无记录。点击下方按钮添加。</p>'}
             <button class="btn secondary" type="button" id="addQuestionBtn" style="margin-top:14px">＋添加提问</button>
           </div>
         </div>
       `;
     }
 
-    function renderScoreStep() {
+    function renderScoreStep(page) {
       const groups = getPosterGroups();
       const summary = summarizeScores();
+      const start = page * (window.innerWidth <= 680 ? 1 : 4);
+      const visibleGroups = groups.slice(start, start + (window.innerWidth <= 680 ? 1 : 4));
       return `<div class="score-workspace">
         <section class="task-hero"><p>点击“＋添加评分”，在弹窗中一次完成一个小组的八项评分。点击已评分小组可修改。</p></section>
         <div class="score-group-actions"><button class="btn secondary" type="button" id="addScoreBtn">＋添加评分</button><button class="btn ghost" type="button" id="addPosterGroupBtn">＋添加组别</button><button class="btn score-delete-btn" type="button" id="deletePosterGroupBtn">－ 删除组别</button></div>
-        <div class="score-record-grid">${groups.map((group, index) => {
+        <div class="score-record-grid">${visibleGroups.map((group, offset) => {
+          const index = start + offset;
           const done = indicators.filter((indicator) => getScore(indicator.key, index + 1)).length;
           return `<article class="score-record-card"><h4>${escapeHtml(group)}</h4><p>${done}/8 项已评分 · 总分 ${summary[index].total}</p><button class="btn ghost" type="button" data-edit-score="${index + 1}">${done ? "查看或修改" : "开始评分"}</button></article>`;
         }).join("")}</div>
         <section class="score-footer-card"><h4>我心中的最优海报</h4><p>请选择你认为整体表现最好的小组。</p>
-          <div class="best-poster-picker" aria-label="选择最优海报">${groups.map((group) => `<button class="best-poster-btn ${state.fields.bestPoster === group ? "is-active" : ""}" type="button" data-best-poster="${escapeHtml(group)}">${escapeHtml(group)}</button>`).join("")}</div></section>
+          <select id="bestPosterSelect" aria-label="选择最优海报"><option value="">请选择小组</option>${groups.map((group) => `<option value="${escapeHtml(group)}" ${state.fields.bestPoster === group ? "selected" : ""}>${escapeHtml(group)}</option>`).join("")}</select></section>
       </div>`;
     }
     function renderReflectionStep(page) {
@@ -1452,8 +1474,9 @@
         ["teamReflection", "小组合作反思", "可以从分工、沟通、成员参与和遇到的问题等方面反思。"],
         ["nextUse", "今后如何应用探究成果", "可以思考探究发现如何用于学习、科学表达或日常生活。"]
       ];
+      const promptPageSize = window.innerWidth <= 680 ? 1 : 2;
       return `<div class="panel"><div class="panel-head"><h3>总结反思</h3></div>
-        <div class="panel-body reflection-fields-stack reflection-prompt">${prompts.slice((page - 1) * 2, (page - 1) * 2 + 2).map(([key, label, hint]) => field(key, label, "textarea", hint)).join("")}</div></div>`;
+        <div class="panel-body reflection-fields-stack reflection-prompt">${prompts.slice((page - 1) * promptPageSize, page * promptPageSize).map(([key, label, hint]) => field(key, label, "textarea", hint)).join("")}</div></div>`;
     }
     function field(key, label, type, placeholder = "") {
       const placeholderAttr = placeholder ? ` placeholder="${escapeHtml(placeholder)}"` : "";
@@ -1497,12 +1520,9 @@
       if (addPosterGroupButton) addPosterGroupButton.addEventListener("click", addPosterGroup);
       const deletePosterGroupButton = document.getElementById("deletePosterGroupBtn");
       if (deletePosterGroupButton) deletePosterGroupButton.addEventListener("click", deletePosterGroup);
-      main.querySelectorAll("[data-best-poster]").forEach((element) => {
-        element.addEventListener("click", () => {
-          state.fields.bestPoster = element.dataset.bestPoster || "";
-          saveState();
-          main.querySelectorAll("[data-best-poster]").forEach((button) => button.classList.toggle("is-active", button === element));
-        });
+      main.querySelector("#bestPosterSelect")?.addEventListener("change", (event) => {
+        state.fields.bestPoster = event.target.value;
+        saveState();
       });
     }
 
@@ -1560,11 +1580,17 @@
         } else if (qa) {
           const item = { ...(current || {}), question: recordDialog.querySelector("#qaQuestion").value.trim(), answer: recordDialog.querySelector("#qaAnswer").value.trim(), ...getStudentIdentityFields() };
           if (!item.question || !item.answer) { alert("请完整填写问题和回答。"); return; }
-          if (index < 0) state.qaRecords.push(item); else state.qaRecords[index] = item;
+          if (index < 0) {
+            state.qaRecords.push(item);
+            state.stepPages.share = getPageCount("share") - 1;
+          } else state.qaRecords[index] = item;
         } else {
           const item = { ...(current || {}), group: recordDialog.querySelector("#questionGroup").value, type: recordDialog.querySelector("#questionType").value, question: recordDialog.querySelector("#questionText").value.trim(), answer: recordDialog.querySelector("#questionAnswer").value.trim(), ...getStudentIdentityFields() };
           if (!item.group || !item.question || !item.answer) { alert("请完整填写提问对象、问题和回答。"); return; }
-          if (index < 0) state.questions.push(item); else state.questions[index] = item;
+          if (index < 0) {
+            state.questions.push(item);
+            state.stepPages.questions = getPageCount("questions") - 1;
+          } else state.questions[index] = item;
         }
         saveState();
         recordDialog.close();
@@ -1597,7 +1623,7 @@
         } else {
           commissionOpen = true;
           state.currentView = "commission";
-          state.stepPages.commission = 1;
+          state.stepPages.commission = 3;
           saveState();
           renderApp();
           window.scrollTo(0, 0);
@@ -1854,6 +1880,10 @@
       state = loadState();
       commissionOpen = true;
       renderApp();
+    });
+
+    window.matchMedia("(max-width: 680px)").addEventListener("change", () => {
+      if (!document.getElementById("archiveDialog").open) renderApp();
     });
 
     renderApp();
