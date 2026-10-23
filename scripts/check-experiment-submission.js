@@ -45,7 +45,7 @@ const state = {
   fields: { question: "Q", reflection_individual: "R" },
   records: [{ runId: "r1", raw: true }],
   attemptHistory: [{ runId: "r1" }],
-  surveys: { postMeta: { q1: 4 }, cognitiveLoad: { q1: 6 }, inquiryParticipation: { q1: 5 } },
+  surveys: { postMeta: { q1: 4 }, cognitiveLoad: { q1: 6 }, inquiryParticipation: { q1: 5, q10: 4, attentionPosition: 3 } },
   knowledgeQuiz: { history: [{ attemptNumber: 1, score: 80, correctCount: 8, totalCount: 10, accuracy: 80, answers: { q1: "A" }, submittedAt: "2026-08-03T00:00:00.000Z" }, { attemptNumber: 2, score: 100, correctCount: 10, totalCount: 10, accuracy: 100, answers: { q1: "B" }, submittedAt: "2026-08-03T01:00:00.000Z" }] }
 };
 
@@ -59,6 +59,8 @@ assert.strictEqual(built.knowledgeQuiz.firstScore, 80);
 assert.strictEqual(built.knowledgeQuiz.bestScore, 80);
 assert.strictEqual(built.knowledgeQuiz.finalScore, 80);
 assert.strictEqual(built.surveys.meta.q1, 4);
+assert.strictEqual(built.surveys.inquiryParticipation.q10, 4);
+assert.strictEqual(built.surveys.inquiryParticipation.attentionPosition, 3);
 assert.strictEqual(built.reflections.reflection_individual, "R");
 assert.strictEqual(built.aiSummary.usageCount, 1);
 assert.strictEqual(built.knowledgeAssessment.schemaVersion, 2);

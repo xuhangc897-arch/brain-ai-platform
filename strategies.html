@@ -316,8 +316,9 @@
     .question-page-progress { flex: 0 0 auto; color: var(--primary-dark); font-size: 14px; font-weight: 900; }
     .step-page-content { min-height: 0; overflow: hidden; animation: step-page-fade-in 150ms ease both; }
     .step-page-content.is-leaving { pointer-events: none; animation: step-page-fade-out 150ms ease both; }
-    .question-page-actions { display: flex; justify-content: space-between; min-height: 46px; padding: 6px 8px 8px; }
+    .question-page-actions { display: flex; justify-content: space-between; min-height: 46px; padding: 6px 0 8px; }
     .question-page-actions.is-first { justify-content: flex-end; }
+    .question-page-actions #stepNextPage { margin-left: auto; }
     .page-card { height: 100%; padding: 16px 18px; border: 1px solid var(--line); border-radius: 10px; background: #fff; overflow: auto; }
     .page-card > :first-child { margin-top: 0; }
     .page-card > :last-child { margin-bottom: 0; }
@@ -1004,6 +1005,7 @@
 
     function getFirstUnansweredSurveyQuestion(surveyKey, itemCount) {
       const answers = state.surveys?.current?.[surveyKey] || {};
+      if (surveyKey === "inquiryParticipation") return getSurveyItems(surveyKey, "inquiry").findIndex((item) => !Number(answers[item.key]));
       for (let index = 0; index < itemCount; index += 1) {
         if (!Number(answers[`q${index + 1}`])) return index;
       }
@@ -1019,7 +1021,7 @@
       for (const [surveyKey, defKey] of [["postMeta", "meta"], ["cognitiveLoad", "load"], ["inquiryParticipation", "inquiry"]]) {
         const missing = getFirstUnansweredSurveyQuestion(surveyKey, SURVEY_DEFS[defKey].items.length);
         if (missing >= 0) return offset + Math.floor(missing / 3);
-        offset += Math.ceil(SURVEY_DEFS[defKey].items.length / 3);
+        offset += Math.ceil(getSurveyItems(surveyKey, defKey).length / 3);
       }
       return Math.max(0, getStepPageCount("posttest") - 1);
     }
@@ -1155,7 +1157,7 @@
         reflection: 3
       };
       if (stepId !== "posttest") return fixedCounts[stepId] || 1;
-      return KNOWLEDGE_QUIZ.items.length + Math.ceil(SURVEY_DEFS.meta.items.length / 3) + Math.ceil(SURVEY_DEFS.load.items.length / 3) + Math.ceil(SURVEY_DEFS.inquiry.items.length / 3) + 1;
+      return KNOWLEDGE_QUIZ.items.length + Math.ceil(SURVEY_DEFS.meta.items.length / 3) + Math.ceil(SURVEY_DEFS.load.items.length / 3) + Math.ceil((SURVEY_DEFS.inquiry.items.length + 1) / 3) + 1;
     }
     function renderPagedStep(stepId, pages) {
       const pageCount = pages.length;
@@ -1224,8 +1226,9 @@
       const pages = KNOWLEDGE_QUIZ.items.map((_, index) => ({ title: `案件知识验证：第 ${index + 1} 题`, className: "quiz-page", content: () => renderKnowledgeQuizItem(index) }));
       [["postMeta", "meta"], ["cognitiveLoad", "load"], ["inquiryParticipation", "inquiry"]].forEach(([surveyKey, defKey]) => {
         const def = SURVEY_DEFS[defKey];
-        for (let startIndex = 0; startIndex < def.items.length; startIndex += 3) {
-          const endIndex = Math.min(startIndex + 3, def.items.length);
+        const items = getSurveyItems(surveyKey, defKey);
+        for (let startIndex = 0; startIndex < items.length; startIndex += 3) {
+          const endIndex = Math.min(startIndex + 3, items.length);
           pages.push({ title: `${def.title}：第 ${startIndex + 1}–${endIndex} 题`, className: "survey-page", content: () => `<div class="survey-shell">${renderSurveyForm(surveyKey, defKey, startIndex, 3)}</div>` });
         }
       });
@@ -1237,17 +1240,30 @@
       return '<div class="actions" style="justify-content:flex-end;"><button class="btn secondary" type="button" id="reviewReportBtn">生成记忆侦探报告</button></div>';
     }
 
+    function getSurveyItems(surveyKey, defKey) {
+      const items = SURVEY_DEFS[defKey].items.map((text, index) => ({ text, key: 'q' + (index + 1) }));
+      if (defKey === "inquiry") {
+        const answers = state.surveys.current.inquiryParticipation;
+        if (!Number.isInteger(answers.attentionPosition) || answers.attentionPosition < 0 || answers.attentionPosition > items.length) {
+          answers.attentionPosition = Math.floor(Math.random() * (items.length + 1));
+          saveState();
+        }
+        items.splice(answers.attentionPosition, 0, { text: "该题请选择【4】", key: "q10" });
+      }
+      return items;
+    }
+
     function renderSurveyForm(surveyKey, defKey, startIndex = 0, pageSize = 3) {
       const def = SURVEY_DEFS[defKey];
       const answers = state.surveys?.current?.[surveyKey] || {};
       return '<section class="survey-card">' +
         '<div class="survey-card-head"><h4>' + def.title + '</h4><p class="survey-card-note">' + def.note + '</p></div>' +
         '<div class="survey-items">' +
-          def.items.slice(startIndex, startIndex + pageSize).map((item, offset) => {
+          getSurveyItems(surveyKey, defKey).slice(startIndex, startIndex + pageSize).map((item, offset) => {
             const index = startIndex + offset;
-            const itemKey = 'q' + (index + 1);
-            return '<div class="survey-item"><p>' + (index + 1) + '. ' + escapeHtml(item) + '</p>' +
-              '<div class="survey-scale" role="radiogroup" aria-label="' + escapeHtml(item) + '">' +
+            const itemKey = item.key;
+            return '<div class="survey-item"><p>' + (index + 1) + '. ' + escapeHtml(item.text) + '</p>' +
+              '<div class="survey-scale" role="radiogroup" aria-label="' + escapeHtml(item.text) + '">' +
                 def.scale.map((score) => {
                   const checked = Number(answers[itemKey]) === score;
                   const label = def.labels?.[score] || '';
@@ -1267,7 +1283,7 @@
       return '<div class="survey-summary">' +
         '<div><strong>' + post.answered + ' / ' + SURVEY_DEFS.meta.items.length + '</strong><span>学习收获调查完成进度</span></div>' +
         '<div><strong>' + load.answered + ' / ' + SURVEY_DEFS.load.items.length + '</strong><span>认知负荷完成进度</span></div>' +
-        '<div><strong>' + inquiry.answered + ' / ' + SURVEY_DEFS.inquiry.items.length + '</strong><span>探究参与完成进度</span></div>' +
+        '<div><strong>' + (inquiry.answered + Number(Boolean(state.surveys?.current?.inquiryParticipation?.q10))) + ' / ' + getSurveyItems("inquiryParticipation", "inquiry").length + '</strong><span>探究参与完成进度</span></div>' +
       '</div>';
     }
     function renderKnowledgeQuiz() {
@@ -1387,7 +1403,7 @@
       const answers = state.surveys?.current?.[surveyKey] || {};
       const values = def.items.map((_, index) => Number(answers['q' + (index + 1)] || 0)).filter(Boolean);
       const total = values.reduce((sum, value) => sum + value, 0);
-      return { answered: values.length, total, average: values.length ? Number((total / values.length).toFixed(2)) : 0, complete: values.length === def.items.length };
+      return { answered: values.length, total, average: values.length ? Number((total / values.length).toFixed(2)) : 0, complete: values.length === def.items.length && (defKey !== "inquiry" || Number(answers.q10) > 0) };
     }
 
     function isSurveyStepComplete(stepId) {
@@ -1401,8 +1417,9 @@
         const answers = state.surveys?.current?.[surveyKey] || {};
         const summary = summarizeSurvey(surveyKey, defKey);
         return [title, [
-          ["题号", "题目", "得分"],
+          ["题号", "题目", "得分", "核验结果"],
           ...def.items.map((item, index) => [String(index + 1), item, answers['q' + (index + 1)] || ""]),
+          ...(defKey === "inquiry" ? [[Number.isInteger(answers.attentionPosition) ? `核验题（第${answers.attentionPosition + 1}题）` : "核验题", "该题请选择【4】", answers.q10 || "", Number(answers.q10) > 0 ? (Number(answers.q10) === 4 ? "通过" : "未通过") : "未采集"]] : []),
           ["合计", "总分", summary.total],
           ["合计", "均分", summary.average]
         ]];

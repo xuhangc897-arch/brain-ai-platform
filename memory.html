@@ -417,35 +417,6 @@
     .method-grid .method-card p { font-size: 18px; line-height: 1.8; }
     .method-grid .method-card h4 { font-size: 20px; line-height: 1.5; }
 
-    .question-page-cases .case-list {
-      grid-template-columns: repeat(2, minmax(0, 1fr));
-      gap: 8px 12px;
-      margin-top: 0;
-    }
-
-    .question-page-cases .template-card {
-      grid-column: 1 / -1;
-      padding: 11px 14px;
-    }
-
-    .question-page-cases .template-card h4 {
-      margin-bottom: 4px;
-    }
-
-    .question-page-cases .template-card p,
-    .question-page-cases .case-body p {
-      margin: 4px 0;
-    }
-
-    .question-page-cases .case-card summary {
-      padding: 9px 12px;
-    }
-
-    .question-page-cases .case-body {
-      padding: 0 12px 10px;
-      font-size: 13px;
-    }
-
     .question-page-form .inquiry-helper {
       margin-top: 0;
     }
@@ -477,6 +448,10 @@
 
     .question-page-actions.is-first {
       justify-content: flex-end;
+    }
+
+    .question-page-actions #stepNextPage {
+      margin-left: auto;
     }
 
     .question-page-actions .btn {
@@ -874,12 +849,6 @@
       .question-page-content,
       .question-page-content.is-leaving {
         animation: none;
-      }
-    }
-
-    @media (min-width: 981px) and (max-width: 1500px) {
-      .question-page-actions {
-        padding-right: 112px;
       }
     }
 
@@ -1521,7 +1490,6 @@
         grid-template-columns: repeat(2, 1fr);
       }
 
-      .question-page-cases .case-list,
       .question-page-form .thinking-layer,
       .step-page-form .thinking-layer,
       .reflection-page .thinking-layer,
@@ -1651,21 +1619,11 @@
 
     .inquiry-helper { display: grid; gap: 14px; margin-top: 16px; }
     .helper-grid { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 12px; }
-    .helper-card, .template-card, .case-card { border: 1px solid #e5edf7; border-radius: 14px; background: linear-gradient(135deg, #ffffff, #f8fbff); box-shadow: 0 10px 24px rgba(23, 32, 51, 0.05); }
+    .helper-card { border: 1px solid #e5edf7; border-radius: 14px; background: linear-gradient(135deg, #ffffff, #f8fbff); box-shadow: 0 10px 24px rgba(23, 32, 51, 0.05); }
     .helper-card { padding: 14px; }
-    .helper-card h4, .template-card h4 { margin: 0 0 10px; color: #1e3a8a; font-size: 15px; }
+    .helper-card h4 { margin: 0 0 10px; color: #1e3a8a; font-size: 15px; }
     .helper-card ul { margin: 0; padding-left: 18px; color: #344054; font-size: 14px; }
-    .template-card { padding: 14px; background: linear-gradient(135deg, #f8fbff, #eef6ff); }
-    .case-list { display: grid; gap: 10px; margin-top: 16px; }
-    .case-card { overflow: hidden; }
-    .case-card summary { display: flex; align-items: center; justify-content: space-between; gap: 12px; padding: 13px 14px; color: #172033; cursor: pointer; font-weight: 900; }
-    .case-card summary::after { content: "+"; display: inline-grid; place-items: center; width: 24px; height: 24px; border-radius: 999px; background: #eef4ff; color: #2563eb; }
-    .case-card[open] summary::after { content: "-"; }
-    .case-body { padding: 0 14px 14px; color: #344054; font-size: 14px; }
-    .case-body p { margin: 8px 0; }
-    .case-tags { display: flex; flex-wrap: wrap; gap: 8px; margin-top: 10px; }
-    .case-tag { padding: 5px 9px; border-radius: 999px; background: #eefbf6; color: #0f766e; font-size: 12px; font-weight: 900; }
-    @media (max-width: 760px) { .helper-grid { grid-template-columns: 1fr; } .case-card summary { align-items: flex-start; } }
+    @media (max-width: 760px) { .helper-grid { grid-template-columns: 1fr; } }
 
 
     .progress-step.is-locked {
@@ -2149,6 +2107,9 @@
 
     function getFirstUnansweredSurveyQuestion(surveyKey, itemCount) {
       const answers = state.surveys?.current?.[surveyKey] || {};
+      if (surveyKey === "inquiryParticipation") {
+        return getSurveyItems(surveyKey, "inquiry").findIndex((item) => !Number(answers[item.key]));
+      }
       for (let index = 0; index < itemCount; index += 1) {
         if (!Number(answers[`q${index + 1}`])) return index;
       }
@@ -2164,7 +2125,7 @@
       for (const [surveyKey, defKey] of [["postMeta", "meta"], ["cognitiveLoad", "load"], ["inquiryParticipation", "inquiry"]]) {
         const missing = getFirstUnansweredSurveyQuestion(surveyKey, SURVEY_DEFS[defKey].items.length);
         if (missing >= 0) return offset + Math.floor(missing / 3);
-        offset += Math.ceil(SURVEY_DEFS[defKey].items.length / 3);
+        offset += Math.ceil(getSurveyItems(surveyKey, defKey).length / 3);
       }
       return Math.max(0, getStepPageCount("posttest") - 1);
     }
@@ -2307,8 +2268,9 @@
         ["inquiryParticipation", "inquiry"]
       ].forEach(([surveyKey, defKey]) => {
         const def = SURVEY_DEFS[defKey];
-        for (let startIndex = 0; startIndex < def.items.length; startIndex += 3) {
-          const endIndex = Math.min(startIndex + 3, def.items.length);
+        const items = getSurveyItems(surveyKey, defKey);
+        for (let startIndex = 0; startIndex < items.length; startIndex += 3) {
+          const endIndex = Math.min(startIndex + 3, items.length);
           pages.push({
             title: `${def.title}：第 ${startIndex + 1}–${endIndex} 题`,
             className: "survey-page",
@@ -2328,16 +2290,29 @@
       return '<div class="actions" style="justify-content:flex-end;"><button class="btn secondary" type="button" id="reviewReportBtn">生成记忆侦探报告</button></div>';
     }
 
+    function getSurveyItems(surveyKey, defKey) {
+      const items = SURVEY_DEFS[defKey].items.map((text, index) => ({ text, key: 'q' + (index + 1) }));
+      if (defKey === "inquiry") {
+        const answers = state.surveys.current.inquiryParticipation;
+        if (!Number.isInteger(answers.attentionPosition) || answers.attentionPosition < 0 || answers.attentionPosition > items.length) {
+          answers.attentionPosition = Math.floor(Math.random() * (items.length + 1));
+          saveState();
+        }
+        items.splice(answers.attentionPosition, 0, { text: "该题请选择【4】", key: "q10" });
+      }
+      return items;
+    }
+
     function renderSurveyForm(surveyKey, defKey, startIndex = 0, pageSize = 3) {
       const def = SURVEY_DEFS[defKey];
       const answers = state.surveys?.current?.[surveyKey] || {};
       return '<section class="survey-card">' +
         '<div class="survey-items">' +
-          def.items.slice(startIndex, startIndex + pageSize).map((item, offset) => {
+          getSurveyItems(surveyKey, defKey).slice(startIndex, startIndex + pageSize).map((item, offset) => {
             const index = startIndex + offset;
-            const itemKey = 'q' + (index + 1);
-            return '<div class="survey-item"><p>' + (index + 1) + '. ' + escapeHtml(item) + '</p>' +
-              '<div class="survey-scale" role="radiogroup" aria-label="' + escapeHtml(item) + '">' +
+            const itemKey = item.key;
+            return '<div class="survey-item"><p>' + (index + 1) + '. ' + escapeHtml(item.text) + '</p>' +
+              '<div class="survey-scale" role="radiogroup" aria-label="' + escapeHtml(item.text) + '">' +
                 def.scale.map((score) => {
                   const checked = Number(answers[itemKey]) === score;
                   const label = def.labels?.[score] || '';
@@ -2357,7 +2332,7 @@
       return '<div class="survey-summary">' +
         '<div><strong>' + post.answered + ' / ' + SURVEY_DEFS.meta.items.length + '</strong><span>学习收获调查完成进度</span></div>' +
         '<div><strong>' + load.answered + ' / ' + SURVEY_DEFS.load.items.length + '</strong><span>认知负荷完成进度</span></div>' +
-        '<div><strong>' + inquiry.answered + ' / ' + SURVEY_DEFS.inquiry.items.length + '</strong><span>探究参与完成进度</span></div>' +
+        '<div><strong>' + (inquiry.answered + Number(Boolean(state.surveys?.current?.inquiryParticipation?.q10))) + ' / ' + getSurveyItems("inquiryParticipation", "inquiry").length + '</strong><span>探究参与完成进度</span></div>' +
       '</div>';
     }
     function bindKnowledgeQuizInputs() {
@@ -2444,7 +2419,7 @@
       const answers = state.surveys?.current?.[surveyKey] || {};
       const values = def.items.map((_, index) => Number(answers['q' + (index + 1)] || 0)).filter(Boolean);
       const total = values.reduce((sum, value) => sum + value, 0);
-      return { answered: values.length, total, average: values.length ? Number((total / values.length).toFixed(2)) : 0, complete: values.length === def.items.length };
+      return { answered: values.length, total, average: values.length ? Number((total / values.length).toFixed(2)) : 0, complete: values.length === def.items.length && (defKey !== "inquiry" || Number(answers.q10) > 0) };
     }
 
     function isSurveyStepComplete(stepId) {
@@ -2458,8 +2433,9 @@
         const answers = state.surveys?.current?.[surveyKey] || {};
         const summary = summarizeSurvey(surveyKey, defKey);
         return [title, [
-          ["题号", "题目", "得分"],
+          ["题号", "题目", "得分", "核验结果"],
           ...def.items.map((item, index) => [String(index + 1), item, answers['q' + (index + 1)] || ""]),
+          ...(defKey === "inquiry" ? [[Number.isInteger(answers.attentionPosition) ? `核验题（第${answers.attentionPosition + 1}题）` : "核验题", "该题请选择【4】", answers.q10 || "", Number(answers.q10) > 0 ? (Number(answers.q10) === 4 ? "通过" : "未通过") : "未采集"]] : []),
           ["合计", "总分", summary.total],
           ["合计", "均分", summary.average]
         ]];
@@ -2489,20 +2465,6 @@
       }
       return '<div class="inquiry-helper">' +
         '<div class="helper-card"><h4>\u7814\u7a76\u95ee\u9898\u601d\u8003\u70b9</h4><ul><li>\u4f60\u4eec\u60f3\u89c2\u5bdf\u6216\u6bd4\u8f83\u7684\u73b0\u8c61\u662f\u4ec0\u4e48\uff1f</li><li>\u95ee\u9898\u4e2d\u7684\u53d8\u91cf\u662f\u5426\u6bd4\u8f83\u6e05\u695a\uff1f</li><li>\u662f\u5426\u80fd\u901a\u8fc7\u5b9e\u9a8c\u8bb0\u5f55\u6216\u6570\u636e\u6765\u5bfb\u627e\u8bc1\u636e\uff1f</li></ul></div>' +
-      '</div>';
-    }
-
-    function renderInquiryCases() {
-      const cases = [
-        { title: "\u5de7\u514b\u529b\u4e0e\u8bb0\u5fc6", question: "\u6444\u5165\u5c11\u91cf\u5de7\u514b\u529b\u662f\u5426\u4f1a\u5f71\u54cd\u5b66\u751f\u5bf9\u8bcd\u8bed\u7684\u56de\u5fc6\u6570\u91cf\uff1f", hypothesis: "\u76f8\u6bd4\u4e8e\u672a\u6444\u5165\u5de7\u514b\u529b\uff0c\u6444\u5165\u5c11\u91cf\u5de7\u514b\u529b\u53ef\u80fd\u4f1a\u6539\u53d8\u8bcd\u8bed\u56de\u5fc6\u6570\u91cf\u3002" },
-        { title: "\u7761\u7720\u4e0e\u5b66\u4e60\u6548\u679c", question: "\u4e0d\u540c\u7761\u7720\u65f6\u957f\u662f\u5426\u4f1a\u5f71\u54cd\u7b2c\u4e8c\u5929\u7684\u5355\u8bcd\u6d4b\u9a8c\u6210\u7ee9\uff1f", hypothesis: "\u76f8\u6bd4\u4e8e\u7761\u7720\u65f6\u95f4\u8f83\u77ed\uff0c\u7761\u7720\u65f6\u95f4\u8f83\u5145\u8db3\u53ef\u80fd\u4f1a\u5bfc\u81f4\u6d4b\u9a8c\u6210\u7ee9\u66f4\u9ad8\u3002" },
-        { title: "\u97f3\u4e50\u4e0e\u4e13\u6ce8\u529b", question: "\u80cc\u666f\u97f3\u4e50\u662f\u5426\u4f1a\u5f71\u54cd\u5b66\u751f\u5b8c\u6210\u9605\u8bfb\u4efb\u52a1\u7684\u4e13\u6ce8\u8868\u73b0\uff1f", hypothesis: "\u76f8\u6bd4\u4e8e\u5b89\u9759\u73af\u5883\uff0c\u6709\u80cc\u666f\u97f3\u4e50\u65f6\u5b66\u751f\u7684\u4e13\u6ce8\u8868\u73b0\u53ef\u80fd\u4f1a\u53d1\u751f\u53d8\u5316\u3002" },
-        { title: "\u827e\u5bbe\u6d69\u65af\u9057\u5fd8\u5b9e\u9a8c", question: "\u5b66\u4e60\u540e\u7ecf\u8fc7\u7684\u65f6\u95f4\u662f\u5426\u4f1a\u5f71\u54cd\u65e0\u610f\u4e49\u97f3\u8282\u7684\u4fdd\u6301\u7387\uff1f", hypothesis: "\u76f8\u6bd4\u4e8e\u5b66\u4e60\u540e\u7acb\u5373\u6d4b\u8bd5\uff0c\u95f4\u9694\u65f6\u95f4\u66f4\u957f\u53ef\u80fd\u4f1a\u5bfc\u81f4\u4fdd\u6301\u7387\u4e0b\u964d\u3002" },
-        { title: "\u7c73\u52d2\u8bb0\u5fc6\u5bb9\u91cf\u5b9e\u9a8c", question: "\u4fe1\u606f\u5355\u4f4d\u6570\u91cf\u662f\u5426\u4f1a\u5f71\u54cd\u53c2\u4e0e\u8005\u51c6\u786e\u590d\u8ff0\u7684\u8868\u73b0\uff1f", hypothesis: "\u76f8\u6bd4\u4e8e\u4fe1\u606f\u5355\u4f4d\u8f83\u5c11\u65f6\uff0c\u4fe1\u606f\u5355\u4f4d\u8f83\u591a\u53ef\u80fd\u4f1a\u5bfc\u81f4\u51c6\u786e\u590d\u8ff0\u7387\u4e0b\u964d\u3002" },
-        { title: "\u65af\u7279\u9c81\u666e\u5b9e\u9a8c", question: "\u989c\u8272\u8bcd\u7684\u8bcd\u4e49\u4e0e\u58a8\u8272\u662f\u5426\u4e00\u81f4\u4f1a\u5f71\u54cd\u989c\u8272\u547d\u540d\u901f\u5ea6\uff1f", hypothesis: "\u76f8\u6bd4\u4e8e\u8bcd\u4e49\u4e0e\u58a8\u8272\u4e00\u81f4\u65f6\uff0c\u4e0d\u4e00\u81f4\u6761\u4ef6\u53ef\u80fd\u4f1a\u5bfc\u81f4\u547d\u540d\u65f6\u95f4\u53d8\u957f\u3002" }
-      ];
-      return '<div class="case-list"><div class="template-card"><h4>\u79d1\u5b66\u63a2\u7a76\u6848\u4f8b</h4><p>\u4ee5\u4e0b\u6848\u4f8b\u53ea\u4f5c\u4e3a\u7075\u611f\u53c2\u8003\uff0c\u53ef\u4ee5\u5b66\u4e60\u601d\u8003\u65b9\u5f0f\uff0c\u4e0d\u9700\u8981\u7167\u7740\u53e5\u5f0f\u5199\u3002</p></div>' +
-        cases.map((item) => '<details class="case-card"><summary>' + item.title + '</summary><div class="case-body"><p><strong>\u7814\u7a76\u95ee\u9898\uff1a</strong>' + item.question + '</p><p><strong>\u7814\u7a76\u5047\u8bbe\uff1a</strong>' + item.hypothesis + '</p><div class="case-tags"><span class="case-tag">\u2713 \u6709\u660e\u786e\u53d8\u91cf</span><span class="case-tag">\u2713 \u53ef\u4ee5\u9a8c\u8bc1</span><span class="case-tag">\u2713 \u6709\u53ef\u6d4b\u91cf\u7ed3\u679c</span></div></div></details>').join('') +
       '</div>';
     }
 
@@ -2546,11 +2508,6 @@
         `
       },
       {
-        title: "科学探究案例",
-        className: "question-page-cases",
-        content: () => renderInquiryCases()
-      },
-      {
         title: "提出研究问题",
         className: "question-page-form",
         content: () => `${renderInquiryScaffold("question")}${renderPairedField("研究问题", renderQuestionSentence("question", "个人研究问题"), renderQuestionSentence("question_group", "小组研究问题"))}`
@@ -2572,7 +2529,7 @@
 
     function getStepPageCount(stepId) {
       const fixedCounts = {
-        question: 4,
+        question: 3,
         hypothesis: 1,
         plan: 5,
         evidence: 1 + Math.ceil(getEvidenceRunGroups().length / 3),
@@ -2583,7 +2540,7 @@
       if (stepId !== "posttest") return fixedCounts[stepId] || 1;
       const metaPages = Math.ceil(SURVEY_DEFS.meta.items.length / 3);
       const loadPages = Math.ceil(SURVEY_DEFS.load.items.length / 3);
-      const inquiryPages = Math.ceil(SURVEY_DEFS.inquiry.items.length / 3);
+      const inquiryPages = Math.ceil((SURVEY_DEFS.inquiry.items.length + 1) / 3);
       return KNOWLEDGE_QUIZ.items.length + metaPages + loadPages + inquiryPages + 1;
     }
 
@@ -2670,22 +2627,6 @@
           }
         });
       }
-    }
-
-    function bindQuestionCasePairs() {
-      const cases = Array.from(main.querySelectorAll(".question-page-cases details"));
-      cases.forEach((details, index) => {
-        const summary = details.querySelector("summary");
-        if (!summary) return;
-        summary.addEventListener("click", (event) => {
-          event.preventDefault();
-          const pairStart = Math.floor(index / 2) * 2;
-          const shouldOpen = !details.open;
-          cases.forEach((item, itemIndex) => {
-            item.open = shouldOpen && itemIndex >= pairStart && itemIndex < pairStart + 2;
-          });
-        });
-      });
     }
 
     function renderHypothesisStep() {
@@ -3230,7 +3171,6 @@
       bindSurveyInputs();
       bindKnowledgeQuizInputs();
       bindPagedStepEvents(stepId);
-      if (stepId === "question") bindQuestionCasePairs();
       if (stepId === "plan") bindHeadbandModalEvents();
       const prev = document.getElementById("prevStep");
       const next = document.getElementById("nextStep");

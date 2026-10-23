@@ -137,8 +137,6 @@ html[data-theme="archive"] input[type="radio"] {
 }
 
 @media (min-width: 641px) {
-  body.experiment-page.has-virtual-agent .question-page-actions,
-  body.experiment-page.has-virtual-agent .step-page-actions,
   body.experiment-page.has-virtual-agent .evidence-page .actions {
     padding-right: 140px;
   }
