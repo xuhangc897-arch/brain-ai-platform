@@ -5,6 +5,8 @@ const fs = require("fs");
 const path = require("path");
 const Module = require("module");
 const crypto = require("crypto");
+const https = require("https");
+const { EventEmitter } = require("events");
 
 const root = path.resolve(__dirname, "..");
 
@@ -142,7 +144,9 @@ assert(generator.validateDiagnosis(validDiagnosis));
 const builtDiagnosis = generator.validateDiagnosis(generator.buildDiagnosis(objectiveMetrics));
 assert(builtDiagnosis);
 assert.strictEqual(builtDiagnosis.dimensions.length, 5);
-assert(!source("cloudfunctions/generateLearningDiagnosis/index.js").includes("OPENAI_API_KEY"));
+assert(source("cloudfunctions/generateLearningDiagnosis/index.js").includes("OPENAI_API_KEY"));
+assert.strictEqual(generator.answerSamples({ memory: { answers: { analysis: "对照了两组结果" } } })[0].excerpts[0].text, "对照了两组结果");
+assert.notStrictEqual(generator.versionId("S001", "hash", 0), generator.versionId("S001", "hash", 2));
 assert.strictEqual(generator.validateDiagnosis({ ...validDiagnosis, dimensions: dimensions.slice(0, 4) }), null);
 assert.strictEqual(generator.validateDiagnosis({
   ...validDiagnosis,
@@ -212,10 +216,44 @@ for (const name of ["generateLearningDiagnosis", "getLearningDiagnosis", "getLea
   const previousKey = process.env.OPENAI_API_KEY;
   delete process.env.OPENAI_API_KEY;
   try {
-    const result = await loadFunction("generateLearningDiagnosis", database).main({ headers: { authorization: `Bearer ${token}` } });
+    const diagnosisGenerator = loadFunction("generateLearningDiagnosis", database);
+    const event = { headers: { authorization: `Bearer ${token}` } };
+    const result = await diagnosisGenerator.main(event);
     assert.strictEqual(result.ok, true, `diagnosis write failed: ${result.code}`);
     assert.strictEqual(Array.from(written.values()).filter((item) => item.recordType === "version").length, 1);
     assert.strictEqual(Array.from(written.values()).filter((item) => item.recordType === "pointer").length, 1);
+    const baselineVersion = Array.from(written.values()).find((item) => item.recordType === "version");
+    const candidate = {
+      ...baselineVersion,
+      teacherReport: { ...baselineVersion.teacherReport, disclaimer: undefined },
+      studentReport: {
+        ...baselineVersion.studentReport,
+        strengths: ["四次实验均完成了正式提交。", "能够回看各次实验记录。"]
+      }
+    };
+    const originalRequest = https.request;
+    process.env.OPENAI_API_KEY = "test-key";
+    https.request = (options, callback) => {
+      assert.strictEqual(options.hostname, "api.deepseek.com");
+      const request = new EventEmitter();
+      request.end = () => process.nextTick(() => {
+        const response = new EventEmitter();
+        response.statusCode = 200;
+        response.setEncoding = () => {};
+        callback(response);
+        response.emit("data", JSON.stringify({ choices: [{ message: { content: JSON.stringify(candidate) } }] }));
+        response.emit("end");
+      });
+      return request;
+    };
+    try {
+      const enriched = await diagnosisGenerator.main(event);
+      assert.strictEqual(enriched.ok, true);
+      assert.strictEqual(Array.from(written.values()).filter((item) => item.recordType === "version").length, 2);
+      const pointer = Array.from(written.values()).find((item) => item.recordType === "pointer");
+      assert.strictEqual(pointer.currentPromptVersion, 2);
+      assert.strictEqual(written.get(pointer.currentRecordId).studentReport.strengths.length, 2);
+    } finally { https.request = originalRequest; }
   } finally {
     if (previousKey === undefined) delete process.env.OPENAI_API_KEY;
     else process.env.OPENAI_API_KEY = previousKey;

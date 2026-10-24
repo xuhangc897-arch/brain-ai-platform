@@ -5,6 +5,8 @@ const fs = require("fs");
 const path = require("path");
 const Module = require("module");
 const crypto = require("crypto");
+const https = require("https");
+const { EventEmitter } = require("events");
 
 const root = path.resolve(__dirname, "..");
 const bank = require(path.join(root, "assets", "knowledge-question-bank.js"));
@@ -277,7 +279,18 @@ assert.strictEqual(generator.completionFacts(generator.fullState({
 const builtSummary = generator.buildSummary({ recordId: "submission_memory", answers: { question: "研究问题", hypothesis: "假设", analysis: "数据分析", conclusion: "结论", reflection: "反思" } }, { input: { aiUsageTaskCount: 0, voiceUsageTaskCount: 0 }, interventions: { relevancePromptCount: 0 } });
 assert(builtSummary.strengths.length >= 2);
 assert(builtSummary.strengths.every((item) => item.sourceTaskIds[0] === "submission_memory"));
-assert(!source("cloudfunctions/generateExperimentMemory/index.js").includes("OPENAI_API_KEY"));
+const samples = generator.answerSamples({ answers: { analysis: "我比较了两组的正确率" } });
+const concise = generator.refineSummary({
+  strengths: [{ code: "USE_EVIDENCE", quote: "比较了两组", observation: "用两组结果支持了分析。" }],
+  nextSuggestion: "下次在结论里写明两组数据的差异。"
+}, builtSummary, samples, "submission_memory");
+assert(concise && concise.strengths[0].evidence.includes("比较了两组"));
+assert(concise.strengths[0].evidence.length <= 70);
+assert.strictEqual(generator.refineSummary({
+  strengths: [{ code: "USE_EVIDENCE", quote: "不存在的原文", observation: "用两组结果支持了分析。" }],
+  nextSuggestion: "核对结论。"
+}, builtSummary, samples, "submission_memory"), null);
+assert(source("cloudfunctions/generateExperimentMemory/index.js").includes("OPENAI_API_KEY"));
 
 const cloudbaseConfig = JSON.parse(source("cloudbase.json"));
 for (const name of ["generateExperimentMemory", "getStudentMemory", "getStudentMemoriesAdmin"]) {
@@ -367,13 +380,40 @@ assert(source("admin/dashboard.html").includes("TEMPORARY_DASHBOARD_LOGIN_BYPASS
   const previousKey = process.env.OPENAI_API_KEY;
   delete process.env.OPENAI_API_KEY;
   try {
-    const result = await loadGenerator(writerDatabase).main({
+    const memoryGenerator = loadGenerator(writerDatabase);
+    const event = {
       headers: { authorization: `Bearer ${signedToken("S001", secret)}` },
       body: JSON.stringify({ experimentId: "memory" })
-    });
+    };
+    const result = await memoryGenerator.main(event);
     assert.strictEqual(result.ok, true, `memory write failed: ${result.code}`);
     assert.strictEqual(Array.from(written.values()).filter((item) => item.memoryType === "experiment").length, 1);
     assert.strictEqual(Array.from(written.values()).filter((item) => item.memoryType === "overall").length, 1);
+    const originalRequest = https.request;
+    process.env.OPENAI_API_KEY = "test-key";
+    https.request = (options, callback) => {
+      assert.strictEqual(options.hostname, "api.deepseek.com");
+      const request = new EventEmitter();
+      request.end = () => process.nextTick(() => {
+        const response = new EventEmitter();
+        response.statusCode = 200;
+        response.setEncoding = () => {};
+        callback(response);
+        response.emit("data", JSON.stringify({ choices: [{ message: { content: JSON.stringify({
+          strengths: [{ code: "USE_EVIDENCE", quote: "比较了各组结果", observation: "用结果支撑了分析。" }],
+          nextSuggestion: "下次在结论中点出具体差异。"
+        }) } }] }));
+        response.emit("end");
+      });
+      return request;
+    };
+    try {
+      const enriched = await memoryGenerator.main(event);
+      assert.strictEqual(enriched.ok, true);
+      const stored = Array.from(written.values()).find((item) => item.memoryType === "experiment");
+      assert.strictEqual(stored.promptVersion, 2);
+      assert(stored.summary.strengths[0].evidence.includes("比较了各组结果"));
+    } finally { https.request = originalRequest; }
   } finally {
     if (previousKey === undefined) delete process.env.OPENAI_API_KEY;
     else process.env.OPENAI_API_KEY = previousKey;
