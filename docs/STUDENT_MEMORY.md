@@ -3,7 +3,7 @@
 ## 数据边界
 
 - `experimentRecords`、`learning_records`、`agent_interventions` 继续保存原始过程记录。
-- `student_memories` 只保存服务端计算事实、规则生成的有限长度摘要和来源记录 ID，不保存完整聊天。
+- `student_memories` 只保存服务端计算事实、有限长度摘要和来源记录 ID，不保存完整聊天。
 - 每名学生每个实验一条 `memoryType=experiment` 文档，另有一条 `memoryType=overall` 文档。
 - 文档 ID 分别由 `studentId|experiment|experimentId` 和 `studentId|overall` 的 SHA-256 生成。
 - 正式提交不完整或数据库写入失败时不更新现有文档。
@@ -68,20 +68,20 @@ strategies_q1..q10
 
 ## 云函数
 
-- `generateExperimentMemory`：验证签名会话，从数据库读取最新正式提交和过程记录，计算事实并更新实验及综合记忆；不调用 AI。
+- `generateExperimentMemory`：验证签名会话，从数据库读取最新正式提交和过程记录，计算事实；配置 `OPENAI_API_KEY` 后使用 DeepSeek 生成简短、引用原文的学习观察与建议，失败时回退到规则摘要。
 - `getStudentMemory`：验证签名会话，只返回当前学生的简化记录和当前实验可用支持。
 - `getStudentMemoriesAdmin`：验证教师 CloudBase UID，返回教师详细视图。
 - `saveAgentIntervention`：额外接受 `interventionType=memory_support`。
 
 已保存的新版正式提交没有 `maxUnlockedStep`。记忆生成在读取时仅对具有 `submissionTime` 且三份实验后问卷完整的此类提交，推定七个探究环节已完成；若记录明确保留了 `maxUnlockedStep`，仍以该值为准。不修改数据库原记录或 `schemaVersion`。完成实验一后即可生成该实验的学习记忆；学习诊断仍需完成四个实验。
 
-摘要只根据正式提交里实际存在的研究问题、假设、分析、结论和反思字段记录可核对的观察；缺失的内容标记为证据不足，不推断学生能力。`OPENAI_API_KEY` 不再是本函数的依赖。
+AI 仅接收限定长度的正式提交文本与客观事实；展示的观察最多两条，每条须引用正式提交原文。没有可用文本或 AI 输出无效时，保留规则摘要。缺失内容不推断学生能力。
 
 ## 部署顺序
 
 1. 备份现有集合，并创建 `teachers`、`student_memories` 及索引。
 2. 禁止客户端直接访问 `student_memories`，确认 `teachers` 仅服务端可读写。
-3. 配置与登录函数相同的 `STUDENT_SESSION_SECRET`；本函数不需要 `OPENAI_API_KEY`。
+3. 配置与登录函数相同的 `STUDENT_SESSION_SECRET`；若启用 AI 摘要，还需配置 `OPENAI_API_KEY`。
 4. 先部署 `studentLogin`、`createStudents`、`getExperimentRecords`、`saveAgentIntervention`。
 5. 再部署 `generateExperimentMemory`、`getStudentMemory`、`getStudentMemoriesAdmin`。
 6. 最后发布静态资源。旧登录会话没有签名令牌，发布后需重新登录一次。
@@ -89,7 +89,7 @@ strategies_q1..q10
 
 修复既有正式提交的记忆缺失时，应先部署新版 `generateExperimentMemory` 云函数；静态站点发布不会部署云函数。备份并核对 `experiment_submissions` 中的正式提交后，让同一正式学生账号进入案件五或独立诊断页：两个入口都会加载 `student-memory.js`，按前四次实验的正式提交重试记忆生成。随后查看助手的“我的学习记录”及教师后台的 `student_memories`。若仍为空，按云函数返回码继续检查正式提交完成状态、数据库写入和函数配置，不直接改写提交或记忆集合。
 2026-10-12 的线上日志显示旧版 AI 生成返回 `AI_INVALID_JSON`；该故障已不影响规则生成。部署后保留原正式提交，重新进入案件五或诊断页触发补发，并核对 `student_memories` 的写入结果。
-2026-10-15 起学习记忆与学习诊断改为仅依赖数据库事实的规则生成；旧版 AI 故障记录仅供历史排查。
+2026-10-15 曾改为规则生成。当前版本在配置 AI 密钥且输出通过校验时写入 AI 摘要，否则使用规则摘要；旧版 AI 故障记录仅供历史排查。
 本地上传包：`output/cloudbase/generateExperimentMemory.zip`，ZIP 根目录含 `index.js`、`package.json`、`question-answers.js`。用户可在现有同名普通云函数中上传并选择安装依赖，保留原 Node.js 20.19、60 秒超时、HTTP 路由及环境变量名称。切勿把密钥写入 ZIP、网页或截图。
 
 回滚时先回滚静态资源，再回滚云函数。已经生成的 `student_memories` 保留，不应在回滚中删除。

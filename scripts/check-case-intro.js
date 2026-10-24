@@ -27,6 +27,7 @@ const stories = browserWindow.MemoryCaseStories;
 const index = read("index.html");
 const introSource = read("assets/case-intro.js");
 const introStyle = read("assets/case-intro.css");
+const poster = read("poster.html");
 const expectedCases = [
   ["screening", "pretest.html", "侦探资格审查", "开始资格审查"],
   ["memory", "memory.html", "少拿的美术材料", "调查记忆容量"],
@@ -41,6 +42,22 @@ const studentCases = [
   ["interference", "xiaoyu", "小雨", "第二首的句子"],
   ["strategies", "xiaolan", "小岚", "合上书自己测"]
 ];
+const commissionPortraits = [
+  ["开放日小向导", "open-day-guide.webp"],
+  ["运动会检录助手", "sports-checkin.webp"],
+  ["科学节展台讲解员", "science-presenter.webp"],
+  ["校园剧舞台提醒员", "stage-cue.webp"],
+  ["图书漂流管理员", "book-drift.webp"],
+  ["小组展示负责人", "group-presentation.webp"]
+];
+
+commissionPortraits.forEach(([title, file]) => {
+  assert(poster.includes(`"${title}": "${file}"`), `${title} 缺少对应的半身肖像映射。`);
+  const portrait = path.join(root, "assets", "commission-characters", file);
+  assert(fs.existsSync(portrait), `${title} 缺少半身肖像文件。`);
+  const bytes = fs.readFileSync(portrait);
+  assert(bytes.toString("ascii", 0, 4) === "RIFF" && bytes.toString("ascii", 8, 12) === "WEBP" && bytes.length < 350000, `${title} 肖像应为适合网页加载的 WebP。`);
+});
 
 assert(registry && stories, "案件注册表或剧情配置未加载。");
 assert(stories.entries.length === expectedCases.length, "剧情配置必须包含六个案件。");

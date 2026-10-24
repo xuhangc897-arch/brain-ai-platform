@@ -65,12 +65,13 @@ tool_use
 
 ## 云函数
 
-- `generateLearningDiagnosis`：学生签名会话、资格核验、客观计算、AI结构化诊断和版本写入。
+- `generateLearningDiagnosis`：学生签名会话、资格核验、客观计算、AI 结构化诊断和版本写入；AI 失败时回退到规则诊断。
 - `getLearningDiagnosis`：只返回当前学生的精简视图、资格和提示状态。
 - `getLearningDiagnosesAdmin`：要求教师CloudBase UID白名单，返回详细诊断和历史版本。
 
-`generateLearningDiagnosis` 和 `getLearningDiagnosis` 只需要与登录函数相同的 `STUDENT_SESSION_SECRET`；诊断生成不调用 AI。
+两个函数均需要与登录函数相同的 `STUDENT_SESSION_SECRET`。`generateLearningDiagnosis` 配置 `OPENAI_API_KEY` 后调用 DeepSeek，依据四次正式提交的限长摘录和客观指标丰富报告；完成资格与维度等级仍由规则决定。未配置密钥或模型输出不合格时使用规则诊断。
 诊断依据四次正式提交和可用过程记录生成。仅完成实验一时不触发诊断生成，`learning_diagnoses` 为空是预期状态。
+AI 诊断保留规则计算的五个维度等级，学生报告可在原有栏目内写更充分的观察和行动建议。来源文本变化或从规则版升级为 AI 版时会写入新的诊断版本；旧版本不覆盖。
 
 ## 部署
 
