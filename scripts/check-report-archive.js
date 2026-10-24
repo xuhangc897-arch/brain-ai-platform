@@ -50,7 +50,7 @@ const app = {
       throw new Error(`Unexpected collection ${name}`);
     }
   }),
-  getTempFileURL: async () => ({ fileList: [] }),
+  getTempFileURL: async () => ({ fileList: [{ tempFileURL: "https://example.com/report.pdf" }] }),
   downloadFile: async ({ fileID }) => { downloadedFileID = fileID; return { fileContent: downloadedContent }; }
 };
 const sandbox = {
@@ -86,6 +86,9 @@ const authorized = (body) => ({ headers: { Authorization: `Bearer ${payload}.${s
   archiveDocs[ownArchiveId] = { studentId: "s-2", experimentId: "memory", submissionId, fileID: "cloud://private/report.pdf" };
   assert.strictEqual((await sandbox.exports.main(authorized({ action: "view", experimentId: "memory", submissionId }))).code, "NOT_FOUND", "a mismatched archive owner must not be served");
   archiveDocs[ownArchiveId].studentId = "s-1";
+  assert.strictEqual((await sandbox.exports.main(authorized({ action: "list" }))).items[0].archived, false, "old layout archives must be offered for regeneration");
+  archiveDocs[ownArchiveId].layoutVersion = 2;
+  assert.strictEqual((await sandbox.exports.main(authorized({ action: "list" }))).items[0].archived, true, "current layout archives remain available");
   const viewed = await sandbox.exports.main(authorized({ action: "view", experimentId: "memory", submissionId }));
   assert.strictEqual(viewed.ok, true);
   assert.strictEqual(downloadedFileID, "cloud://private/report.pdf");

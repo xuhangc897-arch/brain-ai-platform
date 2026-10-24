@@ -9,6 +9,7 @@ const legacyRecords = db.collection("experimentRecords");
 const archives = db.collection("experiment_report_archives");
 const EXPERIMENTS = ["memory", "nback", "interference", "strategies"];
 const LABELS = ["实验一：记忆容量", "实验二：N-back 工作记忆", "实验三：长时记忆干扰", "实验四：长时记忆策略"];
+const REPORT_LAYOUT_VERSION = 2;
 const ID_PATTERN = /^[A-Za-z0-9_.:-]{1,100}$/;
 
 function text(value) { return String(value == null ? "" : value).trim(); }
@@ -112,7 +113,7 @@ async function list(studentId) {
       label: LABELS[index],
       submitted: Boolean(submission),
       submissionId: submission?.submissionId || "",
-      archived: Boolean(url),
+      archived: Boolean(url && archive.layoutVersion === REPORT_LAYOUT_VERSION),
       url
     });
   }
@@ -151,14 +152,14 @@ exports.main = async (event) => {
   const submission = await latestSubmission(text(auth.studentId), text(input.experimentId), text(input.submissionId));
   if (!submission) return { ok: false, code: "NOT_FOUND" };
   const existing = await archiveFor(submission);
-  if (existing?.fileID) {
+  if (existing?.fileID && existing.layoutVersion === REPORT_LAYOUT_VERSION) {
     const url = await temporaryUrl(existing.fileID);
     if (url) return { ok: true, archived: true, url };
   }
   try {
     const pdf = await renderPdf(submission);
     const studentFolder = crypto.createHash("sha256").update(text(auth.studentId)).digest("hex").slice(0, 16);
-    const cloudPath = `experiment-reports/${studentFolder}/${archiveId(auth.studentId, submission.submissionId)}.pdf`;
+    const cloudPath = `experiment-reports/${studentFolder}/${archiveId(auth.studentId, submission.submissionId)}-v${REPORT_LAYOUT_VERSION}.pdf`;
     const uploaded = await app.uploadFile({ cloudPath, fileContent: pdf });
     if (!uploaded?.fileID) throw new Error("UPLOAD_FAILED");
     await archives.doc(archiveId(auth.studentId, submission.submissionId)).set({
@@ -166,6 +167,7 @@ exports.main = async (event) => {
       experimentId: submission.experimentId,
       submissionId: submission.submissionId,
       fileID: uploaded.fileID,
+      layoutVersion: REPORT_LAYOUT_VERSION,
       createdAt: db.serverDate()
     });
     return { ok: true, archived: true, url: await temporaryUrl(uploaded.fileID) };
