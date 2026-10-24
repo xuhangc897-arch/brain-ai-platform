@@ -172,7 +172,36 @@
       interference: buildInterferenceContent,
       strategies: buildStrategiesContent
     };
-    return Object.assign(base, builders[base.activityType](base.state, base.fields));
+    return Object.assign(base, builders[base.activityType](base.state, base.fields), {
+      posttest: buildPosttestSummary(base.submission, base.state, base.activityType)
+    });
+  }
+
+  function buildPosttestSummary(submission, state, activity) {
+    const source = submission?.surveys || state.surveys?.current || state.surveys || {};
+    const quiz = submission?.knowledgeQuiz || state.knowledgeQuiz || {};
+    const assessment = submission?.knowledgeAssessment || state.knowledgeAssessment || {};
+    const stage = { memory: "T1", nback: "T2", interference: "T3", strategies: "T4" }[activity];
+    const quizComplete = Boolean(assessment[stage] || quiz.submitted || quiz.submittedAt || quiz.attempts?.length || quiz.history?.length);
+    const definitions = [
+      { title: "学习收获", source: source.meta || source.postMeta || {}, max: 5,
+        labels: ["理解本案知识", "愿意继续运用", "联系现实生活", "反思并改进", "联想已有知识"] },
+      { title: "活动体验", source: source.cognitiveLoad || {}, max: 10,
+        labels: ["材料难度", "投入的心理努力"] },
+      { title: "探究参与", source: source.inquiryParticipation || {}, max: 5,
+        labels: ["表达研究问题", "提出科学假设", "制定探究步骤", "参与实验操作", "收集所需证据", "分析并得出结论", "发现新问题", "与他人合作", "表达并倾听"] }
+    ];
+    const groups = definitions.map((definition) => {
+      const rows = definition.labels.map((label, index) => {
+        const value = Number(definition.source[`q${index + 1}`]);
+        return { label, value: Number.isFinite(value) && value >= 1 && value <= definition.max ? value : null };
+      });
+      const required = definition.title === "探究参与" ? 10 : rows.length;
+      const answered = rows.filter((row) => row.value !== null).length +
+        (definition.title === "探究参与" && Number(definition.source.q10) >= 1 ? 1 : 0);
+      return { title: definition.title, max: definition.max, rows, answered, required, complete: answered === required };
+    });
+    return { quizComplete, groups, available: quizComplete || groups.some((group) => group.answered > 0) };
   }
 
   function buildMemoryContent(state, fields) {
@@ -182,7 +211,7 @@
     const summary = summarizeBy(state.records || [], "subject", (records) => {
       const capacities = records.map((record) => number(record.finalCapacity)).filter((value) => value > 0);
       const average = capacities.length ? round(avg(capacities), 1) : 0;
-      return { value: average, label: average ? `${average} 个` : "暂未填写" };
+      return { value: average, label: average ? `${average} 个` : "暂未填写", sampleCount: capacities.length };
     });
     const overall = fields.conclusionCapacity || averageFromSummary(summary);
     const questionThought = thinkingSummary(fields.question_individual || fields.question, fields.question_group);
@@ -199,7 +228,8 @@
         ["得出结论", conclusionThought]
       ],
       resultTitle: "短时记忆容量结果",
-      chartRows: summary.length ? summary.map((item) => ({ label: item.name, value: item.value, text: item.label })) : [],
+      chartUnit: "个",
+      chartRows: summary.filter((item) => item.sampleCount > 0).map((item) => ({ label: item.name, value: item.value, text: item.label, sampleCount: item.sampleCount })),
       resultHighlight: overall ? `我的短时记忆容量：约 ${overall} 个信息单位` : "",
       evidence: [
         ["研究问题", questionThought],
@@ -210,7 +240,10 @@
         ["小组平均长度", groupAverage],
         ["头环观察记录", fields.brainFinding]
       ],
-      conclusion: joinText([conclusionThought, reflectionThought])
+      conclusion: joinText([conclusionThought, reflectionThought]),
+      personalConclusion: fields.conclusion_individual || fields.finalConclusion,
+      groupConclusion: fields.conclusion_group || fields.finalConclusion_group,
+      reflection: reflectionThought
     };
   }
 
@@ -218,9 +251,9 @@
     const materialLabel = getNbackMaterialTypeLabel(fields.materialType || fields.stimulusMaterial);
     const teammateSummary = formatNbackTeammateResults(fields);
     const summary = summarizeBy(state.testRuns || [], "condition", (records) => {
-      const accuracy = records.map((record) => number(record.accuracy)).filter((value) => value >= 0);
+      const accuracy = records.map((record) => Number(record.accuracy)).filter((value) => Number.isFinite(value) && value >= 0);
       const average = accuracy.length ? Math.round(avg(accuracy)) : 0;
-      return { value: average, label: average ? `${average}%` : "暂未填写" };
+      return { value: average, label: accuracy.length ? `${average}%` : "暂未填写", sampleCount: accuracy.length };
     });
     const questionThought = thinkingSummary(fields.question_individual || fields.researchQuestion, fields.question_group || fields.researchQuestion_group);
     const hypothesisThought = thinkingSummary(fields.hypothesis_individual || fields.hypothesis, fields.hypothesis_group);
@@ -236,7 +269,8 @@
         ["得出结论", conclusionThought]
       ],
       resultTitle: "N-back 正确率结果",
-      chartRows: summary.length ? summary.map((item) => ({ label: item.name, value: item.value, text: item.label })) : [],
+      chartUnit: "%",
+      chartRows: summary.filter((item) => item.sampleCount > 0).map((item) => ({ label: item.name, value: item.value, text: item.label, sampleCount: item.sampleCount })),
       resultHighlight: `假设判断：${safe(fields.conclusionSupported)}`,
       evidence: [
         ["研究问题", questionThought],
@@ -246,16 +280,19 @@
         ["其他组员实验结果", teammateSummary],
         ["头环观察记录", fields.headbandObservation]
       ],
-      conclusion: joinText([conclusionThought, reflectionThought])
+      conclusion: joinText([conclusionThought, reflectionThought]),
+      personalConclusion: fields.conclusion_individual || fields.conclusion,
+      groupConclusion: fields.conclusion_group,
+      reflection: reflectionThought
     };
   }
 
   function buildInterferenceContent(state, fields) {
     const teammateSummary = formatInterferenceTeammateResults(fields);
     const summary = summarizeBy(state.records || [], "condition", (records) => {
-      const accuracy = records.map((record) => number(record.accuracy)).filter((value) => value >= 0);
+      const accuracy = records.map((record) => Number(record.accuracy)).filter((value) => Number.isFinite(value) && value >= 0);
       const average = accuracy.length ? Math.round(avg(accuracy)) : 0;
-      return { value: average, label: average ? `${average}%` : "暂未填写" };
+      return { value: average, label: accuracy.length ? `${average}%` : "暂未填写", sampleCount: accuracy.length };
     });
     const questionThought = thinkingSummary(fields.question_individual || joinText([fields.lifeFactors, fields.materialFactors]), fields.question_group || joinText([fields.lifeFactors_group, fields.materialFactors_group, fields.question || fields.questionFactor]));
     const hypothesisThought = thinkingSummary(fields.hypothesis_individual || fields.hypothesis, fields.hypothesis_group);
@@ -271,7 +308,8 @@
         ["得出结论", conclusionThought]
       ],
       resultTitle: "不同干扰条件下的记忆结果",
-      chartRows: summary.length ? summary.map((item) => ({ label: item.name, value: item.value, text: item.label })) : [],
+      chartUnit: "%",
+      chartRows: summary.filter((item) => item.sampleCount > 0).map((item) => ({ label: item.name, value: item.value, text: item.label, sampleCount: item.sampleCount })),
       resultHighlight: `最可能影响长时记忆的因素：${safe(fields.factor)}`,
       evidence: [
         ["研究问题", questionThought],
@@ -280,7 +318,10 @@
         ["其他组员实验结果", teammateSummary],
         ["头环观察记录", fields.headband]
       ],
-      conclusion: joinText([conclusionThought, reflectionThought])
+      conclusion: joinText([conclusionThought, reflectionThought]),
+      personalConclusion: fields.conclusion_individual || fields.conclusion,
+      groupConclusion: fields.conclusion_group,
+      reflection: reflectionThought
     };
   }
 
@@ -305,7 +346,8 @@
       return Object.assign(group, {
         value: averageAccuracy,
         label: `${group.roundLabel}·${group.stageLabel}·${group.strategy}`,
-        resultText: `平均正确数 ${averageCorrect}，平均回忆率 ${averageAccuracy}%`
+        resultText: `平均正确数 ${averageCorrect}，平均回忆率 ${averageAccuracy}%`,
+        sampleCount: accuracy.length
       });
     });
     const completed = new Set(records.filter((record) => record.round && record.stage).map((record) => `${number(record.round)}-${number(record.stage)}`));
@@ -321,6 +363,8 @@
       return `第${round === 1 ? "一" : "二"}轮：简单复述 vs ${safe(strategy)}；材料：${materialLabels[type] || safe(type)}；初级${low}题、中级${mid}题、高级${high}题，共${low + mid + high}题`;
     };
     const experimentPlan = `${roundPlanText(1)}；${roundPlanText(2)}`;
+    const bestResult = summary.filter((item) => item.sampleCount > 0)
+      .reduce((best, item) => !best || item.value > best.value ? item : best, null);
     const groupedResult = summary.map((item) => `${item.label}：${item.resultText}`).join("；") || "暂未填写";
     const brainstormThought = thinkingSummary(fields.brainstormIndividual || fields.question_individual, fields.brainstormGroup || fields.question_group);
     const researchQuestion = safe(fields.question || (fields.questionStrategy ? `${fields.questionStrategy}可以改善长时记忆` : ""));
@@ -341,8 +385,9 @@
         ["得出结论", conclusionThought]
       ],
       resultTitle: "不同策略下的记忆表现",
-      chartRows: summary.length ? summary.map((item) => ({ label: item.label, value: item.value, text: `${item.value}%` })) : [],
-      resultHighlight: experimentPlan,
+      chartUnit: "%",
+      chartRows: summary.filter((item) => item.sampleCount > 0).map((item) => ({ label: item.label, value: item.value, text: `${item.value}%`, sampleCount: item.sampleCount })),
+      resultHighlight: bestResult ? `本次最高平均回忆率为 ${bestResult.value}%（${bestResult.label}）；${completionText}。` : completionText,
       evidence: [
         ["头脑风暴", brainstormThought],
         ["研究问题（小组）", researchQuestion],
@@ -352,7 +397,10 @@
         ["轮次阶段结果", groupedResult],
         ["头环观察记录", fields.headband]
       ],
-      conclusion: joinText([conclusionThought, reflectionThought])
+      conclusion: joinText([conclusionThought, reflectionThought]),
+      personalConclusion: fields.conclusion_individual || fields.conclusion,
+      groupConclusion: fields.conclusion_group,
+      reflection: reflectionThought
     };
   }
 
@@ -399,7 +447,86 @@
   }
 
   function renderScienceReport(data) {
-    return renderReportShell(data, "实验结果", renderResultSection(data));
+    const steps = data.steps || [];
+    const repeatedLabels = new Set(["研究问题", "研究问题（小组）", "研究假设", "头脑风暴", "实验计划", "实验材料类别", "N-back 条件设计", "干扰因素选择", "组合完成情况", "轮次阶段结果"]);
+    const supportingEvidence = (data.evidence || []).filter(([label]) => !repeatedLabels.has(label));
+    return `
+      <article class="report-sheet science-report">
+        ${data.guestPreview ? '<p class="report-notice">游客体验报告：内容来自本地状态，不属于正式研究数据。</p>' : ""}
+        <header class="science-header">
+          <div><span class="science-kicker">记忆侦探社 / ${esc(data.meta.caseNo)}</span><h1>侦探小结</h1><p>${esc(data.meta.caseTitle)} · ${esc(data.meta.activityName)}</p></div>
+          <div class="science-file-id">档案编号<br><strong>${esc(createCaseId(data))}</strong><small>生成于 ${esc(data.generatedAt)}</small></div>
+        </header>
+        <section class="science-page overview-page">
+          <h2 class="science-section-title"><span>01</span> 本案发现</h2>
+          <div class="science-identity">${renderScienceIdentity(data)}</div>
+          <div class="science-finding"><span>本案结果</span><strong>${esc(safe(data.resultHighlight))}</strong></div>
+          <div class="science-overview-grid">
+            <div><span>研究问题</span><p>${esc(safe(steps[0]?.[1]))}</p></div>
+            <div><span>研究假设</span><p>${esc(safe(steps[1]?.[1]))}</p></div>
+          </div>
+          <p class="science-lead">先看结论，再沿着实验方法、数据和证据核对这次发现。</p>
+        </section>
+        <section class="science-page data-page">
+          <h2 class="science-section-title"><span>02</span> 探究与数据</h2>
+          <div class="science-method-grid">
+            <div><h3>实验设计</h3><p>${esc(safe(steps[2]?.[1]))}</p></div>
+            <div><h3>搜集证据</h3><p>${esc(safe(steps[3]?.[1]))}</p></div>
+          </div>
+          <h3 class="science-subtitle">${esc(data.resultTitle)}</h3>
+          ${renderScienceData(data)}
+          <p class="science-data-note">图表显示各条件的平均值；“有效次数”是参与该平均值计算的记录数。</p>
+        </section>
+        <section class="science-page judgement-page">
+          <h2 class="science-section-title"><span>03</span> 证据与判断</h2>
+          <div class="science-judgement-grid">
+            <div class="science-text-block"><h3>我的结论</h3><p>${esc(safe(data.personalConclusion))}</p></div>
+            <div class="science-text-block"><h3>小组讨论</h3><p>${esc(safe(data.groupConclusion))}</p></div>
+          </div>
+          <h3 class="science-subtitle">可以核对的记录</h3>
+          <dl class="science-evidence">${supportingEvidence.map(([label, value]) => `<div><dt>${esc(label)}</dt><dd>${esc(safe(value))}</dd></div>`).join("")}</dl>
+          <div class="science-text-block science-reflection"><h3>反思与改进</h3><p>${esc(safe(data.reflection))}</p></div>
+        </section>
+        ${renderPosttestSection(data.posttest)}
+        <footer class="science-footer"><span>ZJU BIElab · 记忆侦探社</span><span>报告生成于 ${esc(data.generatedAt)}</span></footer>
+      </article>
+    `;
+  }
+
+  function renderScienceIdentity(data) {
+    const entries = [["姓名", data.identity.studentName], ["学号", data.identity.studentId],
+      ["班级", data.identity.className], ["小组", data.identity.groupName || data.identity.groupId]];
+    return entries.map(([label, value]) => `<div><span>${label}</span><strong>${esc(safe(value))}</strong></div>`).join("");
+  }
+
+  function renderScienceData(data) {
+    if (!data.chartRows.length) return '<p class="science-empty">尚无可汇总的实验数据。</p>';
+    const rows = data.chartRows;
+    const max = data.chartUnit === "%" ? 100 : Math.max(1, ...rows.map((row) => Number(row.value) || 0));
+    return `<div class="science-chart">${rows.map((row) => {
+      const value = Number(row.value) || 0;
+      const width = Math.max(0, Math.min(100, value / max * 100));
+      return `<div class="science-chart-row"><span>${esc(row.label)}</span><div class="science-chart-track"><i style="width:${width}%"></i></div><strong>${esc(row.text)}</strong></div>`;
+    }).join("")}</div>
+    <table class="science-data-table"><thead><tr><th scope="col">实验条件</th><th scope="col">平均结果</th><th scope="col">有效次数</th></tr></thead>
+    <tbody>${rows.map((row) => `<tr><td>${esc(row.label)}</td><td>${esc(row.text)}</td><td>${Number(row.sampleCount) || 0}</td></tr>`).join("")}</tbody></table>`;
+  }
+
+  function renderPosttestSection(posttest) {
+    if (!posttest?.available) return "";
+    const status = (complete) => `<strong class="${complete ? "is-complete" : "is-pending"}">${complete ? "已完成" : "未完成"}</strong>`;
+    const surveyGroups = posttest.groups.filter((group) => group.answered > 0);
+    return `<section class="science-page posttest-page">
+      <h2 class="science-section-title"><span>04</span> 侦探小结</h2>
+      <p class="science-lead">这里记录知识验证的完成状态，以及你对学习收获和探究过程的自评。自评是个人感受，不代表能力评分。</p>
+      <div class="science-posttest-status">
+        <div><span>知识验证</span>${status(posttest.quizComplete)}</div>
+        ${posttest.groups.map((group) => `<div><span>${esc(group.title)}</span>${status(group.complete)}</div>`).join("")}
+      </div>
+      <p class="science-privacy-note">知识验证的分数、答案和解析不在学生报告中展示。</p>
+      ${surveyGroups.length ? surveyGroups.map((group) => `<div class="science-survey-group"><h3>${esc(group.title)} <small>自评量表 1–${group.max}</small></h3>
+        <div class="science-survey-rows">${group.rows.map((row) => `<div><span>${esc(row.label)}</span><strong>${row.value === null ? "未填写" : `${row.value} / ${group.max}`}</strong></div>`).join("")}</div></div>`).join("") : '<p class="science-empty">这份历史提交没有保存调查作答。</p>'}
+    </section>`;
   }
 
   function renderPosterReport(data) {

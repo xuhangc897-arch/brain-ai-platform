@@ -36,7 +36,7 @@ const review = read("assets/review.js");
 assert.match(review, /BrainExperimentSubmission\.getLatest/);
 assert.match(review, /if \(session\.isGuest\)/);
 assert.doesNotMatch(review, /renderKnowledgeQuizReport\(data\)/);
-assert.doesNotMatch(review, /knowledgeQuiz|知识验证|提交成绩|提交次数/);
+// Student reports may show completion, while check-review-report.js verifies that answers and scores stay hidden.
 assert.doesNotMatch(review, /ai_chat_records|learning_records|agent_interventions/);
 
 const screening = read("pretest.html");
