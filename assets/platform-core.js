@@ -19,6 +19,7 @@
     envId: ENV_ID,
     endpoints: Object.freeze({
       studentLogin: `${HTTP_BASE}/studentLogin`,
+      studentRegister: `${HTTP_BASE}/studentRegister`,
       createStudents: `${HTTP_BASE}/createStudents`,
       saveExperimentRecord: `${HTTP_BASE}/saveExperimentRecord`,
       saveExperimentSubmission: `${HTTP_BASE}/saveExperimentSubmission`,

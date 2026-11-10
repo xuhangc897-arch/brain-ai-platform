@@ -1229,9 +1229,9 @@
       list.innerHTML = visibleItems.map((item) => `
         <article class="report-archive-card">
           <h3>${escapeHtml(item.label)}</h3>
-          <p>${item.archived ? "PDF 已存入平台" : item.submitted ? "正式数据已提交，PDF 待生成" : "尚未找到正式提交"}</p>
+          <p>${item.archived ? "PDF 已存入平台" : item.url ? "旧版 PDF 可更新" : item.submitted ? "正式数据已提交，PDF 待生成" : "尚未找到正式提交"}</p>
           <button class="btn ${item.archived ? "" : "secondary"}" type="button" data-archive-id="${escapeHtml(item.experimentId)}" ${item.submitted ? "" : "disabled"}>
-            ${item.archived ? "在平台内查看" : item.submitted ? "生成并查看 PDF" : "暂无档案"}
+            ${item.archived ? "在平台内查看" : item.url ? "更新并查看 PDF" : item.submitted ? "生成并查看 PDF" : "暂无档案"}
           </button>
         </article>`).join("");
       list.querySelectorAll("[data-archive-id]").forEach((button) => {

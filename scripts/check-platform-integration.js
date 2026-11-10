@@ -543,6 +543,48 @@ async function main() {
   assert.strictEqual(createdStudent.schemaVersion, 1);
   assert.strictEqual(createdStudent.role, "student");
 
+  let registeredStudent = null;
+  let existingRegistration = false;
+  const registrationDatabase = {
+    collection(name) {
+      assert.strictEqual(name, "students");
+      return {
+        where(query) {
+          assert.strictEqual(query.studentId, "2026001");
+          return this;
+        },
+        limit() { return this; },
+        async get() { return { data: existingRegistration ? [{ studentId: "2026001" }] : [] }; },
+        async add(document) {
+          registeredStudent = document;
+          return { id: "student-registered" };
+        }
+      };
+    }
+  };
+  const registerFunction = loadCloudFunction(
+    "cloudfunctions/studentRegister/index.js",
+    registrationDatabase
+  );
+  const invalidRegistration = await registerFunction.main({ body: JSON.stringify({
+    studentId: "2026A01", name: "新学生", class: "1", group: "2"
+  }) });
+  assert.strictEqual(invalidRegistration.code, "INVALID_INPUT");
+  assert.strictEqual(registeredStudent, null);
+  const registered = await registerFunction.main({ body: JSON.stringify({
+    studentId: "2026001", name: "新学生", class: "1", group: "2"
+  }) });
+  assert.strictEqual(registered.ok, true);
+  assert.strictEqual(registeredStudent.password, "2026001");
+  assert.strictEqual(registeredStudent.class, "1");
+  assert.strictEqual(registeredStudent.group, "2");
+  existingRegistration = true;
+  const duplicateRegistration = await registerFunction.main({ body: JSON.stringify({
+    studentId: "2026001", name: "另一位学生", class: "1", group: "2"
+  }) });
+  assert.strictEqual(duplicateRegistration.code, "STUDENT_EXISTS");
+  assert.strictEqual(registeredStudent.name, "新学生");
+
   const legacyRecord = {
     module: "memory",
     recordType: "submission",

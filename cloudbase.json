@@ -30,6 +30,11 @@
       "runtime": "Nodejs16.13"
     },
     {
+      "name": "studentRegister",
+      "timeout": 60,
+      "runtime": "Nodejs20.19"
+    },
+    {
       "name": "saveExperimentRecord",
       "timeout": 60,
       "runtime": "Nodejs16.13"
