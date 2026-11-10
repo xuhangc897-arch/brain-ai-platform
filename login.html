@@ -203,6 +203,10 @@
       border-bottom: 1px solid;
     }
 
+    .login-card [hidden] {
+      display: none;
+    }
+
     .login-heading {
       position: relative;
       z-index: 1;
@@ -316,6 +320,49 @@
       border-color: rgba(232, 198, 128, 0.8);
       background: rgba(0, 0, 0, 0.48);
       box-shadow: 0 0 0 3px rgba(201, 169, 106, 0.09), 0 0 24px rgba(201, 169, 106, 0.1);
+    }
+
+    .register-form .field {
+      display: grid;
+      grid-template-columns: 52px minmax(0, 1fr);
+      align-items: center;
+      gap: 12px;
+      margin-bottom: 14px;
+    }
+
+    .register-form .field label {
+      margin: 0;
+      font-size: 15px;
+    }
+
+    .register-form .field input {
+      height: 46px;
+      padding: 0 14px;
+    }
+
+    .register-note {
+      margin: 20px 0 14px;
+      color: var(--paper);
+      text-align: center;
+      font-size: 12px;
+      letter-spacing: 0.08em;
+    }
+
+    .register-entry,
+    .back-to-login {
+      width: 100%;
+      margin-top: 10px;
+      color: var(--gold-bright);
+      background: transparent;
+      text-align: center;
+      text-decoration: underline;
+      text-underline-offset: 4px;
+      cursor: pointer;
+    }
+
+    .back-to-login {
+      margin-top: 8px;
+      font-size: 12px;
     }
 
     .password-toggle {
@@ -656,6 +703,31 @@
           <p class="message" id="message" role="alert"></p>
         </form>
 
+        <button class="register-entry" id="openRegister" type="button">学生注册</button>
+
+        <form class="register-form" id="registerForm" hidden>
+          <div class="field">
+            <label for="registerStudentId">学号</label>
+            <input id="registerStudentId" name="studentId" type="text" inputmode="numeric" pattern="[0-9]+" autocomplete="off" placeholder="请输入学号（仅限数字）" required />
+          </div>
+          <div class="field">
+            <label for="registerName">姓名</label>
+            <input id="registerName" name="name" type="text" autocomplete="name" placeholder="请输入姓名" required />
+          </div>
+          <div class="field">
+            <label for="registerClass">班级</label>
+            <input id="registerClass" name="class" type="text" inputmode="numeric" pattern="[0-9]+" autocomplete="off" placeholder="请输入班级（仅限数字）" required />
+          </div>
+          <div class="field">
+            <label for="registerGroup">小组</label>
+            <input id="registerGroup" name="group" type="text" inputmode="numeric" pattern="[0-9]+" autocomplete="off" placeholder="请输入小组（仅限数字）" required />
+          </div>
+          <p class="register-note">初始密码默认为学号</p>
+          <button class="submit-btn" id="registerSubmit" type="submit">完成注册</button>
+          <p class="message" id="registerMessage" role="alert"></p>
+          <button class="back-to-login" id="backToLogin" type="button">已有账号？返回学生登录</button>
+        </form>
+
         <div class="guest-entry" aria-label="游客入口">
           <button class="guest-btn" id="guestBtn" type="button">游客登录</button>
           <p class="guest-note">游客可以完成实验并生成报告，但实验记录不会上传后台。</p>
@@ -686,6 +758,7 @@
   <script src="cloudbase.js"></script>
   <script>
     const STUDENT_LOGIN_URL = window.BrainPlatform.config.endpoints.studentLogin;
+    const STUDENT_REGISTER_URL = window.BrainPlatform.config.endpoints.studentRegister;
     const loginForm = document.getElementById("loginForm");
     const accountInput = document.getElementById("account");
     const passwordInput = document.getElementById("password");
@@ -696,6 +769,15 @@
     const studentRole = document.getElementById("studentRole");
     const teacherRole = document.getElementById("teacherRole");
     const accountLabel = document.getElementById("accountLabel");
+    const loginHeading = document.querySelector(".login-heading");
+    const roleOptions = document.querySelector(".login-role-options");
+    const guestEntry = document.querySelector(".guest-entry");
+    const registerForm = document.getElementById("registerForm");
+    const openRegister = document.getElementById("openRegister");
+    const backToLogin = document.getElementById("backToLogin");
+    const registerSubmit = document.getElementById("registerSubmit");
+    const registerMessage = document.getElementById("registerMessage");
+    const registerStudentId = document.getElementById("registerStudentId");
     let selectedRole = "student";
     const redirectTarget = new URLSearchParams(window.location.search).get("redirect") || "index.html";
     const GUEST_SESSION = {
@@ -735,8 +817,72 @@
       accountLabel.textContent = role === "teacher" ? "教师账号" : "学号";
       accountInput.placeholder = role === "teacher" ? "请输入教师账号" : "请输入学号";
       submitBtn.textContent = role === "teacher" ? "教师登录" : "学生登录";
+      openRegister.hidden = role === "teacher";
       message.textContent = "";
     }
+
+    function showRegister(show) {
+      loginHeading.querySelector(".agency-label").textContent = show ? "STUDENT REGISTRATION" : "AGENCY LOGIN";
+      loginHeading.querySelector("h1").textContent = show ? "学生注册" : "登录侦探社";
+      loginHeading.querySelector("p:last-child").textContent = show ? "填写身份资料，开启侦探档案。" : "请出示账号凭证，完成侦探资格核验。";
+      roleOptions.hidden = show;
+      loginForm.hidden = show;
+      openRegister.hidden = show || selectedRole === "teacher";
+      guestEntry.hidden = show;
+      registerForm.hidden = !show;
+      registerMessage.textContent = "";
+      if (show) registerStudentId.focus();
+    }
+
+    openRegister.addEventListener("click", () => showRegister(true));
+    backToLogin.addEventListener("click", () => showRegister(false));
+
+    for (const input of registerForm.querySelectorAll('input[inputmode="numeric"]')) {
+      input.addEventListener("input", () => {
+        input.value = input.value.replace(/[^0-9]/g, "");
+      });
+    }
+
+    registerForm.addEventListener("submit", async (event) => {
+      event.preventDefault();
+      const studentId = registerStudentId.value.trim();
+      const name = document.getElementById("registerName").value.trim();
+      const className = document.getElementById("registerClass").value.trim();
+      const group = document.getElementById("registerGroup").value.trim();
+      if (!/^\d+$/.test(studentId) || !name || !/^\d+$/.test(className) || !/^\d+$/.test(group)) {
+        registerMessage.textContent = "请填写姓名；学号、班级和小组只能填写数字。";
+        return;
+      }
+
+      registerSubmit.disabled = true;
+      backToLogin.disabled = true;
+      registerSubmit.textContent = "档案登记中…";
+      registerMessage.textContent = "";
+      try {
+        const response = await fetch(STUDENT_REGISTER_URL, {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ studentId, name, class: className, group })
+        });
+        if (!response.ok) throw new Error(`注册请求失败：HTTP ${response.status}`);
+        const result = await response.json();
+        if (!result.ok) {
+          registerMessage.textContent = result.message || "注册失败，请稍后重试。";
+          return;
+        }
+        registerForm.reset();
+        showRegister(false);
+        accountInput.value = studentId;
+        message.textContent = "注册成功，初始密码为学号，请登录。";
+        passwordInput.focus();
+      } catch (error) {
+        registerMessage.textContent = getErrorMessage(error) || "注册失败，请稍后重试。";
+      } finally {
+        registerSubmit.disabled = false;
+        backToLogin.disabled = false;
+        registerSubmit.textContent = "完成注册";
+      }
+    });
 
     studentRole.addEventListener("click", () => selectRole("student"));
     teacherRole.addEventListener("click", () => selectRole("teacher"));

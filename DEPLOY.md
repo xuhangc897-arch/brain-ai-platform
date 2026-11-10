@@ -30,4 +30,6 @@ npm run check:dist
 
 CloudBase 云函数、数据库和 AI 后端不属于静态 Pages 工作流。它们的变更必须遵守各自的部署顺序。
 
+学生注册功能上线时，先部署 `cloudfunctions/studentRegister`，再为它配置与 `studentLogin` 相同的 HTTP 网关访问方式和跨域设置，路径为 `/studentRegister`。确认该接口可用后再发布 GitHub Pages；仅推送网页代码不会部署云函数。
+
 完整操作、回滚和故障处理见 [docs/BUILD_DEPLOY_MONITOR.md](docs/BUILD_DEPLOY_MONITOR.md)。
