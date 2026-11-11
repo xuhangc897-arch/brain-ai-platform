@@ -82,6 +82,19 @@
         { text: "接下来，回看四份实验报告，为这位同学规划能实际使用的海报。", pose: "normal" }
       ]),
       buttonText: "接受校园委托"
+    },
+    {
+      id: "duel",
+      caseNumber: "CASE 06",
+      title: "名侦探对决",
+      avatar: "detective",
+      dialog: freezeDialog([
+        { text: "资格审查和案件历练都完成了。现在，合格的侦探们要来一场对决。", pose: "normal" },
+        { text: "这次不靠运气。看清线索，判断自己记住了多少，再决定哪些答案值得保留。", pose: "thinking" },
+        { text: "你在前面学到的记忆知识，能不能帮你作出更准确的判断？", pose: "thinking" },
+        { text: "准备好了就进入挑战。看看谁能合理运用所学，成为更厉害的记忆侦探。", pose: "normal" }
+      ]),
+      buttonText: "进入侦探对决"
     }
   ].map((entry) => Object.freeze(entry));
 

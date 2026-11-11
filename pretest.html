@@ -244,6 +244,7 @@
       display: grid;
       gap: 8px;
     }
+    #inquiryAbilityRoot { margin-top: 24px; }
 
     .survey-page-note {
       display: flex;
@@ -568,6 +569,12 @@
           <button class="btn" type="button" id="metaNextBtn">下一页</button>
           <button class="btn" type="button" id="completeBtn">完成资格审查（仅一次机会）</button>
         </div>
+        <div id="inquiryAbilityRoot"></div>
+        <div class="actions assessment-actions" id="inquiryAbilityActions">
+          <p class="status" id="inquiryAbilityStatus" aria-live="polite"></p>
+          <button class="btn secondary" type="button" id="inquiryAbilityPrevBtn">上一页</button>
+          <button class="btn secondary" type="button" id="inquiryAbilityNextBtn">下一页</button>
+        </div>
       </div>
     </section>
   </main>
@@ -575,6 +582,7 @@
   <script src="assets/experiment-registry.js"></script>
   <script src="assets/knowledge-pretest.js"></script>
   <script src="assets/knowledge-assessment.js"></script>
+  <script src="assets/inquiry-ability-survey.js"></script>
   <script src="assets/platform-core.js"></script>
   <script src="auth.js"></script>
   <script src="assets/experiment-bridge.js"></script>
@@ -610,6 +618,7 @@
         "在学习这些知识时，我会联想到之前学过或了解过的知识。"
       ]
     };
+    const inquiryAbilityDef = window.BrainInquiryAbilitySurvey;
 
     const inputs = {
       studentName: document.getElementById("studentName"),
@@ -618,6 +627,7 @@
       groupId: document.getElementById("groupId")
     };
     const surveyRoot = document.getElementById("surveyRoot");
+    const inquiryAbilityRoot = document.getElementById("inquiryAbilityRoot");
     const knowledgePretestRoot = document.getElementById("knowledgePretestRoot");
     const knowledgePretestStatus = document.getElementById("knowledgePretestStatus");
     const knowledgePretestIntro = document.getElementById("knowledgePretestIntro");
@@ -630,6 +640,7 @@
     let state = loadState();
     let knowledgePageIndex = 0;
     let metaPageIndex = 0;
+    let inquiryAbilityPageIndex = 0;
     let activeAssessmentView = state.knowledgeAssessment.T0 || state.legacyQualification ? "meta" : "knowledge";
     let assessmentPageTransitioning = false;
     renderApp();
@@ -650,6 +661,7 @@
         groupId: identity.groupName || saved.groupId || context.groupId || "",
         groupName: identity.groupName || saved.groupName || context.groupName || "",
         answers: Object.assign({}, saved.answers || saved.preMeta || {}),
+        preInquiryAbility: Object.assign({}, saved.preInquiryAbility || {}),
         knowledgeAssessment: storedTimeline,
         knowledgeDraft,
         legacyKnowledgePretest: saved.knowledgePretest || null,
@@ -718,6 +730,7 @@
         groupName: state.groupName,
         answers: state.answers,
         preMeta: state.answers,
+        preInquiryAbility: state.preInquiryAbility,
         knowledgeAssessment: state.knowledgeAssessment,
         knowledgeDraft: Object.assign({}, state.knowledgeDraft, { currentPage: 0 }),
         knowledgePretest: state.legacyKnowledgePretest,
@@ -756,6 +769,8 @@
       document.getElementById("knowledgeSubmitBtn").addEventListener("click", submitKnowledgePretest);
       document.getElementById("metaPrevBtn").addEventListener("click", goToPreviousMetaPage);
       document.getElementById("metaNextBtn").addEventListener("click", () => changeMetaPage(1));
+      document.getElementById("inquiryAbilityPrevBtn").addEventListener("click", () => changeInquiryAbilityPage(-1));
+      document.getElementById("inquiryAbilityNextBtn").addEventListener("click", () => changeInquiryAbilityPage(1));
     }
 
     function renderAssessmentView() {
@@ -763,7 +778,10 @@
       knowledgePretestPanel.hidden = !showKnowledge;
       metaSurveyPanel.hidden = showKnowledge;
       if (showKnowledge) renderKnowledgePretest();
-      else renderSurvey();
+      else {
+        renderSurvey();
+        renderInquiryAbilitySurvey();
+      }
       renderSummary();
     }
 
@@ -911,7 +929,7 @@
       if (state.completed) {
         metaSurveyIntro.hidden = true;
         surveyRoot.innerHTML = '<div class="assessment-page-content"><div class="assessment-page-head"><strong>资格审查</strong><span class="assessment-page-progress">已完成</span></div>' +
-          '<section class="survey-card"><div><strong>资格审查已完成</strong><p>作答已提交并锁定，可以返回首页进入实验。</p></div></section></div>';
+          '<section class="survey-card"><div><strong>资格审查已完成</strong><p>知识前测和元认知问卷已提交。下方的科学探究能力问卷仍可修改。</p></div></section></div>';
         previous.hidden = true;
         next.hidden = true;
         complete.hidden = true;
@@ -962,6 +980,56 @@
       });
     }
 
+    function changeInquiryAbilityPage(offset) {
+      const pageCount = Math.ceil(inquiryAbilityDef.items.length / META_PAGE_SIZE);
+      const target = Math.max(0, Math.min(pageCount - 1, inquiryAbilityPageIndex + offset));
+      if (target === inquiryAbilityPageIndex) return;
+      transitionAssessmentPage(inquiryAbilityRoot, () => {
+        inquiryAbilityPageIndex = target;
+        renderInquiryAbilitySurvey();
+      });
+    }
+
+    function renderInquiryAbilitySurvey() {
+      const pageCount = Math.ceil(inquiryAbilityDef.items.length / META_PAGE_SIZE);
+      const start = inquiryAbilityPageIndex * META_PAGE_SIZE;
+      inquiryAbilityRoot.innerHTML = '<div class="assessment-page-content"><div class="assessment-page-head">' +
+        '<strong>' + inquiryAbilityDef.title + '：第 ' + (start + 1) + '–' + Math.min(start + 3, inquiryAbilityDef.items.length) + ' 题</strong>' +
+        '<span class="assessment-page-progress">' + (inquiryAbilityPageIndex + 1) + '/' + pageCount + '</span></div>' +
+        '<section class="survey-card"><div class="survey-page-note"><span>' + inquiryAbilityDef.note + '</span><span>' + inquiryAbilityDef.anchors + '</span></div>' +
+        inquiryAbilityDef.items.slice(start, start + META_PAGE_SIZE).map((item, offset) => {
+          const index = start + offset;
+          const itemKey = 'q' + (index + 1);
+          return '<div class="survey-item"><p>' + (index + 1) + '. ' + escapeHtml(item) + '</p><div class="survey-scale" role="radiogroup" aria-label="' + escapeHtml(item) + '">' +
+            inquiryAbilityDef.scale.map((score) => {
+              const checked = Number(state.preInquiryAbility[itemKey]) === score;
+              return '<label class="survey-option ' + (checked ? 'is-selected' : '') + '"><input type="radio" name="inquiry-' + itemKey + '" data-inquiry-question="' + itemKey + '" value="' + score + '" ' + (checked ? 'checked' : '') + '>' +
+                '<span class="survey-option-card"><span class="survey-score">' + score + '</span><span class="survey-label">' + inquiryAbilityDef.labels[score] + '</span></span></label>';
+            }).join('') + '</div></div>';
+        }).join('') + '</section></div>';
+      document.getElementById('inquiryAbilityPrevBtn').hidden = inquiryAbilityPageIndex === 0;
+      document.getElementById('inquiryAbilityNextBtn').hidden = inquiryAbilityPageIndex === pageCount - 1;
+      document.getElementById('inquiryAbilityStatus').textContent = summarizeInquiryAbility().answered + ' / ' + inquiryAbilityDef.items.length + ' 题已完成';
+      inquiryAbilityRoot.querySelectorAll('[data-inquiry-question]').forEach((input) => {
+        input.addEventListener('change', async () => {
+          state.preInquiryAbility[input.dataset.inquiryQuestion] = Number(input.value);
+          saveState();
+          input.closest('.survey-scale')?.querySelectorAll('.survey-option').forEach((option) => {
+            option.classList.toggle('is-selected', option.querySelector('input')?.checked === true);
+          });
+          document.getElementById('inquiryAbilityStatus').textContent = summarizeInquiryAbility().answered + ' / ' + inquiryAbilityDef.items.length + ' 题已完成';
+          renderSummary();
+          if (state.completed) await submitScreeningRecord();
+        });
+      });
+    }
+
+    function summarizeInquiryAbility() {
+      const values = inquiryAbilityDef.items.map((_, index) => Number(state.preInquiryAbility['q' + (index + 1)] || 0)).filter(Boolean);
+      const total = values.reduce((sum, value) => sum + value, 0);
+      return { answered: values.length, total, average: values.length ? Number((total / values.length).toFixed(2)) : 0, complete: values.length === inquiryAbilityDef.items.length };
+    }
+
     function summarize() {
       const values = surveyDef.items
         .map((_, index) => Number(state.answers["q" + (index + 1)] || 0))
@@ -979,7 +1047,8 @@
       const summary = summarize();
       summaryRoot.innerHTML = [
         ["知识前测", state.knowledgeAssessment.T0 ? "已提交" : state.legacyQualification ? "旧版已完成" : Object.keys(state.knowledgeDraft.answers).length + "/20"],
-        ["元认知问卷", summary.answered + "/" + surveyDef.items.length]
+        ["元认知问卷", summary.answered + "/" + surveyDef.items.length],
+        ["科学探究能力问卷", summarizeInquiryAbility().answered + "/" + inquiryAbilityDef.items.length]
       ].map((item) => '<div><strong>' + item[1] + '</strong><span>' + item[0] + '</span></div>').join("");
       summaryRoot.hidden = activeAssessmentView !== "meta" || metaPageIndex !== 1 || state.completed;
       status.classList.toggle("is-complete", state.completed);
@@ -1006,6 +1075,14 @@
         alert("请完成所有题目后再提交资格审查。");
         status.classList.remove("is-complete");
         status.textContent = "请完成所有题目后再提交资格审查。";
+        return;
+      }
+      if (!summarizeInquiryAbility().complete) {
+        const missing = inquiryAbilityDef.items.findIndex((_, index) => !state.preInquiryAbility['q' + (index + 1)]);
+        inquiryAbilityPageIndex = Math.floor(missing / META_PAGE_SIZE);
+        renderInquiryAbilitySurvey();
+        inquiryAbilityRoot.scrollIntoView({ behavior: 'smooth', block: 'start' });
+        alert('请完成科学探究能力调查问卷后再提交资格审查。');
         return;
       }
       state.completed = true;
@@ -1042,6 +1119,9 @@
         answers: state.answers,
         items: surveyDef.items,
         labels: surveyDef.labels,
+        preInquiryAbility: state.preInquiryAbility,
+        inquiryAbilityItems: inquiryAbilityDef.items,
+        inquiryAbilityLabels: inquiryAbilityDef.labels,
         knowledgeAssessment: state.knowledgeAssessment,
         knowledgePretest: state.legacyKnowledgePretest,
         legacyQualification: state.legacyQualification,

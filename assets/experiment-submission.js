@@ -62,6 +62,7 @@
     }
     return {
       meta,
+      inquiryAbility: clone(current.inquiryAbility || {}),
       cognitiveLoad: clone(current.cognitiveLoad || {}),
       inquiryParticipation: clone(current.inquiryParticipation || {})
     };

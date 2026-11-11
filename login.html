@@ -110,7 +110,7 @@
       min-height: 100vh;
       min-height: 100svh;
       margin: 0 auto;
-      padding: 118px clamp(28px, 5vw, 76px) 106px;
+      padding: 72px clamp(28px, 5vw, 76px) 48px;
     }
 
     .archive-brief {
@@ -168,8 +168,8 @@
 
     .login-card {
       position: relative;
-      min-height: 590px;
-      padding: 43px 42px 34px;
+      min-height: 0;
+      padding: 28px 42px 22px;
       overflow: hidden;
       background:
         linear-gradient(135deg, rgba(255, 231, 180, 0.035), transparent 38%),
@@ -218,7 +218,7 @@
       align-items: center;
       justify-content: center;
       gap: 12px;
-      margin: 0 0 18px;
+      margin: 0 0 10px;
       color: rgba(226, 192, 123, 0.8);
       font-family: var(--latin);
       font-size: 10px;
@@ -243,7 +243,7 @@
     }
 
     .login-heading > p {
-      margin: 12px 0 30px;
+      margin: 8px 0 18px;
       color: var(--muted);
       font-size: 13px;
       letter-spacing: 0.08em;
@@ -252,7 +252,7 @@
     .login-role-options {
       display: flex;
       gap: 10px;
-      margin-bottom: 24px;
+      margin-bottom: 14px;
     }
 
     .login-role-options button {
@@ -272,7 +272,7 @@
     }
 
     .field {
-      margin-bottom: 18px;
+      margin-bottom: 12px;
     }
 
     .field label {
@@ -301,7 +301,7 @@
 
     .field input {
       width: 100%;
-      height: 50px;
+      height: 44px;
       padding: 0 46px 0 44px;
       border: 1px solid rgba(212, 175, 106, 0.42);
       border-radius: 2px;
@@ -395,7 +395,7 @@
     }
 
     .submit-btn {
-      min-height: 50px;
+      min-height: 46px;
       margin-top: 6px;
       border: 1px solid #e0bd76;
       border-radius: 3px;
@@ -416,8 +416,8 @@
     }
 
     .guest-entry {
-      margin-top: 16px;
-      padding-top: 16px;
+      margin-top: 10px;
+      padding-top: 10px;
       border-top: 1px solid rgba(212, 175, 106, 0.2);
       text-align: center;
     }
@@ -459,7 +459,7 @@
       align-items: flex-end;
       justify-content: space-between;
       gap: 16px;
-      margin-top: 18px;
+      margin-top: 10px;
       color: rgba(215, 190, 141, 0.42);
       font-family: var(--latin);
       font-size: 8px;
@@ -469,8 +469,8 @@
 
     .archive-seal {
       display: grid;
-      width: 74px;
-      height: 74px;
+      width: 52px;
+      height: 52px;
       flex: 0 0 auto;
       border: 1px solid rgba(194, 141, 76, 0.34);
       border-radius: 50%;
@@ -538,7 +538,7 @@
     @media (max-width: 980px) {
       .archive-layout {
         grid-template-columns: 1fr minmax(380px, 460px) 1fr;
-        padding-top: 110px;
+        padding-top: 72px;
       }
 
       .archive-brief {
@@ -607,18 +607,25 @@
 
     @media (max-height: 720px) and (min-width: 641px) {
       .archive-layout {
-        padding-top: 90px;
-        padding-bottom: 70px;
+        padding-top: 20px;
+        padding-bottom: 16px;
       }
 
       .login-card {
-        min-height: 0;
-        padding-top: 34px;
-        padding-bottom: 25px;
+        padding-top: 20px;
+        padding-bottom: 16px;
       }
 
       .login-heading > p {
-        margin-bottom: 20px;
+        margin-bottom: 14px;
+      }
+
+      .login-role-options {
+        margin-bottom: 10px;
+      }
+
+      .field {
+        margin-bottom: 8px;
       }
 
       .card-file-meta {

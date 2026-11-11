@@ -1,0 +1,344 @@
+<!doctype html>
+<html lang="zh-CN">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>词图学习任务 · 演示</title>
+  <style>
+    :root { font-family:"Microsoft YaHei","PingFang SC","Segoe UI",Arial,sans-serif; color:#172033; background:#f6f8fb; }
+    * { box-sizing:border-box; }
+    body { margin:0; min-height:100dvh; }
+    button, input { font:inherit; }
+    button { cursor:pointer; }
+    button:disabled { cursor:not-allowed; opacity:.55; }
+    .shell { min-height:100dvh; display:grid; place-items:center; padding:28px 16px; }
+    .card { width:min(100%,800px); min-height:min(680px,calc(100dvh - 56px)); display:flex; flex-direction:column; padding:clamp(24px,5vw,48px); border:1px solid #dbe3ef; border-radius:16px; background:#fff; box-shadow:0 16px 40px rgba(23,32,51,.08); }
+    .card.intro-card { width:min(100%,640px); min-height:0; padding:36px 40px; }
+    .card.intro-card .body { display:none; }
+    .card.intro-card .actions { margin-top:28px; }
+    .card.rating-card { width:min(100%,900px); min-height:min(520px,calc(100dvh - 56px)); }
+    .card.recognition-card .options { max-width:540px; width:100%; margin:18px auto 0; }
+    .card.recognition-card .option img { max-height:108px; }
+    .card.recognition-card .body { align-content:center; }
+    .eyebrow { color:#2563eb; font-size:14px; font-weight:800; letter-spacing:.04em; }
+    h1 { margin:10px 0 8px; font-size:clamp(26px,4vw,36px); line-height:1.3; }
+    p { margin:0; }
+    .hint { color:#667085; font-size:16px; line-height:1.7; }
+    .body { flex:1; display:grid; align-content:center; margin:28px 0; }
+    .actions { display:flex; flex-wrap:wrap; justify-content:space-between; gap:12px; align-items:center; }
+    .actions > .btn:only-child { margin-left:auto; }
+    .btn { min-height:48px; border:0; border-radius:8px; padding:11px 22px; background:#2563eb; color:#fff; font-weight:800; }
+    .btn:hover:not(:disabled) { background:#1d4ed8; }
+    .btn.secondary { background:#eaf1ff; color:#1d4ed8; }
+    .btn.secondary:hover:not(:disabled) { background:#dbeafe; }
+    .btn.ghost { background:#fff; color:#1d4ed8; border:1px solid #bfdbfe; }
+    .picture { display:block; width:min(100%,260px); aspect-ratio:1; object-fit:contain; margin:0 auto; border-radius:10px; }
+    .word { font-size:clamp(30px,6vw,48px); font-weight:800; text-align:center; letter-spacing:.015em; }
+    .study { display:grid; gap:16px; justify-items:center; }
+    .options { display:grid; grid-template-columns:repeat(2,minmax(0,1fr)); gap:14px; }
+    .option { border:2px solid #dbe3ef; border-radius:12px; padding:10px; background:#fff; transition:border-color .15s,background .15s; }
+    button.option:hover,button.option:focus-visible { border-color:#2563eb; background:#eff5ff; }
+    .option.selected { border:3px solid #2563eb; background:#eff5ff; position:relative; }
+    .option.selected::after { content:"已选"; position:absolute; right:8px; top:8px; padding:3px 8px; border-radius:999px; background:#2563eb; color:#fff; font-size:12px; font-weight:800; }
+    .option img { display:block; width:100%; max-height:180px; aspect-ratio:1; object-fit:contain; }
+    .sequence { display:flex; justify-content:center; gap:10px; margin:24px 0; }
+    .shape { display:grid; place-items:center; width:clamp(54px,15vw,82px); aspect-ratio:1; border-radius:12px; background:#eaf1ff; color:#2563eb; font-size:36px; font-weight:800; }
+    .shape.unknown { color:#667085; background:#f2f4f7; }
+    .shape-options { justify-content:center; }
+    .shape-options button { min-width:70px; min-height:58px; font-size:30px; }
+    .rating-panel { width:min(100%,760px); margin:auto; }
+    .rating-panel .word { font-size:clamp(42px,7vw,64px); margin-bottom:30px; }
+    .likert { display:grid; grid-template-columns:repeat(7,minmax(0,1fr)); gap:8px; }
+    .likert button { min-height:72px; border:2px solid #bfdbfe; border-radius:12px; background:#f8fbff; color:#1d4ed8; font-size:28px; font-weight:800; }
+    .likert button[aria-pressed="true"] { border-color:#2563eb; background:#2563eb; color:#fff; }
+    .likert-labels { display:flex; justify-content:space-between; margin-top:14px; color:#667085; font-size:16px; }
+    .inline-rating { width:100%; margin:20px auto 0; }
+    .inline-rating h2 { margin:0 0 14px; font-size:20px; text-align:center; }
+    .inline-rating .rating-panel { max-width:540px; }
+    .inline-rating .likert button { min-height:54px; font-size:22px; }
+    dialog { width:min(90vw,460px); border:1px solid #dbe3ef; border-radius:14px; padding:28px; box-shadow:0 24px 64px rgba(0,0,0,.25); color:#172033; }
+    dialog::backdrop { background:rgba(8,17,31,.58); }
+    dialog p { margin:0 0 24px; font-size:20px; font-weight:700; line-height:1.6; }
+    .timer { float:right; padding:6px 12px; border-radius:999px; background:#eaf1ff; color:#1d4ed8; font-size:18px; font-weight:800; font-variant-numeric:tabular-nums; }
+    .word-grid { display:grid; grid-template-columns:repeat(auto-fit,minmax(130px,1fr)); gap:10px; }
+    .word-pick { min-height:52px; border:1px solid #dbe3ef; border-radius:8px; background:#f8fbff; color:#172033; font-weight:700; }
+    .word-pick[aria-pressed="true"] { border-color:#2563eb; background:#eaf1ff; color:#1d4ed8; }
+    .score { text-align:center; padding:18px 0; }
+    .score strong { display:block; color:#1d4ed8; font-size:clamp(52px,9vw,84px); line-height:1.2; }
+    .score span { color:#667085; }
+    .points { display:grid; grid-template-columns:repeat(2,minmax(0,1fr)); gap:12px; max-width:460px; margin:24px auto 0; }
+    .points div { padding:14px; border-radius:10px; background:#eaf1ff; text-align:center; }
+    .points span { display:block; color:#667085; font-size:14px; }
+    .points strong { color:#1d4ed8; font-size:28px; font-variant-numeric:tabular-nums; }
+    .restore { position:fixed; right:16px; bottom:16px; z-index:2; display:none; min-height:40px; padding:6px 12px; border:1px solid #bfdbfe; border-radius:8px; background:#fff; color:#1d4ed8; font-weight:700; }
+    body.active { background:#08111f; }
+    body.active .card { box-shadow:0 24px 64px rgba(0,0,0,.24); }
+    body.active .restore { display:block; }
+    :root:fullscreen .restore { display:none; }
+    .error { color:#b42318; }
+    @media(max-width:540px) { .card,.card.intro-card { padding:22px 18px; } .body { margin:22px 0; } .options,.likert { gap:5px; } .option { padding:5px; } .option img { max-height:145px; } .likert button { min-height:52px; font-size:20px; } .likert-labels { font-size:13px; } .actions > .btn { flex:1; } }
+  </style>
+</head>
+<body>
+  <main class="shell"><section class="card" id="app" aria-live="polite"></section></main>
+  <button class="restore" id="restore" type="button">返回全屏</button>
+  <script>
+    const app = document.getElementById('app');
+    const bank = {"items":[{"id":"P01","round":0,"word":"ojo","pictureAsset":"docs/spanish-picture-bank-images/P01.jpg"},{"id":"P02","round":0,"word":"coche","pictureAsset":"docs/spanish-picture-bank-images/P02.jpg"},{"id":"P03","round":0,"word":"uva","pictureAsset":"docs/spanish-picture-bank-images/P03.jpg"},{"id":"P04","round":0,"word":"vela","pictureAsset":"docs/spanish-picture-bank-images/P04.jpg"},{"id":"W01","round":1,"word":"sol","pictureAsset":"docs/spanish-picture-bank-images/W01.jpg"},{"id":"W02","round":1,"word":"pan","pictureAsset":"docs/spanish-picture-bank-images/W02.jpg"},{"id":"W03","round":4,"word":"pez","pictureAsset":"docs/spanish-picture-bank-images/W03.jpg"},{"id":"W04","round":1,"word":"flor","pictureAsset":"docs/spanish-picture-bank-images/W04.jpg"},{"id":"W05","round":4,"word":"tren","pictureAsset":"docs/spanish-picture-bank-images/W05.jpg"},{"id":"W06","round":1,"word":"mesa","pictureAsset":"docs/spanish-picture-bank-images/W06.jpg"},{"id":"W07","round":4,"word":"taza","pictureAsset":"docs/spanish-picture-bank-images/W07.jpg"},{"id":"W08","round":1,"word":"gato","pictureAsset":"docs/spanish-picture-bank-images/W08.jpg"},{"id":"W09","round":4,"word":"luna","pictureAsset":"docs/spanish-picture-bank-images/W09.jpg"},{"id":"W10","round":4,"word":"casa","pictureAsset":"docs/spanish-picture-bank-images/W10.jpg"},{"id":"W11","round":4,"word":"árbol","pictureAsset":"docs/spanish-picture-bank-images/W11.jpg"},{"id":"W12","round":4,"word":"mano","pictureAsset":"docs/spanish-picture-bank-images/W12.jpg"},{"id":"W13","round":2,"word":"perro","pictureAsset":"docs/spanish-picture-bank-images/W13.jpg"},{"id":"W14","round":2,"word":"libro","pictureAsset":"docs/spanish-picture-bank-images/W14.jpg"},{"id":"W15","round":2,"word":"silla","pictureAsset":"docs/spanish-picture-bank-images/W15.jpg"},{"id":"W16","round":2,"word":"leche","pictureAsset":"docs/spanish-picture-bank-images/W16.jpg"},{"id":"W17","round":2,"word":"barco","pictureAsset":"docs/spanish-picture-bank-images/W17.jpg"},{"id":"W18","round":3,"word":"playa","pictureAsset":"docs/spanish-picture-bank-images/W18.jpg"},{"id":"W19","round":2,"word":"queso","pictureAsset":"docs/spanish-picture-bank-images/W19.jpg"},{"id":"W20","round":3,"word":"reloj","pictureAsset":"docs/spanish-picture-bank-images/W20.jpg"},{"id":"W21","round":3,"word":"llave","pictureAsset":"docs/spanish-picture-bank-images/W21.jpg"},{"id":"W22","round":3,"word":"globo","pictureAsset":"docs/spanish-picture-bank-images/W22.jpg"},{"id":"W23","round":3,"word":"sopa","pictureAsset":"docs/spanish-picture-bank-images/W23.jpg"},{"id":"W24","round":3,"word":"nube","pictureAsset":"docs/spanish-picture-bank-images/W24.jpg"},{"id":"W25","round":3,"word":"bota","pictureAsset":"docs/spanish-picture-bank-images/W25.jpg"},{"id":"W26","round":4,"word":"cama","pictureAsset":"docs/spanish-picture-bank-images/W26.jpg"},{"id":"W27","round":4,"word":"pato","pictureAsset":"docs/spanish-picture-bank-images/W27.jpg"},{"id":"W28","round":1,"word":"caballo","pictureAsset":"docs/spanish-picture-bank-images/W28.jpg"},{"id":"W29","round":1,"word":"cuchara","pictureAsset":"docs/spanish-picture-bank-images/W29.jpg"},{"id":"W30","round":1,"word":"ventana","pictureAsset":"docs/spanish-picture-bank-images/W30.jpg"},{"id":"W31","round":1,"word":"camisa","pictureAsset":"docs/spanish-picture-bank-images/W31.jpg"},{"id":"W32","round":2,"word":"pelota","pictureAsset":"docs/spanish-picture-bank-images/W32.jpg"},{"id":"W33","round":2,"word":"botella","pictureAsset":"docs/spanish-picture-bank-images/W33.jpg"},{"id":"W34","round":2,"word":"zapato","pictureAsset":"docs/spanish-picture-bank-images/W34.jpg"},{"id":"W35","round":2,"word":"conejo","pictureAsset":"docs/spanish-picture-bank-images/W35.jpg"},{"id":"W36","round":2,"word":"naranja","pictureAsset":"docs/spanish-picture-bank-images/W36.jpg"},{"id":"W37","round":3,"word":"manzana","pictureAsset":"docs/spanish-picture-bank-images/W37.jpg"},{"id":"W38","round":3,"word":"cebolla","pictureAsset":"docs/spanish-picture-bank-images/W38.jpg"},{"id":"W39","round":3,"word":"mochila","pictureAsset":"docs/spanish-picture-bank-images/W39.jpg"},{"id":"W40","round":3,"word":"tenedor","pictureAsset":"docs/spanish-picture-bank-images/W40.jpg"},{"id":"W41","round":3,"word":"escalera","pictureAsset":"docs/spanish-picture-bank-images/W41.jpg"},{"id":"W42","round":3,"word":"tijeras","pictureAsset":"docs/spanish-picture-bank-images/W42.jpg"},{"id":"W43","round":3,"word":"cereza","pictureAsset":"docs/spanish-picture-bank-images/W43.jpg"},{"id":"W44","round":4,"word":"tortuga","pictureAsset":"docs/spanish-picture-bank-images/W44.jpg"},{"id":"W45","round":4,"word":"cometa","pictureAsset":"docs/spanish-picture-bank-images/W45.jpg"},{"id":"W46","round":1,"word":"mariposa","pictureAsset":"docs/spanish-picture-bank-images/W46.jpg"},{"id":"W47","round":4,"word":"murciélago","pictureAsset":"docs/spanish-picture-bank-images/W47.jpg"},{"id":"W48","round":4,"word":"saltamontes","pictureAsset":"docs/spanish-picture-bank-images/W48.jpg"},{"id":"W49","round":2,"word":"columpio","pictureAsset":"docs/spanish-picture-bank-images/W49.jpg"},{"id":"W50","round":1,"word":"paraguas","pictureAsset":"docs/spanish-picture-bank-images/W50.jpg"},{"id":"W51","round":4,"word":"escritorio","pictureAsset":"docs/spanish-picture-bank-images/W51.jpg"},{"id":"W52","round":1,"word":"zanahoria","pictureAsset":"docs/spanish-picture-bank-images/W52.jpg"},{"id":"W53","round":2,"word":"lavadora","pictureAsset":"docs/spanish-picture-bank-images/W53.jpg"},{"id":"W54","round":4,"word":"semáforo","pictureAsset":"docs/spanish-picture-bank-images/W54.jpg"},{"id":"W55","round":4,"word":"caracol","pictureAsset":"docs/spanish-picture-bank-images/W55.jpg"},{"id":"W56","round":2,"word":"calcetín","pictureAsset":"docs/spanish-picture-bank-images/W56.jpg"},{"id":"W57","round":2,"word":"camiseta","pictureAsset":"docs/spanish-picture-bank-images/W57.jpg"},{"id":"W58","round":3,"word":"almohada","pictureAsset":"docs/spanish-picture-bank-images/W58.jpg"},{"id":"W59","round":3,"word":"cuchillo","pictureAsset":"docs/spanish-picture-bank-images/W59.jpg"},{"id":"W60","round":4,"word":"cepillo","pictureAsset":"docs/spanish-picture-bank-images/W60.jpg"},{"id":"W61","round":3,"word":"cangrejo","pictureAsset":"docs/spanish-picture-bank-images/W61.jpg"},{"id":"W62","round":4,"word":"berenjena","pictureAsset":"docs/spanish-picture-bank-images/W62.jpg"},{"id":"W63","round":4,"word":"escoba","pictureAsset":"docs/spanish-picture-bank-images/W63.jpg"},{"id":"W64","round":3,"word":"serpiente","pictureAsset":"docs/spanish-picture-bank-images/W64.jpg"},{"id":"W65","round":4,"word":"ardilla","pictureAsset":"docs/spanish-picture-bank-images/W65.jpg"},{"id":"W66","round":4,"word":"pimiento","pictureAsset":"docs/spanish-picture-bank-images/W66.jpg"}]};
+    let form, roundNumber = 0, stage = 'intro', index = 0, chosenOption = null, ratingChoice = null;
+    let jol = {}, restudy = new Set(), answers = {}, fillerAnswers = [], roundResult = null, totalPoints = 0;
+    let timerId = null, deadline = 0;
+    const shapes = [
+      { sequence:['●','◆','●'], choices:['◆','▲','●'], answer:'◆' },
+      { sequence:['▲','▲','■'], choices:['●','■','▲'], answer:'▲' },
+      { sequence:['◆','●','▲'], choices:['◆','■','●'], answer:'◆' },
+      { sequence:['■','●','■'], choices:['▲','●','◆'], answer:'●' }
+    ];
+    const asset = path => '../' + path;
+    const current = () => form.rounds[roundNumber];
+    const image = id => asset(current().pictures[id]);
+    const escapeHtml = value => String(value).replace(/[&<>"']/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
+    const optionGrid = (trial, action, selectedId = null) => '<div class="word">' + escapeHtml(trial.word) + '</div><div class="options">' + trial.optionPictureIds.map((id,i) => {
+      const tag = action ? 'button' : 'div';
+      return '<' + tag + ' class="option' + (id === selectedId ? ' selected' : '') + '"' + (action ? ' type="button" data-action="' + action + '" data-id="' + id + '"' : '') + ' aria-label="选项 ' + (i + 1) + (id === selectedId ? '，已选' : '') + '"><img src="' + image(id) + '" alt="选项 ' + (i + 1) + '"></' + tag + '>';
+    }).join('') + '</div>';
+    const ratingPanel = word => '<div class="rating-panel">' + (word ? '<div class="word">' + escapeHtml(word) + '</div>' : '') + '<div class="likert" role="group" aria-label="把握程度">' +
+      [1,2,3,4,5,6,7].map(value => '<button type="button" data-action="rate" data-value="' + value + '" aria-pressed="false" aria-label="' + value + ' 分">' + value + '</button>').join('') +
+      '</div><div class="likert-labels"><span>非常没把握</span><span>非常有把握</span></div></div>';
+    const frame = (title, hint, body, actions = '', counter = '') => {
+      app.innerHTML = '<div class="eyebrow">' + (stage === 'intro' || stage === 'finished' ? '词图学习任务' : roundNumber === 0 ? '四张词卡练习' + (counter ? ' · ' + counter : '') : '第 ' + roundNumber + ' 轮' + (stage === 'study' ? ' · 初次学习' : '') + (counter ? ' · ' + counter : '')) +
+        (stage === 'study' || stage === 'filler' ? '<span class="timer" id="timer">' + (stage === 'study' ? '00:05' : '01:00') + '</span>' : '') + '</div>' +
+        '<h1>' + title + '</h1><p class="hint">' + hint + '</p><div class="body">' + body + '</div><div class="actions">' + actions + '</div>';
+    };
+    const button = (action, label, kind = '', disabled = false) => '<button type="button" class="btn ' + kind + '" data-action="' + action + '"' + (disabled ? ' disabled' : '') + '>' + label + '</button>';
+    function stopCountdown() { clearInterval(timerId); timerId = null; deadline = 0; }
+    function startCountdown(seconds, onEnd) {
+      stopCountdown();
+      deadline = Date.now() + seconds * 1000;
+      const tick = () => {
+        const left = Math.max(0, Math.ceil((deadline - Date.now()) / 1000));
+        const display = document.getElementById('timer');
+        if (display) display.textContent = String(Math.floor(left / 60)).padStart(2,'0') + ':' + String(left % 60).padStart(2,'0');
+        if (left === 0) { stopCountdown(); onEnd(); }
+      };
+      timerId = setInterval(tick, 100);
+      tick();
+    }
+    function advanceStudy() {
+      if (++index === current().study.length) beginFiller();
+      else { render(); startCountdown(5, advanceStudy); }
+    }
+    function beginStudy() { stage = 'study'; index = 0; render(); startCountdown(5, advanceStudy); }
+    function beginFiller() {
+      stage = 'filler'; index = 0; render();
+      startCountdown(60, () => { stage = 'jol'; index = 0; render(); });
+    }
+    function advanceWithdrawal() {
+      if (++index === current().withdrawalOrder.length) {
+        roundResult = scoreRound();
+        if (roundNumber > 0) totalPoints += roundResult.points;
+        stage = 'result'; index = 0;
+      }
+      else stage = 'withdrawal';
+      render();
+    }
+    function scoreRound() {
+      let correct = 0, points = 0;
+      for (const trial of current().recognitionTrials) {
+        const response = answers[trial.itemId];
+        if (response.withdrawn) continue;
+        if (trial.optionPictureIds[trial.correctOptionIndex] === response.optionId) { correct++; points++; }
+        else points -= 3;
+      }
+      return {correct, points};
+    }
+    const signed = value => value > 0 ? '+' + value : String(value);
+
+    // Match the existing form generator's selection and ordering rules.
+    function shuffle(items, seed) {
+      const result = items.slice(); let state = seed >>> 0 || 1;
+      for (let i = result.length - 1; i > 0; i--) {
+        state ^= state << 13; state ^= state >>> 17; state ^= state << 5;
+        const j = (state >>> 0) % (i + 1);
+        [result[i], result[j]] = [result[j], result[i]];
+      }
+      return result;
+    }
+    const lengthGroup = item => [...item.word].length <= 5 ? 0 : [...item.word].length <= 7 ? 1 : 2;
+    function orderedSelection(items, count, rank) {
+      const remaining = items.slice(), selected = [];
+      for (let i = 0; i < count; i++) {
+        const position = rank % remaining.length;
+        rank = Math.floor(rank / remaining.length);
+        selected.push(remaining.splice(position, 1)[0]);
+      }
+      return selected;
+    }
+    function makeRound(round, formId) {
+      const pool = bank.items.filter(item => item.round === round);
+      let selected;
+      if (round === 0) {
+        selected = shuffle(pool, formId + 1);
+      } else if (round === 1) {
+        let rank = (formId * 37 + 19) % 8640;
+        const groups = [0,1,2].map(group => pool.filter(item => lengthGroup(item) === group));
+        const short = orderedSelection(groups[0], 3, rank % 60); rank = Math.floor(rank / 60);
+        const medium = orderedSelection(groups[1], 3, rank % 24); rank = Math.floor(rank / 24);
+        const long = orderedSelection(groups[2], 2, rank);
+        const choices = [short,medium,long], positions = [0,0,0];
+        selected = shuffle([0,0,0,1,1,1,2,2], formId + 9029).map(group => choices[group][positions[group]++]);
+      } else {
+        const quotas = {2:[4,3,3],3:[5,4,3],4:[6,4,4]}[round];
+        selected = quotas.flatMap((count, group) => shuffle(pool.filter(item => lengthGroup(item) === group),
+          Math.imul(formId + 1, 2654435761) ^ Math.imul(round * 3 + group + 1, 1597334677)).slice(0, count));
+        selected = shuffle(selected, formId ^ (round * 104729 + 7));
+      }
+      const pictures = Object.fromEntries(selected.map(item => [item.id, item.pictureAsset]));
+      const testOrder = shuffle(selected, formId ^ (round * 104729 + 37));
+      const recognitionTrials = testOrder.map((item, position) => {
+        const choices = [item, ...[1,2,3].map(offset => testOrder[(position + offset) % selected.length])];
+        const options = shuffle(choices.map(choice => choice.id), formId ^ (round * 104729 + position * 101 + 53));
+        return { itemId:item.id, word:item.word, optionPictureIds:options, correctOptionIndex:options.indexOf(item.id) };
+      });
+      return {
+        study:selected.map(item => ({itemId:item.id,word:item.word,pictureId:item.id,pictureAsset:item.pictureAsset})),
+        pictures,
+        jolOrder:shuffle(selected.map(item => item.id), formId ^ (round * 104729 + 11)),
+        restudyDisplayOrder:shuffle(selected.map(item => item.id), formId ^ (round * 104729 + 23)),
+        recognitionTrials,
+        withdrawalOrder:shuffle(selected.map(item => item.id), formId ^ (round * 104729 + 71))
+      };
+    }
+    function render() {
+      app.classList.toggle('intro-card', stage === 'intro');
+      app.classList.toggle('rating-card', stage === 'jol');
+      app.classList.toggle('recognition-card', stage === 'recognition');
+      if (stage === 'jol') ratingChoice = null;
+      if (stage === 'intro') {
+        frame('准备开始', '先用四张词卡熟悉任务操作。练习结果不计入正式成绩。',
+          '',
+          button('start', '开始四张词卡练习'));
+      } else if (stage === 'study') {
+        const item = current().study[index];
+        frame(roundNumber === 0 ? '认识练习词卡' : '初次学习', '每张词卡显示 5 秒，请专注记忆。',
+          '<div class="study"><div class="word">' + escapeHtml(item.word) + '</div><img class="picture" src="' + asset(item.pictureAsset) + '" alt="' + escapeHtml(item.word) + '"></div>',
+          '',
+          (index + 1) + ' / ' + current().study.length);
+      } else if (stage === 'filler') {
+        const task = shapes[index];
+        frame('请选择下一个图形', '只有选对才能继续；本环节持续 1 分钟。',
+          '<div><div class="sequence">' + [...task.sequence,'?'].map(s => '<span class="shape' + (s === '?' ? ' unknown' : '') + '">' + s + '</span>').join('') + '</div><p class="error" id="feedback" role="status"></p></div>',
+          '<div class="actions shape-options">' + task.choices.map((s,i) => '<button class="btn secondary" type="button" data-action="shape" data-value="' + i + '" aria-label="选择图形 ' + s + '">' + s + '</button>').join('') + '</div>',
+          '图形判断');
+      } else if (stage === 'jol') {
+        const id = current().jolOrder[index], word = current().study.find(item => item.itemId === id).word;
+        frame('你觉得自己能选出对应图片吗？', '请选择 1–7 分，表示你的把握程度。',
+          ratingPanel(word),
+          button('next-jol', '确认', '', true),
+          (index + 1) + ' / ' + current().jolOrder.length);
+      } else if (stage === 'restudy') {
+        const words = current().restudyDisplayOrder.map(id => {
+          const word = current().study.find(item => item.itemId === id).word;
+          return '<button class="word-pick" type="button" data-action="pick-word" data-id="' + id + '" aria-pressed="' + restudy.has(id) + '">' + escapeHtml(word) + '</button>';
+        }).join('');
+        frame('哪些词还需要再学习？', '如果你可以重新学习一个或多个单词，以提高自己之后的表现，你会选择重新学习哪些单词？',
+          '<div class="word-grid">' + words + '</div>', button('next-restudy', '确认选择'));
+      } else if (stage === 'recognition') {
+        const trial = current().recognitionTrials[index];
+        frame('请选择与这个词对应的图片', '请根据刚才记住的词图关系作答。',
+          optionGrid(trial, 'choose', chosenOption) + (chosenOption ? '<div class="inline-rating"><h2>你对刚才的选择有多大把握？</h2>' + ratingPanel(null) + '</div>' : ''),
+          chosenOption ? button('next-recognition', '确认', '', true) : '',
+          (index + 1) + ' / ' + current().recognitionTrials.length);
+      } else if (stage === 'withdrawal') {
+        const id = current().withdrawalOrder[index];
+        const trial = current().recognitionTrials.find(item => item.itemId === id);
+        frame('是否保留这道题的答案？', '蓝框标出你刚才的选择。',
+          optionGrid(trial, null, answers[id].optionId),
+          button('withdraw', '撤回答案', 'secondary') + button('keep', '保留答案') +
+            '<dialog id="withdraw-dialog"><p>你是否认为当前答案错误，选择撤回答案？</p><div class="actions">' + button('cancel-withdraw', '取消', 'secondary') + button('confirm-withdraw', '确认撤回') + '</div></dialog>',
+          (index + 1) + ' / ' + current().withdrawalOrder.length);
+      } else if (stage === 'result') {
+        frame(roundNumber === 0 ? '练习已完成' : '本轮已完成', roundNumber === 0 ? '练习结果不计入正式成绩。' : '这是本轮最终正确数。',
+          '<div class="score"><strong>' + roundResult.correct + ' / ' + current().study.length + '</strong><span>答对题数</span></div>' +
+            (roundNumber === 0 ? '' : '<div class="points"><div><span>本轮积分</span><strong>' + signed(roundResult.points) + '</strong></div><div><span>累计积分</span><strong>' + signed(totalPoints) + '</strong></div></div>'),
+          roundNumber === 0 ? button('begin-formal', '正式开始') : roundNumber === 4 ? button('finish', '完成任务') : button('finish', '结束任务', 'secondary') + button('continue', '继续下一轮'));
+      } else {
+        frame('任务已完成，请联系助教进行下一步', '', '', '');
+        document.body.classList.remove('active');
+      }
+    }
+    async function start() {
+      // Request fullscreen synchronously from the student's click.
+      if (document.documentElement.requestFullscreen) {
+        try { await document.documentElement.requestFullscreen(); } catch (_) {}
+      }
+      const param = new URLSearchParams(location.search).get('formId');
+      const requested = Number(param);
+      const formId = param !== null && Number.isInteger(requested) && requested >= 0 && requested < 8640
+        ? requested : crypto.getRandomValues(new Uint32Array(1))[0] % 8640;
+      form = { rounds:{0:makeRound(0,formId),1:makeRound(1,formId),2:makeRound(2,formId),3:makeRound(3,formId),4:makeRound(4,formId)} };
+      document.body.classList.add('active');
+      roundNumber = 0;
+      totalPoints = 0; roundResult = null;
+      beginStudy();
+    }
+    app.addEventListener('click', event => {
+      const target = event.target.closest('[data-action]');
+      if (!target) return;
+      const action = target.dataset.action;
+      if (action === 'start') { start(); return; }
+      if (action === 'shape') {
+        const choice = shapes[index].choices[Number(target.dataset.value)];
+        const correct = choice === shapes[index].answer;
+        fillerAnswers.push({question:index, choice, correct});
+        if (!correct) { document.getElementById('feedback').textContent = '再试一次，选对后继续。'; return; }
+        index = (index + 1) % shapes.length;
+      } else if (action === 'rate') {
+        ratingChoice = Number(target.dataset.value);
+        app.querySelectorAll('[data-action="rate"]').forEach(item => item.setAttribute('aria-pressed', item === target));
+        app.querySelector('.actions .btn').disabled = false;
+        return;
+      } else if (action === 'next-jol') {
+        jol[current().jolOrder[index]] = ratingChoice;
+        if (++index === current().jolOrder.length) { stage = 'restudy'; index = 0; }
+      } else if (action === 'pick-word') {
+        const id = target.dataset.id;
+        if (restudy.has(id)) restudy.delete(id); else restudy.add(id);
+        target.setAttribute('aria-pressed', restudy.has(id));
+        return;
+      } else if (action === 'next-restudy') {
+        stage = 'recognition'; index = 0;
+      } else if (action === 'choose') {
+        chosenOption = target.dataset.id;
+        ratingChoice = null;
+        render(); return;
+      } else if (action === 'next-recognition') {
+        const id = current().recognitionTrials[index].itemId;
+        answers[id] = {optionId:chosenOption, confidence:ratingChoice};
+        chosenOption = null;
+        if (++index === current().recognitionTrials.length) { stage = 'withdrawal'; index = 0; }
+        else stage = 'recognition';
+      } else if (action === 'withdraw') {
+        document.getElementById('withdraw-dialog').showModal(); return;
+      } else if (action === 'cancel-withdraw') {
+        document.getElementById('withdraw-dialog').close(); return;
+      } else if (action === 'confirm-withdraw') {
+        document.getElementById('withdraw-dialog').close();
+        const id = current().withdrawalOrder[index];
+        answers[id].withdrawn = true;
+        advanceWithdrawal(); return;
+      } else if (action === 'keep') {
+        answers[current().withdrawalOrder[index]].withdrawn = false;
+        advanceWithdrawal(); return;
+      } else if (action === 'begin-formal' || action === 'continue') {
+        roundNumber++; jol = {}; restudy = new Set(); answers = {}; fillerAnswers = []; roundResult = null; beginStudy(); return;
+      } else if (action === 'finish') {
+        stage = 'finished';
+      }
+      render();
+    });
+    document.getElementById('restore').addEventListener('click', () => document.documentElement.requestFullscreen?.());
+    render();
+  </script>
+</body>
+</html>

@@ -6,7 +6,7 @@ const app = cloudbase.init({ env: cloudbase.SYMBOL_CURRENT_ENV });
 const db = app.database();
 const submissions = db.collection("experiment_submissions");
 const students = db.collection("students");
-const EXPERIMENTS = new Set(["memory", "nback", "interference", "strategies", "poster", "screening"]);
+const EXPERIMENTS = new Set(["memory", "nback", "interference", "strategies", "poster", "duel", "screening"]);
 const ID_PATTERN = /^[A-Za-z0-9_.:-]{1,100}$/;
 
 function text(value) { return String(value == null ? "" : value).trim(); }
@@ -65,7 +65,7 @@ function validSubmission(value, studentId) {
   if (text(submission.studentId) !== studentId || !EXPERIMENTS.has(text(submission.experimentId))) return false;
   if (!text(submission.submissionId) || !text(submission.experimentName) || !text(submission.submissionTime)) return false;
   if (!submission.knowledgeQuiz || !Array.isArray(submission.knowledgeQuiz.attempts) || submission.knowledgeQuiz.attempts.length > 1) return false;
-  if (Number(submission.schemaVersion) >= 2 && !validKnowledgeAssessment(submission.knowledgeAssessment)) return false;
+  if (Number(submission.schemaVersion) >= 2 && submission.experimentId !== "duel" && !validKnowledgeAssessment(submission.knowledgeAssessment)) return false;
   return [submission.answers, submission.experimentResults, submission.surveys, submission.reflections, submission.aiSummary].every((item) => item && typeof item === "object" && !Array.isArray(item));
 }
 
