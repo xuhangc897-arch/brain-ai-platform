@@ -37,12 +37,12 @@ const registry = window.BrainExperimentRegistry;
 assert.strictEqual(registry.version, 1);
 assert.deepStrictEqual(
   Array.from(registry.moduleIds),
-  ["memory", "nback", "interference", "strategies", "poster", "screening", "aiChat"]
+  ["memory", "nback", "interference", "strategies", "poster", "duel", "screening", "aiChat"]
 );
 assert.strictEqual(new Set(registry.moduleIds).size, registry.moduleIds.length);
-assert.strictEqual(registry.experiments.length, 5);
-assert.strictEqual(new Set(registry.experiments.map((entry) => entry.route)).size, 5);
-assert.strictEqual(new Set(registry.experiments.map((entry) => entry.storageKey)).size, 5);
+assert.strictEqual(registry.experiments.length, 6);
+assert.strictEqual(new Set(registry.experiments.map((entry) => entry.route)).size, 6);
+assert.strictEqual(new Set(registry.experiments.map((entry) => entry.storageKey)).size, 6);
 assert.strictEqual(registry.get("memory").route, "memory.html");
 assert.strictEqual(registry.getReportUrl("poster"), "review.html?activityType=poster");
 assert.strictEqual(registry.getReportUrl("screening"), "");
@@ -128,6 +128,7 @@ const rootPages = [
   "interference.html",
   "strategies.html",
   "poster.html"
+  ,"detective-duel.html"
 ];
 for (const page of rootPages) {
   assertOrder(page, "assets/experiment-registry.js", "assets/platform-core.js");

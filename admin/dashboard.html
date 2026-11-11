@@ -1063,6 +1063,7 @@
   <script src="../assets/experiment-integration.js"></script>
   <script src="../assets/knowledge-pretest.js"></script>
   <script src="../assets/knowledge-assessment.js"></script>
+  <script src="../assets/inquiry-ability-survey.js"></script>
   <script src="../cloudbase.js"></script>
   <script>
     const experimentRegistry = window.BrainExperimentRegistry;
@@ -1686,6 +1687,7 @@
     }
 
     const MEMORY_SURVEY_DEFS = {
+      inquiryAbility: window.BrainInquiryAbilitySurvey,
       postMeta: {
         title: "学习收获调查",
         labels: { 1: "非常不同意", 2: "不同意", 3: "一般", 4: "同意", 5: "非常同意" },
@@ -1724,6 +1726,7 @@
     };
 
     const NBACK_SURVEY_DEFS = {
+      inquiryAbility: window.BrainInquiryAbilitySurvey,
       postMeta: {
         title: "学习收获调查",
         labels: { 1: "非常不同意", 2: "不同意", 3: "一般", 4: "同意", 5: "非常同意" },
@@ -1755,7 +1758,7 @@
 
     function buildSurveySheet(studentLabel, state, surveyKey, surveyDefs = MEMORY_SURVEY_DEFS) {
       const def = surveyDefs[surveyKey];
-      const answers = state.surveys?.[surveyKey] || {};
+      const answers = state.surveys?.[surveyKey] || state.surveys?.current?.[surveyKey] || {};
       const values = def.items.map((_, index) => Number(answers[`q${index + 1}`] || 0)).filter(Boolean);
       const total = values.reduce((sum, value) => sum + value, 0);
       const average = values.length ? Number((total / values.length).toFixed(2)) : "";
@@ -1896,6 +1899,7 @@
         buildSurveySheet(studentLabel, state, "postMeta", NBACK_SURVEY_DEFS),
         buildSurveySheet(studentLabel, state, "cognitiveLoad", NBACK_SURVEY_DEFS),
         buildSurveySheet(studentLabel, state, "inquiryParticipation", NBACK_SURVEY_DEFS),
+        buildSurveySheet(studentLabel, state, "inquiryAbility", NBACK_SURVEY_DEFS),
         ...(Number(stateRecord.schemaVersion) >= 2
           ? [buildKnowledgeAssessmentSheet(studentLabel, state)]
           : [buildKnowledgeQuizSheet(studentLabel, state), buildKnowledgeHistorySheet(studentLabel, state)]),
@@ -2133,6 +2137,7 @@
         buildSurveySheet(studentLabel, state, "postMeta"),
         buildSurveySheet(studentLabel, state, "cognitiveLoad"),
         buildSurveySheet(studentLabel, state, "inquiryParticipation"),
+        buildSurveySheet(studentLabel, state, "inquiryAbility"),
         [`${studentLabel}-系统信息`, [
           ["项目", "内容"],
           ["实验版本", "science-inquiry-static-v1"],
@@ -2183,6 +2188,7 @@
           buildSurveySheet(studentLabel, state, "postMeta"),
           buildSurveySheet(studentLabel, state, "cognitiveLoad"),
           buildSurveySheet(studentLabel, state, "inquiryParticipation"),
+          buildSurveySheet(studentLabel, state, "inquiryAbility"),
           [`${studentLabel}-localStorage原始数据`, [
             ["localStorage key", "JSON"],
             [storageKey, JSON.stringify(state)]
@@ -2605,6 +2611,13 @@
           ["合计", "总分", "", state.total || ""],
           ["合计", "均分", "", state.average || ""],
           ["合计", "是否完成", "", state.complete || state.completed ? "是" : "否"]
+        ]],
+        [`${studentLabel}-科学探究能力前测`, [
+          ["题号", "题目", "得分", "选项含义"],
+          ...(state.inquiryAbilityItems || window.BrainInquiryAbilitySurvey.items).map((item, index) => {
+            const score = Number(state.preInquiryAbility?.[`q${index + 1}`] || 0);
+            return [String(index + 1), item, score || "", (state.inquiryAbilityLabels || window.BrainInquiryAbilitySurvey.labels)[score] || ""];
+          })
         ]],
         [`${studentLabel}-localStorage原始数据`, [
           ["localStorage key", "JSON"],

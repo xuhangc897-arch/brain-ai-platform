@@ -17,12 +17,13 @@ const rootFiles = [
   "interference.html",
   "strategies.html",
   "poster.html",
+  "detective-duel.html",
   "review.html",
   "diagnosis.html",
   "auth.js",
   "cloudbase.js"
 ];
-const directories = ["assets", "admin"];
+const directories = ["assets", "admin", "docs/spanish-picture-bank-images"];
 const excludedDeployFiles = new Set([
   "assets/headband-guide.png",
   "assets/home-hero-bg.png",

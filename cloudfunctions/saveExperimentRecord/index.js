@@ -8,7 +8,7 @@ const RECORDS_COLLECTION = "experimentRecords";
 const LEGACY_SCHEMA_VERSION = 1;
 const CURRENT_SCHEMA_VERSION = 2;
 const SUPPORTED_SCHEMA_VERSIONS = new Set([LEGACY_SCHEMA_VERSION, CURRENT_SCHEMA_VERSION]);
-const ALLOWED_MODULES = new Set(["memory", "nback", "interference", "strategies", "poster", "screening", "aiChat"]);
+const ALLOWED_MODULES = new Set(["memory", "nback", "interference", "strategies", "poster", "duel", "screening", "aiChat"]);
 const ALLOWED_RECORD_TYPES = new Set(["experiment", "state", "submission"]);
 const ID_PATTERN = /^[A-Za-z0-9_.:-]{1,100}$/;
 

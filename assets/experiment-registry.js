@@ -68,6 +68,19 @@
       reportEnabled: true
     },
     {
+      id: "duel",
+      label: "名侦探对决",
+      kind: "experiment",
+      order: 6,
+      caseNo: "案件06",
+      caseTitle: "名侦探对决",
+      activityName: "词图学习与判断挑战",
+      reportType: "science",
+      route: "detective-duel.html",
+      storageKey: "detective-duel-state-v1",
+      reportEnabled: false
+    },
+    {
       id: "screening",
       label: "资格审查",
       kind: "screening",

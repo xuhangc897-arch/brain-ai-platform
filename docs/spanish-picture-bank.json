@@ -1,0 +1,573 @@
+{
+  "version": "draft-4",
+  "status": "requires_human_review_and_pilot",
+  "practiceCount": 4,
+  "roundCounts": [
+    8,
+    10,
+    12,
+    14
+  ],
+  "items": [
+    {
+      "id": "P01",
+      "round": 0,
+      "word": "ojo",
+      "meaningZh": "眼睛",
+      "pictureZh": "一只睁开的眼睛",
+      "pictureAsset": "docs/spanish-picture-bank-images/P01.jpg"
+    },
+    {
+      "id": "P02",
+      "round": 0,
+      "word": "coche",
+      "meaningZh": "汽车",
+      "pictureZh": "一辆普通小汽车",
+      "pictureAsset": "docs/spanish-picture-bank-images/P02.jpg"
+    },
+    {
+      "id": "P03",
+      "round": 0,
+      "word": "uva",
+      "meaningZh": "葡萄",
+      "pictureZh": "一串紫葡萄",
+      "pictureAsset": "docs/spanish-picture-bank-images/P03.jpg"
+    },
+    {
+      "id": "P04",
+      "round": 0,
+      "word": "vela",
+      "meaningZh": "蜡烛",
+      "pictureZh": "一支点燃的蜡烛，不出现帆船",
+      "pictureAsset": "docs/spanish-picture-bank-images/P04.jpg"
+    },
+    {
+      "id": "W01",
+      "round": 1,
+      "word": "sol",
+      "meaningZh": "太阳",
+      "pictureZh": "天空中的太阳",
+      "pictureAsset": "docs/spanish-picture-bank-images/W01.jpg"
+    },
+    {
+      "id": "W02",
+      "round": 1,
+      "word": "pan",
+      "meaningZh": "面包",
+      "pictureZh": "一条面包",
+      "pictureAsset": "docs/spanish-picture-bank-images/W02.jpg"
+    },
+    {
+      "id": "W03",
+      "round": 4,
+      "word": "pez",
+      "meaningZh": "鱼",
+      "pictureZh": "一条鱼",
+      "pictureAsset": "docs/spanish-picture-bank-images/W03.jpg"
+    },
+    {
+      "id": "W04",
+      "round": 1,
+      "word": "flor",
+      "meaningZh": "花",
+      "pictureZh": "一朵花",
+      "pictureAsset": "docs/spanish-picture-bank-images/W04.jpg"
+    },
+    {
+      "id": "W05",
+      "round": 4,
+      "word": "tren",
+      "meaningZh": "火车",
+      "pictureZh": "一列火车",
+      "pictureAsset": "docs/spanish-picture-bank-images/W05.jpg"
+    },
+    {
+      "id": "W06",
+      "round": 1,
+      "word": "mesa",
+      "meaningZh": "桌子",
+      "pictureZh": "一张普通桌子",
+      "pictureAsset": "docs/spanish-picture-bank-images/W06.jpg"
+    },
+    {
+      "id": "W07",
+      "round": 4,
+      "word": "taza",
+      "meaningZh": "杯子",
+      "pictureZh": "一个有把手的杯子",
+      "pictureAsset": "docs/spanish-picture-bank-images/W07.jpg"
+    },
+    {
+      "id": "W08",
+      "round": 1,
+      "word": "gato",
+      "meaningZh": "猫",
+      "pictureZh": "一只猫",
+      "pictureAsset": "docs/spanish-picture-bank-images/W08.jpg"
+    },
+    {
+      "id": "W09",
+      "round": 4,
+      "word": "luna",
+      "meaningZh": "月亮",
+      "pictureZh": "深蓝夜空中一弯明黄色月亮、几颗星星与下方的月光倒影",
+      "pictureAsset": "docs/spanish-picture-bank-images/W09.jpg"
+    },
+    {
+      "id": "W10",
+      "round": 4,
+      "word": "casa",
+      "meaningZh": "房子",
+      "pictureZh": "一栋独立的房子",
+      "pictureAsset": "docs/spanish-picture-bank-images/W10.jpg"
+    },
+    {
+      "id": "W11",
+      "round": 4,
+      "word": "árbol",
+      "meaningZh": "树",
+      "pictureZh": "一棵完整的树",
+      "pictureAsset": "docs/spanish-picture-bank-images/W11.jpg"
+    },
+    {
+      "id": "W12",
+      "round": 4,
+      "word": "mano",
+      "meaningZh": "手",
+      "pictureZh": "一只张开的手",
+      "pictureAsset": "docs/spanish-picture-bank-images/W12.jpg"
+    },
+    {
+      "id": "W13",
+      "round": 2,
+      "word": "perro",
+      "meaningZh": "狗",
+      "pictureZh": "一只狗",
+      "pictureAsset": "docs/spanish-picture-bank-images/W13.jpg"
+    },
+    {
+      "id": "W14",
+      "round": 2,
+      "word": "libro",
+      "meaningZh": "书",
+      "pictureZh": "一本合上的书",
+      "pictureAsset": "docs/spanish-picture-bank-images/W14.jpg"
+    },
+    {
+      "id": "W15",
+      "round": 2,
+      "word": "silla",
+      "meaningZh": "椅子",
+      "pictureZh": "一把普通椅子",
+      "pictureAsset": "docs/spanish-picture-bank-images/W15.jpg"
+    },
+    {
+      "id": "W16",
+      "round": 2,
+      "word": "leche",
+      "meaningZh": "牛奶",
+      "pictureZh": "一杯白色牛奶",
+      "pictureAsset": "docs/spanish-picture-bank-images/W16.jpg"
+    },
+    {
+      "id": "W17",
+      "round": 2,
+      "word": "barco",
+      "meaningZh": "船",
+      "pictureZh": "一艘小船",
+      "pictureAsset": "docs/spanish-picture-bank-images/W17.jpg"
+    },
+    {
+      "id": "W18",
+      "round": 3,
+      "word": "playa",
+      "meaningZh": "海滩",
+      "pictureZh": "金色沙岸、白色浪线、蓝色海面与天空及清晰海平线，不出现鱼缸",
+      "pictureAsset": "docs/spanish-picture-bank-images/W18.jpg"
+    },
+    {
+      "id": "W19",
+      "round": 2,
+      "word": "queso",
+      "meaningZh": "奶酪",
+      "pictureZh": "一块奶酪",
+      "pictureAsset": "docs/spanish-picture-bank-images/W19.jpg"
+    },
+    {
+      "id": "W20",
+      "round": 3,
+      "word": "reloj",
+      "meaningZh": "钟表",
+      "pictureZh": "一个圆形挂钟",
+      "pictureAsset": "docs/spanish-picture-bank-images/W20.jpg"
+    },
+    {
+      "id": "W21",
+      "round": 3,
+      "word": "llave",
+      "meaningZh": "钥匙",
+      "pictureZh": "一把金属钥匙",
+      "pictureAsset": "docs/spanish-picture-bank-images/W21.jpg"
+    },
+    {
+      "id": "W22",
+      "round": 3,
+      "word": "globo",
+      "meaningZh": "气球",
+      "pictureZh": "一个系绳的气球，不出现地球仪",
+      "pictureAsset": "docs/spanish-picture-bank-images/W22.jpg"
+    },
+    {
+      "id": "W23",
+      "round": 3,
+      "word": "sopa",
+      "meaningZh": "汤",
+      "pictureZh": "一碗汤",
+      "pictureAsset": "docs/spanish-picture-bank-images/W23.jpg"
+    },
+    {
+      "id": "W24",
+      "round": 3,
+      "word": "nube",
+      "meaningZh": "云",
+      "pictureZh": "天空中的一朵云",
+      "pictureAsset": "docs/spanish-picture-bank-images/W24.jpg"
+    },
+    {
+      "id": "W25",
+      "round": 3,
+      "word": "bota",
+      "meaningZh": "靴子",
+      "pictureZh": "一只靴子",
+      "pictureAsset": "docs/spanish-picture-bank-images/W25.jpg"
+    },
+    {
+      "id": "W26",
+      "round": 4,
+      "word": "cama",
+      "meaningZh": "床",
+      "pictureZh": "一张床",
+      "pictureAsset": "docs/spanish-picture-bank-images/W26.jpg"
+    },
+    {
+      "id": "W27",
+      "round": 4,
+      "word": "pato",
+      "meaningZh": "鸭子",
+      "pictureZh": "一只鸭子",
+      "pictureAsset": "docs/spanish-picture-bank-images/W27.jpg"
+    },
+    {
+      "id": "W28",
+      "round": 1,
+      "word": "caballo",
+      "meaningZh": "马",
+      "pictureZh": "一匹马",
+      "pictureAsset": "docs/spanish-picture-bank-images/W28.jpg"
+    },
+    {
+      "id": "W29",
+      "round": 1,
+      "word": "cuchara",
+      "meaningZh": "勺子",
+      "pictureZh": "一把勺子",
+      "pictureAsset": "docs/spanish-picture-bank-images/W29.jpg"
+    },
+    {
+      "id": "W30",
+      "round": 1,
+      "word": "ventana",
+      "meaningZh": "窗户",
+      "pictureZh": "一扇窗户",
+      "pictureAsset": "docs/spanish-picture-bank-images/W30.jpg"
+    },
+    {
+      "id": "W31",
+      "round": 1,
+      "word": "camisa",
+      "meaningZh": "衬衫",
+      "pictureZh": "一件有领衬衫",
+      "pictureAsset": "docs/spanish-picture-bank-images/W31.jpg"
+    },
+    {
+      "id": "W32",
+      "round": 2,
+      "word": "pelota",
+      "meaningZh": "球",
+      "pictureZh": "一个普通圆球，不出现具体运动标志",
+      "pictureAsset": "docs/spanish-picture-bank-images/W32.jpg"
+    },
+    {
+      "id": "W33",
+      "round": 2,
+      "word": "botella",
+      "meaningZh": "瓶子",
+      "pictureZh": "一个有瓶口的瓶子",
+      "pictureAsset": "docs/spanish-picture-bank-images/W33.jpg"
+    },
+    {
+      "id": "W34",
+      "round": 2,
+      "word": "zapato",
+      "meaningZh": "鞋",
+      "pictureZh": "一只普通低帮鞋",
+      "pictureAsset": "docs/spanish-picture-bank-images/W34.jpg"
+    },
+    {
+      "id": "W35",
+      "round": 2,
+      "word": "conejo",
+      "meaningZh": "兔子",
+      "pictureZh": "一只兔子",
+      "pictureAsset": "docs/spanish-picture-bank-images/W35.jpg"
+    },
+    {
+      "id": "W36",
+      "round": 2,
+      "word": "naranja",
+      "meaningZh": "橙子",
+      "pictureZh": "一个完整的橙子",
+      "pictureAsset": "docs/spanish-picture-bank-images/W36.jpg"
+    },
+    {
+      "id": "W37",
+      "round": 3,
+      "word": "manzana",
+      "meaningZh": "苹果",
+      "pictureZh": "一个完整的苹果",
+      "pictureAsset": "docs/spanish-picture-bank-images/W37.jpg"
+    },
+    {
+      "id": "W38",
+      "round": 3,
+      "word": "cebolla",
+      "meaningZh": "洋葱",
+      "pictureZh": "一个完整的紫皮洋葱，带淡色根须",
+      "pictureAsset": "docs/spanish-picture-bank-images/W38.jpg"
+    },
+    {
+      "id": "W39",
+      "round": 3,
+      "word": "mochila",
+      "meaningZh": "背包",
+      "pictureZh": "一个双肩背包",
+      "pictureAsset": "docs/spanish-picture-bank-images/W39.jpg"
+    },
+    {
+      "id": "W40",
+      "round": 3,
+      "word": "tenedor",
+      "meaningZh": "叉子",
+      "pictureZh": "一把餐叉",
+      "pictureAsset": "docs/spanish-picture-bank-images/W40.jpg"
+    },
+    {
+      "id": "W41",
+      "round": 3,
+      "word": "escalera",
+      "meaningZh": "梯子",
+      "pictureZh": "一架可攀爬的梯子，不出现楼梯",
+      "pictureAsset": "docs/spanish-picture-bank-images/W41.jpg"
+    },
+    {
+      "id": "W42",
+      "round": 3,
+      "word": "tijeras",
+      "meaningZh": "剪刀",
+      "pictureZh": "一把剪刀",
+      "pictureAsset": "docs/spanish-picture-bank-images/W42.jpg"
+    },
+    {
+      "id": "W43",
+      "round": 3,
+      "word": "cereza",
+      "meaningZh": "樱桃",
+      "pictureZh": "两颗带梗樱桃",
+      "pictureAsset": "docs/spanish-picture-bank-images/W43.jpg"
+    },
+    {
+      "id": "W44",
+      "round": 4,
+      "word": "tortuga",
+      "meaningZh": "乌龟",
+      "pictureZh": "一只乌龟",
+      "pictureAsset": "docs/spanish-picture-bank-images/W44.jpg"
+    },
+    {
+      "id": "W45",
+      "round": 4,
+      "word": "cometa",
+      "meaningZh": "风筝",
+      "pictureZh": "天空中的一只风筝，不出现彗星",
+      "pictureAsset": "docs/spanish-picture-bank-images/W45.jpg"
+    },
+    {
+      "id": "W46",
+      "round": 1,
+      "word": "mariposa",
+      "meaningZh": "蝴蝶",
+      "pictureZh": "一只蝴蝶",
+      "pictureAsset": "docs/spanish-picture-bank-images/W46.jpg"
+    },
+    {
+      "id": "W47",
+      "round": 4,
+      "word": "murciélago",
+      "meaningZh": "蝙蝠",
+      "pictureZh": "一只张开翅膀的蝙蝠",
+      "pictureAsset": "docs/spanish-picture-bank-images/W47.jpg"
+    },
+    {
+      "id": "W48",
+      "round": 4,
+      "word": "saltamontes",
+      "meaningZh": "蚱蜢",
+      "pictureZh": "一只蚱蜢",
+      "pictureAsset": "docs/spanish-picture-bank-images/W48.jpg"
+    },
+    {
+      "id": "W49",
+      "round": 2,
+      "word": "columpio",
+      "meaningZh": "秋千",
+      "pictureZh": "一个空秋千",
+      "pictureAsset": "docs/spanish-picture-bank-images/W49.jpg"
+    },
+    {
+      "id": "W50",
+      "round": 1,
+      "word": "paraguas",
+      "meaningZh": "雨伞",
+      "pictureZh": "一把撑开的雨伞",
+      "pictureAsset": "docs/spanish-picture-bank-images/W50.jpg"
+    },
+    {
+      "id": "W51",
+      "round": 4,
+      "word": "escritorio",
+      "meaningZh": "书桌",
+      "pictureZh": "一张带抽屉的书桌，不出现普通餐桌",
+      "pictureAsset": "docs/spanish-picture-bank-images/W51.jpg"
+    },
+    {
+      "id": "W52",
+      "round": 1,
+      "word": "zanahoria",
+      "meaningZh": "胡萝卜",
+      "pictureZh": "一根胡萝卜",
+      "pictureAsset": "docs/spanish-picture-bank-images/W52.jpg"
+    },
+    {
+      "id": "W53",
+      "round": 2,
+      "word": "lavadora",
+      "meaningZh": "洗衣机",
+      "pictureZh": "一台前开门洗衣机",
+      "pictureAsset": "docs/spanish-picture-bank-images/W53.jpg"
+    },
+    {
+      "id": "W54",
+      "round": 4,
+      "word": "semáforo",
+      "meaningZh": "交通信号灯",
+      "pictureZh": "一个红黄绿交通信号灯",
+      "pictureAsset": "docs/spanish-picture-bank-images/W54.jpg"
+    },
+    {
+      "id": "W55",
+      "round": 4,
+      "word": "caracol",
+      "meaningZh": "蜗牛",
+      "pictureZh": "一只带壳蜗牛",
+      "pictureAsset": "docs/spanish-picture-bank-images/W55.jpg"
+    },
+    {
+      "id": "W56",
+      "round": 2,
+      "word": "calcetín",
+      "meaningZh": "袜子",
+      "pictureZh": "一只袜子",
+      "pictureAsset": "docs/spanish-picture-bank-images/W56.jpg"
+    },
+    {
+      "id": "W57",
+      "round": 2,
+      "word": "camiseta",
+      "meaningZh": "T恤",
+      "pictureZh": "一件无领短袖T恤，不出现衬衫",
+      "pictureAsset": "docs/spanish-picture-bank-images/W57.jpg"
+    },
+    {
+      "id": "W58",
+      "round": 3,
+      "word": "almohada",
+      "meaningZh": "枕头",
+      "pictureZh": "一个枕头",
+      "pictureAsset": "docs/spanish-picture-bank-images/W58.jpg"
+    },
+    {
+      "id": "W59",
+      "round": 3,
+      "word": "cuchillo",
+      "meaningZh": "刀",
+      "pictureZh": "一把餐刀，不出现剪刀",
+      "pictureAsset": "docs/spanish-picture-bank-images/W59.jpg"
+    },
+    {
+      "id": "W60",
+      "round": 4,
+      "word": "cepillo",
+      "meaningZh": "刷子",
+      "pictureZh": "一把清洁刷，不出现牙刷",
+      "pictureAsset": "docs/spanish-picture-bank-images/W60.jpg"
+    },
+    {
+      "id": "W61",
+      "round": 3,
+      "word": "cangrejo",
+      "meaningZh": "螃蟹",
+      "pictureZh": "一只螃蟹",
+      "pictureAsset": "docs/spanish-picture-bank-images/W61.jpg"
+    },
+    {
+      "id": "W62",
+      "round": 4,
+      "word": "berenjena",
+      "meaningZh": "茄子",
+      "pictureZh": "一个茄子",
+      "pictureAsset": "docs/spanish-picture-bank-images/W62.jpg"
+    },
+    {
+      "id": "W63",
+      "round": 4,
+      "word": "escoba",
+      "meaningZh": "扫帚",
+      "pictureZh": "一把扫帚",
+      "pictureAsset": "docs/spanish-picture-bank-images/W63.jpg"
+    },
+    {
+      "id": "W64",
+      "round": 3,
+      "word": "serpiente",
+      "meaningZh": "蛇",
+      "pictureZh": "一条蛇",
+      "pictureAsset": "docs/spanish-picture-bank-images/W64.jpg"
+    },
+    {
+      "id": "W65",
+      "round": 4,
+      "word": "ardilla",
+      "meaningZh": "松鼠",
+      "pictureZh": "一只松鼠",
+      "pictureAsset": "docs/spanish-picture-bank-images/W65.jpg"
+    },
+    {
+      "id": "W66",
+      "round": 4,
+      "word": "pimiento",
+      "meaningZh": "甜椒",
+      "pictureZh": "一个彩色甜椒，不出现辣椒",
+      "pictureAsset": "docs/spanish-picture-bank-images/W66.jpg"
+    }
+  ]
+}
