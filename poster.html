@@ -601,6 +601,18 @@
     .knowledge-option.is-selected,
     .knowledge-option:has(input:checked) { border-color: var(--primary); background: var(--primary-soft); color: var(--primary); }
     .knowledge-complete { padding: 22px; border: 1px solid var(--line); border-radius: 12px; text-align: center; background: var(--panel); }
+    .survey-card { display: grid; gap: 8px; margin-top: 16px; }
+    .survey-page-note { display: flex; justify-content: space-between; gap: 12px; color: var(--muted); font-size: 12px; }
+    .survey-item { padding: 12px 0; border-top: 1px solid var(--line); }
+    .survey-item p { margin: 0 0 9px; font-weight: 800; line-height: 1.5; }
+    .survey-scale { display: grid; grid-template-columns: repeat(5, minmax(0, 1fr)); gap: 10px; }
+    .survey-option { position: relative; }
+    .survey-option input { position: absolute; opacity: 0; }
+    .survey-option-card { display: grid; place-items: center; min-height: 52px; padding: 7px 4px; border: 1px solid var(--line); border-radius: 8px; background: var(--panel); color: var(--muted); cursor: pointer; text-align: center; }
+    .survey-option-card:hover, .survey-option input:focus-visible + .survey-option-card { border-color: var(--primary); }
+    .survey-option.is-selected .survey-option-card { border-color: var(--primary); background: var(--primary-soft); color: var(--primary); }
+    .survey-score { display: block; font-size: 18px; font-weight: 900; }
+    .survey-label { display: block; font-size: 12px; font-weight: 700; }
 
     .report-archive-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(220px, 1fr)); gap: 14px; margin: 20px 0; }
     .report-archive-card { border: 1px solid var(--line); border-radius: 12px; padding: 18px; background: var(--panel); }
@@ -654,6 +666,10 @@
       .score-record-grid { grid-template-columns: 1fr; }
       .score-footer-card { gap: 10px; }
       .score-footer-card select { flex: 1; width: auto; }
+      .survey-scale { gap: 4px; }
+      .survey-option-card { min-height: 58px; }
+      .survey-label { font-size: 10px; }
+      .survey-page-note { flex-direction: column; gap: 3px; }
       .archive-dialog { width: calc(100vw - 12px); height: calc(100dvh - 12px); padding: 8px; }
       .report-archive-viewer { height: calc(100dvh - 95px); }
     }
@@ -740,6 +756,7 @@
   <script src="assets/experiment-integration.js"></script>
   <script src="assets/knowledge-pretest.js"></script>
   <script src="assets/knowledge-assessment.js"></script>
+  <script src="assets/inquiry-ability-survey.js"></script>
   <script src="assets/experiment-submission.js"></script>
   <script src="assets/report-archive.js"></script>
   <script src="assets/student-memory.js"></script>
@@ -760,11 +777,27 @@
       { id: "questions", title: "提问交流", minutes: "15分钟", taskDescription: "认真观看其他小组的委托海报，提出问题并记录对方的回答。" },
       { id: "score", title: "海报评分", minutes: "20分钟", taskDescription: "根据海报评分表的四个维度对每组海报评分，并为最优海报点赞。" },
       { id: "reflection", title: "总结反思", minutes: "10分钟", taskDescription: "总结交流收获、海报改进方向、小组合作情况和探究成果的应用。" },
-      { id: "posttest", title: "侦探小结", minutes: "15分钟", taskDescription: "完成课程知识后测。" }
+      { id: "posttest", title: "侦探小结", minutes: "25分钟", taskDescription: "完成课程知识后测、元认知问卷和科学探究能力问卷。" }
     ];
 
     const knowledgeQuestions = window.BrainKnowledgePretestQuestions;
     const knowledgeAssessmentApi = window.BrainKnowledgeAssessment;
+    const metaSurvey = {
+      title: "记忆相关知识元认知情况调查问卷",
+      scale: [1, 2, 3, 4, 5],
+      anchors: "1=完全否，2=较少，3=一般，4=较多，5=完全是",
+      labels: { 1: "完全否", 2: "较少", 3: "一般", 4: "较多", 5: "完全是" },
+      note: "请选择最符合你真实想法的一项。",
+      items: [
+        "我能够理解老师所讲的有关记忆的知识。",
+        "这些有关记忆的知识对我很有用，我会继续使用。",
+        "在学习这些知识时，我会与现实生活进行联系。",
+        "我会根据今天学到的知识反思之前的学习过程中做的不足的地方并加以改进。",
+        "在学习这些知识时，我会联想到之前学过或了解过的知识。"
+      ]
+    };
+    const inquiryAbilitySurvey = window.BrainInquiryAbilitySurvey;
+    const SURVEY_PAGE_SIZE = 3;
 
     const indicators = [
       { key: "question", dimension: "科学性", title: "研究问题明确性", rule: "1分：未写出研究问题；2分：写出问题但非疑问句；3分：用疑问句表述但问题不清晰；4分：用疑问句清晰表述问题，问题简洁完整" },
@@ -836,6 +869,8 @@
       posterGroups: groupLabels.slice(),
       knowledgeAssessment: knowledgeAssessmentApi.emptyTimeline(),
       knowledgeDraftT5: knowledgeAssessmentApi.createDraft("T5", knowledgeQuestions, true),
+      surveys: { current: { postMeta: {}, inquiryAbility: {} } },
+      posttestSurveysSubmitted: false,
       savedAt: ""
     };
 
@@ -888,6 +923,10 @@
       merged.posterGroups = Array.isArray(incoming.posterGroups) && incoming.posterGroups.length ? incoming.posterGroups : base.posterGroups.slice();
       merged.knowledgeAssessment = knowledgeAssessmentApi.mergeTimelines(incoming.knowledgeAssessment, knowledgeAssessmentApi.readTimeline());
       merged.knowledgeDraftT5 = knowledgeAssessmentApi.normalizeDraft(incoming.knowledgeDraftT5, "T5", knowledgeQuestions, true);
+      merged.surveys = { current: {
+        postMeta: Object.assign({}, incoming.surveys?.current?.postMeta || incoming.surveys?.postMeta || {}),
+        inquiryAbility: Object.assign({}, incoming.surveys?.current?.inquiryAbility || incoming.surveys?.inquiryAbility || {})
+      } };
       return merged;
     }
 
@@ -1054,7 +1093,7 @@
         return allScored && hasText(fields.bestPoster);
       }
       if (stepId === "reflection") return ["reflectionGain", "reflectionImprove", "teamReflection", "nextUse"].every((key) => hasText(fields[key]));
-      if (stepId === "posttest") return Boolean(state.knowledgeAssessment?.T5);
+      if (stepId === "posttest") return Boolean(state.knowledgeAssessment?.T5 && state.posttestSurveysSubmitted);
       return true;
     }
 
@@ -1286,7 +1325,8 @@
       if (stepId === "questions") return Math.max(1, Math.ceil(state.questions.length / getRecordPageSize()));
       if (stepId === "score") return Math.ceil(getPosterGroups().length / (window.innerWidth <= 680 ? 1 : 4));
       if (stepId === "reflection") return window.innerWidth <= 680 ? 5 : 3;
-      return { make: 2, posttest: 20 }[stepId] || 1;
+      if (stepId === "posttest") return knowledgeQuestions.length + Math.ceil(metaSurvey.items.length / SURVEY_PAGE_SIZE) + Math.ceil(inquiryAbilitySurvey.items.length / SURVEY_PAGE_SIZE);
+      return { make: 2 }[stepId] || 1;
     }
 
     function renderNavigation(page, pageCount) {
@@ -1295,7 +1335,7 @@
         <div class="actions">
           <button class="btn ghost" type="button" id="prevStep">上一页</button>
           ${isFinalStep && page === pageCount - 1
-            ? (state.knowledgeAssessment?.T5 ? '<button class="btn secondary final-step-action" type="button" id="reviewReportBtn">生成记忆侦探报告</button>' : '<button class="btn" type="button" id="posttestSubmit">提交侦探小结</button>')
+            ? (state.posttestSurveysSubmitted ? '<button class="btn secondary final-step-action" type="button" id="reviewReportBtn">生成记忆侦探报告</button>' : '<button class="btn" type="button" id="posttestSubmit">提交侦探小结</button>')
             : '<button class="btn" type="button" id="nextStep">下一页</button>'}
         </div>
       `;
@@ -1314,6 +1354,13 @@
     }
 
     function renderPosttestStep(page) {
+      if (page >= knowledgeQuestions.length) {
+        if (state.posttestSurveysSubmitted) return `<div class="knowledge-complete"><h3>侦探小结已完成</h3><p>问卷已提交，现在可以生成最终报告。</p></div>`;
+        const metaPageCount = Math.ceil(metaSurvey.items.length / SURVEY_PAGE_SIZE);
+        return page < knowledgeQuestions.length + metaPageCount
+          ? renderPosttestSurvey(metaSurvey, "postMeta", page - knowledgeQuestions.length)
+          : renderPosttestSurvey(inquiryAbilitySurvey, "inquiryAbility", page - knowledgeQuestions.length - metaPageCount);
+      }
       const record = state.knowledgeAssessment?.T5;
       if (record) {
         return `<div class="knowledge-complete"><h3>侦探小结已完成</h3><p>作答已提交并锁定，现在可以生成最终报告。</p></div>`;
@@ -1335,6 +1382,22 @@
       }).join("");
       return `<div class="task-hero"><h3>侦探小结 · 知识后测</h3><p>共 20 题，每页一题。提交后答案将锁定，学生端不显示分数、答案或解析。</p></div>
         <div class="knowledge-page" style="margin-top:16px;">${cards}</div>`;
+    }
+
+    function renderPosttestSurvey(definition, key, surveyPage) {
+      const start = surveyPage * SURVEY_PAGE_SIZE;
+      const answers = state.surveys.current[key];
+      return `<div class="task-hero"><h3>${escapeHtml(definition.title)}</h3><p>${escapeHtml(definition.note)}</p></div>
+        <div class="survey-card"><div class="survey-page-note"><span>第 ${start + 1}–${Math.min(start + SURVEY_PAGE_SIZE, definition.items.length)} 题</span><span>${escapeHtml(definition.anchors)}</span></div>
+        ${definition.items.slice(start, start + SURVEY_PAGE_SIZE).map((item, offset) => {
+          const index = start + offset;
+          const questionKey = `q${index + 1}`;
+          return `<div class="survey-item"><p>${index + 1}. ${escapeHtml(item)}</p><div class="survey-scale" role="radiogroup" aria-label="${escapeHtml(item)}">
+            ${definition.scale.map((score) => `<label class="survey-option ${Number(answers[questionKey]) === score ? "is-selected" : ""}">
+              <input type="radio" name="${key}-${questionKey}" data-survey="${key}" data-question="${questionKey}" value="${score}" ${Number(answers[questionKey]) === score ? "checked" : ""}>
+              <span class="survey-option-card"><span class="survey-score">${score}</span><span class="survey-label">${escapeHtml(definition.labels[score])}</span></span>
+            </label>`).join("")}</div></div>`;
+        }).join("")}</div>`;
     }
 
     function renderPlanStep(page) {
@@ -1622,9 +1685,23 @@
       if (next) next.addEventListener("click", () => {
         const stepId = steps[state.currentStep].id;
         const page = state.stepPages[stepId] || 0;
-        if (stepId === "posttest" && !state.knowledgeDraftT5.answers[state.knowledgeDraftT5.questionOrder[page]]) {
-          showStepMessage("请先完成本页题目。");
-          return;
+        if (stepId === "posttest") {
+          if (page < knowledgeQuestions.length && !state.knowledgeAssessment?.T5 && !state.knowledgeDraftT5.answers[state.knowledgeDraftT5.questionOrder[page]]) {
+            showStepMessage("请先完成本页题目。");
+            return;
+          }
+          if (page >= knowledgeQuestions.length) {
+            const metaPageCount = Math.ceil(metaSurvey.items.length / SURVEY_PAGE_SIZE);
+            const meta = page < knowledgeQuestions.length + metaPageCount;
+            const definition = meta ? metaSurvey : inquiryAbilitySurvey;
+            const key = meta ? "postMeta" : "inquiryAbility";
+            const surveyPage = meta ? page - knowledgeQuestions.length : page - knowledgeQuestions.length - metaPageCount;
+            if (definition.items.slice(surveyPage * SURVEY_PAGE_SIZE, (surveyPage + 1) * SURVEY_PAGE_SIZE)
+              .some((_, offset) => !state.surveys.current[key][`q${surveyPage * SURVEY_PAGE_SIZE + offset + 1}`])) {
+              showStepMessage("请先完成本页题目。");
+              return;
+            }
+          }
         }
         if (page < getPageCount(stepId) - 1) {
           state.stepPages[stepId] = page + 1;
@@ -1647,17 +1724,45 @@
           });
         });
       });
+      main.querySelectorAll("[data-survey]").forEach((input) => {
+        input.addEventListener("change", () => {
+          state.surveys.current[input.dataset.survey][input.dataset.question] = Number(input.value);
+          saveState();
+          input.closest(".survey-scale")?.querySelectorAll(".survey-option").forEach((option) => {
+            option.classList.toggle("is-selected", option.querySelector("input")?.checked === true);
+          });
+        });
+      });
       const submitPosttest = document.getElementById("posttestSubmit");
       if (submitPosttest) submitPosttest.addEventListener("click", submitPosttestOnce);
     }
 
     function submitPosttestOnce() {
-      const result = knowledgeAssessmentApi.submitStage(state.knowledgeAssessment, "T5", knowledgeQuestions, state.knowledgeDraftT5);
-      if (result.unanswered?.length) {
-        showStepMessage("请先完成全部 20 道题目。");
-        return;
+      for (const [key, definition, firstPage] of [
+        ["postMeta", metaSurvey, knowledgeQuestions.length],
+        ["inquiryAbility", inquiryAbilitySurvey, knowledgeQuestions.length + Math.ceil(metaSurvey.items.length / SURVEY_PAGE_SIZE)]
+      ]) {
+        const missing = definition.items.findIndex((_, index) => !state.surveys.current[key][`q${index + 1}`]);
+        if (missing !== -1) {
+          state.stepPages.posttest = firstPage + Math.floor(missing / SURVEY_PAGE_SIZE);
+          saveState();
+          renderStep();
+          showStepMessage("请先完成全部问卷题目。");
+          return;
+        }
       }
-      state.knowledgeAssessment = result.timeline;
+      if (!state.knowledgeAssessment?.T5) {
+        const result = knowledgeAssessmentApi.submitStage(state.knowledgeAssessment, "T5", knowledgeQuestions, state.knowledgeDraftT5);
+        if (result.unanswered?.length) {
+          state.stepPages.posttest = state.knowledgeDraftT5.questionOrder.indexOf(result.unanswered[0]);
+          saveState();
+          renderStep();
+          showStepMessage("请先完成全部 20 道知识题目。");
+          return;
+        }
+        state.knowledgeAssessment = result.timeline;
+      }
+      state.posttestSurveysSubmitted = true;
       saveState();
       renderApp();
       showStepMessage("侦探小结已完成，作答已锁定。");
@@ -1690,7 +1795,7 @@
     }
 
     async function generateReviewReport(activityType) {
-      if (!state.knowledgeAssessment?.T5) {
+      if (!state.knowledgeAssessment?.T5 || !state.posttestSurveysSubmitted) {
         showStepMessage("请先完成侦探小结。");
         return;
       }

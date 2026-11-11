@@ -567,13 +567,13 @@
           <p class="status" id="status"></p>
           <button class="btn secondary" type="button" id="metaPrevBtn">上一页</button>
           <button class="btn" type="button" id="metaNextBtn">下一页</button>
-          <button class="btn" type="button" id="completeBtn">完成资格审查（仅一次机会）</button>
         </div>
         <div id="inquiryAbilityRoot"></div>
         <div class="actions assessment-actions" id="inquiryAbilityActions">
           <p class="status" id="inquiryAbilityStatus" aria-live="polite"></p>
           <button class="btn secondary" type="button" id="inquiryAbilityPrevBtn">上一页</button>
           <button class="btn secondary" type="button" id="inquiryAbilityNextBtn">下一页</button>
+          <button class="btn" type="button" id="completeBtn">完成资格审查（仅一次机会）</button>
         </div>
       </div>
     </section>
@@ -929,7 +929,7 @@
       if (state.completed) {
         metaSurveyIntro.hidden = true;
         surveyRoot.innerHTML = '<div class="assessment-page-content"><div class="assessment-page-head"><strong>资格审查</strong><span class="assessment-page-progress">已完成</span></div>' +
-          '<section class="survey-card"><div><strong>资格审查已完成</strong><p>知识前测和元认知问卷已提交。下方的科学探究能力问卷仍可修改。</p></div></section></div>';
+          '<section class="survey-card"><div><strong>知识前测和元认知问卷已提交</strong><p>下方的科学探究能力问卷仍可修改。</p></div></section></div>';
         previous.hidden = true;
         next.hidden = true;
         complete.hidden = true;
@@ -963,7 +963,7 @@
 
       previous.hidden = false;
       next.hidden = metaPageIndex === pageCount - 1;
-      complete.hidden = metaPageIndex !== pageCount - 1;
+      complete.hidden = true;
       summaryRoot.hidden = metaPageIndex !== pageCount - 1;
 
       surveyRoot.querySelectorAll("[data-question]").forEach((input) => {
@@ -1009,6 +1009,7 @@
         }).join('') + '</section></div>';
       document.getElementById('inquiryAbilityPrevBtn').hidden = inquiryAbilityPageIndex === 0;
       document.getElementById('inquiryAbilityNextBtn').hidden = inquiryAbilityPageIndex === pageCount - 1;
+      document.getElementById('completeBtn').hidden = state.completed || inquiryAbilityPageIndex !== pageCount - 1;
       document.getElementById('inquiryAbilityStatus').textContent = summarizeInquiryAbility().answered + ' / ' + inquiryAbilityDef.items.length + ' 题已完成';
       inquiryAbilityRoot.querySelectorAll('[data-inquiry-question]').forEach((input) => {
         input.addEventListener('change', async () => {
@@ -1052,7 +1053,7 @@
       ].map((item) => '<div><strong>' + item[1] + '</strong><span>' + item[0] + '</span></div>').join("");
       summaryRoot.hidden = activeAssessmentView !== "meta" || metaPageIndex !== 1 || state.completed;
       status.classList.toggle("is-complete", state.completed);
-      status.textContent = state.completed ? "资格审查已完成，数据已保存，可以返回首页进入实验。" : "";
+      status.textContent = "";
       const completeButton = document.getElementById("completeBtn");
       if (completeButton) {
         completeButton.disabled = state.completed;
@@ -1099,11 +1100,6 @@
       }
       activeAssessmentView = "meta";
       renderAssessmentView();
-      if (state.completed) {
-        status.textContent = result?.queued
-          ? "资格审查已完成，数据将在联网后自动同步，可以返回首页进入实验。"
-          : "资格审查已完成，数据已提交，可以返回首页进入实验。";
-      }
     }
 
     function buildScreeningSnapshot() {
