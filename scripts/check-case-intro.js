@@ -34,7 +34,8 @@ const expectedCases = [
   ["nback", "nback.html", "跟丢的口算接龙", "追踪工作记忆"],
   ["interference", "interference.html", "串在一起的古诗", "调查遗忘原因"],
   ["strategies", "strategies.html", "看熟了却写不出", "破解记忆策略"],
-  ["poster", "poster.html", "校园委托行动", "接受校园委托"]
+  ["poster", "poster.html", "校园委托行动", "接受校园委托"],
+  ["duel", "detective-duel.html", "名侦探对决", "进入侦探对决"]
 ];
 const studentCases = [
   ["memory", "xiaohe", "小禾", "彩纸、胶棒、剪刀"],
@@ -60,10 +61,10 @@ commissionPortraits.forEach(([title, file]) => {
 });
 
 assert(registry && stories, "案件注册表或剧情配置未加载。");
-assert(stories.entries.length === expectedCases.length, "剧情配置必须包含六个案件。");
+assert(stories.entries.length === expectedCases.length, "剧情配置必须包含七个案件。");
 
 const cardTags = Array.from(index.matchAll(/<button\b[^>]*\bclass="case-card"[^>]*>/g), (match) => match[0]);
-assert(cardTags.length === expectedCases.length, "首页必须包含六张案件卡片。");
+assert(cardTags.length === expectedCases.length, "首页必须包含七张案件卡片。");
 
 expectedCases.forEach(([id, route, title, buttonText], indexPosition) => {
   const story = stories.get(id);
@@ -194,4 +195,4 @@ assert(!skip.hidden && dialog.children.length === 1, "再次进入仍从第一�
 skip.click();
 assert(dialog.children.length === 1 && dialog.children[0].textContent.startsWith("侦探：") && advance.textContent === "调查记忆容量", "跳过后只显示末句并允许进入实验。");
 
-console.log("Six case intro stories, card mappings, routes and replay contracts passed.");
+console.log("Seven case intro stories, card mappings, routes and replay contracts passed.");
