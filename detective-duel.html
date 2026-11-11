@@ -14,7 +14,7 @@
     .shell { min-height:100dvh; display:grid; place-items:center; padding:28px 16px; }
     .card { width:min(100%,800px); min-height:min(680px,calc(100dvh - 56px)); display:flex; flex-direction:column; padding:clamp(24px,5vw,48px); border:1px solid #dbe3ef; border-radius:16px; background:#fff; box-shadow:0 16px 40px rgba(23,32,51,.08); }
     .card.intro-card { width:min(100%,640px); min-height:0; padding:36px 40px; }
-    .card.intro-card .body { display:none; }
+    .card.intro-card .body { margin:20px 0 0; }
     .card.intro-card .actions { margin-top:28px; }
     .card.rating-card { width:min(100%,900px); min-height:min(520px,calc(100dvh - 56px)); }
     .card.recognition-card .options { max-width:540px; width:100%; margin:18px auto 0; }
@@ -70,6 +70,15 @@
     .points div { padding:14px; border-radius:10px; background:#eaf1ff; text-align:center; }
     .points span { display:block; color:#667085; font-size:14px; }
     .points strong { color:#1d4ed8; font-size:28px; font-variant-numeric:tabular-nums; }
+    .topbar { padding:16px 24px; border-bottom:1px solid var(--line); background:var(--panel); }
+    .topbar-inner { max-width:1200px; margin:auto; display:flex; justify-content:space-between; align-items:center; gap:16px; }
+    .brand-title { display:grid; gap:4px; }
+    .brand-title strong { font-size:20px; }
+    .identity-pill { color:var(--muted); font-size:13px; }
+    .top-actions { display:flex; gap:10px; flex-wrap:wrap; }
+    .top-actions .btn { min-height:40px; }
+    :root:fullscreen .topbar { display:none; }
+    .practice-rule { max-width:560px; margin:auto; padding:16px 20px; border-radius:10px; background:var(--primary-soft); line-height:1.8; }
     .restore { position:fixed; right:16px; bottom:16px; z-index:2; display:none; min-height:40px; padding:6px 12px; border:1px solid #bfdbfe; border-radius:8px; background:#fff; color:#1d4ed8; font-weight:700; }
     .mode-switch { position:fixed; top:18px; right:18px; z-index:2; display:flex; gap:4px; padding:4px; border:1px solid var(--line); border-radius:9px; background:var(--panel); }
     .mode-switch button { min-height:34px; padding:5px 10px; border:0; border-radius:6px; background:transparent; color:var(--muted); font-weight:700; }
@@ -88,10 +97,16 @@
     html[data-theme="archive"] .btn.secondary,html[data-theme="archive"] .shape,html[data-theme="archive"] .timer,html[data-theme="archive"] .points div,html[data-theme="archive"] .word-pick[aria-pressed="true"] { background:var(--primary-soft); color:var(--primary-dark); }
     html[data-theme="archive"] .option.selected,html[data-theme="archive"] .word-pick[aria-pressed="true"],html[data-theme="archive"] .likert button[aria-pressed="true"] { border-color:var(--primary); }
     html[data-theme="archive"] .option.selected,html[data-theme="archive"] .likert button,html[data-theme="archive"] .word-pick,html[data-theme="archive"] .shape.unknown { background:#fffaf2; }
-    @media(max-width:540px) { .card,.card.intro-card { padding:22px 18px; } .body { margin:22px 0; } .options,.likert { gap:5px; } .option { padding:5px; } .option img { max-height:145px; } .likert button { min-height:52px; font-size:20px; } .likert-labels { font-size:13px; } .actions > .btn { flex:1; } }
+    @media(max-width:540px) { .topbar-inner { align-items:flex-start; flex-direction:column; } .topbar { padding:12px 16px; } .card,.card.intro-card { padding:22px 18px; } .body { margin:22px 0; } .options,.likert { gap:5px; } .option { padding:5px; } .option img { max-height:145px; } .likert button { min-height:52px; font-size:20px; } .likert-labels { font-size:13px; } .actions > .btn { flex:1; } }
   </style>
 </head>
 <body>
+  <header class="topbar">
+    <div class="topbar-inner">
+      <div class="brand-title"><strong>名侦探对决 · 词图记忆任务</strong><span id="activityInfo" class="identity-pill">活动信息 · 四张词卡练习，随后最多四轮正式任务</span><span id="authStudentPill" class="identity-pill"></span></div>
+      <div class="top-actions"><button class="btn secondary" id="homeBtn" type="button">回到首页</button></div>
+    </div>
+  </header>
   <div class="mode-switch" role="group" aria-label="主题模式">
     <button type="button" data-theme-option="science" aria-pressed="true">科技风</button>
     <button type="button" data-theme-option="archive" aria-pressed="false">档案风</button>
@@ -128,6 +143,7 @@
       [1,2,3,4,5,6,7].map(value => '<button type="button" data-action="rate" data-value="' + value + '" aria-pressed="false" aria-label="' + value + ' 分">' + value + '</button>').join('') +
       '</div><div class="likert-labels"><span>非常没把握</span><span>非常有把握</span></div></div>';
     const frame = (title, hint, body, actions = '', counter = '') => {
+      document.getElementById('activityInfo').textContent = '活动信息 · ' + (stage === 'intro' ? '准备练习' : stage === 'finished' ? '任务已完成' : roundNumber === 0 ? '四张词卡练习' : '正式任务第 ' + roundNumber + ' 轮') + ' · ' + title;
       app.innerHTML = '<div class="eyebrow">' + (stage === 'intro' || stage === 'finished' ? '名侦探对决' : roundNumber === 0 ? '四张词卡练习' + (counter ? ' · ' + counter : '') : '第 ' + roundNumber + ' 轮' + (stage === 'study' ? ' · 初次学习' : '') + (counter ? ' · ' + counter : '')) +
         (stage === 'study' || stage === 'filler' ? '<span class="timer" id="timer">' + (stage === 'study' ? '00:05' : '01:00') + '</span>' : '') + '</div>' +
         '<h1>' + title + '</h1><p class="hint">' + hint + '</p><div class="body">' + body + '</div><div class="actions">' + actions + '</div>';
@@ -238,23 +254,23 @@
       if (stage === 'jol') ratingChoice = null;
       if (stage === 'intro') {
         frame('准备开始', '先用四张词卡熟悉任务操作。练习结果不计入正式成绩。',
-          '',
+          '<div class="practice-rule">记住每个西班牙语词与图片的对应关系。随后完成图形判断、评估把握程度、选择是否重新学习，再从四张图片中选答案并决定保留或撤回。<br>计分规则：正确且保留 +1 分；错误且保留 −3 分；撤回答案 0 分。</div>',
           button('start', '开始四张词卡练习'));
       } else if (stage === 'study') {
         const item = current().study[index];
-        frame(roundNumber === 0 ? '认识练习词卡' : '初次学习', '每张词卡显示 5 秒，请专注记忆。',
+        frame(roundNumber === 0 ? '认识练习词卡' : '初次学习', roundNumber === 0 ? '每张词卡显示 5 秒，请把词语和图片对应起来，稍后会用它们作答。' : '每张词卡显示 5 秒，请专注记忆。',
           '<div class="study"><div class="word">' + escapeHtml(item.word) + '</div><img class="picture" src="' + asset(item.pictureAsset) + '" alt="' + escapeHtml(item.word) + '"></div>',
           '',
           (index + 1) + ' / ' + current().study.length);
       } else if (stage === 'filler') {
         const task = shapes[index];
-        frame('请选择下一个图形', '只有选对才能继续；本环节持续 1 分钟。',
+        frame('请选择下一个图形', roundNumber === 0 ? '观察前三个图形的规律，点击下方图形补全序列。选错可以重试，本环节持续 1 分钟。' : '只有选对才能继续；本环节持续 1 分钟。',
           '<div><div class="sequence">' + [...task.sequence,'?'].map(s => '<span class="shape' + (s === '?' ? ' unknown' : '') + '">' + s + '</span>').join('') + '</div><p class="error" id="feedback" role="status"></p></div>',
           '<div class="actions shape-options">' + task.choices.map((s,i) => '<button class="btn secondary" type="button" data-action="shape" data-value="' + i + '" aria-label="选择图形 ' + s + '">' + s + '</button>').join('') + '</div>',
           '图形判断');
       } else if (stage === 'jol') {
         const id = current().jolOrder[index], word = current().study.find(item => item.itemId === id).word;
-        frame('你觉得自己能选出对应图片吗？', '请选择 1–7 分，表示你的把握程度。',
+        frame('你觉得自己能选出对应图片吗？', roundNumber === 0 ? '看着这个词，点击 1–7 分表示你对之后选对图片的把握；1 分最低，7 分最高。' : '请选择 1–7 分，表示你的把握程度。',
           ratingPanel(word),
           button('next-jol', '确认', '', true),
           (index + 1) + ' / ' + current().jolOrder.length);
@@ -263,26 +279,26 @@
           const word = current().study.find(item => item.itemId === id).word;
           return '<button class="word-pick" type="button" data-action="pick-word" data-id="' + id + '" aria-pressed="' + restudy.has(id) + '">' + escapeHtml(word) + '</button>';
         }).join('');
-        frame('哪些词还需要再学习？', '如果你可以重新学习一个或多个单词，以提高自己之后的表现，你会选择重新学习哪些单词？',
+        frame('哪些词还需要再学习？', roundNumber === 0 ? '点击你想重新学习的词，可以选多个，也可以不选；选中的词会高亮。选好后点击确认选择。' : '如果你可以重新学习一个或多个单词，以提高自己之后的表现，你会选择重新学习哪些单词？',
           '<div class="word-grid">' + words + '</div>', button('next-restudy', '确认选择'));
       } else if (stage === 'recognition') {
         const trial = current().recognitionTrials[index];
-        frame('请选择与这个词对应的图片', '请根据刚才记住的词图关系作答。',
+        frame('请选择与这个词对应的图片', roundNumber === 0 ? '先点击与上方词语对应的图片，再用 1–7 分评价你对这次选择的把握，最后点击确认。' : '请根据刚才记住的词图关系作答。',
           optionGrid(trial, 'choose', chosenOption) + (chosenOption ? '<div class="inline-rating"><h2>你对刚才的选择有多大把握？</h2>' + ratingPanel(null) + '</div>' : ''),
           chosenOption ? button('next-recognition', '确认', '', true) : '',
           (index + 1) + ' / ' + current().recognitionTrials.length);
       } else if (stage === 'withdrawal') {
         const id = current().withdrawalOrder[index];
         const trial = current().recognitionTrials.find(item => item.itemId === id);
-        frame('是否保留这道题的答案？', '蓝框标出你刚才的选择。',
+        frame('是否保留这道题的答案？', roundNumber === 0 ? '蓝框是你刚才选的图片。确定就保留：答对 +1 分、答错 −3 分；不确定可撤回，得 0 分。' : '蓝框标出你刚才的选择。',
           optionGrid(trial, null, answers[id].optionId),
           button('withdraw', '撤回答案', 'secondary') + button('keep', '保留答案') +
             '<dialog id="withdraw-dialog"><p>你是否认为当前答案错误，选择撤回答案？</p><div class="actions">' + button('cancel-withdraw', '取消', 'secondary') + button('confirm-withdraw', '确认撤回') + '</div></dialog>',
           (index + 1) + ' / ' + current().withdrawalOrder.length);
       } else if (stage === 'result') {
-        frame(roundNumber === 0 ? '练习已完成' : '本轮已完成', roundNumber === 0 ? '练习结果不计入正式成绩。' : '这是本轮最终正确数。',
+        frame(roundNumber === 0 ? '练习已完成' : '本轮已完成', roundNumber === 0 ? '这是本次练习的得分情况，不计入正式成绩。正式任务也按同样规则计分。' : '这是本轮最终正确数。',
           '<div class="score"><strong>' + roundResult.correct + ' / ' + current().study.length + '</strong><span>答对题数</span></div>' +
-            (roundNumber === 0 ? '' : '<div class="points"><div><span>本轮积分</span><strong>' + signed(roundResult.points) + '</strong></div><div><span>累计积分</span><strong>' + signed(totalPoints) + '</strong></div></div>'),
+            '<div class="points"><div><span>' + (roundNumber === 0 ? '练习积分' : '本轮积分') + '</span><strong>' + signed(roundResult.points) + '</strong></div><div><span>' + (roundNumber === 0 ? '正式累计积分' : '累计积分') + '</span><strong>' + signed(totalPoints) + '</strong></div></div>',
           roundNumber === 0 ? button('begin-formal', '正式开始') : roundNumber === 4 ? button('finish', '完成任务') : button('finish', '结束任务', 'secondary') + button('continue', '继续下一轮'));
       } else {
         frame('任务已完成，请联系助教进行下一步', '', '', '');
@@ -360,6 +376,7 @@
       render();
     });
     document.getElementById('restore').addEventListener('click', () => document.documentElement.requestFullscreen?.());
+    document.getElementById('homeBtn').addEventListener('click', () => { location.href = 'index.html'; });
     render();
   </script>
 </body>
