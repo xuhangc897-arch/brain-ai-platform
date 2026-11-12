@@ -644,7 +644,13 @@
       max-width: none;
       margin: 12px 0 0;
       font-size: clamp(14px, 1.2vw, 17px);
+      white-space: pre-line;
+      line-height: 1.8;
     }
+
+    .briefing-actions { display: flex; align-items: center; justify-content: space-between; gap: 12px; }
+    .briefing-skip { margin-top: 16px; padding: 10px 4px; border: 0; background: transparent; color: #dcb56d; cursor: pointer; }
+    .briefing-skip[hidden] { display: none; }
 
     .scene--briefing .advance-button {
       min-height: 44px;
@@ -1355,7 +1361,7 @@
         <p class="briefing-speaker intro-animate">侦探助手</p>
         <h2 class="hero-title intro-animate">案件卷宗</h2>
         <p class="hero-copy intro-animate" id="briefingDialogue" aria-live="polite"></p>
-        <button class="advance-button intro-animate" id="briefingAdvance" type="button" data-advance disabled>开启案件卷宗</button>
+        <div class="briefing-actions"><button class="briefing-skip" id="briefingSkip" type="button" hidden>跳过剧情</button><button class="advance-button intro-animate" id="briefingAdvance" type="button" data-advance disabled>开启案件卷宗</button></div>
       </div>
       <span class="click-hint">点击右下角开启卷宗</span>
     </section>
@@ -1498,9 +1504,11 @@
       const compactViewport = window.matchMedia("(max-width: 720px)");
       const connection = navigator.connection || navigator.mozConnection || navigator.webkitConnection;
       const sceneNames = ["记忆侦探社入口", "案件卷宗", "案件导航"];
-      const briefingText = "欢迎加入记忆侦探社，新侦探。你的第一份卷宗已经备好。先打开卷宗，完成资格审查，再循着线索展开调查吧。";
+      const briefingText = ["欢迎加入记忆侦探社，新侦探。", "你的第一份卷宗已经备好。", "先打开卷宗，完成资格审查，再循着线索展开调查吧。"].join("\n");
       const briefingDialogue = document.getElementById("briefingDialogue");
       const briefingAdvance = document.getElementById("briefingAdvance");
+      const briefingSkip = document.getElementById("briefingSkip");
+      const briefingSeenKey = platform.storage.scopedKey("briefing-seen-v1");
       let briefingTimer = null;
       let caseIntro = null;
       let activeScene = 0;
@@ -1513,9 +1521,11 @@
         window.clearInterval(briefingTimer);
         briefingDialogue.textContent = "";
         briefingAdvance.disabled = true;
+        briefingSkip.hidden = localStorage.getItem(briefingSeenKey) !== "true";
         if (reduceMotion.matches) {
           briefingDialogue.textContent = briefingText;
           briefingAdvance.disabled = false;
+          localStorage.setItem(briefingSeenKey, "true");
           return;
         }
         const characters = Array.from(briefingText);
@@ -1526,9 +1536,17 @@
             window.clearInterval(briefingTimer);
             briefingTimer = null;
             briefingAdvance.disabled = false;
+            localStorage.setItem(briefingSeenKey, "true");
           }
         }, 55);
       }
+
+      briefingSkip.addEventListener("click", () => {
+        window.clearInterval(briefingTimer);
+        briefingTimer = null;
+        briefingDialogue.textContent = briefingText;
+        briefingAdvance.disabled = false;
+      });
 
       function hydrateElement(element) {
         if (!element?.dataset.src) return false;

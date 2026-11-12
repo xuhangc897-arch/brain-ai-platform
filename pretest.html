@@ -542,9 +542,10 @@
       <div class="panel-body">
         <div class="survey-intro" id="knowledgePretestIntro">
           <h2>记忆知识前测</h2>
-          <p>这里有20道课程开始前的知识题。题目会随机排列，结果只用于比较学习前后的变化，不影响你的成绩。知识前测仅有一次正式提交机会，请确认全部答案后再提交。</p>
+          <p>完成元认知和科学探究能力问卷后，作答20道课程开始前的知识题。题目会随机排列，结果只用于比较学习前后的变化，不影响你的成绩。</p>
         </div>
         <div id="knowledgePretestRoot"></div>
+        <div class="summary" id="summary"></div>
         <div class="actions assessment-actions" id="knowledgePretestActions">
           <p class="status" id="knowledgePretestStatus" aria-live="polite"></p>
           <button class="btn secondary" type="button" id="knowledgePrevBtn">上一页</button>
@@ -562,7 +563,6 @@
           <p><strong>资格审查仅有一次正式提交机会，请检查全部答案后再点击完成。</strong></p>
         </div>
         <div id="surveyRoot"></div>
-        <div class="summary" id="summary"></div>
         <div class="actions assessment-actions" id="metaSurveyActions">
           <p class="status" id="status"></p>
           <button class="btn secondary" type="button" id="metaPrevBtn">上一页</button>
@@ -573,7 +573,6 @@
           <p class="status" id="inquiryAbilityStatus" aria-live="polite"></p>
           <button class="btn secondary" type="button" id="inquiryAbilityPrevBtn">上一页</button>
           <button class="btn secondary" type="button" id="inquiryAbilityNextBtn">下一页</button>
-          <button class="btn" type="button" id="completeBtn">完成资格审查（仅一次机会）</button>
         </div>
       </div>
     </section>
@@ -641,7 +640,7 @@
     let knowledgePageIndex = 0;
     let metaPageIndex = 0;
     let inquiryAbilityPageIndex = 0;
-    let activeAssessmentView = state.knowledgeAssessment.T0 || state.legacyQualification ? (state.completed ? "inquiry" : "meta") : "knowledge";
+    let activeAssessmentView = state.completed ? "inquiry" : "meta";
     let assessmentPageTransitioning = false;
     renderApp();
 
@@ -760,11 +759,15 @@
         saveState();
         location.href = "index.html";
       });
-      document.getElementById("completeBtn").addEventListener("click", completePretest);
-      document.getElementById("knowledgePrevBtn").addEventListener("click", () => changeKnowledgePage(-1));
+      document.getElementById("knowledgePrevBtn").addEventListener("click", () => {
+        if (knowledgePageIndex === 0) {
+          activeAssessmentView = "inquiry";
+          inquiryAbilityPageIndex = Math.ceil(inquiryAbilityDef.items.length / META_PAGE_SIZE) - 1;
+          renderAssessmentView();
+        } else changeKnowledgePage(-1);
+      });
       document.getElementById("knowledgeNextBtn").addEventListener("click", () => {
-        if (state.knowledgeAssessment.T0 || state.legacyQualification) openMetaSurvey();
-        else changeKnowledgePage(1);
+        changeKnowledgePage(1);
       });
       document.getElementById("knowledgeSubmitBtn").addEventListener("click", submitKnowledgePretest);
       document.getElementById("metaPrevBtn").addEventListener("click", goToPreviousMetaPage);
@@ -793,7 +796,11 @@
           document.getElementById("inquiryAbilityStatus").textContent = "请先完成本页题目。";
           return;
         }
-        changeInquiryAbilityPage(1);
+        if (inquiryAbilityPageIndex === Math.ceil(inquiryAbilityDef.items.length / META_PAGE_SIZE) - 1) {
+          activeAssessmentView = "knowledge";
+          knowledgePageIndex = 0;
+          renderAssessmentView();
+        } else changeInquiryAbilityPage(1);
       });
     }
 
@@ -807,7 +814,6 @@
         renderInquiryAbilitySurvey();
         metaSurveyIntro.hidden = activeAssessmentView !== "meta" || state.completed;
         surveyRoot.hidden = activeAssessmentView !== "meta";
-        summaryRoot.hidden = activeAssessmentView !== "meta";
         document.getElementById("metaSurveyActions").hidden = activeAssessmentView !== "meta";
         inquiryAbilityRoot.hidden = activeAssessmentView !== "inquiry";
         document.getElementById("inquiryAbilityActions").hidden = activeAssessmentView !== "inquiry";
@@ -831,12 +837,11 @@
         knowledgePretestRoot.innerHTML = '<div class="assessment-page-content"><div class="assessment-page-head"><strong>知识前测</strong><span class="assessment-page-progress">已完成</span></div>' +
           '<section class="survey-card"><div><strong>' + (legacy ? '旧版资格审查已完成' : '知识前测已完成') + '</strong><p>' +
           (legacy ? '原有40题记录已保留，不折算为新的T0知识前测，也无需追溯补测。' : '作答已提交并锁定，不显示题目、答案或成绩。') + '</p></div></section></div>';
-        previous.hidden = true;
-        next.hidden = false;
-        next.disabled = false;
-        next.textContent = "进入元认知问卷";
-        submit.hidden = true;
-        knowledgePretestStatus.textContent = "知识前测已完成，可以继续元认知问卷。";
+        previous.hidden = state.completed;
+        next.hidden = true;
+        submit.hidden = state.completed;
+        submit.textContent = "完成资格审查（仅一次机会）";
+        knowledgePretestStatus.textContent = state.completed ? "资格审查已完成。" : "知识前测已完成，可以提交资格审查。";
         return;
       }
       knowledgePretestIntro.hidden = true;
@@ -865,17 +870,18 @@
             option.classList.toggle("is-selected", option.querySelector("input")?.checked === true);
           });
           knowledgePretestStatus.textContent = "已完成 " + Object.keys(state.knowledgeDraft.answers).length + " / 20 题。";
+          renderSummary();
         });
       });
 
-      previous.hidden = knowledgePageIndex === 0;
+      previous.hidden = false;
       previous.disabled = false;
       next.hidden = knowledgePageIndex === knowledgeQuestions.length - 1;
       next.disabled = false;
       next.textContent = "下一页";
       submit.hidden = knowledgePageIndex !== knowledgeQuestions.length - 1;
       submit.disabled = false;
-      submit.textContent = "提交知识前测（仅一次机会）";
+      submit.textContent = "完成资格审查（仅一次机会）";
       knowledgePretestStatus.textContent = "已完成 " + answeredCount + " / 20 题。";
     }
 
@@ -904,19 +910,11 @@
       }, 150);
     }
 
-    function openMetaSurvey() {
-      activeAssessmentView = "meta";
-      metaPageIndex = 0;
-      renderAssessmentView();
-    }
-
     function goToPreviousMetaPage() {
       if (metaPageIndex > 0) {
         changeMetaPage(-1);
         return;
       }
-      activeAssessmentView = "knowledge";
-      renderAssessmentView();
     }
 
     function changeMetaPage(offset) {
@@ -930,8 +928,11 @@
       });
     }
 
-    function submitKnowledgePretest() {
-      if (state.knowledgeAssessment.T0 || state.legacyQualification) return;
+    async function submitKnowledgePretest() {
+      if (state.knowledgeAssessment.T0 || state.legacyQualification) {
+        await completePretest();
+        return;
+      }
       const result = assessmentApi.submitStage(state.knowledgeAssessment, "T0", knowledgeQuestions, state.knowledgeDraft);
       if (result.unanswered?.length) {
         knowledgePageIndex = state.knowledgeDraft.questionOrder.indexOf(result.unanswered[0]);
@@ -943,26 +944,18 @@
       state.completed = false;
       state.completedAt = "";
       saveState();
-      activeAssessmentView = "meta";
-      metaPageIndex = 0;
-      renderAssessmentView();
+      await completePretest();
     }
 
     function renderSurvey() {
-      if (!state.knowledgeAssessment.T0 && !state.legacyQualification) {
-        surveyRoot.innerHTML = "";
-        return;
-      }
       const previous = document.getElementById("metaPrevBtn");
       const next = document.getElementById("metaNextBtn");
-      const complete = document.getElementById("completeBtn");
       if (state.completed) {
         metaSurveyIntro.hidden = true;
         surveyRoot.innerHTML = '<div class="assessment-page-content"><div class="assessment-page-head"><strong>资格审查</strong><span class="assessment-page-progress">已完成</span></div>' +
-          '<section class="survey-card"><div><strong>知识前测和元认知问卷已提交</strong><p>科学探究能力问卷仍可修改。</p></div></section></div>';
+          '<section class="survey-card"><div><strong>资格审查已完成</strong><p>科学探究能力问卷仍可修改。</p></div></section></div>';
         previous.hidden = true;
         next.hidden = true;
-        complete.hidden = true;
         summaryRoot.hidden = true;
         return;
       }
@@ -991,11 +984,9 @@
         }).join("") +
       '</section></div>';
 
-      previous.hidden = false;
+      previous.hidden = metaPageIndex === 0;
       next.hidden = false;
       next.textContent = metaPageIndex === pageCount - 1 ? "进入科学探究问卷" : "下一页";
-      complete.hidden = true;
-      summaryRoot.hidden = metaPageIndex !== pageCount - 1;
 
       surveyRoot.querySelectorAll("[data-question]").forEach((input) => {
         input.addEventListener("change", () => {
@@ -1039,8 +1030,8 @@
             }).join('') + '</div></div>';
         }).join('') + '</section></div>';
       document.getElementById('inquiryAbilityPrevBtn').hidden = state.completed && inquiryAbilityPageIndex === 0;
-      document.getElementById('inquiryAbilityNextBtn').hidden = inquiryAbilityPageIndex === pageCount - 1;
-      document.getElementById('completeBtn').hidden = state.completed || inquiryAbilityPageIndex !== pageCount - 1;
+      document.getElementById('inquiryAbilityNextBtn').hidden = state.completed && inquiryAbilityPageIndex === pageCount - 1;
+      document.getElementById('inquiryAbilityNextBtn').textContent = inquiryAbilityPageIndex === pageCount - 1 ? '进入知识前测' : '下一页';
       document.getElementById('inquiryAbilityStatus').textContent = summarizeInquiryAbility().answered + ' / ' + inquiryAbilityDef.items.length + ' 题已完成';
       inquiryAbilityRoot.querySelectorAll('[data-inquiry-question]').forEach((input) => {
         input.addEventListener('change', async () => {
@@ -1082,14 +1073,9 @@
         ["元认知问卷", summary.answered + "/" + surveyDef.items.length],
         ["科学探究能力问卷", summarizeInquiryAbility().answered + "/" + inquiryAbilityDef.items.length]
       ].map((item) => '<div><strong>' + item[1] + '</strong><span>' + item[0] + '</span></div>').join("");
-      summaryRoot.hidden = activeAssessmentView !== "meta" || metaPageIndex !== 1 || state.completed;
+      summaryRoot.hidden = activeAssessmentView !== "knowledge" || knowledgePageIndex !== knowledgeQuestions.length - 1 || state.completed;
       status.classList.toggle("is-complete", state.completed);
       status.textContent = "";
-      const completeButton = document.getElementById("completeBtn");
-      if (completeButton) {
-        completeButton.disabled = state.completed;
-        completeButton.textContent = state.completed ? "资格审查已完成" : "完成资格审查（仅一次机会）";
-      }
     }
 
     async function completePretest() {
@@ -1121,8 +1107,6 @@
       state.completed = true;
       state.completedAt = state.completedAt || new Date().toISOString();
       saveState();
-      const button = document.getElementById("completeBtn");
-      if (button) button.disabled = true;
       const result = await submitScreeningRecord();
       if (!result?.ok && !result?.queued) {
         state.completed = false;

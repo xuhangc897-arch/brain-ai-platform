@@ -1665,11 +1665,22 @@
       { id: "posttest", title: "侦探小结", minutes: "15分钟", taskDescription: "完成知识点测试、元认知问卷和科学探究活动参与情况调查问卷。" }
     ];
     const SURVEY_DEFS = {
+      load: {
+        title: "认知负荷情况调查问卷",
+        scale: [1, 2, 3, 4, 5, 6, 7, 8, 9, 10],
+        anchors: "1=非常低，10=非常高",
+        labels: { 1: "1", 2: "2", 3: "3", 4: "4", 5: "5", 6: "6", 7: "7", 8: "8", 9: "9", 10: "10" },
+        note: "请根据刚才的科学探究活动选择，分数越高表示难度或投入的心理努力越高。",
+        items: [
+          "你认为刚才科学探究活动的学习材料难度如何？",
+          "你在刚才的科学探究活动中投入了多少心理努力？"
+        ]
+      },
       meta: {
         title: "元认知问卷",
         scale: [1, 2, 3, 4, 5],
-        anchors: "1=非常不同意，2=不同意，3=一般，4=同意，5=非常同意",
-        labels: { 1: "非常不同意", 2: "不同意", 3: "一般", 4: "同意", 5: "非常同意" },
+        anchors: "1=完全否，2=较少，3=一般，4=较多，5=完全是",
+        labels: { 1: "完全否", 2: "较少", 3: "一般", 4: "较多", 5: "完全是" },
         note: "请根据刚刚完成的科学探究活动，选择最符合你真实情况的选项。",
         items: [
           "我能够理解本次科学探究中获得的有关工作记忆的知识。",
@@ -1704,7 +1715,7 @@
     const knowledgeAssessmentApi = window.BrainKnowledgeAssessment;
 
     function createDefaultSurveys() {
-      return { current: { postMeta: {}, inquiryParticipation: {} } };
+      return { current: { postMeta: {}, cognitiveLoad: {}, inquiryParticipation: {} } };
     }
     function mergeSurveys(incoming = {}) {
       const merged = createDefaultSurveys();
@@ -2059,7 +2070,7 @@
       for (let index = 0; index < KNOWLEDGE_QUIZ.items.length; index += 1) {
         if (!quizAnswers[`q${index + 1}`]) return index;
       }
-      const surveys = [["postMeta", "meta"], ["inquiryParticipation", "inquiry"]];
+      const surveys = [["postMeta", "meta"], ["cognitiveLoad", "load"], ["inquiryParticipation", "inquiry"]];
       let offset = KNOWLEDGE_QUIZ.items.length;
       for (const [surveyKey, defKey] of surveys) {
         const missing = getFirstUnansweredSurveyQuestion(surveyKey, SURVEY_DEFS[defKey].items.length);
@@ -2199,7 +2210,7 @@
         analysis: 3,
         conclusion: 1,
         reflection: 2,
-        posttest: KNOWLEDGE_QUIZ.items.length + Math.ceil(SURVEY_DEFS.meta.items.length / 3) + Math.ceil((SURVEY_DEFS.inquiry.items.length + 1) / 3) + 1
+        posttest: KNOWLEDGE_QUIZ.items.length + Math.ceil(SURVEY_DEFS.meta.items.length / 3) + Math.ceil(SURVEY_DEFS.load.items.length / 3) + Math.ceil((SURVEY_DEFS.inquiry.items.length + 1) / 3) + 1
       };
       if (stepId === "evidence") return 1 + Math.ceil(getEvidenceRunGroups().length / 3);
       return fixedCounts[stepId] || 1;
@@ -2275,7 +2286,7 @@
         title: `案件知识验证 第 ${index + 1} 题`,
         content: () => renderKnowledgeQuizItem(index)
       }));
-      [["postMeta", "meta"], ["inquiryParticipation", "inquiry"]].forEach(([surveyKey, defKey]) => {
+      [["postMeta", "meta"], ["cognitiveLoad", "load"], ["inquiryParticipation", "inquiry"]].forEach(([surveyKey, defKey]) => {
         const def = SURVEY_DEFS[defKey];
         const items = getSurveyItems(surveyKey, defKey);
         for (let startIndex = 0; startIndex < items.length; startIndex += 3) {
@@ -2293,6 +2304,7 @@
         renderKnowledgeQuiz() +
         '<div class="survey-intro"><h3>📝 元认知问卷</h3><p>请根据刚刚完成的科学探究活动，选择最符合你真实情况的选项。</p></div>' +
         renderSurveyForm("postMeta", "meta") +
+        renderSurveyForm("cognitiveLoad", "load") +
         renderSurveyForm("inquiryParticipation", "inquiry") +
         renderSurveySummaryCards() +
         renderPosttestExportArea() +
@@ -2341,9 +2353,11 @@
 
     function renderSurveySummaryCards() {
       const post = summarizeSurvey("postMeta", "meta");
+      const load = summarizeSurvey("cognitiveLoad", "load");
       const inquiry = summarizeSurvey("inquiryParticipation", "inquiry");
       return '<div class="survey-summary">' +
         '<div><strong>' + post.answered + ' / ' + SURVEY_DEFS.meta.items.length + '</strong><span>元认知问卷完成进度</span></div>' +
+        '<div><strong>' + load.answered + ' / ' + SURVEY_DEFS.load.items.length + '</strong><span>认知负荷问卷完成进度</span></div>' +
         '<div><strong>' + (inquiry.answered + Number(Boolean(state.surveys?.current?.inquiryParticipation?.q10))) + ' / ' + getSurveyItems("inquiryParticipation", "inquiry").length + '</strong><span>探究参与完成进度</span></div>' +
       '</div>';
     }
@@ -2476,7 +2490,7 @@
     }
 
     function isSurveyStepComplete(stepId) {
-      if (stepId === "posttest") return summarizeSurvey("postMeta", "meta").complete && summarizeSurvey("inquiryParticipation", "inquiry").complete && isKnowledgeQuizAnswered();
+      if (stepId === "posttest") return summarizeSurvey("postMeta", "meta").complete && summarizeSurvey("cognitiveLoad", "load").complete && summarizeSurvey("inquiryParticipation", "inquiry").complete && isKnowledgeQuizAnswered();
       return true;
     }
 
@@ -2494,13 +2508,16 @@
         ]];
       };
       const post = summarizeSurvey("postMeta", "meta");
+      const load = summarizeSurvey("cognitiveLoad", "load");
       const inquiry = summarizeSurvey("inquiryParticipation", "inquiry");
       return [
         makeSheet("元认知问卷", "postMeta", "meta"),
+        makeSheet("认知负荷问卷", "cognitiveLoad", "load"),
         makeSheet("侦探小结-探究参与", "inquiryParticipation", "inquiry"),
         ["问卷汇总", [
           ["问卷", "已答题数", "总分", "均分", "完成情况"],
           ["元认知问卷", post.answered, post.total, post.average, post.complete ? "已完成" : "未完成"],
+          ["认知负荷问卷", load.answered, load.total, load.average, load.complete ? "已完成" : "未完成"],
           ["侦探小结科学探究参与", inquiry.answered, inquiry.total, inquiry.average, inquiry.complete ? "已完成" : "未完成"]
         ]]
       ];

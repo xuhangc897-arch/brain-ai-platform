@@ -1700,11 +1700,22 @@
       { id: "posttest", title: "侦探小结", minutes: "15分钟", taskDescription: "完成知识点测试、元认知问卷和科学探究活动参与情况调查问卷。" }
     ];
     const SURVEY_DEFS = {
+      load: {
+        title: "认知负荷情况调查问卷",
+        scale: [1, 2, 3, 4, 5, 6, 7, 8, 9, 10],
+        anchors: "1=非常低，10=非常高",
+        labels: { 1: "1", 2: "2", 3: "3", 4: "4", 5: "5", 6: "6", 7: "7", 8: "8", 9: "9", 10: "10" },
+        note: "请根据刚才的科学探究活动选择，分数越高表示难度或投入的心理努力越高。",
+        items: [
+          "你认为刚才科学探究活动的学习材料难度如何？",
+          "你在刚才的科学探究活动中投入了多少心理努力？"
+        ]
+      },
       meta: {
         title: "元认知问卷",
         scale: [1, 2, 3, 4, 5],
-        anchors: "1=非常不同意，2=不同意，3=一般，4=同意，5=非常同意",
-        labels: { 1: "非常不同意", 2: "不同意", 3: "一般", 4: "同意", 5: "非常同意" },
+        anchors: "1=完全否，2=较少，3=一般，4=较多，5=完全是",
+        labels: { 1: "完全否", 2: "较少", 3: "一般", 4: "较多", 5: "完全是" },
         note: "请根据刚刚完成的科学探究活动，选择最符合你真实情况的选项。",
         items: [
           "我能够理解本次科学探究中获得的有关短时记忆容量的知识。",
@@ -1739,7 +1750,7 @@
     const knowledgeAssessmentApi = window.BrainKnowledgeAssessment;
 
     function createDefaultSurveys() {
-      return { current: { postMeta: {}, inquiryParticipation: {} } };
+      return { current: { postMeta: {}, cognitiveLoad: {}, inquiryParticipation: {} } };
     }
     function mergeSurveys(incoming = {}) {
       const merged = createDefaultSurveys();
@@ -2112,7 +2123,7 @@
         if (!quizAnswers[`q${index + 1}`]) return index;
       }
       let offset = KNOWLEDGE_QUIZ.items.length;
-      for (const [surveyKey, defKey] of [["postMeta", "meta"], ["inquiryParticipation", "inquiry"]]) {
+      for (const [surveyKey, defKey] of [["postMeta", "meta"], ["cognitiveLoad", "load"], ["inquiryParticipation", "inquiry"]]) {
         const missing = getFirstUnansweredSurveyQuestion(surveyKey, SURVEY_DEFS[defKey].items.length);
         if (missing >= 0) return offset + Math.floor(missing / 3);
         offset += Math.ceil(getSurveyItems(surveyKey, defKey).length / 3);
@@ -2254,6 +2265,7 @@
       }));
       [
         ["postMeta", "meta"],
+        ["cognitiveLoad", "load"],
         ["inquiryParticipation", "inquiry"]
       ].forEach(([surveyKey, defKey]) => {
         const def = SURVEY_DEFS[defKey];
@@ -2316,9 +2328,11 @@
 
     function renderSurveySummaryCards() {
       const post = summarizeSurvey("postMeta", "meta");
+      const load = summarizeSurvey("cognitiveLoad", "load");
       const inquiry = summarizeSurvey("inquiryParticipation", "inquiry");
       return '<div class="survey-summary">' +
         '<div><strong>' + post.answered + ' / ' + SURVEY_DEFS.meta.items.length + '</strong><span>元认知问卷完成进度</span></div>' +
+        '<div><strong>' + load.answered + ' / ' + SURVEY_DEFS.load.items.length + '</strong><span>认知负荷问卷完成进度</span></div>' +
         '<div><strong>' + (inquiry.answered + Number(Boolean(state.surveys?.current?.inquiryParticipation?.q10))) + ' / ' + getSurveyItems("inquiryParticipation", "inquiry").length + '</strong><span>探究参与完成进度</span></div>' +
       '</div>';
     }
@@ -2410,7 +2424,7 @@
     }
 
     function isSurveyStepComplete(stepId) {
-      if (stepId === "posttest") return summarizeSurvey("postMeta", "meta").complete && summarizeSurvey("inquiryParticipation", "inquiry").complete && isKnowledgeQuizAnswered();
+      if (stepId === "posttest") return summarizeSurvey("postMeta", "meta").complete && summarizeSurvey("cognitiveLoad", "load").complete && summarizeSurvey("inquiryParticipation", "inquiry").complete && isKnowledgeQuizAnswered();
       return true;
     }
 
@@ -2428,13 +2442,16 @@
         ]];
       };
       const post = summarizeSurvey("postMeta", "meta");
+      const load = summarizeSurvey("cognitiveLoad", "load");
       const inquiry = summarizeSurvey("inquiryParticipation", "inquiry");
       return [
         makeSheet("元认知问卷", "postMeta", "meta"),
+        makeSheet("认知负荷问卷", "cognitiveLoad", "load"),
         makeSheet("侦探小结-探究参与", "inquiryParticipation", "inquiry"),
         ["问卷汇总", [
           ["问卷", "已答题数", "总分", "均分", "完成情况"],
           ["元认知问卷", post.answered, post.total, post.average, post.complete ? "已完成" : "未完成"],
+          ["认知负荷问卷", load.answered, load.total, load.average, load.complete ? "已完成" : "未完成"],
           ["侦探小结科学探究参与", inquiry.answered, inquiry.total, inquiry.average, inquiry.complete ? "已完成" : "未完成"]
         ]]
       ];
@@ -2523,8 +2540,9 @@
       };
       if (stepId !== "posttest") return fixedCounts[stepId] || 1;
       const metaPages = Math.ceil(SURVEY_DEFS.meta.items.length / 3);
+      const loadPages = Math.ceil(SURVEY_DEFS.load.items.length / 3);
       const inquiryPages = Math.ceil((SURVEY_DEFS.inquiry.items.length + 1) / 3);
-      return KNOWLEDGE_QUIZ.items.length + metaPages + inquiryPages + 1;
+      return KNOWLEDGE_QUIZ.items.length + metaPages + loadPages + inquiryPages + 1;
     }
 
     function renderPagedStep(stepId, pages) {
@@ -2687,7 +2705,7 @@
             <div class="reading-card"><p>顺背法按原顺序复述，倒背法按相反顺序复述。</p><div class="form-grid">
               <div class="field"><label for="method">测量方法</label><select id="method" data-field="method"><option value="顺背法" ${selected("method", "顺背法")}>顺背法</option><option value="倒背法" ${selected("method", "倒背法")}>倒背法</option></select></div>
               <div class="field"><label for="materialType">实验材料类别</label><select id="materialType" data-field="materialType"><option value="number" ${selected("materialType", "number")}>数字</option><option value="letter" ${selected("materialType", "letter")}>英文大写字母</option><option value="chinese" ${selected("materialType", "chinese")}>汉字</option><option value="shape" ${selected("materialType", "shape")}>图形</option></select></div>
-              <div class="field"><label>起始长度</label><input type="number" min="2" max="8" data-field="startLength" value="${escapeHtml(state.fields.startLength)}" /></div>
+              <div class="field"><label>起始长度（你要从几个单位开始测量）</label><input type="number" min="2" max="8" data-field="startLength" value="${escapeHtml(state.fields.startLength)}" /></div>
             </div></div>
           `
         },

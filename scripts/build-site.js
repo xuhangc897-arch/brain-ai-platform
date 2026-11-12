@@ -25,6 +25,7 @@ const rootFiles = [
 ];
 const directories = ["assets", "admin", "docs/spanish-picture-bank-images"];
 const excludedDeployFiles = new Set([
+  "assets/active-retrieval-study.png",
   "assets/headband-guide.png",
   "assets/home-hero-bg.png",
   "assets/home-hero-bg.webp",
