@@ -9,6 +9,7 @@ const context = {};
 context.window = context;
 [
   "knowledge-pretest.js",
+  "knowledge-posttest.js",
   "knowledge-post-memory.js",
   "knowledge-post-nback.js",
   "knowledge-post-interference.js",
@@ -20,11 +21,12 @@ context.window = context;
 ));
 
 const stages = [
-  { id: "T0/T5", title: "课程前测与课程后测共用题库", questions: context.BrainKnowledgePretestQuestions },
+  { id: "T0", title: "课程知识前测", questions: context.BrainKnowledgePretestQuestions },
   { id: "T1", title: "短时记忆容量即时测试", questions: context.BrainKnowledgePostMemoryQuestions },
   { id: "T2", title: "工作记忆 / N-back 即时测试", questions: context.BrainKnowledgePostNbackQuestions },
   { id: "T3", title: "长时记忆干扰即时测试", questions: context.BrainKnowledgePostInterferenceQuestions },
-  { id: "T4", title: "长时记忆策略即时测试", questions: context.BrainKnowledgePostStrategyQuestions }
+  { id: "T4", title: "长时记忆策略即时测试", questions: context.BrainKnowledgePostStrategyQuestions },
+  { id: "T5", title: "课程知识后测（平行卷初稿）", questions: context.BrainKnowledgePosttestQuestions }
 ];
 
 const typeLabels = {
@@ -56,9 +58,8 @@ const lines = [
   "# 知识测评 T0–T5 题库审核稿",
   "",
   "> 适用对象：七年级学生<br>",
-  "> 审核状态：已审核通过<br>",
-  "> 版本说明：本轮已移除 T0/T5 对 N-back 范式先验知识的依赖，并重写全部40道唯一题目的干扰项。<br>",
-  "> 题目数量：学生端呈现60题次，实际唯一题目40道；T0与T5完全共用同一套20题。",
+  "> 审核状态：新增 T5 题库待学科教师审题与学生试测；不能仅凭内容对应认定心理测量意义上的平行性。<br>",
+  "> 题目数量：学生端呈现60题次，实际唯一题目60道；T0与T5各有独立的20题。",
   "",
   "## 一、结构核对",
   "",
@@ -69,7 +70,7 @@ const lines = [
   "| T2 | 工作记忆 / N-back 即时测试 | 5 | 固定题目、固定顺序 |",
   "| T3 | 长时记忆干扰即时测试 | 5 | 固定题目、固定顺序 |",
   "| T4 | 长时记忆策略即时测试 | 5 | 固定题目、固定顺序 |",
-  "| T5 | 课程结束知识后测 | 20 | 直接调用T0题库，独立随机题序 |",
+  "| T5 | 课程结束知识后测 | 20 | 独立平行卷初稿，随机题序 |",
   "",
   "## 二、题目明细",
   ""
@@ -78,9 +79,6 @@ const lines = [
 let number = 1;
 stages.forEach((stage) => {
   lines.push(`### ${stage.id} ${stage.title}（${stage.questions.length}题）`, "");
-  if (stage.id === "T0/T5") {
-    lines.push("T0和T5的题目ID、题干、选项与答案完全相同；T5不建立独立题库。", "");
-  }
   stage.questions.forEach((question) => {
     const type = typeOf(question);
     lines.push(
@@ -101,7 +99,7 @@ stages.forEach((stage) => {
 });
 
 const t0 = stages[0].questions;
-const post = stages.slice(1).flatMap((stage) => stage.questions);
+const post = stages.slice(1, 5).flatMap((stage) => stage.questions);
 const stageRows = [
   ["T0", distribution(t0)],
   ["T1", distribution(stages[1].questions)],
@@ -109,25 +107,22 @@ const stageRows = [
   ["T3", distribution(stages[3].questions)],
   ["T4", distribution(stages[4].questions)],
   ["T1–T4合计", distribution(post)],
-  ["T5", distribution(t0)]
+  ["T5", distribution(stages[5].questions)]
 ];
 
 lines.push(
-  "## 三、本轮修订说明",
+  "## 三、设计与审核说明",
   "",
-  "### 1. T0/T5中的N-back先验知识处理",
+  "### 1. T0与T5的对应",
   "",
-  "- 替换 `t0_nback_concept_2`：原题要求理解“N值增大”的含义，现改为阅读时联系前后信息的工作记忆情境。",
-  "- 替换 `t0_nback_experiment_1`：原题要求比较1-back和2-back，现改为比较“边听通知边回复消息”和“只听通知”的控制变量题。",
-  "- 同时重写工作记忆模块其余3题，使5题均可凭生活经验和一般学习经历理解。",
-  "- 经自动检查，T0/T5的题干和选项均不包含1-back、2-back、3-back、N-back、N值或具体判断规则；N-back专业知识仅保留在T2即时测试。",
+  "- T0保持原题库不变。T5按相同的四模块各5题、概念6题、生活应用10题、实验推理4题编写独立题目。",
+  "- 对应题使用相同知识点与认知任务，但更换题干、情境、选项和题目ID。详见《前后测20题对应与平行测验蓝图》。",
+  "- T0与T5均不要求预先理解N-back范式规则；N-back专业知识仅在T2即时测试中考查。",
+  "- 平行性仍需经学科教师审题、同年级学生试测与统计检验；当前称为平行卷初稿。",
   "",
   "### 2. 弱干扰项重写",
   "",
-  "- T0/T5共用20题和T1–T4共20题的干扰项均已重写。",
-  "- 删除或替换依靠绝对词即可排除的选项，例如“永久保存所有信息”“自动扩大容量”“设备损坏是唯一原因”“只抄写标点符号”等。",
-  "- 新干扰项主要采用相邻概念混淆、因果方向倒置、部分正确但不充分的解释、现实中常见的次优策略，以及仍带一个混杂因素的实验方案。",
-  "- 实验推理题增加了简单数据、条件比较或控制变量判断，但未增加超出七年级理解范围的术语。",
+  "- 新 T5 题保持四选一，每题一个预设最佳答案；干扰项需在审题和试测中继续检查。",
   "",
   "### 3. A/B/C/D答案分布",
   "",
@@ -139,15 +134,14 @@ lines.push(
   "",
   "| 题目 ID | 审核意见 | 建议修改 | 审核人 | 状态 |",
   "| --- | --- | --- | --- | --- |",
-  "| 全部题目 | 同意按本版本执行 | 无 | 用户审核 | 已通过 |",
+  "| 新增 T5 题目 | 待学科教师审题和同年级学生试测 | 检查内容、歧义、难度与区分度 | 待定 | 待审核 |",
   "",
   "## 五、审核确认项",
   "",
-  "- [x] T0/T5不要求学生预先理解N-back范式或规则。",
-  "- [x] T0与T5的题目ID、题干、选项和答案完全一致。",
-  "- [x] 每题只有一个明确最佳答案。",
-  "- [x] 四个选项处于相近的逻辑层次，不能仅凭绝对词排除。",
-  "- [x] 题干、情境和数据适合七年级学生阅读。",
+  "- [x] T0与T5不要求学生预先理解N-back范式规则。",
+  "- [x] T0与T5题目ID和题干不同，模块及题型配额一致。",
+  "- [ ] 学科教师确认每题只有一个明确最佳答案、选项质量和七年级适读性。",
+  "- [ ] 同年级学生试测并检验两卷难度、区分度、信度及分数对应关系。",
   "- [x] T2继续考查N-back专业知识。"
 );
 

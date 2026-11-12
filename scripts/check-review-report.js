@@ -30,7 +30,7 @@ function render(activity, experimentResults) {
     experimentResults,
     knowledgeQuiz: { attempts: [{ score: 987, answers: { q1: "PRIVATE_QUIZ_ANSWER" } }] },
     surveys: {
-      meta: surveyAnswers(5, 4), cognitiveLoad: surveyAnswers(2, 6), inquiryParticipation: surveyAnswers(10, 3)
+      meta: surveyAnswers(5, 4), inquiryParticipation: surveyAnswers(10, 3)
     }
   };
   assert.strictEqual(context.BrainReportArchive.render(submission), true);
@@ -50,7 +50,8 @@ assert.match(memory.html, /width:100%/);
 assert.match(memory.html, /知识验证[\s\S]*已完成/);
 assert.doesNotMatch(memory.html, /PRIVATE_QUIZ_ANSWER|987/);
 assert.doesNotMatch(memory.html, /绘制了结果图表/);
-assert.strictEqual(memory.data.posttest.groups[2].complete, true);
+assert.strictEqual(memory.data.posttest.groups.length, 2);
+assert.strictEqual(memory.data.posttest.groups[1].complete, true);
 
 const nback = render("nback", { testRuns: [
   { condition: "1-back", accuracy: 0 }, { condition: "2-back", accuracy: 80 }

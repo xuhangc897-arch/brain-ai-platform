@@ -56,22 +56,36 @@ assert(source.includes('buildRound(1, "休息条件"') && source.includes('build
 assert(source.includes('buildRound(1, "低相似干扰"') && source.includes('buildRound(2, "高相似干扰"'), "similarity rounds must retain low then high similarity interference");
 assert(source.includes('if (!PLAN_FACTORS.includes(state.fields.factor)'), "legacy emotion drafts must not start a new emotion run");
 const planConstants = sliceBetween("const PLAN_FACTORS =", "const defaultState =");
-const planFields = { independentVariablePlan: "", dependentVariablePlan: "", controlVariablePlan: "", difficulty: "medium", memorySeconds: 30, restSeconds: 30, interferenceSeconds: 30 };
-const planPages = vm.runInNewContext(`${planConstants}\n${plan}\nrenderPagedPlanStep()`, {
+const materialChoice = sliceBetween("function renderMaterialChoiceField()", "function renderPagedPlanStep()");
+const planFields = { factor: "倒摄干扰", materialChoice: "letters", independentVariablePlan: "", dependentVariablePlan: "", controlVariablePlan: "", difficulty: "medium", memorySeconds: 60, restSeconds: 30, interferenceSeconds: 30 };
+const planPages = vm.runInNewContext(`${planConstants}\n${materialChoice}\n${plan}\nrenderPagedPlanStep()`, {
   state: { fields: planFields },
   escapeHtml: String,
   selected: () => "",
+  getSelectedMaterialChoice: () => ({ value: "letters" }),
   renderPagedStep: (_, pages) => pages
 });
 assert.strictEqual(planPages.length, 5, "plan must render five pages");
 assert(planPages[0].content().includes("安静休息，不学习新材料") && planPages[1].content().includes("相似度较低的干扰材料"), "two material pages must keep their distinct round designs");
 assert(planPages[3].content().includes('type="radio"') && planPages[3].content().includes('type="checkbox"') && planPages[3].content().includes('placeholder="其他控制变量"'), "variable page must render choice and fill-in inputs");
 assert(!planPages[4].content().includes('data-field="factor"') && !planPages[4].content().includes('data-field="emotionCondition"'), "parameter page must not repeat factor or emotion controls");
+assert(planPages[4].content().includes('data-field="materialChoice"') && planPages[4].content().includes('id="openMaterialGuide"'), "parameter page must offer material selection and examples");
+const materialBuilders = sliceBetween("const MATERIAL_VARIANT_COUNT =", "const defaultState =");
+const materialSelectors = sliceBetween("function getSelectedMaterialPack()", "function splitRecordedItems(value)");
+const materialContext = { state: { fields: { factor: "倒摄干扰", materialChoice: "words", difficulty: "medium" } }, EXTERNAL_EMOTION_VIDEOS: {} };
+vm.runInNewContext(`${materialBuilders}\n${materialSelectors}`, materialContext);
+assert.strictEqual(vm.runInNewContext('getSelectedDifficultySet().materialType', materialContext), "双字具体词语");
+assert.strictEqual(vm.runInNewContext('getSelectedDifficultySet().rounds[0].variants[0].memory.length', materialContext), 6);
+materialContext.state.fields = { factor: "材料相似性", materialChoice: "animals", difficulty: "medium" };
+assert.strictEqual(vm.runInNewContext('getSelectedDifficultySet().materialType', materialContext), "动物词语");
+assert.strictEqual(vm.runInNewContext('getSelectedDifficultySet().rounds[0].variants[0].memory.every((item) => SIMILARITY_CATEGORY_BANKS[0].items.includes(item))', materialContext), true);
+assert.strictEqual(vm.runInNewContext('getSelectedDifficultySet().rounds[1].variants[0].interference.every((item) => SIMILARITY_CATEGORY_BANKS[0].items.includes(item))', materialContext), true);
 const planVariableSource = sliceBetween("function updatePlanVariable(element)", "function bindOtherMemberInputs()");
 const variableFields = { factor: "倒摄干扰", independentVariablePlan: "", dependentVariablePlan: "", controlVariablePlan: "", emotionCondition: "中性" };
 let savedPlan = 0;
 const variableContext = {
   state: { fields: variableFields },
+  PLAN_MATERIAL_OPTIONS: { "材料相似性": [{ value: "mixed" }] },
   main: {
     querySelectorAll: (selector) => selector.includes('"dependent"') ? [{ value: "记忆表现（得分与正确率）" }] : [{ value: "测试方式" }],
     querySelector: () => ({ value: "同一教室" })
@@ -83,6 +97,7 @@ vm.runInNewContext(planVariableSource, variableContext);
 vm.runInNewContext('updatePlanVariable({ dataset: { planVariable: "factor" }, value: "材料相似性" })', variableContext);
 assert.strictEqual(variableFields.factor, "材料相似性");
 assert.strictEqual(variableFields.independentVariablePlan, "材料相似性");
+assert.strictEqual(variableFields.materialChoice, "mixed");
 assert.strictEqual(variableFields.emotionCondition, "");
 vm.runInNewContext('updatePlanVariable({ dataset: { planVariable: "controlOther" } })', variableContext);
 assert.strictEqual(variableFields.dependentVariablePlan, "记忆表现（得分与正确率）");
@@ -103,7 +118,7 @@ vm.runInNewContext(factorOptionsSource, validationContext);
 assert.strictEqual(vm.runInNewContext('getInterferenceFactorOptions("").length', validationContext), 3, "new teammate records must offer only two factors");
 assert.strictEqual(vm.runInNewContext('getInterferenceFactorOptions("emotion").length', validationContext), 4, "historical emotion answers must remain visible");
 assert(source.includes(".time-parameter-grid") && source.includes("grid-template-columns: repeat(3"), "time parameters must share one desktop row");
-assert(source.includes('merged.fields.interferenceSeconds = sharedPhaseSeconds;'), "saved rest and interference times must be reconciled on load");
+assert(source.includes('merged.fields.interferenceSeconds = merged.fields.restSeconds;'), "saved rest and interference times must be reconciled on load");
 const updateFieldSource = sliceBetween("function updateField(element, field)", "function bindHeadbandModalEvents()");
 const fields = { restSeconds: "", interferenceSeconds: "" };
 const inputs = { restSeconds: { value: "" }, interferenceSeconds: { value: "" } };

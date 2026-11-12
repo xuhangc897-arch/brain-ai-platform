@@ -1062,6 +1062,7 @@
   <script src="../assets/platform-core.js"></script>
   <script src="../assets/experiment-integration.js"></script>
   <script src="../assets/knowledge-pretest.js"></script>
+  <script src="../assets/knowledge-posttest.js"></script>
   <script src="../assets/knowledge-assessment.js"></script>
   <script src="../assets/inquiry-ability-survey.js"></script>
   <script src="../cloudbase.js"></script>
@@ -2438,8 +2439,10 @@
       });
       const orderedStudents = Array.from(students.values()).sort((left, right) => left.studentId.localeCompare(right.studentId, "zh-CN", { numeric: true }));
       if (!orderedStudents.length) return [];
-      const questions = window.BrainKnowledgePretestQuestions;
+      const pretestQuestions = window.BrainKnowledgePretestQuestions;
+      const posttestQuestions = window.BrainKnowledgePosttestQuestions;
       const questionSetVersion = window.BrainKnowledgeAssessment.questionSetVersion;
+      const posttestQuestionSetVersion = window.BrainKnowledgeAssessment.posttestQuestionSetVersion;
       const summaryRows = orderedStudents.map((student) => {
         const t0 = student.T0;
         const t5 = student.T5;
@@ -2451,7 +2454,10 @@
       const detailRows = orderedStudents.flatMap((student) => ["T0", "T5"].flatMap((stage) => {
         const assessment = student[stage];
         if (!assessment) return [];
-        if (assessment.questionSetVersion !== questionSetVersion) {
+        const isNewPosttest = stage === "T5" && assessment.questionSetVersion === posttestQuestionSetVersion;
+        const expectedVersion = isNewPosttest ? posttestQuestionSetVersion : questionSetVersion;
+        const questions = isNewPosttest ? posttestQuestions : pretestQuestions;
+        if (assessment.questionSetVersion !== expectedVersion) {
           return [[student.studentId, student.studentName, student.className, student.groupName,
             stage, "", "", "", "", "", "", "", "", assessment.questionSetVersion,
             formatDate(assessment.timestamp), "题库版本不同，无法按当前题库展开逐题结果"]];

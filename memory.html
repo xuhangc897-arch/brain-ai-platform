@@ -1,4 +1,4 @@
-﻿<!doctype html>
+<!doctype html>
 <html lang="zh-CN">
 <head>
   <meta charset="utf-8" />
@@ -1672,7 +1672,6 @@
   <script src="assets/experiment-registry.js"></script>
   <script src="assets/knowledge-post-memory.js"></script>
   <script src="assets/knowledge-assessment.js"></script>
-  <script src="assets/inquiry-ability-survey.js"></script>
   <script src="assets/platform-core.js"></script>
   <script src="auth.js"></script>
   <script src="assets/experiment-uploader.js"></script>
@@ -1698,12 +1697,11 @@
       { id: "analysis", title: "处理信息", minutes: "10分钟", taskDescription: "计算短时记忆的容量，整理容量平均值、结果图和脑活动记录。" },
       { id: "conclusion", title: "得出结论", minutes: "15分钟", taskDescription: "结合实验数据、假设和米勒理论写出自己的最终结论。" },
       { id: "reflection", title: "反思交流", minutes: "15分钟", taskDescription: "反思实验设计、合作过程以及科学探究各环节中的表现。" },
-      { id: "posttest", title: "侦探小结", minutes: "15分钟", taskDescription: "完成案件知识验证、学习收获调查、认知负荷调查和探究参与调查。" }
+      { id: "posttest", title: "侦探小结", minutes: "15分钟", taskDescription: "完成知识点测试、元认知问卷和科学探究活动参与情况调查问卷。" }
     ];
     const SURVEY_DEFS = {
-      ability: window.BrainInquiryAbilitySurvey,
       meta: {
-        title: "学习收获调查",
+        title: "元认知问卷",
         scale: [1, 2, 3, 4, 5],
         anchors: "1=非常不同意，2=不同意，3=一般，4=同意，5=非常同意",
         labels: { 1: "非常不同意", 2: "不同意", 3: "一般", 4: "同意", 5: "非常同意" },
@@ -1714,17 +1712,6 @@
           "在学习这些有关短时记忆容量的知识时，我会与现实生活进行联系。",
           "我会根据今天科学探究中获得的知识，反思自己以前记忆过程中做得不足的地方并加以改进。",
           "在学习这些有关短时记忆容量的知识时，我会联想到之前学过或了解过的知识。"
-        ]
-      },
-      load: {
-        title: "认知负荷情况调查问卷",
-        scale: [1, 2, 3, 4, 5, 6, 7, 8, 9, 10],
-        anchors: "1=非常低，10=非常高",
-        labels: { 1: "非常低", 2: "很低", 3: "较低", 4: "稍低", 5: "中等偏低", 6: "中等偏高", 7: "稍高", 8: "较高", 9: "很高", 10: "非常高" },
-        note: "请选择最符合你刚才活动体验的一项。得分越高，表示材料难度或心理努力越高。",
-        items: [
-          "你认为刚才科学探究活动的学习材料难度如何？（得分越高，难度越大）",
-          "你在刚才的科学探究活动中投入了多少心理努力？（得分越高，投入的心理努力越多）"
         ]
       },
       inquiry: {
@@ -1752,7 +1739,7 @@
     const knowledgeAssessmentApi = window.BrainKnowledgeAssessment;
 
     function createDefaultSurveys() {
-      return { current: { postMeta: {}, inquiryAbility: {}, cognitiveLoad: {}, inquiryParticipation: {} } };
+      return { current: { postMeta: {}, inquiryParticipation: {} } };
     }
     function mergeSurveys(incoming = {}) {
       const merged = createDefaultSurveys();
@@ -1816,7 +1803,7 @@
     }
 
     const PLAN_ORDER_STEPS = [
-      { id: "division", title: "分工", description: "小组成员自行决定分工，决定实验顺序。例如，A实验时，B和C需要在一旁观察A的头环颜色变化情况。" },
+      { id: "division", title: "分工", description: "小组成员自行决定分工，决定实验顺序。" },
       { id: "measure", title: "测量", description: "通过所选方法测量参与者的短时记忆容量：通过（顺背法/倒背法），测量参与者能正确记忆的（最长数字长度/最长字母长度），每位参与者测量三次，计算平均值可得每位参与者的短时记忆容量。" },
       { id: "record", title: "记录数据", description: "将实验所得的数据记录在数据记录表中。" },
       { id: "analysis", title: "处理分析数据", description: "对数据进行处理分析。" },
@@ -1880,6 +1867,7 @@
         teammate1Result: "",
         teammate2Id: "",
         teammate2Result: "",
+        teamSize: 2,
         groupAverageShortTermMemory: "",
         planOrder: INITIAL_PLAN_ORDER,
         planOrderConfirmed: false,
@@ -2124,7 +2112,7 @@
         if (!quizAnswers[`q${index + 1}`]) return index;
       }
       let offset = KNOWLEDGE_QUIZ.items.length;
-      for (const [surveyKey, defKey] of [["postMeta", "meta"], ["inquiryAbility", "ability"], ["cognitiveLoad", "load"], ["inquiryParticipation", "inquiry"]]) {
+      for (const [surveyKey, defKey] of [["postMeta", "meta"], ["inquiryParticipation", "inquiry"]]) {
         const missing = getFirstUnansweredSurveyQuestion(surveyKey, SURVEY_DEFS[defKey].items.length);
         if (missing >= 0) return offset + Math.floor(missing / 3);
         offset += Math.ceil(getSurveyItems(surveyKey, defKey).length / 3);
@@ -2199,7 +2187,7 @@
         return fields.planOrderConfirmed === true && hasText(fields.method) && hasText(fields.material) && hasText(fields.startLength) && hasText(fields.trialsPerParticipant);
       }
       if (stepId === "evidence") return getSuccessfulRunGroups().length > 0;
-      if (stepId === "analysis") return Array.isArray(state.records) && state.records.length > 0 && (hasText(fields.brainFinding) || hasText(fields.teammate1Result) || hasText(fields.teammate2Result));
+      if (stepId === "analysis") return Array.isArray(state.records) && state.records.length > 0 && (hasText(fields.brainFinding) || Array.from({length:getTeamSize() - 1}, (_, index) => fields[`teammate${index + 1}Result`]).some(hasText));
       if (stepId === "conclusion") return hasText(fields.conclusionCapacity) && hasText(fields.finalConclusion);
       if (stepId === "reflection") return hasText(fields.designImprove) && hasText(fields.teamwork) && hasText(fields.inquiryReflection);
       return true;
@@ -2266,8 +2254,6 @@
       }));
       [
         ["postMeta", "meta"],
-        ["inquiryAbility", "ability"],
-        ["cognitiveLoad", "load"],
         ["inquiryParticipation", "inquiry"]
       ].forEach(([surveyKey, defKey]) => {
         const def = SURVEY_DEFS[defKey];
@@ -2330,13 +2316,9 @@
 
     function renderSurveySummaryCards() {
       const post = summarizeSurvey("postMeta", "meta");
-      const ability = summarizeSurvey("inquiryAbility", "ability");
-      const load = summarizeSurvey("cognitiveLoad", "load");
       const inquiry = summarizeSurvey("inquiryParticipation", "inquiry");
       return '<div class="survey-summary">' +
-        '<div><strong>' + post.answered + ' / ' + SURVEY_DEFS.meta.items.length + '</strong><span>学习收获调查完成进度</span></div>' +
-        '<div><strong>' + ability.answered + ' / ' + SURVEY_DEFS.ability.items.length + '</strong><span>科学探究能力完成进度</span></div>' +
-        '<div><strong>' + load.answered + ' / ' + SURVEY_DEFS.load.items.length + '</strong><span>认知负荷完成进度</span></div>' +
+        '<div><strong>' + post.answered + ' / ' + SURVEY_DEFS.meta.items.length + '</strong><span>元认知问卷完成进度</span></div>' +
         '<div><strong>' + (inquiry.answered + Number(Boolean(state.surveys?.current?.inquiryParticipation?.q10))) + ' / ' + getSurveyItems("inquiryParticipation", "inquiry").length + '</strong><span>探究参与完成进度</span></div>' +
       '</div>';
     }
@@ -2428,7 +2410,7 @@
     }
 
     function isSurveyStepComplete(stepId) {
-      if (stepId === "posttest") return summarizeSurvey("postMeta", "meta").complete && summarizeSurvey("inquiryAbility", "ability").complete && summarizeSurvey("cognitiveLoad", "load").complete && summarizeSurvey("inquiryParticipation", "inquiry").complete && isKnowledgeQuizAnswered();
+      if (stepId === "posttest") return summarizeSurvey("postMeta", "meta").complete && summarizeSurvey("inquiryParticipation", "inquiry").complete && isKnowledgeQuizAnswered();
       return true;
     }
 
@@ -2446,19 +2428,13 @@
         ]];
       };
       const post = summarizeSurvey("postMeta", "meta");
-      const ability = summarizeSurvey("inquiryAbility", "ability");
-      const load = summarizeSurvey("cognitiveLoad", "load");
       const inquiry = summarizeSurvey("inquiryParticipation", "inquiry");
       return [
-        makeSheet("学习收获调查", "postMeta", "meta"),
-        makeSheet("科学探究能力调查", "inquiryAbility", "ability"),
-        makeSheet("侦探小结-认知负荷", "cognitiveLoad", "load"),
+        makeSheet("元认知问卷", "postMeta", "meta"),
         makeSheet("侦探小结-探究参与", "inquiryParticipation", "inquiry"),
         ["问卷汇总", [
           ["问卷", "已答题数", "总分", "均分", "完成情况"],
-          ["学习收获调查", post.answered, post.total, post.average, post.complete ? "已完成" : "未完成"],
-          ["科学探究能力调查", ability.answered, ability.total, ability.average, ability.complete ? "已完成" : "未完成"],
-          ["侦探小结认知负荷", load.answered, load.total, load.average, load.complete ? "已完成" : "未完成"],
+          ["元认知问卷", post.answered, post.total, post.average, post.complete ? "已完成" : "未完成"],
           ["侦探小结科学探究参与", inquiry.answered, inquiry.total, inquiry.average, inquiry.complete ? "已完成" : "未完成"]
         ]]
       ];
@@ -2547,10 +2523,8 @@
       };
       if (stepId !== "posttest") return fixedCounts[stepId] || 1;
       const metaPages = Math.ceil(SURVEY_DEFS.meta.items.length / 3);
-      const abilityPages = Math.ceil(SURVEY_DEFS.ability.items.length / 3);
-      const loadPages = Math.ceil(SURVEY_DEFS.load.items.length / 3);
       const inquiryPages = Math.ceil((SURVEY_DEFS.inquiry.items.length + 1) / 3);
-      return KNOWLEDGE_QUIZ.items.length + metaPages + abilityPages + loadPages + inquiryPages + 1;
+      return KNOWLEDGE_QUIZ.items.length + metaPages + inquiryPages + 1;
     }
 
     function renderPagedStep(stepId, pages) {
@@ -2886,8 +2860,13 @@
       return value || "";
     }
 
+    function getTeamSize() { return Math.min(6, Math.max(2, Number(state.fields.teamSize) || 2)); }
+    function getTeamResults(personalResult) {
+      return [personalResult, ...Array.from({length:getTeamSize() - 1}, (_, index) => state.fields[`teammate${index + 1}Result`])];
+    }
+
     function getShortTermGroupAverage(personalResult) {
-      const values = [personalResult, state.fields.teammate1Result, state.fields.teammate2Result]
+      const values = getTeamResults(personalResult)
         .map((value) => Number(value))
         .filter((value) => Number.isFinite(value) && value > 0);
       return values.length ? Number((values.reduce((sum, value) => sum + value, 0) / values.length).toFixed(1)) : "";
@@ -2895,9 +2874,9 @@
 
     function completeGroupAverage() {
       const personalResult = getPersonalShortTermMemory();
-      const rawValues = [personalResult, state.fields.teammate1Result, state.fields.teammate2Result];
+      const rawValues = getTeamResults(personalResult);
       if (rawValues.some((value) => value === "" || value === null || value === undefined)) {
-        alert("请先输入三位同学的成绩。");
+        alert("请先输入所有组员的成绩。");
         return;
       }
       const values = rawValues.map((value) => Number(value));
@@ -2905,7 +2884,7 @@
         alert("请输入有效的数字成绩。");
         return;
       }
-      state.fields.groupAverageShortTermMemory = Number((values.reduce((sum, value) => sum + value, 0) / 3).toFixed(1));
+      state.fields.groupAverageShortTermMemory = Number((values.reduce((sum, value) => sum + value, 0) / values.length).toFixed(1));
       saveState();
       renderApp();
     }
@@ -2913,13 +2892,12 @@
     function renderTeamResultTable(summary) {
       const personalResult = getPersonalShortTermMemory(summary);
       const average = state.fields.groupAverageShortTermMemory;
-      const filledCount = [personalResult, state.fields.teammate1Result, state.fields.teammate2Result]
-        .filter((value) => Number(value) > 0).length;
-      const note = filledCount === 2 ? "仍可补充另一名组员结果。" : "请记录三名成员的有效短时记忆容量。";
+      const note = `请记录 ${getTeamSize()} 名成员的有效短时记忆容量。`;
       return `
         <div class="panel team-result-card">
-          <div class="panel-head"><h3>三人小组结果记录</h3><p>实验一根据三人的有效短时记忆容量计算小组平均值。</p></div>
+          <div class="panel-head"><h3>小组结果记录</h3><p>根据小组成员的有效短时记忆容量计算平均值。</p></div>
           <div class="panel-body">
+            <div class="actions"><button class="btn secondary" type="button" data-team-adjust="-1" aria-label="减少一名组员" ${getTeamSize() === 2 ? "disabled" : ""}>−</button><span>小组人数：${getTeamSize()} 人</span><button class="btn secondary" type="button" data-team-adjust="1" aria-label="增加一名组员" ${getTeamSize() === 6 ? "disabled" : ""}>＋</button></div>
             <table>
               <thead><tr><th>成员</th><th>组员编号</th><th>实验结果</th></tr></thead>
               <tbody>
@@ -2928,16 +2906,7 @@
                   <td><input type="text" data-field="participantId" value="${escapeHtml(state.fields.participantId || state.studentId)}" placeholder="本人编号"></td>
                   <td><input type="number" value="${escapeHtml(personalResult)}" placeholder="自动带入本人结果" disabled></td>
                 </tr>
-                <tr>
-                  <td>组员</td>
-                  <td><input type="text" data-field="teammate1Id" value="${escapeHtml(state.fields.teammate1Id)}" placeholder="请输入编号"></td>
-                  <td><input type="text" inputmode="decimal" data-field="teammate1Result" value="${escapeHtml(state.fields.teammate1Result)}" placeholder="请输入短时记忆容量"></td>
-                </tr>
-                <tr>
-                  <td>组员</td>
-                  <td><input type="text" data-field="teammate2Id" value="${escapeHtml(state.fields.teammate2Id)}" placeholder="请输入编号"></td>
-                  <td><input type="text" inputmode="decimal" data-field="teammate2Result" value="${escapeHtml(state.fields.teammate2Result)}" placeholder="请输入短时记忆容量"></td>
-                </tr>
+                ${Array.from({length:getTeamSize() - 1}, (_, index) => { const number = index + 1; return `<tr><td>组员${number}</td><td><input type="text" data-field="teammate${number}Id" value="${escapeHtml(state.fields[`teammate${number}Id`] || "")}" placeholder="请输入编号"></td><td><input type="text" inputmode="decimal" data-field="teammate${number}Result" value="${escapeHtml(state.fields[`teammate${number}Result`] || "")}" placeholder="请输入短时记忆容量"></td></tr>`; }).join("")}
               </tbody>
             </table>
             <div class="actions" style="justify-content:flex-end;">
@@ -2956,8 +2925,9 @@
       const personalResult = getPersonalShortTermMemory(summary);
       const average = state.fields.groupAverageShortTermMemory || getShortTermGroupAverage(personalResult);
       return ["小组记录", [
-        ["本人编号", "本人结果", "组员1编号", "组员1结果", "组员2编号", "组员2结果", "小组平均长度"],
-        [state.fields.participantId || state.studentId, personalResult, state.fields.teammate1Id, state.fields.teammate1Result, state.fields.teammate2Id, state.fields.teammate2Result, average]
+        ["成员", "编号", "实验结果", "小组平均长度"],
+        ["本人", state.fields.participantId || state.studentId, personalResult, average],
+        ...Array.from({length:getTeamSize() - 1}, (_, index) => [`组员${index + 1}`, state.fields[`teammate${index + 1}Id`] || "", state.fields[`teammate${index + 1}Result`] || "", ""])
       ]];
     }
 
@@ -3026,7 +2996,7 @@
           content: () => `<div class="single-step-layout"><div class="panel"><div class="panel-body"><div class="chart">${chart}</div><textarea data-field="brainFinding" placeholder="请询问在你进行实验时观察头环的同学，并记录头环观察结果：颜色主要是红/黄/蓝中的哪一种？颜色是否随着任务难度或材料长度变化？前额叶区域是否出现更明显的暖色？哪一次任务中颜色变化最明显？">${escapeHtml(state.fields.brainFinding)}</textarea></div></div></div>`
         },
         {
-          title: "三人小组结果记录",
+          title: "小组结果记录",
           className: "team-result-page",
           content: () => `<div class="single-step-layout">${renderTeamResultTable(summary)}</div>`
         }
@@ -3148,7 +3118,7 @@
         if (field === "materialType") syncMaterialFields(state.fields.materialType);
         else normalizeMaterialType(state.fields);
       }
-      if (["participantId", "teammate1Result", "teammate2Result"].includes(field)) {
+      if (field === "participantId" || /^teammate[1-5]Result$/.test(field)) {
         state.fields.groupAverageShortTermMemory = "";
       }
       saveState();
@@ -3195,6 +3165,11 @@
       if (stepId === "evidence") bindGameEvents();
       const completeGroupAverageBtn = document.getElementById("completeGroupAverageBtn");
       if (completeGroupAverageBtn) completeGroupAverageBtn.addEventListener("click", completeGroupAverage);
+      main.querySelectorAll("[data-team-adjust]").forEach(button => button.addEventListener("click", () => {
+        state.fields.teamSize = Math.min(6, Math.max(2, getTeamSize() + Number(button.dataset.teamAdjust)));
+        state.fields.groupAverageShortTermMemory = "";
+        saveState(); renderApp();
+      }));
       const reviewReport = document.getElementById("reviewReportBtn");
       if (reviewReport) reviewReport.addEventListener("click", () => generateReviewReport("memory"));
     }

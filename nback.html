@@ -1,4 +1,4 @@
-﻿<!doctype html>
+<!doctype html>
 <html lang="zh-CN">
 <head>
   <meta charset="utf-8" />
@@ -1637,7 +1637,6 @@
   <script src="assets/experiment-registry.js"></script>
   <script src="assets/knowledge-post-nback.js"></script>
   <script src="assets/knowledge-assessment.js"></script>
-  <script src="assets/inquiry-ability-survey.js"></script>
   <script src="assets/platform-core.js"></script>
   <script src="auth.js"></script>
   <script src="assets/experiment-uploader.js"></script>
@@ -1663,12 +1662,11 @@
       { id: "analysis", title: "处理信息", minutes: "10分钟", taskDescription: "汇总不同条件下的正确率、漏答率和反应时，并记录头环观察结果。" },
       { id: "conclusion", title: "得出结论", minutes: "5分钟", taskDescription: "根据研究问题和实验数据说明结果趋势，以及是否符合原先假设。" },
       { id: "reflection", title: "反思交流", minutes: "15分钟", taskDescription: "反思实验设计可以怎样改进，以及如何提高结果的说服力。" },
-      { id: "posttest", title: "侦探小结", minutes: "15分钟", taskDescription: "完成案件知识验证、学习收获调查、认知负荷调查和探究参与调查。" }
+      { id: "posttest", title: "侦探小结", minutes: "15分钟", taskDescription: "完成知识点测试、元认知问卷和科学探究活动参与情况调查问卷。" }
     ];
     const SURVEY_DEFS = {
-      ability: window.BrainInquiryAbilitySurvey,
       meta: {
-        title: "学习收获调查",
+        title: "元认知问卷",
         scale: [1, 2, 3, 4, 5],
         anchors: "1=非常不同意，2=不同意，3=一般，4=同意，5=非常同意",
         labels: { 1: "非常不同意", 2: "不同意", 3: "一般", 4: "同意", 5: "非常同意" },
@@ -1679,17 +1677,6 @@
           "在学习这些有关工作记忆的知识时，我会与现实生活进行联系。",
           "我会根据今天科学探究中获得的知识，反思自己以前完成复杂任务时的表现，并尝试加以改进。",
           "在学习这些有关工作记忆的知识时，我会联想到之前学过或了解过的知识。"
-        ]
-      },
-      load: {
-        title: "认知负荷情况调查问卷",
-        scale: [1, 2, 3, 4, 5, 6, 7, 8, 9, 10],
-        anchors: "1=非常低，10=非常高",
-        labels: { 1: "非常低", 2: "很低", 3: "较低", 4: "稍低", 5: "中等偏低", 6: "中等偏高", 7: "稍高", 8: "较高", 9: "很高", 10: "非常高" },
-        note: "请选择最符合你刚才活动体验的一项。得分越高，表示材料难度或心理努力越高。",
-        items: [
-          "你认为刚才科学探究活动的学习材料难度如何？（得分越高，难度越大）",
-          "你在刚才的科学探究活动中投入了多少心理努力？（得分越高，投入的心理努力越多）"
         ]
       },
       inquiry: {
@@ -1717,7 +1704,7 @@
     const knowledgeAssessmentApi = window.BrainKnowledgeAssessment;
 
     function createDefaultSurveys() {
-      return { current: { postMeta: {}, inquiryAbility: {}, cognitiveLoad: {}, inquiryParticipation: {} } };
+      return { current: { postMeta: {}, inquiryParticipation: {} } };
     }
     function mergeSurveys(incoming = {}) {
       const merged = createDefaultSurveys();
@@ -1837,7 +1824,8 @@
         teammate2MaterialType: "image",
         teammate2AverageAccuracy: "",
         teammate2AverageMissRate: "",
-        teammate2Result: ""
+        teammate2Result: "",
+        teamSize: 2
       },
       testRuns: [],
       surveys: createDefaultSurveys(),
@@ -2071,12 +2059,12 @@
       for (let index = 0; index < KNOWLEDGE_QUIZ.items.length; index += 1) {
         if (!quizAnswers[`q${index + 1}`]) return index;
       }
-      const surveys = [["postMeta", "meta"], ["inquiryAbility", "ability"], ["cognitiveLoad", "load"], ["inquiryParticipation", "inquiry"]];
+      const surveys = [["postMeta", "meta"], ["inquiryParticipation", "inquiry"]];
       let offset = KNOWLEDGE_QUIZ.items.length;
       for (const [surveyKey, defKey] of surveys) {
         const missing = getFirstUnansweredSurveyQuestion(surveyKey, SURVEY_DEFS[defKey].items.length);
-        if (missing >= 0) return offset + (defKey === "ability" ? Math.floor(missing / 3) : 0);
-        offset += defKey === "ability" ? Math.ceil(SURVEY_DEFS.ability.items.length / 3) : 1;
+        if (missing >= 0) return offset + Math.floor(missing / 3);
+        offset += Math.ceil(getSurveyItems(surveyKey, defKey).length / 3);
       }
       return Math.max(0, getStepPageCount("posttest") - 1);
     }
@@ -2138,7 +2126,7 @@
       if (stepId === "hypothesis") return hasText(fields.hypothesis);
       if (stepId === "plan") return hasText(fields.stimulusMaterial) && hasText(fields.experimentDesign) && hasText(fields.stimulusInterval);
       if (stepId === "evidence") return Array.isArray(state.testRuns) && state.testRuns.length > 0;
-      if (stepId === "analysis") return Array.isArray(state.testRuns) && state.testRuns.length > 0 && (hasText(fields.headbandObservation) || hasText(fields.teammate1Result) || hasText(fields.teammate2Result));
+      if (stepId === "analysis") return Array.isArray(state.testRuns) && state.testRuns.length > 0 && (hasText(fields.headbandObservation) || Array.from({length:getTeamSize() - 1}, (_, index) => { const prefix = `teammate${index + 1}`; return [fields[`${prefix}AverageAccuracy`], fields[`${prefix}AverageMissRate`], fields[`${prefix}Result`]].some(hasText); }).some(Boolean));
       if (stepId === "conclusion") return hasText(fields.conclusion) && fields.conclusionSupported !== defaultState.fields.conclusionSupported;
       if (stepId === "reflection") return hasText(fields.improvement) && hasText(fields.persuasiveness);
       return true;
@@ -2211,7 +2199,7 @@
         analysis: 3,
         conclusion: 1,
         reflection: 2,
-        posttest: KNOWLEDGE_QUIZ.items.length + 9
+        posttest: KNOWLEDGE_QUIZ.items.length + Math.ceil(SURVEY_DEFS.meta.items.length / 3) + Math.ceil((SURVEY_DEFS.inquiry.items.length + 1) / 3) + 1
       };
       if (stepId === "evidence") return 1 + Math.ceil(getEvidenceRunGroups().length / 3);
       return fixedCounts[stepId] || 1;
@@ -2287,23 +2275,24 @@
         title: `案件知识验证 第 ${index + 1} 题`,
         content: () => renderKnowledgeQuizItem(index)
       }));
-      pages.push(
-        { title: SURVEY_DEFS.meta.title, className: "survey-page", content: () => renderSurveyForm("postMeta", "meta") },
-        ...Array.from({ length: Math.ceil(SURVEY_DEFS.ability.items.length / 3) }, (_, page) => ({ title: `${SURVEY_DEFS.ability.title}：第 ${page * 3 + 1}–${Math.min((page + 1) * 3, SURVEY_DEFS.ability.items.length)} 题`, className: "survey-page", content: () => renderSurveyForm("inquiryAbility", "ability", page * 3, 3) })),
-        { title: SURVEY_DEFS.load.title, className: "survey-page", content: () => renderSurveyForm("cognitiveLoad", "load") },
-        { title: SURVEY_DEFS.inquiry.title, className: "survey-page", content: () => renderSurveyForm("inquiryParticipation", "inquiry") },
-        { title: "完成案件调查", content: () => `<div class="survey-shell"><div class="survey-intro"><h3>完成案件调查</h3><p>确认知识验证和全部问卷均已完成后，生成记忆侦探报告。</p></div>${renderSurveySummaryCards()}${renderPosttestExportArea()}</div>` }
-      );
+      [["postMeta", "meta"], ["inquiryParticipation", "inquiry"]].forEach(([surveyKey, defKey]) => {
+        const def = SURVEY_DEFS[defKey];
+        const items = getSurveyItems(surveyKey, defKey);
+        for (let startIndex = 0; startIndex < items.length; startIndex += 3) {
+          const first = startIndex + 1;
+          const last = Math.min(startIndex + 3, items.length);
+          pages.push({ title: `${def.title}：第 ${first}–${last} 题`, className: "survey-page", content: () => renderSurveyForm(surveyKey, defKey, startIndex, 3) });
+        }
+      });
+      pages.push({ title: "完成案件调查", content: () => `<div class="survey-shell"><div class="survey-intro"><h3>完成案件调查</h3><p>确认知识验证和全部问卷均已完成后，生成记忆侦探报告。</p></div>${renderSurveySummaryCards()}${renderPosttestExportArea()}</div>` });
       return renderPagedStep("posttest", pages);
     }
 
     function renderSurveyPage(kind) {
       return '<div class="survey-shell">' +
         renderKnowledgeQuiz() +
-        '<div class="survey-intro"><h3>📝 学习收获调查</h3><p>请根据刚刚完成的科学探究活动，选择最符合你真实情况的选项。</p></div>' +
+        '<div class="survey-intro"><h3>📝 元认知问卷</h3><p>请根据刚刚完成的科学探究活动，选择最符合你真实情况的选项。</p></div>' +
         renderSurveyForm("postMeta", "meta") +
-        renderSurveyForm("inquiryAbility", "ability") +
-        renderSurveyForm("cognitiveLoad", "load") +
         renderSurveyForm("inquiryParticipation", "inquiry") +
         renderSurveySummaryCards() +
         renderPosttestExportArea() +
@@ -2352,13 +2341,9 @@
 
     function renderSurveySummaryCards() {
       const post = summarizeSurvey("postMeta", "meta");
-      const ability = summarizeSurvey("inquiryAbility", "ability");
-      const load = summarizeSurvey("cognitiveLoad", "load");
       const inquiry = summarizeSurvey("inquiryParticipation", "inquiry");
       return '<div class="survey-summary">' +
-        '<div><strong>' + post.answered + ' / ' + SURVEY_DEFS.meta.items.length + '</strong><span>学习收获调查完成进度</span></div>' +
-        '<div><strong>' + ability.answered + ' / ' + SURVEY_DEFS.ability.items.length + '</strong><span>科学探究能力完成进度</span></div>' +
-        '<div><strong>' + load.answered + ' / ' + SURVEY_DEFS.load.items.length + '</strong><span>认知负荷完成进度</span></div>' +
+        '<div><strong>' + post.answered + ' / ' + SURVEY_DEFS.meta.items.length + '</strong><span>元认知问卷完成进度</span></div>' +
         '<div><strong>' + (inquiry.answered + Number(Boolean(state.surveys?.current?.inquiryParticipation?.q10))) + ' / ' + getSurveyItems("inquiryParticipation", "inquiry").length + '</strong><span>探究参与完成进度</span></div>' +
       '</div>';
     }
@@ -2491,7 +2476,7 @@
     }
 
     function isSurveyStepComplete(stepId) {
-      if (stepId === "posttest") return summarizeSurvey("postMeta", "meta").complete && summarizeSurvey("inquiryAbility", "ability").complete && summarizeSurvey("cognitiveLoad", "load").complete && summarizeSurvey("inquiryParticipation", "inquiry").complete && isKnowledgeQuizAnswered();
+      if (stepId === "posttest") return summarizeSurvey("postMeta", "meta").complete && summarizeSurvey("inquiryParticipation", "inquiry").complete && isKnowledgeQuizAnswered();
       return true;
     }
 
@@ -2509,18 +2494,13 @@
         ]];
       };
       const post = summarizeSurvey("postMeta", "meta");
-      const load = summarizeSurvey("cognitiveLoad", "load");
       const inquiry = summarizeSurvey("inquiryParticipation", "inquiry");
       return [
-        makeSheet("学习收获调查", "postMeta", "meta"),
-        makeSheet("科学探究能力调查", "inquiryAbility", "ability"),
-        makeSheet("侦探小结-认知负荷", "cognitiveLoad", "load"),
+        makeSheet("元认知问卷", "postMeta", "meta"),
         makeSheet("侦探小结-探究参与", "inquiryParticipation", "inquiry"),
         ["问卷汇总", [
           ["问卷", "已答题数", "总分", "均分", "完成情况"],
-          ["学习收获调查", post.answered, post.total, post.average, post.complete ? "已完成" : "未完成"],
-          ["科学探究能力调查", summarizeSurvey("inquiryAbility", "ability").answered, summarizeSurvey("inquiryAbility", "ability").total, summarizeSurvey("inquiryAbility", "ability").average, summarizeSurvey("inquiryAbility", "ability").complete ? "已完成" : "未完成"],
-          ["侦探小结认知负荷", load.answered, load.total, load.average, load.complete ? "已完成" : "未完成"],
+          ["元认知问卷", post.answered, post.total, post.average, post.complete ? "已完成" : "未完成"],
           ["侦探小结科学探究参与", inquiry.answered, inquiry.total, inquiry.average, inquiry.complete ? "已完成" : "未完成"]
         ]]
       ];
@@ -2573,54 +2553,7 @@
               <article class="reading-card">
                 <h4>材料二：N-back任务</h4>
                 <p>N-back是一种常见的工作记忆任务。你需要判断屏幕上现在出现的数字、字母或图形，是否与它前面第N个出现的内容相同。因此，你要一边记住前面的内容，一边不断更新记忆。</p><p>例如，在2-back任务中，数字依次出现：7、5、6、5、8、3……看到6时，要和它前面第2个数字7比较：不同，选择“否”。看到下一个5时，要和它前面第2个数字5比较：相同，选择“是”。</p><div class="nback-example">
-                  <svg class="nback-example-svg" viewBox="0 0 720 320" role="img" aria-labelledby="nbackExampleTitle nbackExampleDesc">
-                    <title id="nbackExampleTitle">N-back活动举例：2-back数字实验</title>
-                    <desc id="nbackExampleDesc">数字序列7、5、6、5、8、3中，从第三个数字开始与前两个数字比较。</desc>
-                    <rect x="1" y="1" width="718" height="318" rx="8" fill="#ffffff" stroke="#dbe3ef" />
-                    <text x="360" y="36" text-anchor="middle" fill="#172033" font-size="22" font-weight="800">N-back活动举例：2-back数字实验</text>
-                    <g fill="none" stroke="#1e3a8a" stroke-width="3" stroke-linecap="round" stroke-linejoin="round">
-                      <path d="M74 76 Q94 58 114 76 Q94 94 74 76Z" />
-                      <circle cx="94" cy="76" r="5" fill="#1e3a8a" />
-                      <path d="M174 76 Q194 58 214 76 Q194 94 174 76Z" />
-                      <circle cx="194" cy="76" r="5" fill="#1e3a8a" />
-                    </g>
-                    <text x="94" y="112" text-anchor="middle" fill="#1e3a8a" font-size="16" font-weight="800">先看</text>
-                    <text x="194" y="112" text-anchor="middle" fill="#1e3a8a" font-size="16" font-weight="800">先看</text>
-                    <g fill="#fff" stroke="#bfdbfe" stroke-width="2">
-                      <rect x="50" y="130" width="88" height="70" rx="8" />
-                      <rect x="150" y="130" width="88" height="70" rx="8" />
-                      <rect x="250" y="130" width="88" height="70" rx="8" />
-                      <rect x="350" y="130" width="88" height="70" rx="8" />
-                      <rect x="450" y="130" width="88" height="70" rx="8" />
-                      <rect x="550" y="130" width="88" height="70" rx="8" />
-                    </g>
-                    <g fill="#172033" font-size="34" font-weight="900" text-anchor="middle">
-                      <text x="94" y="176">7</text>
-                      <text x="194" y="176">5</text>
-                      <text x="294" y="176">6</text>
-                      <text x="394" y="176">5</text>
-                      <text x="494" y="176">8</text>
-                      <text x="594" y="176">3</text>
-                    </g>
-                    <g fill="#0f766e" font-size="18" font-weight="900" text-anchor="middle">
-                      <text x="294" y="112">否</text>
-                      <text x="394" y="112">是</text>
-                      <text x="494" y="112">否</text>
-                      <text x="594" y="112">否</text>
-                    </g>
-                    <g fill="none" stroke="#1e3a8a" stroke-width="2.5" stroke-linecap="round">
-                      <path d="M94 218 C94 246 294 246 294 218" />
-                      <path d="M194 238 C194 266 394 266 394 238" />
-                      <path d="M294 258 C294 286 494 286 494 258" />
-                      <path d="M394 278 C394 306 594 306 594 278" />
-                    </g>
-                    <g fill="#475467" font-size="14" text-anchor="middle">
-                      <text x="194" y="242">6 与前2个数字7比较</text>
-                      <text x="294" y="270">5 与前2个数字5比较</text>
-                      <text x="394" y="292">8 与前2个数字6比较</text>
-                      <text x="494" y="312">3 与前2个数字5比较</text>
-                    </g>
-                  </svg>
+                  <img class="nback-example-svg" src="assets/nback-explanation.jpg" alt="2-back 数字示例：7、5、6、5、8、3；从第三个数字开始，与前两个数字比较，结果依次为否、是、否、否。" width="1754" height="896" loading="lazy" decoding="async">
                   <div class="practice-entry">
                     <button class="btn" id="openPracticeBtn" type="button">体验 N-back</button>
                   </div>
@@ -2733,52 +2666,7 @@
                 <p>请以下图示意图为基础，请在纸上分别画出自变量为N的大小和自变量为关卡数量时的实验示意图。</p>
                 <p>提醒：在图中，我们采用的实验材料是【数字】，你也可以使用【图形】【汉字】【字母】作为N-back的材料。请在讨论后与你的组员一起确定你们小组的实验材料吧！</p>
                 <div class="nback-example" aria-label="N-back活动举例">
-                  <svg class="nback-example-svg" viewBox="0 0 720 320" role="img" aria-labelledby="planNbackExampleTitle planNbackExampleDesc">
-                    <title id="planNbackExampleTitle">N-back活动举例：2-back数字实验</title>
-                    <desc id="planNbackExampleDesc">数字序列7、5、6、5、8、3，从第三个数字开始与前2个数字进行比较，结果依次为否、是、否、否。</desc>
-                    <rect x="1" y="1" width="718" height="318" rx="8" fill="#ffffff" stroke="#dbe3ef" />
-                    <text x="360" y="36" text-anchor="middle" fill="#172033" font-size="22" font-weight="800">N-back活动举例：2-back数字实验</text>
-                    <g fill="none" stroke="#1e3a8a" stroke-width="3" stroke-linecap="round" stroke-linejoin="round">
-                      <path d="M74 76 Q94 58 114 76 Q94 94 74 76Z" />
-                      <circle cx="94" cy="76" r="5" fill="#1e3a8a" />
-                      <path d="M174 76 Q194 58 214 76 Q194 94 174 76Z" />
-                      <circle cx="194" cy="76" r="5" fill="#1e3a8a" />
-                    </g>
-                    <g fill="#0f766e" font-size="18" font-weight="900" text-anchor="middle">
-                      <text x="294" y="84">否</text>
-                      <text x="394" y="84">是</text>
-                      <text x="494" y="84">否</text>
-                      <text x="594" y="84">否</text>
-                    </g>
-                    <g fill="#ffffff" stroke="#bfdbfe" stroke-width="2">
-                      <rect x="50" y="118" width="88" height="70" rx="8" />
-                      <rect x="150" y="118" width="88" height="70" rx="8" />
-                      <rect x="250" y="118" width="88" height="70" rx="8" />
-                      <rect x="350" y="118" width="88" height="70" rx="8" />
-                      <rect x="450" y="118" width="88" height="70" rx="8" />
-                      <rect x="550" y="118" width="88" height="70" rx="8" />
-                    </g>
-                    <g fill="#172033" font-size="34" font-weight="900" text-anchor="middle">
-                      <text x="94" y="164">7</text>
-                      <text x="194" y="164">5</text>
-                      <text x="294" y="164">6</text>
-                      <text x="394" y="164">5</text>
-                      <text x="494" y="164">8</text>
-                      <text x="594" y="164">3</text>
-                    </g>
-                    <g fill="none" stroke="#1e3a8a" stroke-width="2.5" stroke-linecap="round">
-                      <path d="M94 210 C94 238 294 238 294 210" />
-                      <path d="M194 232 C194 260 394 260 394 232" />
-                      <path d="M294 254 C294 282 494 282 494 254" />
-                      <path d="M394 276 C394 304 594 304 594 276" />
-                    </g>
-                    <g fill="#475467" font-size="14" text-anchor="middle">
-                      <text x="194" y="236">6 与前 2 个数字比较</text>
-                      <text x="294" y="264">5 与前 2 个数字比较</text>
-                      <text x="394" y="292">8 与前 2 个数字比较</text>
-                      <text x="494" y="314">3 与前 2 个数字比较</text>
-                    </g>
-                  </svg>
+                  <img class="nback-example-svg" src="assets/nback-explanation.jpg" alt="2-back 数字示例：7、5、6、5、8、3；从第三个数字开始，与前两个数字比较，结果依次为否、是、否、否。" width="1754" height="896" loading="lazy" decoding="async">
                 </div>
               </div>
               <div class="form-grid">
@@ -2897,15 +2785,7 @@
         <div class="image-modal-card">
           <button class="btn secondary image-modal-close" type="button" data-close-image-modal aria-label="关闭${escapeHtml(title)}">×</button>
           <div class="image-modal-body">
-            <svg class="nback-example-svg" viewBox="0 0 720 300" role="img" aria-label="2-back 数字活动示意图">
-              <rect x="1" y="1" width="718" height="298" rx="8" fill="#ffffff" stroke="#dbe3ef" />
-              <text x="360" y="38" text-anchor="middle" fill="#172033" font-size="22" font-weight="800">N-back活动举例：2-back数字实验</text>
-              <g fill="#ffffff" stroke="#bfdbfe" stroke-width="2">${[50,150,250,350,450,550].map((x) => `<rect x="${x}" y="104" width="88" height="70" rx="8" />`).join("")}</g>
-              <g fill="#172033" font-size="34" font-weight="900" text-anchor="middle">${[7,5,6,5,8,3].map((value, index) => `<text x="${94 + index * 100}" y="150">${value}</text>`).join("")}</g>
-              <g fill="#0f766e" font-size="18" font-weight="900" text-anchor="middle"><text x="294" y="88">否</text><text x="394" y="88">是</text><text x="494" y="88">否</text><text x="594" y="88">否</text></g>
-              <g fill="none" stroke="#1e3a8a" stroke-width="2.5"><path d="M94 194 C94 222 294 222 294 194"/><path d="M194 216 C194 244 394 244 394 216"/><path d="M294 238 C294 266 494 266 494 238"/><path d="M394 260 C394 288 594 288 594 260"/></g>
-              <g fill="#475467" font-size="14" text-anchor="middle"><text x="194" y="218">6 与前2个数字7比较</text><text x="294" y="244">5 与前2个数字5比较</text><text x="394" y="268">8 与前2个数字6比较</text><text x="494" y="292">3 与前2个数字5比较</text></g>
-            </svg>
+            <img class="nback-example-svg" src="assets/nback-explanation.jpg" alt="2-back 数字示例：7、5、6、5、8、3；从第三个数字开始，与前两个数字比较，结果依次为否、是、否、否。" width="1754" height="896" loading="lazy" decoding="async">
           </div>
         </div>
       </div>`;
@@ -3014,7 +2894,7 @@
         ["number", "数字"],
         ["letter", "英文大写字母"],
         ["chinese", "汉字"]
-      ].map(([value, label]) => `<option value="${value}" ${state.fields[field] === value ? "selected" : ""}>${label}</option>`).join("");
+      ].map(([value, label]) => `<option value="${value}" ${(state.fields[field] || "image") === value ? "selected" : ""}>${label}</option>`).join("");
       const renderMemberRow = (index) => {
         const prefix = "teammate" + index;
         return `
@@ -3040,23 +2920,24 @@
       };
       return `
         <div class="panel team-result-card">
-          <div class="panel-head"><h3>其他组员实验结果记录</h3><p>仅用于留痕和对比，不参与统计计算。</p></div>
+          <div class="panel-head"><h3>小组结果记录</h3><p>仅用于留痕和对比，不参与统计计算。</p></div>
           <div class="panel-body">
+            <div class="actions"><button class="btn secondary" type="button" data-team-adjust="-1" aria-label="减少一名组员" ${getTeamSize() === 2 ? "disabled" : ""}>−</button><span>小组人数：${getTeamSize()} 人</span><button class="btn secondary" type="button" data-team-adjust="1" aria-label="增加一名组员" ${getTeamSize() === 6 ? "disabled" : ""}>＋</button></div>
             <div class="reading-card"><strong>本人结果：</strong>${escapeHtml(personalResult || "完成实验后自动生成")}</div>
             <div class="member-result-list">
-              ${renderMemberRow(1)}
-              ${renderMemberRow(2)}
+              ${Array.from({length:getTeamSize() - 1}, (_, index) => renderMemberRow(index + 1)).join("")}
             </div>
           </div>
         </div>`;
     }
 
+    function getTeamSize() { return Math.min(6, Math.max(2, Number(state.fields.teamSize) || 2)); }
+
     function getTeamResultSheet(summary) {
       return ["小组记录", [
         ["成员", "编号", "材料类别", "平均正确率", "平均漏答率", "结果摘要", "旧版结果文本"],
         ["本人", state.fields.participantId || state.studentId, getMaterialTypeLabel(state.fields.materialType || state.fields.stimulusMaterial), "", "", getPersonalNbackResult(summary), ""],
-        ["组员1", state.fields.teammate1Id, getMaterialTypeLabel(state.fields.teammate1MaterialType), state.fields.teammate1AverageAccuracy, state.fields.teammate1AverageMissRate, "", state.fields.teammate1Result || ""],
-        ["组员2", state.fields.teammate2Id, getMaterialTypeLabel(state.fields.teammate2MaterialType), state.fields.teammate2AverageAccuracy, state.fields.teammate2AverageMissRate, "", state.fields.teammate2Result || ""]
+        ...Array.from({length:getTeamSize() - 1}, (_, index) => { const number = index + 1; return [`组员${number}`, state.fields[`teammate${number}Id`] || "", getMaterialTypeLabel(state.fields[`teammate${number}MaterialType`] || "image"), state.fields[`teammate${number}AverageAccuracy`] || "", state.fields[`teammate${number}AverageMissRate`] || "", "", state.fields[`teammate${number}Result`] || ""]; })
       ]];
     }
 
@@ -3272,6 +3153,10 @@
       bindSurveyInputs();
       bindKnowledgeQuizInputs();
       bindPagedStepEvents(stepId);
+      main.querySelectorAll("[data-team-adjust]").forEach(button => button.addEventListener("click", () => {
+        state.fields.teamSize = Math.min(6, Math.max(2, getTeamSize() + Number(button.dataset.teamAdjust)));
+        saveState(); renderApp();
+      }));
       bindImageModalEvents();
       if (stepId === "evidence") bindGameEvents();
       if (stepId === "question") bindPracticeEvents();

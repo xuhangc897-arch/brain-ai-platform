@@ -61,10 +61,10 @@ commissionPortraits.forEach(([title, file]) => {
 });
 
 assert(registry && stories, "案件注册表或剧情配置未加载。");
-assert(stories.entries.length === expectedCases.length, "剧情配置必须包含七个案件。");
+assert(stories.entries.length === expectedCases.length, "剧情配置必须包含资格审查和六个案件。");
 
 const cardTags = Array.from(index.matchAll(/<button\b[^>]*\bclass="case-card"[^>]*>/g), (match) => match[0]);
-assert(cardTags.length === expectedCases.length, "首页必须包含七张案件卡片。");
+assert(cardTags.length === expectedCases.length, "首页必须包含资格审查和六张案件卡片。");
 
 expectedCases.forEach(([id, route, title, buttonText], indexPosition) => {
   const story = stories.get(id);
@@ -94,7 +94,7 @@ studentCases.forEach(([id, avatar, speaker, storyDetail]) => {
   assert(introStyle.includes(`case-characters/${avatar}.webp`), `${id} 的立绘未接入样式。`);
 });
 
-assert(stories.get("screening").avatar === "detective" && stories.get("poster").avatar === "detective", "资格审查与最终报告应保留侦探形象。");
+assert(["screening", "poster", "duel"].every((id) => stories.get(id).avatar === "detective"), "资格审查、成果展示与名侦探对决应保留侦探形象。");
 
 [
   'href="assets/case-intro.css"',
@@ -195,4 +195,4 @@ assert(!skip.hidden && dialog.children.length === 1, "再次进入仍从第一�
 skip.click();
 assert(dialog.children.length === 1 && dialog.children[0].textContent.startsWith("侦探：") && advance.textContent === "调查记忆容量", "跳过后只显示末句并允许进入实验。");
 
-console.log("Seven case intro stories, card mappings, routes and replay contracts passed.");
+console.log("Screening and six case intro stories, card mappings, routes and replay contracts passed.");

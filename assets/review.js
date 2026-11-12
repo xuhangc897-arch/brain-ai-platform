@@ -184,10 +184,8 @@
     const stage = { memory: "T1", nback: "T2", interference: "T3", strategies: "T4" }[activity];
     const quizComplete = Boolean(assessment[stage] || quiz.submitted || quiz.submittedAt || quiz.attempts?.length || quiz.history?.length);
     const definitions = [
-      { title: "学习收获", source: source.meta || source.postMeta || {}, max: 5,
+      { title: "元认知", source: source.meta || source.postMeta || {}, max: 5,
         labels: ["理解本案知识", "愿意继续运用", "联系现实生活", "反思并改进", "联想已有知识"] },
-      { title: "活动体验", source: source.cognitiveLoad || {}, max: 10,
-        labels: ["材料难度", "投入的心理努力"] },
       { title: "探究参与", source: source.inquiryParticipation || {}, max: 5,
         labels: ["表达研究问题", "提出科学假设", "制定探究步骤", "参与实验操作", "收集所需证据", "分析并得出结论", "发现新问题", "与他人合作", "表达并倾听"] }
     ];

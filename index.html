@@ -1355,9 +1355,9 @@
         <p class="briefing-speaker intro-animate">侦探助手</p>
         <h2 class="hero-title intro-animate">案件卷宗</h2>
         <p class="hero-copy intro-animate" id="briefingDialogue" aria-live="polite"></p>
-        <button class="advance-button intro-animate" id="briefingAdvance" type="button" data-advance disabled>继续对话</button>
+        <button class="advance-button intro-animate" id="briefingAdvance" type="button" data-advance disabled>开启案件卷宗</button>
       </div>
-      <span class="click-hint">点击右下角继续</span>
+      <span class="click-hint">点击右下角开启卷宗</span>
     </section>
 
     <section class="scene scene--navigation" data-scene="2" aria-label="案件导航">
@@ -1498,14 +1498,9 @@
       const compactViewport = window.matchMedia("(max-width: 720px)");
       const connection = navigator.connection || navigator.mozConnection || navigator.webkitConnection;
       const sceneNames = ["记忆侦探社入口", "案件卷宗", "案件导航"];
-      const briefingLines = [
-        "欢迎加入记忆侦探社，新侦探。",
-        "你的第一份卷宗已经备好。",
-        "先打开卷宗，完成资格审查，再循着线索展开调查吧。"
-      ];
+      const briefingText = "欢迎加入记忆侦探社，新侦探。你的第一份卷宗已经备好。先打开卷宗，完成资格审查，再循着线索展开调查吧。";
       const briefingDialogue = document.getElementById("briefingDialogue");
       const briefingAdvance = document.getElementById("briefingAdvance");
-      let briefingLineIndex = -1;
       let briefingTimer = null;
       let caseIntro = null;
       let activeScene = 0;
@@ -1514,18 +1509,16 @@
       let pointerStartX = null;
       let carouselDragged = false;
 
-      function showBriefingLine(index) {
+      function playBriefing() {
         window.clearInterval(briefingTimer);
-        briefingLineIndex = index;
         briefingDialogue.textContent = "";
         briefingAdvance.disabled = true;
-        briefingAdvance.textContent = index === briefingLines.length - 1 ? "开启案件卷宗" : "继续对话";
-        const characters = Array.from(briefingLines[index]);
         if (reduceMotion.matches) {
-          briefingDialogue.textContent = briefingLines[index];
+          briefingDialogue.textContent = briefingText;
           briefingAdvance.disabled = false;
           return;
         }
+        const characters = Array.from(briefingText);
         let position = 0;
         briefingTimer = window.setInterval(() => {
           briefingDialogue.textContent += characters[position++];
@@ -1633,7 +1626,7 @@
         next.removeAttribute("aria-hidden");
 
         activeScene = nextScene;
-        if (nextScene === 1) showBriefingLine(0);
+        if (nextScene === 1) playBriefing();
         else window.clearInterval(briefingTimer);
         experience.classList.toggle("is-navigation-active", nextScene === 2);
         replayButton.hidden = nextScene !== scenes.length - 1;
@@ -1647,13 +1640,7 @@
       }
 
       function advance() {
-        if (activeScene === 1) {
-          if (briefingAdvance.disabled) return;
-          if (briefingLineIndex < briefingLines.length - 1) {
-            showBriefingLine(briefingLineIndex + 1);
-            return;
-          }
-        }
+        if (activeScene === 1 && briefingAdvance.disabled) return;
         if (activeScene < scenes.length - 1) showScene(activeScene + 1);
       }
 
