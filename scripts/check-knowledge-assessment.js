@@ -138,7 +138,12 @@ assert.match(pretestSource, /const META_PAGE_SIZE = 3;/);
 assert.match(pretestSource, /knowledgeQuestions\[knowledgePageIndex\]|questionOrder\[knowledgePageIndex\]/);
 assert.match(pretestSource, /surveyDef\.items\.slice\(start, start \+ META_PAGE_SIZE\)/);
 assert.match(pretestSource, /submit\.hidden = knowledgePageIndex !== knowledgeQuestions\.length - 1/);
-assert.match(pretestSource, /document\.getElementById\('completeBtn'\)\.hidden = state\.completed \|\| inquiryAbilityPageIndex !== pageCount - 1/);
+assert.match(pretestSource, /activeAssessmentView = "knowledge";\s*knowledgePageIndex = 0;/);
+assert.match(pretestSource, /await completePretest\(\);/);
+assert.match(pretestSource, /let activeAssessmentView = state\.completed \? "inquiry" : "meta";/);
+assert.match(pretestSource, /activeAssessmentView = "inquiry";\s*inquiryAbilityPageIndex = Math\.ceil\(inquiryAbilityDef\.items\.length \/ META_PAGE_SIZE\) - 1;/);
+assert.match(posterSource, /if \(page < metaPages \+ inquiryPages\)/);
+assert.match(posterSource, /const knowledgePage = page - metaPages - inquiryPages;/);
 assert.match(pretestSource, /knowledgePageIndex = state\.knowledgeDraft\.questionOrder\.indexOf\(result\.unanswered\[0\]\)/);
 assert.match(pretestSource, /作答已提交并锁定，不显示题目、答案或成绩/);
 

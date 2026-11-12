@@ -28,6 +28,7 @@ const index = read("index.html");
 const introSource = read("assets/case-intro.js");
 const introStyle = read("assets/case-intro.css");
 const poster = read("poster.html");
+const duel = read("detective-duel.html");
 const expectedCases = [
   ["screening", "pretest.html", "侦探资格审查", "开始资格审查"],
   ["memory", "memory.html", "少拿的美术材料", "调查记忆容量"],
@@ -112,6 +113,11 @@ assert(["screening", "poster", "duel"].every((id) => stories.get(id).avatar === 
 ].forEach(([contract, label]) => assert(index.includes(contract), `首页缺少${label}：${contract}`));
 
 assert(!index.includes("caseDialog"), "旧案件确认弹窗仍然存在。");
+assert(index.includes('briefingSeenKey = platform.storage.scopedKey("briefing-seen-v1")'), "卷宗开场观看状态必须按学生保存。");
+assert(index.includes('briefingSkip.hidden = localStorage.getItem(briefingSeenKey) !== "true"'), "首次进入卷宗不得跳过剧情。");
+assert(index.includes('briefingSkip.addEventListener("click"') && index.includes('white-space: pre-line'), "卷宗台词必须分行播放并支持再次进入时跳过。");
+assert(duel.includes("button('start', '开始教学')") && duel.includes('.intro-card .actions > .btn:only-child { margin-left:0; }'), "对决教学按钮须位于左下角。");
+assert(duel.includes("['','第一轮','第二轮','第三轮','第四轮'][roundNumber]") && !duel.includes("' · 初次学习'"), "正式对决左上角须直接显示轮次。");
 assert(introSource.includes('scopedKey(SEEN_STORAGE_KEY)'), "剧情观看记录必须使用用户作用域存储。");
 assert(introSource.includes("markSeen(activeStory.id)"), "点击开始调查时必须记录已观看案件。");
 assert(introSource.includes("skipButton.hidden = !hasSeen(caseId)"), "首次进入必须隐藏跳过按钮，第二次起才能显示。");

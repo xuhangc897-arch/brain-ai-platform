@@ -775,7 +775,7 @@
       { id: "questions", title: "提问交流", minutes: "15分钟", taskDescription: "认真观看其他小组的委托海报，提出问题并记录对方的回答。" },
       { id: "score", title: "海报评分", minutes: "20分钟", taskDescription: "根据海报评分表的四个维度对每组海报评分，并为最优海报点赞。" },
       { id: "reflection", title: "总结反思", minutes: "10分钟", taskDescription: "总结交流收获、海报改进方向、小组合作情况和探究成果的应用。" },
-      { id: "posttest", title: "侦探小结", minutes: "25分钟", taskDescription: "完成知识后测、元认知和科学探究问卷。" }
+      { id: "posttest", title: "侦探小结", minutes: "25分钟", taskDescription: "先完成元认知和科学探究能力问卷，再完成20道知识后测。" }
     ];
 
     const knowledgeQuestions = window.BrainKnowledgePosttestQuestions;
@@ -1352,24 +1352,26 @@
     }
 
     function renderPosttestStep(page) {
-      if (page >= knowledgeQuestions.length) {
-        if (state.posttestSurveysSubmitted) return `<div class="knowledge-complete"><h3>侦探小结已完成</h3><p>问卷已提交，现在可以生成最终报告。</p></div>`;
-        const metaPages = Math.ceil(metaSurvey.items.length / SURVEY_PAGE_SIZE);
-        return page < knowledgeQuestions.length + metaPages
-          ? renderPosttestSurvey(metaSurvey, "postMeta", page - knowledgeQuestions.length)
-          : renderPosttestSurvey(inquiryAbilitySurvey, "inquiryAbility", page - knowledgeQuestions.length - metaPages);
+      if (state.posttestSurveysSubmitted) return `<div class="knowledge-complete"><h3>侦探小结已完成</h3><p>问卷已提交，现在可以生成最终报告。</p></div>`;
+      const metaPages = Math.ceil(metaSurvey.items.length / SURVEY_PAGE_SIZE);
+      const inquiryPages = Math.ceil(inquiryAbilitySurvey.items.length / SURVEY_PAGE_SIZE);
+      if (page < metaPages + inquiryPages) {
+        return page < metaPages
+          ? renderPosttestSurvey(metaSurvey, "postMeta", page)
+          : renderPosttestSurvey(inquiryAbilitySurvey, "inquiryAbility", page - metaPages);
       }
       const record = state.knowledgeAssessment?.T5;
       if (record) {
         return `<div class="knowledge-complete"><h3>侦探小结已完成</h3><p>作答已提交并锁定，现在可以生成最终报告。</p></div>`;
       }
       const draft = state.knowledgeDraftT5;
-      const pageIds = draft.questionOrder.slice(page, page + 1);
+      const knowledgePage = page - metaPages - inquiryPages;
+      const pageIds = draft.questionOrder.slice(knowledgePage, knowledgePage + 1);
       const cards = pageIds.map((questionId, pageIndex) => {
         const question = knowledgeAssessmentApi.getQuestion(knowledgeQuestions, questionId);
         const selectedAnswer = draft.answers[questionId] || "";
         return `<article class="knowledge-card">
-          <h4>第 ${page + pageIndex + 1} 题</h4>
+          <h4>第 ${knowledgePage + pageIndex + 1} 题</h4>
           <p>${escapeHtml(question.question)}</p>
           <div class="knowledge-options">${Object.entries(question.options).map(([key, value]) => `
             <label class="knowledge-option ${selectedAnswer === key ? "is-selected" : ""}">
@@ -1680,18 +1682,18 @@
         const stepId = steps[state.currentStep].id;
         const page = state.stepPages[stepId] || 0;
         if (stepId === "posttest") {
-          if (page < knowledgeQuestions.length && !state.knowledgeAssessment?.T5 && !state.knowledgeDraftT5.answers[state.knowledgeDraftT5.questionOrder[page]]) {
-            showStepMessage("请先完成本页题目。"); return;
-          }
-          if (page >= knowledgeQuestions.length) {
-            const metaPages = Math.ceil(metaSurvey.items.length / SURVEY_PAGE_SIZE);
-            const isMeta = page < knowledgeQuestions.length + metaPages;
+          const metaPages = Math.ceil(metaSurvey.items.length / SURVEY_PAGE_SIZE);
+          const inquiryPages = Math.ceil(inquiryAbilitySurvey.items.length / SURVEY_PAGE_SIZE);
+          if (page < metaPages + inquiryPages) {
+            const isMeta = page < metaPages;
             const definition = isMeta ? metaSurvey : inquiryAbilitySurvey;
             const key = isMeta ? "postMeta" : "inquiryAbility";
-            const surveyPage = isMeta ? page - knowledgeQuestions.length : page - knowledgeQuestions.length - metaPages;
+            const surveyPage = isMeta ? page : page - metaPages;
             if (definition.items.slice(surveyPage * SURVEY_PAGE_SIZE, (surveyPage + 1) * SURVEY_PAGE_SIZE).some((_, offset) => !state.surveys.current[key][`q${surveyPage * SURVEY_PAGE_SIZE + offset + 1}`])) {
               showStepMessage("请先完成本页题目。"); return;
             }
+          } else if (!state.knowledgeAssessment?.T5 && !state.knowledgeDraftT5.answers[state.knowledgeDraftT5.questionOrder[page - metaPages - inquiryPages]]) {
+            showStepMessage("请先完成本页题目。"); return;
           }
         }
         if (page < getPageCount(stepId) - 1) {
@@ -1727,7 +1729,7 @@
     }
 
     function submitPosttestOnce() {
-      for (const [key, definition, firstPage] of [["postMeta", metaSurvey, knowledgeQuestions.length], ["inquiryAbility", inquiryAbilitySurvey, knowledgeQuestions.length + Math.ceil(metaSurvey.items.length / SURVEY_PAGE_SIZE)]]) {
+      for (const [key, definition, firstPage] of [["postMeta", metaSurvey, 0], ["inquiryAbility", inquiryAbilitySurvey, Math.ceil(metaSurvey.items.length / SURVEY_PAGE_SIZE)]]) {
         const missing = definition.items.findIndex((_, index) => !state.surveys.current[key][`q${index + 1}`]);
         if (missing !== -1) {
           state.stepPages.posttest = firstPage + Math.floor(missing / SURVEY_PAGE_SIZE);
@@ -1737,7 +1739,7 @@
       if (!state.knowledgeAssessment?.T5) {
         const result = knowledgeAssessmentApi.submitStage(state.knowledgeAssessment, "T5", knowledgeQuestions, state.knowledgeDraftT5);
         if (result.unanswered?.length) {
-          state.stepPages.posttest = state.knowledgeDraftT5.questionOrder.indexOf(result.unanswered[0]);
+          state.stepPages.posttest = Math.ceil(metaSurvey.items.length / SURVEY_PAGE_SIZE) + Math.ceil(inquiryAbilitySurvey.items.length / SURVEY_PAGE_SIZE) + state.knowledgeDraftT5.questionOrder.indexOf(result.unanswered[0]);
           saveState(); renderStep(); showStepMessage("请先完成全部 20 道知识题目。"); return;
         }
         state.knowledgeAssessment = result.timeline;

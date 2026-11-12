@@ -22,10 +22,20 @@ function metaQuestionCount(page) {
   return (items[1].match(/^\s*"/gm) || []).length;
 }
 
+function surveyQuestionCount(page, startMarker, endMarker) {
+  const section = page.slice(page.indexOf(startMarker), page.indexOf(endMarker, page.indexOf(startMarker)));
+  const items = section.match(/items:\s*\[([\s\S]*?)\]/);
+  return items ? (items[1].match(/^\s*"/gm) || []).length : 0;
+}
+
 for (const file of experimentFiles) {
   const page = source(file);
   assert.strictEqual(metaQuestionCount(page), 5, `${file}: learning-outcome metacognition survey must have five items`);
-  assert(!page.includes("load: {") && !page.includes("ability: window.BrainInquiryAbilitySurvey"), `${file}: posttest must exclude cognitive load and inquiry ability surveys`);
+  assert.strictEqual(surveyQuestionCount(page, "load: {", "meta: {"), 2, `${file}: cognitive load must have two items`);
+  assert.strictEqual(surveyQuestionCount(page, "inquiry: {", "const KNOWLEDGE_QUIZ"), 9, `${file}: inquiry participation must have nine scored items`);
+  assert(page.includes('anchors: "1=完全否，2=较少，3=一般，4=较多，5=完全是"'), `${file}: five-point survey anchors must use the requested labels`);
+  assert(page.includes("load: {") && !page.includes("ability: window.BrainInquiryAbilitySurvey"), `${file}: posttest must include cognitive load and exclude inquiry ability`);
+  assert(page.includes('summarizeSurvey("cognitiveLoad", "load").complete'), `${file}: cognitive load must be required`);
   assert(page.includes("function getIncompleteStepMessage(stepId)"), `${file}: missing incomplete-page formatter`);
   assert(page.includes("showStepMessage(getIncompleteStepMessage(steps[state.currentStep].id))"), `${file}: validation must include the incomplete page`);
   assert(page.includes('class="quiz-key"') && page.includes('class="quiz-label"'), `${file}: knowledge choices must use qualification-style structure`);
@@ -73,18 +83,19 @@ const nbackPosttest = source("nback.html");
 const posttestPagesSource = nbackPosttest.slice(nbackPosttest.indexOf("function renderPosttestStep()"), nbackPosttest.indexOf("function renderSurveyPage(kind)"));
 const posttestContext = {
   KNOWLEDGE_QUIZ: { items: Array(20).fill(null) },
-  SURVEY_DEFS: { meta: { title: "元认知问卷", items: Array(5).fill(null) }, inquiry: { title: "探究参与", items: Array(9).fill(null) } },
-  getSurveyItems: (_, key) => Array(key === "meta" ? 5 : 10).fill(null),
+  SURVEY_DEFS: { meta: { title: "元认知问卷", items: Array(5).fill(null) }, load: { title: "认知负荷", items: Array(2).fill(null) }, inquiry: { title: "探究参与", items: Array(9).fill(null) } },
+  getSurveyItems: (_, key) => Array(key === "meta" ? 5 : key === "load" ? 2 : 10).fill(null),
   renderSurveyForm: (key, _, start, size) => `${key}:${start}:${size}`,
   renderPagedStep: (_, pages) => pages
 };
 vm.runInNewContext(posttestPagesSource, posttestContext);
 const posttestPages = vm.runInNewContext("renderPosttestStep()", posttestContext);
-assert.strictEqual(posttestPages.length, 27, "N-back posttest must split both surveys into short pages");
+assert.strictEqual(posttestPages.length, 28, "N-back posttest must split all three surveys into short pages");
 assert.strictEqual(posttestPages[20].content(), "postMeta:0:3");
 assert.strictEqual(posttestPages[21].content(), "postMeta:3:3");
-assert.strictEqual(posttestPages[22].content(), "inquiryParticipation:0:3");
-assert.strictEqual(posttestPages[25].content(), "inquiryParticipation:9:3");
+assert.strictEqual(posttestPages[22].content(), "cognitiveLoad:0:3");
+assert.strictEqual(posttestPages[23].content(), "inquiryParticipation:0:3");
+assert.strictEqual(posttestPages[26].content(), "inquiryParticipation:9:3");
 
 const dashboard = source("admin/dashboard.html");
 const sheetSource = dashboard.slice(dashboard.indexOf("function buildSurveySheet(studentLabel"), dashboard.indexOf("function buildKnowledgeQuizSheet(studentLabel"));

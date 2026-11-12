@@ -23,9 +23,11 @@
     h1 { margin:10px 0 8px; font-size:clamp(26px,4vw,36px); line-height:1.3; }
     p { margin:0; }
     .hint { color:#667085; font-size:16px; line-height:1.7; }
+    .intro-rules { display:grid; gap:18px; color:var(--ink); }
     .body { flex:1; display:grid; align-content:center; margin:28px 0; }
     .actions { display:flex; flex-wrap:wrap; justify-content:space-between; gap:12px; align-items:center; }
     .actions > .btn:only-child { margin-left:auto; }
+    .intro-card .actions > .btn:only-child { margin-left:0; }
     .btn { min-height:48px; border:0; border-radius:8px; padding:11px 22px; background:#2563eb; color:#fff; font-weight:800; }
     .btn:hover:not(:disabled) { background:#1d4ed8; }
     .btn.secondary { background:#eaf1ff; color:#1d4ed8; }
@@ -154,9 +156,9 @@
       '</div><div class="likert-labels"><span>非常没把握</span><span>非常有把握</span></div></div>';
     const frame = (title, hint, body, actions = '', counter = '') => {
       document.getElementById('activityInfo').textContent = '活动信息 · ' + (stage === 'intro' ? '准备练习' : stage === 'finished' ? '任务已完成' : roundNumber === 0 ? '四张词卡练习' : '正式任务第 ' + roundNumber + ' 轮') + ' · ' + title;
-      app.innerHTML = '<div class="eyebrow">' + (stage === 'intro' || stage === 'finished' ? '名侦探对决' : roundNumber === 0 ? '四张词卡练习' + (counter ? ' · ' + counter : '') : '第 ' + roundNumber + ' 轮' + (stage === 'study' ? ' · 初次学习' : '') + (counter ? ' · ' + counter : '')) +
+      app.innerHTML = '<div class="eyebrow">' + (stage === 'intro' || stage === 'finished' ? '名侦探对决' : roundNumber === 0 ? '四张词卡练习' + (counter ? ' · ' + counter : '') : ['','第一轮','第二轮','第三轮','第四轮'][roundNumber] + (counter ? ' · ' + counter : '')) +
         (stage === 'study' || stage === 'filler' ? '<span class="timer" id="timer">' + (stage === 'study' ? '00:05' : '01:00') + '</span>' : '') + '</div>' +
-        '<h1>' + title + '</h1><p class="hint">' + hint + '</p><div class="body">' + body + '</div><div class="actions">' + actions + '</div>';
+        '<h1>' + title + '</h1>' + (stage === 'intro' ? '<div class="hint intro-rules">' + hint + '</div>' : '<p class="hint">' + hint + '</p>') + '<div class="body">' + body + '</div><div class="actions">' + actions + '</div>';
     };
     const button = (action, label, kind = '', disabled = false) => '<button type="button" class="btn ' + kind + '" data-action="' + action + '"' + (disabled ? ' disabled' : '') + '>' + label + '</button>';
     function stopCountdown() { clearInterval(timerId); timerId = null; deadline = 0; }
@@ -273,9 +275,9 @@
       app.classList.toggle('recognition-card', stage === 'recognition');
       if (stage === 'jol') ratingChoice = null;
       if (stage === 'intro') {
-        frame('准备开始', '接下来，我们要进行一个有趣的活动。在这个活动中，你需要记忆一些西班牙语单词，每个单词会出现5秒钟，它的意思会通过图片告知。紧接着，你需要回忆这个单词对应的图片，然后作出回答。当然，这个活动远远没有这么简单，在你记忆和回忆的过程中还需要完成一些其他的小任务。每一轮的单词回忆成功数量越多，你就能拿到更高的分数，但是请注意，如果失败的话会扣除相应的分数，所以请认真阅读规则。每一轮完成后，你可以选择继续闯关，或者止步于此。当你完成后，请举手告知助教老师。准备好了吗？在正式开始之前，请完成教程，以确保你真的理解了以上流程内容。',
+        frame('准备开始', '<p>接下来，我们要进行一个有趣的活动。在这个活动中，你需要记忆一些西班牙语单词，每个单词会出现5秒钟，它的意思会通过图片告知。</p><p>紧接着，你需要回忆这个单词对应的图片，然后作出回答。当然，这个活动远远没有这么简单，在你记忆和回忆的过程中还需要完成一些其他的小任务。</p><p>每一轮的单词回忆成功数量越多，你就能拿到更高的分数，但是请注意，如果失败的话会扣除相应的分数，所以请认真阅读规则。</p><p>每一轮完成后，你可以选择继续闯关，或者止步于此。当你完成后，请举手告知助教老师。准备好了吗？在正式开始之前，请完成教程，以确保你真的理解了以上流程内容。</p>',
           '',
-          button('start', '开始四张词卡练习'));
+          button('start', '开始教学'));
       } else if (stage === 'study') {
         const item = current().study[index];
         frame(roundNumber === 0 ? '认识练习词卡' : '初次学习', roundNumber === 0 ? '每张词卡显示 5 秒，请记住词语和图片的对应关系。' : '每张词卡显示 5 秒，请专注记忆。',
