@@ -140,6 +140,7 @@ assert.match(pretestSource, /surveyDef\.items\.slice\(start, start \+ META_PAGE_
 assert.match(pretestSource, /submit\.hidden = knowledgePageIndex !== knowledgeQuestions\.length - 1/);
 assert.match(pretestSource, /activeAssessmentView = "knowledge";\s*knowledgePageIndex = 0;/);
 assert.match(pretestSource, /await completePretest\(\);/);
+assert.match(pretestSource, /if \(submitted\) alert\("资格审查已完成"\);/);
 assert.match(pretestSource, /let activeAssessmentView = state\.completed \? "inquiry" : "meta";/);
 assert.match(pretestSource, /activeAssessmentView = "inquiry";\s*inquiryAbilityPageIndex = Math\.ceil\(inquiryAbilityDef\.items\.length \/ META_PAGE_SIZE\) - 1;/);
 assert.match(posterSource, /if \(page < metaPages \+ inquiryPages\)/);

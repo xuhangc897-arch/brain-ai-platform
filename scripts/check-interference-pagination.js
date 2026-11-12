@@ -72,14 +72,17 @@ assert(!planPages[4].content().includes('data-field="factor"') && !planPages[4].
 assert(planPages[4].content().includes('data-field="materialChoice"') && planPages[4].content().includes('id="openMaterialGuide"'), "parameter page must offer material selection and examples");
 const materialBuilders = sliceBetween("const MATERIAL_VARIANT_COUNT =", "const defaultState =");
 const materialSelectors = sliceBetween("function getSelectedMaterialPack()", "function splitRecordedItems(value)");
-const materialContext = { state: { fields: { factor: "倒摄干扰", materialChoice: "words", difficulty: "medium" } }, EXTERNAL_EMOTION_VIDEOS: {} };
+const materialContext = { state: { fields: { factor: "倒摄干扰", materialChoice: "letters", difficulty: "medium" } }, EXTERNAL_EMOTION_VIDEOS: {} };
 vm.runInNewContext(`${materialBuilders}\n${materialSelectors}`, materialContext);
-assert.strictEqual(vm.runInNewContext('getSelectedDifficultySet().materialType', materialContext), "双字具体词语");
+assert.strictEqual(vm.runInNewContext('getSelectedDifficultySet().materialType', materialContext), "无意义三字母串");
 assert.strictEqual(vm.runInNewContext('getSelectedDifficultySet().rounds[0].variants[0].memory.length', materialContext), 6);
-materialContext.state.fields = { factor: "材料相似性", materialChoice: "animals", difficulty: "medium" };
-assert.strictEqual(vm.runInNewContext('getSelectedDifficultySet().materialType', materialContext), "动物词语");
+materialContext.state.fields = { factor: "材料相似性", materialChoice: "mixed", difficulty: "medium" };
+assert.strictEqual(vm.runInNewContext('getSelectedDifficultySet().materialType', materialContext), "高频双字具体名词");
 assert.strictEqual(vm.runInNewContext('getSelectedDifficultySet().rounds[0].variants[0].memory.every((item) => SIMILARITY_CATEGORY_BANKS[0].items.includes(item))', materialContext), true);
-assert.strictEqual(vm.runInNewContext('getSelectedDifficultySet().rounds[1].variants[0].interference.every((item) => SIMILARITY_CATEGORY_BANKS[0].items.includes(item))', materialContext), true);
+assert.strictEqual(vm.runInNewContext('getSelectedDifficultySet().rounds[1].variants[0].interference.every((item) => SIMILARITY_CATEGORY_BANKS[1].items.includes(item))', materialContext), true);
+assert.strictEqual(vm.runInNewContext('PLAN_MATERIAL_OPTIONS["倒摄干扰"].length', materialContext), 1);
+assert.strictEqual(vm.runInNewContext('PLAN_MATERIAL_OPTIONS["材料相似性"].length', materialContext), 1);
+assert(materialChoice.includes("六类高频双字具体名词") && !materialChoice.includes("混合类别词语："), "材料说明必须对应当前题库。");
 const planVariableSource = sliceBetween("function updatePlanVariable(element)", "function bindOtherMemberInputs()");
 const variableFields = { factor: "倒摄干扰", independentVariablePlan: "", dependentVariablePlan: "", controlVariablePlan: "", emotionCondition: "中性" };
 let savedPlan = 0;
@@ -113,10 +116,20 @@ assert.strictEqual(vm.runInNewContext('validateStep("plan")', validationContext)
 validationFields.factor = "材料相似性";
 validationFields.controlVariablePlan = "";
 assert.strictEqual(vm.runInNewContext('validateStep("plan")', validationContext), false, "plan needs a control-variable answer");
-const factorOptionsSource = sliceBetween("function getInterferenceFactorOptions(selectedValue)", "function getMaterialTypeOptions()");
+const factorOptionsSource = sliceBetween("function getInterferenceFactorOptions(selectedValue)", "function getMaterialTypeOptions(");
 vm.runInNewContext(factorOptionsSource, validationContext);
 assert.strictEqual(vm.runInNewContext('getInterferenceFactorOptions("").length', validationContext), 3, "new teammate records must offer only two factors");
 assert.strictEqual(vm.runInNewContext('getInterferenceFactorOptions("emotion").length', validationContext), 4, "historical emotion answers must remain visible");
+const teamMaterialSource = sliceBetween("function getMaterialTypeOptions(", "function renderTeamResultTable(");
+vm.runInNewContext(teamMaterialSource, materialContext);
+for (const [factor, expected] of [["retroactive", "无意义三字母串"], ["similarity", "高频双字具体名词"], ["emotion", "中性三位数字组"]]) {
+  const options = vm.runInNewContext(`getMaterialTypeOptions(${JSON.stringify(factor)})`, materialContext);
+  assert.deepStrictEqual(Array.from(options, (option) => option.value), ["", expected], `${factor} teammate materials must match the question bank`);
+}
+assert.deepStrictEqual(Array.from(vm.runInNewContext('getMaterialTypeOptions("")', materialContext), (option) => option.value), [""], "a teammate factor must be selected before choosing materials");
+assert.deepStrictEqual(Array.from(vm.runInNewContext('getMaterialTypeOptions("retroactive", "旧材料")', materialContext), (option) => option.value), ["", "无意义三字母串", "旧材料"], "saved legacy material values must stay visible");
+assert(source.includes("getMaterialTypeOptions(item.interferenceFactor, item.materialType)"), "teammate material dropdown must follow its selected factor");
+assert(source.includes('state.fields.otherMemberResults[index].materialType = "";') && source.includes('if (factorChanged) renderApp();'), "switching teammate factors must clear the previous material and refresh options");
 assert(source.includes(".time-parameter-grid") && source.includes("grid-template-columns: repeat(3"), "time parameters must share one desktop row");
 assert(source.includes('merged.fields.interferenceSeconds = merged.fields.restSeconds;'), "saved rest and interference times must be reconciled on load");
 const updateFieldSource = sliceBetween("function updateField(element, field)", "function bindHeadbandModalEvents()");

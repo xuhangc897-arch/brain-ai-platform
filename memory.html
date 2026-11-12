@@ -1705,10 +1705,10 @@
         scale: [1, 2, 3, 4, 5, 6, 7, 8, 9, 10],
         anchors: "1=非常低，10=非常高",
         labels: { 1: "1", 2: "2", 3: "3", 4: "4", 5: "5", 6: "6", 7: "7", 8: "8", 9: "9", 10: "10" },
-        note: "请根据刚才的科学探究活动选择，分数越高表示难度或投入的心理努力越高。",
+        note: "请根据刚才的科学探究活动选择。",
         items: [
-          "你认为刚才科学探究活动的学习材料难度如何？",
-          "你在刚才的科学探究活动中投入了多少心理努力？"
+          "你认为刚才科学探究活动的学习材料难度如何？（得分越高，难度越大）",
+          "你在刚才的科学探究活动中投入了多少心理努力？（得分越高，投入的心理努力越多）"
         ]
       },
       meta: {
@@ -2319,7 +2319,7 @@
                   const label = def.labels?.[score] || '';
                   return '<label class="survey-option ' + (checked ? 'is-selected' : '') + '">' +
                     '<input type="radio" name="' + surveyKey + '-' + itemKey + '" data-survey="' + surveyKey + '" data-question="' + itemKey + '" value="' + score + '" ' + (checked ? 'checked' : '') + '>' +
-                    '<span class="survey-option-card"><span class="survey-score">' + score + '</span><span class="survey-label">' + escapeHtml(label) + '</span></span></label>';
+                    '<span class="survey-option-card"><span class="survey-score">' + score + '</span>' + (defKey === "load" ? "" : '<span class="survey-label">' + escapeHtml(label) + '</span>') + '</span></label>';
                 }).join('') +
               '</div></div>';
           }).join('') +

@@ -1108,7 +1108,8 @@
       state.completedAt = state.completedAt || new Date().toISOString();
       saveState();
       const result = await submitScreeningRecord();
-      if (!result?.ok && !result?.queued) {
+      const submitted = Boolean(result?.ok || result?.queued);
+      if (!submitted) {
         state.completed = false;
         state.completedAt = "";
         saveState();
@@ -1116,6 +1117,7 @@
       }
       activeAssessmentView = "inquiry";
       renderAssessmentView();
+      if (submitted) alert("资格审查已完成");
     }
 
     function buildScreeningSnapshot() {
