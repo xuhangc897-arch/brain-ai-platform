@@ -32,6 +32,9 @@ for (const file of experimentFiles) {
   const page = source(file);
   assert.strictEqual(metaQuestionCount(page), 5, `${file}: learning-outcome metacognition survey must have five items`);
   assert.strictEqual(surveyQuestionCount(page, "load: {", "meta: {"), 2, `${file}: cognitive load must have two items`);
+  assert(page.includes("你认为刚才科学探究活动的学习材料难度如何？（得分越高，难度越大）"), `${file}: difficulty item must include its scoring explanation`);
+  assert(page.includes("你在刚才的科学探究活动中投入了多少心理努力？（得分越高，投入的心理努力越多）"), `${file}: effort item must include its scoring explanation`);
+  assert(page.includes('defKey === "load" ? "" :'), `${file}: ten-point options must show each number only once`);
   assert.strictEqual(surveyQuestionCount(page, "inquiry: {", "const KNOWLEDGE_QUIZ"), 9, `${file}: inquiry participation must have nine scored items`);
   assert(page.includes('anchors: "1=完全否，2=较少，3=一般，4=较多，5=完全是"'), `${file}: five-point survey anchors must use the requested labels`);
   assert(page.includes("load: {") && !page.includes("ability: window.BrainInquiryAbilitySurvey"), `${file}: posttest must include cognitive load and exclude inquiry ability`);

@@ -518,10 +518,10 @@
         scale: [1, 2, 3, 4, 5, 6, 7, 8, 9, 10],
         anchors: "1=非常低，10=非常高",
         labels: { 1: "1", 2: "2", 3: "3", 4: "4", 5: "5", 6: "6", 7: "7", 8: "8", 9: "9", 10: "10" },
-        note: "请根据刚才的科学探究活动选择，分数越高表示难度或投入的心理努力越高。",
+        note: "请根据刚才的科学探究活动选择。",
         items: [
-          "你认为刚才科学探究活动的学习材料难度如何？",
-          "你在刚才的科学探究活动中投入了多少心理努力？"
+          "你认为刚才科学探究活动的学习材料难度如何？（得分越高，难度越大）",
+          "你在刚才的科学探究活动中投入了多少心理努力？（得分越高，投入的心理努力越多）"
         ]
       },
       meta: {
@@ -717,23 +717,19 @@
       return selected;
     }
 
-    function buildRetroactiveRounds(difficulty, materialChoice = "letters") {
+    function buildRetroactiveRounds(difficulty) {
       const itemCount = MATERIAL_ITEM_COUNTS[difficulty];
       const interferenceCount = RETROACTIVE_INTERFERENCE_COUNTS[difficulty];
       const difficultyIndex = ["easy", "medium", "hard"].indexOf(difficulty);
       const memoryBase = difficultyIndex * 600;
-      const memoryItems = (start) => materialChoice === "words"
-        ? rotateTake(RETROACTIVE_WORD_POOL, start, itemCount)
-        : takeDiverseLetterTriplets(start, itemCount);
+      const memoryItems = (start) => takeDiverseLetterTriplets(start, itemCount);
       const restVariants = Array.from({ length: MATERIAL_VARIANT_COUNT }, (_, variantIndex) => ({
         memory: memoryItems(memoryBase + variantIndex * 97),
         interference: []
       }));
       const interferenceVariants = Array.from({ length: MATERIAL_VARIANT_COUNT }, (_, variantIndex) => ({
         memory: memoryItems(memoryBase + 240 + variantIndex * 97),
-        interference: materialChoice === "words"
-          ? rotateTake(SIMILARITY_CATEGORY_BANKS[(variantIndex + 2) % MATERIAL_VARIANT_COUNT].items, difficultyIndex + variantIndex, interferenceCount)
-          : rotateTake(RETROACTIVE_WORD_POOL, difficultyIndex * 13 + variantIndex * 7, interferenceCount)
+        interference: rotateTake(RETROACTIVE_WORD_POOL, difficultyIndex * 13 + variantIndex * 7, interferenceCount)
       }));
       const interferenceInstructions = {
         easy: "请从上到下循环大声朗读这些词语，直到计时结束。",
@@ -741,27 +737,27 @@
         hard: "请先读奇数位置、再读偶数位置的词语，循环进行直到计时结束。"
       };
       return [
-        buildRound(1, "休息条件", restVariants, `请按顺序记忆以下${materialChoice === "words" ? "双字词语" : "三字母材料"}。`, "请参与者闭上眼睛休息，不要刻意回想，也不要刻意不想。"),
-        buildRound(2, "倒摄干扰条件", interferenceVariants, `请按顺序记忆以下${materialChoice === "words" ? "双字词语" : "三字母材料"}。`, interferenceInstructions[difficulty])
+        buildRound(1, "休息条件", restVariants, "请按顺序记忆以下三字母材料。", "请参与者闭上眼睛休息，不要刻意回想，也不要刻意不想。"),
+        buildRound(2, "倒摄干扰条件", interferenceVariants, "请按顺序记忆以下三字母材料。", interferenceInstructions[difficulty])
       ];
     }
 
-    function buildSimilarityRounds(difficulty, selectedCategory = null) {
+    function buildSimilarityRounds(difficulty) {
       const itemCount = MATERIAL_ITEM_COUNTS[difficulty];
       const start = DIFFICULTY_OFFSETS[difficulty];
       const lowSimilarityVariants = Array.from({ length: MATERIAL_VARIANT_COUNT }, (_, variantIndex) => {
-        const categoryIndex = selectedCategory === null ? variantIndex : selectedCategory;
+        const categoryIndex = variantIndex;
         const targetCategory = SIMILARITY_CATEGORY_BANKS[categoryIndex];
         const unrelatedCategory = SIMILARITY_CATEGORY_BANKS[(categoryIndex + 3) % MATERIAL_VARIANT_COUNT];
-        const variantStart = start + (selectedCategory === null ? 0 : variantIndex * 3);
+        const variantStart = start;
         return {
           memory: rotateTake(targetCategory.items, variantStart, itemCount),
           interference: rotateTake(unrelatedCategory.items, variantStart + itemCount, itemCount)
         };
       });
       const highSimilarityVariants = Array.from({ length: MATERIAL_VARIANT_COUNT }, (_, variantIndex) => {
-        const sharedCategory = SIMILARITY_CATEGORY_BANKS[selectedCategory === null ? (variantIndex + 1) % MATERIAL_VARIANT_COUNT : selectedCategory];
-        const variantStart = start + (selectedCategory === null ? 0 : variantIndex * 3 + itemCount);
+        const sharedCategory = SIMILARITY_CATEGORY_BANKS[(variantIndex + 1) % MATERIAL_VARIANT_COUNT];
+        const variantStart = start;
         return {
           memory: rotateTake(sharedCategory.items, variantStart, itemCount),
           interference: rotateTake(sharedCategory.items, variantStart + itemCount, itemCount)
@@ -831,8 +827,8 @@
     const PLAN_FACTORS = ["倒摄干扰", "材料相似性"];
     const PLAN_FACTOR_LABELS = { "倒摄干扰": "新旧材料（倒摄干扰）", "材料相似性": "相似材料（相似性干扰）" };
     const PLAN_MATERIAL_OPTIONS = {
-      "倒摄干扰": [{ value: "letters", label: "无意义三字母串" }, { value: "words", label: "双字具体词语" }],
-      "材料相似性": [{ value: "mixed", label: "混合类别词语" }, { value: "animals", label: "动物词语" }, { value: "fruits", label: "水果词语" }]
+      "倒摄干扰": [{ value: "letters", label: "无意义三字母串" }],
+      "材料相似性": [{ value: "mixed", label: "高频双字具体名词（六类轮换）" }]
     };
     const PLAN_DEPENDENT_OPTIONS = ["记忆表现（得分与正确率）", "大脑活动水平（头环观察）"];
     const PLAN_CONTROL_OPTIONS = ["记忆材料的难度与数量", "记忆时间与干扰阶段时间", "测试方式"];
@@ -1352,7 +1348,7 @@
                   const label = def.labels?.[score] || '';
                   return '<label class="survey-option ' + (checked ? 'is-selected' : '') + '">' +
                     '<input type="radio" name="' + surveyKey + '-' + itemKey + '" data-survey="' + surveyKey + '" data-question="' + itemKey + '" value="' + score + '" ' + (checked ? 'checked' : '') + '>' +
-                    '<span class="survey-option-card"><span class="survey-score">' + score + '</span><span class="survey-label">' + escapeHtml(label) + '</span></span></label>';
+                    '<span class="survey-option-card"><span class="survey-score">' + score + '</span>' + (defKey === "load" ? "" : '<span class="survey-label">' + escapeHtml(label) + '</span>') + '</span></label>';
                 }).join('') +
               '</div></div>';
           }).join('') +
@@ -1651,7 +1647,10 @@
     function renderMaterialChoiceField() {
       const options = PLAN_MATERIAL_OPTIONS[state.fields.factor] || PLAN_MATERIAL_OPTIONS["倒摄干扰"];
       const selectedChoice = getSelectedMaterialChoice().value;
-      return `<div class="field"><label for="planMaterialChoice">实验材料</label><div class="material-choice-label"><select id="planMaterialChoice" data-field="materialChoice">${options.map((option) => `<option value="${option.value}" ${selectedChoice === option.value ? "selected" : ""}>${option.label}</option>`).join("")}</select><button class="material-help" type="button" id="openMaterialGuide" aria-label="查看实验材料说明" aria-haspopup="dialog">?</button></div><dialog class="material-guide-dialog" id="materialGuideDialog" aria-labelledby="materialGuideTitle"><h3 id="materialGuideTitle">实验材料说明</h3><p>可选材料会随实验类型变化；选择后，搜集证据阶段会使用对应材料。</p><ul><li>无意义三字母串：如 CFX、DHK，用没有词义的字母组合测试记忆。</li><li>双字具体词语：如太阳、钥匙、沙滩，记忆后再接触新的词语。</li><li>混合类别词语：如小猫、苹果、铅笔；不同测量可抽取不同类别，单次测量仍使用同一类别的目标词语。</li><li>动物词语：如小猫、兔子、熊猫；水果词语：如苹果、香蕉、葡萄。相似性实验会比较不同类别与同类别词语造成的干扰。</li></ul><div class="actions"><button class="btn secondary" type="button" id="closeMaterialGuide">关闭</button></div></dialog></div>`;
+      const examples = state.fields.factor === "材料相似性"
+        ? "<li>记忆材料来自动物、水果、衣物、食物、文具、家居六类高频双字具体名词，例如小猫、兔子，或苹果、香蕉；每套使用同一类别。</li><li>低相似条件使用不同类别的干扰词，高相似条件使用同类别但不重复的干扰词。类别由材料库轮换抽取。</li>"
+        : "<li>记忆材料是无意义三字母串，例如 CFX、DHK；初级、中级、高级分别记忆 4、6、8 项。</li><li>第一轮安静休息；第二轮朗读中文高频词作为干扰，例如太阳、月亮、钥匙。干扰词分别为 4、8、12 项。</li>";
+      return `<div class="field"><label for="planMaterialChoice">实验材料</label><div class="material-choice-label"><select id="planMaterialChoice" data-field="materialChoice">${options.map((option) => `<option value="${option.value}" ${selectedChoice === option.value ? "selected" : ""}>${option.label}</option>`).join("")}</select><button class="material-help" type="button" id="openMaterialGuide" aria-label="查看实验材料说明" aria-haspopup="dialog">?</button></div><dialog class="material-guide-dialog" id="materialGuideDialog" aria-labelledby="materialGuideTitle"><h3 id="materialGuideTitle">实验材料说明</h3><p>材料类型由所选实验因素确定，搜集证据阶段会从对应材料库抽取。</p><ul>${examples}</ul><div class="actions"><button class="btn secondary" type="button" id="closeMaterialGuide">关闭</button></div></dialog></div>`;
     }
     function renderPagedPlanStep() {
       const planChoices = (kind, options, type) => options.map((option) => `<label class="plan-choice"><input type="${type}" ${type === "radio" ? 'name="planFactor"' : ""} data-plan-variable="${kind}" value="${escapeHtml(option)}" ${kind === "factor" ? (state.fields.independentVariablePlan === option ? "checked" : "") : (String(state.fields[kind === "dependent" ? "dependentVariablePlan" : "controlVariablePlan"] || "").split("、").includes(option) ? "checked" : "")}>${escapeHtml(kind === "factor" ? PLAN_FACTOR_LABELS[option] : option)}</label>`).join("");
@@ -1851,13 +1850,20 @@
       if (selectedValue === "emotion") options.push({ value: "emotion", label: "情绪状态干扰（历史记录）" });
       return options;
     }
-    function getMaterialTypeOptions() {
-      return ["", "无意义音节", "语段/人物活动配对", "单词及中文", "数字串", "古诗"].map((value)=>({ value, label: value || "请选择" }));
+    function getMaterialTypeOptions(factor, selectedValue = "") {
+      const materialByFactor = {
+        retroactive: MATERIAL_SETS["倒摄干扰"].sets.easy.materialType,
+        similarity: MATERIAL_SETS["材料相似性"].sets.easy.materialType,
+        emotion: MATERIAL_SETS["情绪"].sets.easy.materialType
+      };
+      const values = ["", ...(materialByFactor[factor] ? [materialByFactor[factor]] : [])];
+      if (selectedValue && !values.includes(selectedValue)) values.push(selectedValue);
+      return values.map((value)=>({ value, label: value || "请选择" }));
     }
     function renderTeamResultTable(summary) {
       const personalResult = getPersonalInterferenceResult(summary);
       const members = normalizeOtherMemberResults(state.fields).slice(0, Math.min(6, Math.max(2, Number(state.fields.teamSize) || 2)) - 1);
-      const memberRows = members.map((item, index)=>`<tr><td>组员${index + 1}</td><td><input class="member-id-input" type="text" data-member-index="${index}" data-member-field="memberId" value="${escapeHtml(item.memberId)}" placeholder="编号"></td><td><select data-member-index="${index}" data-member-field="interferenceFactor">${renderOptionList(getInterferenceFactorOptions(item.interferenceFactor), item.interferenceFactor)}</select></td><td><select data-member-index="${index}" data-member-field="materialType">${renderOptionList(getMaterialTypeOptions(), item.materialType)}</select></td><td><input type="number" min="0" step="0.1" data-member-index="${index}" data-member-field="averageScore" value="${escapeHtml(item.averageScore)}" placeholder="数字"></td><td><div class="percent-field"><input type="number" min="0" max="100" step="0.1" data-member-index="${index}" data-member-field="averageAccuracy" value="${escapeHtml(item.averageAccuracy)}" placeholder="数字"><span>%</span></div></td></tr>`).join("");
+      const memberRows = members.map((item, index)=>`<tr><td>组员${index + 1}</td><td><input class="member-id-input" type="text" data-member-index="${index}" data-member-field="memberId" value="${escapeHtml(item.memberId)}" placeholder="编号"></td><td><select data-member-index="${index}" data-member-field="interferenceFactor">${renderOptionList(getInterferenceFactorOptions(item.interferenceFactor), item.interferenceFactor)}</select></td><td><select data-member-index="${index}" data-member-field="materialType">${renderOptionList(getMaterialTypeOptions(item.interferenceFactor, item.materialType), item.materialType)}</select></td><td><input type="number" min="0" step="0.1" data-member-index="${index}" data-member-field="averageScore" value="${escapeHtml(item.averageScore)}" placeholder="数字"></td><td><div class="percent-field"><input type="number" min="0" max="100" step="0.1" data-member-index="${index}" data-member-field="averageAccuracy" value="${escapeHtml(item.averageAccuracy)}" placeholder="数字"><span>%</span></div></td></tr>`).join("");
       return `<div class="panel team-result-card"><div class="panel-head"><h3>小组结果记录</h3><p>仅用于留痕和对比，不参与统计计算。</p></div><div class="panel-body"><div class="actions"><button class="btn secondary" type="button" data-team-adjust="-1" aria-label="减少一名组员" ${state.fields.teamSize <= 2 ? "disabled" : ""}>−</button><span>小组人数：${state.fields.teamSize} 人</span><button class="btn secondary" type="button" data-team-adjust="1" aria-label="增加一名组员" ${state.fields.teamSize >= 6 ? "disabled" : ""}>＋</button></div><table><thead><tr><th>成员</th><th>组员编号</th><th>干扰因素</th><th>实验材料</th><th>平均得分</th><th>平均正确率</th></tr></thead><tbody><tr><td>本人</td><td><input class="member-id-input" type="text" data-field="participantId" value="${escapeHtml(state.fields.participantId || state.studentId)}" placeholder="本人编号"></td><td colspan="4"><input type="text" value="${escapeHtml(personalResult)}" placeholder="自动带入本人结果" disabled></td></tr>${memberRows}</tbody></table></div></div>`;
     }
     function getTeamResultSheet(summary) {
@@ -1951,8 +1957,13 @@
           const field = element.dataset.memberField;
           state.fields.otherMemberResults = normalizeOtherMemberResults(state.fields);
           if (!state.fields.otherMemberResults[index]) state.fields.otherMemberResults[index] = createEmptyOtherMemberResult();
+          const factorChanged = field === "interferenceFactor" && state.fields.otherMemberResults[index].interferenceFactor !== element.value;
+          if (factorChanged) {
+            state.fields.otherMemberResults[index].materialType = "";
+          }
           state.fields.otherMemberResults[index][field] = element.type === "number" ? (element.value === "" ? "" : Number(element.value)) : element.value;
           saveState();
+          if (factorChanged) renderApp();
         };
         element.addEventListener("change", update);
         element.addEventListener("input", update);
@@ -2073,21 +2084,10 @@
       return options.find((option) => option.value === state.fields.materialChoice) || options[0];
     }
     function getSelectedMaterialSource() {
-      const choice = getSelectedMaterialChoice();
-      return choice === (PLAN_MATERIAL_OPTIONS[state.fields.factor] || [])[0]
-        ? getSelectedMaterialPack().source : `学生选择：${choice.label}`;
+      return getSelectedMaterialPack().source;
     }
     function getSelectedDifficultySet() {
       const pack = getSelectedMaterialPack();
-      const choice = getSelectedMaterialChoice().value;
-      const difficulty = state.fields.difficulty;
-      if (state.fields.factor === "倒摄干扰" && choice === "words") {
-        return buildDifficultySet("双字具体词语", difficulty, (level) => buildRetroactiveRounds(level, "words"));
-      }
-      if (state.fields.factor === "材料相似性" && choice !== "mixed") {
-        const category = choice === "animals" ? 0 : 1;
-        return buildDifficultySet(choice === "animals" ? "动物词语" : "水果词语", difficulty, (level) => buildSimilarityRounds(level, category));
-      }
       return pack.sets[state.fields.difficulty] || pack.sets.medium || pack.sets.easy;
     }
     function splitRecordedItems(value) {
