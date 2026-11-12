@@ -17,6 +17,7 @@ const requiredFiles = [
   "interference.html",
   "strategies.html",
   "poster.html",
+  "detective-duel.html",
   "pretest.html",
   "review.html",
   "diagnosis.html",
@@ -51,7 +52,6 @@ const forbiddenRoots = [
   ".github",
   "api",
   "cloudfunctions",
-  "docs",
   "scripts",
   "node_modules",
   "备份",
@@ -99,6 +99,11 @@ for (const relativePath of forbiddenRoots) {
   if (fs.existsSync(path.join(output, relativePath))) {
     throw new Error(`发布包包含禁止目录：${relativePath}`);
   }
+}
+const docsDirectory = path.join(output, "docs");
+if (fs.existsSync(docsDirectory) &&
+    fs.readdirSync(docsDirectory).some((name) => name !== "spanish-picture-bank-images")) {
+  throw new Error("发布包的 docs 目录只能包含西语图片资源。");
 }
 for (const relativePath of forbiddenFiles) {
   if (fs.existsSync(path.join(output, relativePath))) {
