@@ -3,6 +3,7 @@
 
   const SCHEMA_VERSION = 2;
   const QUESTION_SET_VERSION = "knowledge-v3-2026-08";
+  const POSTTEST_QUESTION_SET_VERSION = "knowledge-t5-parallel-v1-2026-11";
   const STORAGE_KEY = "knowledge-assessment-v2";
   const STAGES = Object.freeze(["T0", "T1", "T2", "T3", "T4", "T5"]);
   const VALID_ANSWERS = new Set(["A", "B", "C", "D"]);
@@ -89,7 +90,7 @@
   function createDraft(stage, questions, randomize) {
     return {
       stage,
-      questionSetVersion: QUESTION_SET_VERSION,
+      questionSetVersion: stage === "T5" ? POSTTEST_QUESTION_SET_VERSION : QUESTION_SET_VERSION,
       questionOrder: randomize ? shuffle(questions.map((item) => item.id)) : questions.map((item) => item.id),
       answers: {},
       currentPage: 0
@@ -98,7 +99,7 @@
 
   function normalizeDraft(value, stage, questions, randomize) {
     const source = value && typeof value === "object" ? value : {};
-    const sameQuestionSet = source.questionSetVersion === QUESTION_SET_VERSION;
+    const sameQuestionSet = source.questionSetVersion === (stage === "T5" ? POSTTEST_QUESTION_SET_VERSION : QUESTION_SET_VERSION);
     const validIds = new Set(questions.map((item) => item.id));
     const incomingOrder = sameQuestionSet && Array.isArray(source.questionOrder)
       ? source.questionOrder.filter((id) => validIds.has(id))
@@ -149,8 +150,8 @@
     const timestamp = new Date().toISOString();
     const record = {
       stage,
-      assessmentId: [stage, QUESTION_SET_VERSION, session.studentId || "guest"].join("|"),
-      questionSetVersion: QUESTION_SET_VERSION,
+      assessmentId: [stage, draft.questionSetVersion, session.studentId || "guest"].join("|"),
+      questionSetVersion: draft.questionSetVersion,
       questionOrder: draft.questionOrder.slice(),
       answers: { ...draft.answers },
       score: summary.score,
@@ -170,6 +171,7 @@
   global.BrainKnowledgeAssessment = Object.freeze({
     schemaVersion: SCHEMA_VERSION,
     questionSetVersion: QUESTION_SET_VERSION,
+    posttestQuestionSetVersion: POSTTEST_QUESTION_SET_VERSION,
     stages: STAGES,
     emptyTimeline,
     normalizeTimeline,

@@ -31,6 +31,7 @@ const requiredFiles = [
   "assets/ai-assistant.js",
   "assets/knowledge-question-bank.js",
   "assets/knowledge-pretest.js",
+  "assets/knowledge-posttest.js",
   "assets/knowledge-post-memory.js",
   "assets/knowledge-post-nback.js",
   "assets/knowledge-post-interference.js",
