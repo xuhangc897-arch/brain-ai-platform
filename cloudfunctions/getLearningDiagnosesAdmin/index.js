@@ -31,17 +31,21 @@ exports.main = async (event) => {
   if (!teacher) return { ok: false, code: "FORBIDDEN", message: "当前账号没有教师查看权限。", records: [] };
   const payload = event && typeof event === "object" ? event : {};
   const condition = { recordType: "version" };
-  ["studentId", "studentName", "className", "groupName"].forEach((key) => {
-    const value = String(payload[key] || "").trim();
-    if (value) condition[key] = value;
-  });
+  const personKeys = ["studentId", "studentName", "className", "groupName"];
+  const personFilter = personKeys.some((key) => String(payload[key] || "").trim());
   try {
-    const result = await diagnoses
-      .where(condition)
-      .orderBy("generatedAt", "desc")
-      .limit(normalizeLimit(payload.limit))
-      .get();
-    let records = Array.isArray(result.data) ? result.data : [];
+    let records = [];
+    if (personFilter) {
+      for (let offset = 0; ; offset += 100) {
+        const result = await diagnoses.where(condition).orderBy("generatedAt", "desc").skip(offset).limit(100).get();
+        const page = Array.isArray(result.data) ? result.data : [];
+        records.push(...page.filter((record) => personKeys.every((key) => !String(payload[key] || "").trim() || String(record[key] || "").toLocaleLowerCase().includes(String(payload[key]).trim().toLocaleLowerCase()))));
+        if (page.length < 100) break;
+      }
+    } else {
+      const result = await diagnoses.where(condition).orderBy("generatedAt", "desc").limit(normalizeLimit(payload.limit)).get();
+      records = Array.isArray(result.data) ? result.data : [];
+    }
     if (payload.latestOnly !== false) {
       const seen = new Set();
       records = records.filter((record) => {
@@ -50,7 +54,7 @@ exports.main = async (event) => {
         return true;
       });
     }
-    return { ok: true, records };
+    return { ok: true, records: records.slice(0, normalizeLimit(payload.limit)) };
   } catch (error) {
     console.error("getLearningDiagnosesAdmin failed", { code: error.code || error.errCode || "UNKNOWN" });
     return { ok: false, code: "QUERY_FAILED", message: "读取学习诊断失败。", records: [] };

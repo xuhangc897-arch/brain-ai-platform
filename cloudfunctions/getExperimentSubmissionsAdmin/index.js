@@ -12,6 +12,7 @@ function body(event) { if (event && typeof event.body === "string") { try { retu
 function currentUid() { const context = typeof cloudbase.getCloudbaseContext === "function" ? cloudbase.getCloudbaseContext() : {}; return text(context.TCB_UUID || context.UID || context.OPENID || context.WX_OPENID); }
 async function isTeacher() { const uid = currentUid(); if (!uid) return false; const result = await teachers.where({ uid, active: true, role: "teacher" }).limit(1).get(); return Array.isArray(result.data) && Boolean(result.data[0]); }
 function timeValue(value) { if (!value) return 0; if (typeof value === "string") return Date.parse(value) || 0; if (value.$date) return Date.parse(value.$date) || 0; if (value.seconds) return Number(value.seconds) * 1000; return 0; }
+function matchesPerson(record, input) { return ["studentId", "studentName", "className", "groupName"].every((key) => !text(input[key]) || text(record[key]).toLocaleLowerCase().includes(text(input[key]).toLocaleLowerCase())); }
 function asDashboardRecord(item) {
   const quiz = item.knowledgeQuiz || {}; const attempts = Array.isArray(quiz.attempts) ? quiz.attempts : []; const last = attempts[attempts.length - 1] || {};
   const state = Object.assign({}, item.experimentResults || {}, { studentId: item.studentId, studentName: item.studentName || "", className: item.className || "", groupName: item.groupName || "", fields: item.answers || {}, knowledgeAssessment: item.knowledgeAssessment || null, surveys: { postMeta: item.surveys && item.surveys.meta || {}, cognitiveLoad: item.surveys && item.surveys.cognitiveLoad || {}, inquiryParticipation: item.surveys && item.surveys.inquiryParticipation || {} }, knowledgeQuiz: Object.assign({}, quiz, { history: attempts.map((entry) => Object.assign({}, entry, { submittedAt: entry.timestamp || entry.submittedAt || "" })), submitted: attempts.length > 0, answers: last.answers || {}, score: quiz.finalScore, correctCount: last.correctCount || 0, submittedAt: last.timestamp || last.submittedAt || "", wrongQuestions: last.wrongQuestions || [] }) });
@@ -37,22 +38,21 @@ exports.main = async (event) => {
   if (!await isTeacher()) return { ok: false, code: "FORBIDDEN", records: [] };
   const input = body(event); const limit = Math.max(1, Math.min(500, Number(input.limit) || 100));
   const newCondition = {}; const legacyCondition = { recordType: "submission" };
-  if (text(input.studentId)) { newCondition.studentId = text(input.studentId); legacyCondition.studentId = text(input.studentId); }
   if (text(input.module)) { newCondition.experimentId = text(input.module); legacyCondition.module = text(input.module); }
-  ["studentName", "className", "groupName"].forEach((key) => { if (text(input[key])) { newCondition[key] = text(input[key]); legacyCondition[key] = text(input[key]); } });
   const exportAll = Boolean(input.exportAll);
-  const [newResult, legacyResult] = await Promise.all(exportAll
+  const scanAll = exportAll || ["studentId", "studentName", "className", "groupName"].some((key) => text(input[key]));
+  const [newResult, legacyResult] = await Promise.all(scanAll
     ? [readAll(submissions, newCondition), readAll(legacyRecords, legacyCondition)]
     : [submissions.where(newCondition).orderBy("uploadedAt", "desc").limit(limit).get(), legacyRecords.where(legacyCondition).orderBy("uploadedAt", "desc").limit(limit).get()]);
-  const newData = exportAll ? newResult : newResult.data;
-  const legacyData = exportAll ? legacyResult : legacyResult.data;
+  const newData = scanAll ? newResult : newResult.data;
+  const legacyData = scanAll ? legacyResult : legacyResult.data;
   const records = (Array.isArray(newData) ? newData.map(asDashboardRecord) : []).concat(Array.isArray(legacyData) ? legacyData.map(asLegacyDashboardRecord) : []);
   records.sort((left, right) => timeValue(right.uploadedAt || right.createdAt) - timeValue(left.uploadedAt || left.createdAt));
   const from = text(input.dateFrom) ? Date.parse(`${text(input.dateFrom)}T00:00:00+08:00`) : 0;
   const to = text(input.dateTo) ? Date.parse(`${text(input.dateTo)}T23:59:59.999+08:00`) : Number.MAX_SAFE_INTEGER;
   const skip = Math.max(0, Number(input.skip) || 0);
-  const filtered = records.filter((record) => { const value = timeValue(record.uploadedAt || record.createdAt); return value >= from && value <= to; });
+  const filtered = records.filter((record) => { const value = timeValue(record.uploadedAt || record.createdAt); return value >= from && value <= to && matchesPerson(record, input); });
   return { ok: true, records: exportAll ? filtered : filtered.slice(skip, skip + limit) };
 };
 
-exports.__test = { asDashboardRecord, asLegacyDashboardRecord, timeValue };
+exports.__test = { asDashboardRecord, asLegacyDashboardRecord, timeValue, matchesPerson };

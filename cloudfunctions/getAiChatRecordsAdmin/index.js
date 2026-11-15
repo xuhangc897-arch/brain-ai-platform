@@ -20,13 +20,13 @@ async function readAll(collection, condition) { const items = []; const pageSize
 exports.main = async (event) => {
   if (!await isTeacher()) return { ok: false, code: "FORBIDDEN", records: [] };
   const input = body(event); const limit = Math.max(1, Math.min(500, Number(input.limit) || 100)); const condition = {};
-  ["studentId", "studentName", "className", "groupName"].forEach((key) => { if (text(input[key])) condition[key] = text(input[key]); }); if (text(input.sourceModule)) condition.experimentId = text(input.sourceModule);
+  if (text(input.sourceModule)) condition.experimentId = text(input.sourceModule);
   const legacyCondition = { module: "aiChat", recordType: "submission" };
-  if (condition.studentId) legacyCondition.studentId = condition.studentId;
   const exportAll = Boolean(input.exportAll);
-  const scanLegacy = exportAll || ["studentName", "className", "groupName", "sourceModule"].some((key) => text(input[key]));
+  const personFilter = ["studentId", "studentName", "className", "groupName"].some((key) => text(input[key]));
+  const scanLegacy = exportAll || personFilter || text(input.sourceModule);
   const [currentItems, legacyItems] = await Promise.all([
-    exportAll
+    exportAll || personFilter
       ? readAll(records, condition)
       : records.where(condition).orderBy("uploadedAt", "desc").limit(limit).get().then((result) => Array.isArray(result.data) ? result.data : []),
     scanLegacy
@@ -41,7 +41,7 @@ exports.main = async (event) => {
     const value = timeValue(record.uploadedAt || record.createdAt);
     return value >= from && value <= to
       && (!text(input.sourceModule) || record.data.sourceModule === text(input.sourceModule))
-      && ["studentName", "className", "groupName"].every((key) => !text(input[key]) || text(record[key]) === text(input[key]));
+      && ["studentId", "studentName", "className", "groupName"].every((key) => !text(input[key]) || text(record[key]).toLocaleLowerCase().includes(text(input[key]).toLocaleLowerCase()));
   });
   return { ok: true, records: exportAll ? filtered : filtered.slice(skip, skip + limit) };
 };

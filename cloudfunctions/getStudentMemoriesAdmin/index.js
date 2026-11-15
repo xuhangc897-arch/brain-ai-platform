@@ -31,15 +31,24 @@ exports.main = async (event) => {
   if (!teacher) return { ok: false, code: "FORBIDDEN", message: "当前账号没有教师查看权限。", records: [] };
   const payload = event && typeof event === "object" ? event : {};
   const condition = {};
-  ["studentId", "studentName", "className", "groupName", "experimentId", "memoryType"].forEach((key) => {
+  ["experimentId", "memoryType"].forEach((key) => {
     const value = String(payload[key] || "").trim();
     if (value) condition[key] = value;
   });
-  const result = await memories
-    .where(condition)
-    .orderBy("updatedAt", "desc")
-    .skip(Math.max(0, Number(payload.skip) || 0))
-    .limit(normalizeLimit(payload.limit))
-    .get();
-  return { ok: true, records: Array.isArray(result.data) ? result.data : [] };
+  const personKeys = ["studentId", "studentName", "className", "groupName"];
+  const personFilter = personKeys.some((key) => String(payload[key] || "").trim());
+  const skip = Math.max(0, Number(payload.skip) || 0);
+  const limit = normalizeLimit(payload.limit);
+  if (!personFilter) {
+    const result = await memories.where(condition).orderBy("updatedAt", "desc").skip(skip).limit(limit).get();
+    return { ok: true, records: Array.isArray(result.data) ? result.data : [] };
+  }
+  const matched = [];
+  for (let offset = 0; matched.length < skip + limit; offset += 100) {
+    const result = await memories.where(condition).orderBy("updatedAt", "desc").skip(offset).limit(100).get();
+    const page = Array.isArray(result.data) ? result.data : [];
+    matched.push(...page.filter((record) => personKeys.every((key) => !String(payload[key] || "").trim() || String(record[key] || "").toLocaleLowerCase().includes(String(payload[key]).trim().toLocaleLowerCase()))));
+    if (page.length < 100) break;
+  }
+  return { ok: true, records: matched.slice(skip, skip + limit) };
 };
