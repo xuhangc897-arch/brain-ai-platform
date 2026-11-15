@@ -4,6 +4,7 @@ const assert = require("assert");
 const Module = require("module");
 const fs = require("fs");
 const path = require("path");
+const vm = require("vm");
 
 const root = path.resolve(__dirname, "..");
 
@@ -205,6 +206,34 @@ function baseData() {
   assert(dashboardSource.includes('name: "updateExperimentRecordAdmin"'));
   assert(!initStudentsSource.includes('window.db.collection("students")'));
   assert(!dashboardSource.includes('window.db.collection("experiment_submissions")'));
+
+  const loadStudentsCode = initStudentsSource.slice(initStudentsSource.indexOf("    async function loadStudents()"), initStudentsSource.indexOf("    function openDeleteStudentDialog"));
+  const accountRows = Array.from({ length: 105 }, (_, index) => ({ studentId: String(index + 1).padStart(3, "0"), name: index === 104 ? "新姓名" : "其他", class: "三班", group: "2组" }));
+  const studentPage = { isLoggedIn: true, studentPrevBtn: {}, studentNextBtn: {}, studentListStatus: {}, STUDENT_PAGE_SIZE: 100,
+    studentPageSkip: 0, studentHasMore: false, currentStudents: [], renderStudentList() {}, getErrorMessage: (error) => error.message,
+    studentFilters: { studentId: { value: "" }, name: { value: "新姓" }, class: { value: "" }, group: { value: "" } },
+    window: { app: { async callFunction({ data }) { return { result: { ok: true, records: accountRows.slice(data.skip, data.skip + data.limit), hasMore: data.skip + data.limit < accountRows.length } }; } } } };
+  vm.createContext(studentPage);
+  await vm.runInContext(`${loadStudentsCode}\nloadStudents()`, studentPage);
+  assert.strictEqual(studentPage.currentStudents.length, 1);
+  assert.strictEqual(studentPage.currentStudents[0].studentId, "105");
+  assert.strictEqual(studentPage.studentListStatus.textContent, "共找到 1 个学生账号。");
+
+  const recordQueryCode = dashboardSource.slice(dashboardSource.indexOf("    function withCurrentProfile(record)"), dashboardSource.indexOf("    async function loadRecords()"));
+  const oldRecord = { studentId: "105", studentName: "旧姓名", className: "旧班", groupName: "1组", createdAt: "2026-08-08T10:30:00.000Z",
+    data: { studentId: "105", studentName: "旧姓名", className: "旧班", groupName: "1组", fullState: { studentId: "105", studentName: "旧姓名", className: "旧班", groupName: "1组" } } };
+  const recordPage = { studentProfiles: new Map([["105", { studentId: "105", name: "新姓名", class: "三班", group: "2组" }]]),
+    window: { app: { async callFunction({ data }) { assert.strictEqual(data.studentId, "105"); return { result: { ok: true, records: [clone(oldRecord), { studentId: "1105", studentName: "新姓名" }] } }; } } } };
+  vm.createContext(recordPage);
+  const queryRecords = vm.runInContext(`${recordQueryCode}\nfetchRecords`, recordPage);
+  const linkedRecords = await queryRecords({ module: "memory", recordType: "submission", studentId: "", studentName: "新姓", className: "", groupName: "", limit: 100 });
+  assert.strictEqual(linkedRecords.length, 1);
+  assert.strictEqual(linkedRecords[0].studentName, "新姓名");
+  assert.strictEqual(linkedRecords[0].className, "三班");
+  assert.strictEqual(linkedRecords[0].groupName, "2组");
+  assert.strictEqual(linkedRecords[0].data.fullState.studentName, "新姓名");
+  assert.strictEqual(linkedRecords[0].data.fullState.groupName, "2组");
+  assert.strictEqual(oldRecord.studentName, "旧姓名");
 
   const cloudbaseConfig = JSON.parse(fs.readFileSync(path.join(root, "cloudbase.json"), "utf8"));
   const configuredFunctions = new Set(cloudbaseConfig.functions.map((item) => item.name));

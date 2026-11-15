@@ -1156,6 +1156,7 @@
     const TEMPORARY_DASHBOARD_LOGIN_BYPASS = false;
     let isLoggedIn = false;
     let records = [];
+    let studentProfiles = new Map();
     let pendingDeleteRecord = null;
     let pendingEditRecord = null;
     let currentRecordView = "submissions";
@@ -1240,25 +1241,73 @@
       };
     }
 
+    async function refreshStudentProfiles() {
+      const profiles = new Map();
+      for (let skip = 0; ; skip += 100) {
+        const response = await window.app.callFunction({ name: "getStudentsAdmin", data: { limit: 100, skip } });
+        const result = response && (response.result || response);
+        if (!result || !result.ok) throw new Error((result && result.message) || "读取学生资料失败。");
+        (result.records || []).forEach((student) => profiles.set(String(student.studentId), student));
+        if (!result.hasMore) break;
+      }
+      studentProfiles = profiles;
+    }
+
+    function withCurrentProfile(record) {
+      const profile = studentProfiles.get(String(record.studentId || ""));
+      if (!profile) return record;
+      const originalGroup = record.groupName;
+      const visited = new Set();
+      function update(value) {
+        if (!value || typeof value !== "object" || visited.has(value)) return;
+        visited.add(value);
+        if (String(value.studentId || "") === String(profile.studentId)) {
+          if ("studentName" in value) value.studentName = profile.name;
+          if ("className" in value) value.className = profile.class;
+          if ("groupName" in value) value.groupName = profile.group;
+          if ("groupId" in value && String(value.groupId) === String(originalGroup)) value.groupId = profile.group;
+        }
+        Object.values(value).forEach(update);
+      }
+      update(record);
+      return record;
+    }
+
+    function matchesCurrentProfile(record, payload) {
+      return ["studentId", "studentName", "className", "groupName"].every((key) =>
+        !String(payload[key] || "").trim() || String(record[key] || "").toLocaleLowerCase().includes(String(payload[key]).trim().toLocaleLowerCase()));
+    }
+
     async function fetchRecords(payload) {
       const functionName = payload.module === "aiChat"
         ? "getAiChatRecordsAdmin"
         : payload.recordType === "submission"
           ? "getExperimentSubmissionsAdmin"
           : "getExperimentRecords";
-      const response = await window.app.callFunction({
-        name: functionName,
-        data: payload
-      });
-      const result = response && (response.result || response);
-
-      if (!result || !result.ok) {
-        const error = new Error((result && result.message) || "读取实验记录失败");
-        error.code = (result && result.code) || "QUERY_FAILED";
-        throw error;
+      const personKeys = ["studentId", "studentName", "className", "groupName"];
+      const hasPersonFilter = personKeys.some((key) => String(payload[key] || "").trim());
+      const matchedIds = hasPersonFilter ? Array.from(studentProfiles.values()).filter((student) =>
+        personKeys.every((key) => {
+          const value = key === "studentName" ? student.name : key === "className" ? student.class : key === "groupName" ? student.group : student.studentId;
+          return !String(payload[key] || "").trim() || String(value || "").toLocaleLowerCase().includes(String(payload[key]).trim().toLocaleLowerCase());
+        })).map((student) => student.studentId) : [];
+      if (hasPersonFilter && !matchedIds.length) return [];
+      const requests = hasPersonFilter
+        ? matchedIds.map((studentId) => ({ ...payload, studentId, studentName: "", className: "", groupName: "", exportAll: true }))
+        : [payload];
+      const batches = [];
+      for (let index = 0; index < requests.length; index += 10) {
+        batches.push(...await Promise.all(requests.slice(index, index + 10).map(async (request) => {
+          const response = await window.app.callFunction({ name: functionName, data: request });
+          const result = response && (response.result || response);
+          if (!result || !result.ok) throw new Error((result && result.message) || "读取实验记录失败");
+          const items = Array.isArray(result.records) ? result.records : [];
+          return hasPersonFilter ? items.filter((record) => String(record.studentId) === String(request.studentId)) : items;
+        })));
       }
-
-      return Array.isArray(result.records) ? result.records : [];
+      const matched = batches.flat().map(withCurrentProfile).filter((record) => matchesCurrentProfile(record, payload));
+      if (hasPersonFilter) matched.sort((left, right) => Date.parse(right.uploadedAt || right.createdAt || 0) - Date.parse(left.uploadedAt || left.createdAt || 0));
+      return payload.exportAll ? matched : matched.slice(0, Number(payload.limit) || 100);
     }
 
     async function loadRecords() {
@@ -1273,6 +1322,7 @@
       setStatus("正在读取实验记录...");
 
       try {
+        await refreshStudentProfiles();
         records = await fetchRecords(buildQueryPayload());
         renderSubmissionTable();
         setStatus(`已读取 ${records.length} 条实验记录。`);
@@ -1482,20 +1532,17 @@
       queryBtn.disabled = true;
       setStatus("正在读取结构化学习记忆...");
       try {
+        await refreshStudentProfiles();
         const response = await window.app.callFunction({
           name: "getStudentMemoriesAdmin",
           data: {
-            studentId: filters.studentId.value.trim(),
-            studentName: filters.studentName.value.trim(),
-            className: filters.className.value.trim(),
-            groupName: filters.groupName.value.trim(),
             experimentId: filters.module.value.trim(),
-            limit: 100
+            limit: 200
           }
         });
         const result = response && (response.result || response);
         if (!result || !result.ok) throw new Error((result && result.message) || "读取学习记忆失败");
-        records = Array.isArray(result.records) ? result.records : [];
+        records = (Array.isArray(result.records) ? result.records : []).map(withCurrentProfile).filter((record) => matchesCurrentProfile(record, buildQueryPayload()));
         renderMemoryTable();
         setStatus(`已读取 ${records.length} 条结构化学习记忆。`);
       } catch (error) {
@@ -1535,20 +1582,17 @@
       queryBtn.disabled = true;
       setStatus("正在读取学习诊断...");
       try {
+        await refreshStudentProfiles();
         const response = await window.app.callFunction({
           name: "getLearningDiagnosesAdmin",
           data: {
-            studentId: filters.studentId.value.trim(),
-            studentName: filters.studentName.value.trim(),
-            className: filters.className.value.trim(),
-            groupName: filters.groupName.value.trim(),
             latestOnly: !diagnosisHistory.checked,
-            limit: 100
+            limit: 200
           }
         });
         const result = response && (response.result || response);
         if (!result || !result.ok) throw new Error((result && result.message) || "读取学习诊断失败");
-        records = Array.isArray(result.records) ? result.records : [];
+        records = (Array.isArray(result.records) ? result.records : []).map(withCurrentProfile).filter((record) => matchesCurrentProfile(record, buildQueryPayload()));
         renderDiagnosisTable();
         setStatus(`已读取 ${records.length} 条学习诊断。`);
       } catch (error) {
@@ -2719,6 +2763,7 @@
 
       let sheets = [];
       try {
+        await refreshStudentProfiles();
         const isAiChatExport = searchTypeFilter.value === "aiChat";
         const exportSourceRecords = isAiChatExport
           ? await fetchRecords(Object.assign({}, buildQueryPayload("submission"), { exportAll: true, skip: 0 }))
@@ -2743,7 +2788,7 @@
         const strategyAttemptHistory = collectStrategyAttemptHistory(latestStateRecords, cloudAttemptRecords);
         const attemptSheets = strategyAttemptHistory.length ? [buildStrategyAttemptHistorySheet(strategyAttemptHistory)] : [];
         sheets = [buildOverviewSheet(exportSourceRecords), ...buildKnowledgeComparisonSheets(exportSourceRecords), ...detailSheets, ...attemptSheets,
-          ["提交原始数据", [["学号", "姓名", "模块", "记录ID", "提交时间", "完整JSON"], ...exportSourceRecords.map((record) => [record.studentId, record.studentName, getModuleLabel(record.module), record.recordId, formatDate(record.createdAt), JSON.stringify(record.data || record.payload || {})])]]];
+          ["提交数据（当前账号资料）", [["学号", "姓名", "模块", "记录ID", "提交时间", "完整JSON"], ...exportSourceRecords.map((record) => [record.studentId, record.studentName, getModuleLabel(record.module), record.recordId, formatDate(record.createdAt), JSON.stringify(record.data || record.payload || {})])]]];
       } catch (error) {
         console.error("读取完整状态快照失败", getErrorSummary(error));
         setStatus(error.message || "读取完整记录失败，无法导出。");
