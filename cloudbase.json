@@ -72,6 +72,11 @@
       "runtime": "Nodejs20.19"
     },
     {
+      "name": "updateExperimentRecordAdmin",
+      "timeout": 60,
+      "runtime": "Nodejs20.19"
+    },
+    {
       "name": "saveAiChatRecord",
       "timeout": 60,
       "runtime": "Nodejs20.19"

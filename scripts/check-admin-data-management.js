@@ -43,6 +43,7 @@ function createMock(initial, currentUid = "teacher-1") {
         return {
           async get() { return { data: store.has(id) ? [clone(store.get(id))] : [] }; },
           async set(document) { store.set(id, Object.assign({ _id: id }, clone(document))); return {}; },
+          async update(changes) { store.set(id, Object.assign({}, store.get(id), clone(changes))); return {}; },
           async remove() { store.delete(id); return {}; }
         };
       }
@@ -110,6 +111,10 @@ function baseData() {
   assert.strictEqual(firstPage.records[0].studentId, "001");
   assert.strictEqual(firstPage.hasMore, true);
   assert.strictEqual(Object.prototype.hasOwnProperty.call(firstPage.records[0], "password"), false);
+  const filteredStudents = await getStudents.main({ studentId: "002", name: "李同学", class: "一班", group: "2组" });
+  assert.strictEqual(filteredStudents.records.length, 1);
+  assert.strictEqual(filteredStudents.records[0].studentId, "002");
+  assert.strictEqual((await getStudents.main({ name: "不存在" })).records.length, 0);
 
   const deleteStudent = load("cloudfunctions/deleteStudentAdmin/index.js", mock.sdk);
   assert.strictEqual((await deleteStudent.main({ studentId: "missing" })).code, "NOT_FOUND");
@@ -127,10 +132,26 @@ function baseData() {
   assert.strictEqual(stored.studentName, "王同学");
   assert.strictEqual(stored.adminCreated, true);
   assert.strictEqual(stored.createdByUid, "teacher-1");
+  const updateRecord = load("cloudfunctions/updateExperimentRecordAdmin/index.js", mock.sdk);
+  const edited = baseData();
+  edited.answers = { question: "修正答案" };
+  mock.setUid("");
+  assert.strictEqual((await updateRecord.main({ sourceCollection: "experiment_submissions", recordId: created.recordId, data: edited })).code, "FORBIDDEN");
+  mock.setUid("teacher-1");
+  assert.strictEqual((await updateRecord.main({ sourceCollection: "experiment_submissions", recordId: created.recordId, data: edited })).code, "UPDATED");
+  assert.strictEqual(mock.stores.experiment_submissions.get(created.recordId).answers.question, "修正答案");
+  assert.strictEqual(mock.stores.experiment_submissions.get(created.recordId).studentId, "001");
 
   const submissionAdmin = load("cloudfunctions/getExperimentSubmissionsAdmin/index.js", mock.sdk);
   assert.strictEqual((await submissionAdmin.main({ studentName: "王同学", groupName: "1组" })).records.length, 1);
   assert.strictEqual((await submissionAdmin.main({ studentName: "其他同学" })).records.length, 0);
+  const bulkMock = createMock({
+    teachers: [{ _id: "t1", uid: "teacher-1", active: true, role: "teacher" }],
+    experiment_submissions: Array.from({ length: 501 }, (_, index) => ({ _id: `bulk-${index}`, studentId: "001", experimentId: "screening", uploadedAt: "2026-08-08T10:30:00.000Z" })),
+    experimentRecords: []
+  });
+  const bulkAdmin = load("cloudfunctions/getExperimentSubmissionsAdmin/index.js", bulkMock.sdk);
+  assert.strictEqual((await bulkAdmin.main({ exportAll: true })).records.length, 501);
   const aiAdmin = load("cloudfunctions/getAiChatRecordsAdmin/index.js", mock.sdk);
   assert.strictEqual((await aiAdmin.main({ studentName: "王同学", sourceModule: "memory" })).records.length, 1);
   assert.strictEqual((await aiAdmin.main({ studentName: "王同学", sourceModule: "nback" })).records.length, 0);
@@ -151,15 +172,19 @@ function baseData() {
   const dashboardSource = fs.readFileSync(path.join(root, "admin/dashboard.html"), "utf8");
   assert(initStudentsSource.includes('href="../index.html"'));
   assert(initStudentsSource.includes('name: "getStudentsAdmin"'));
+  assert(initStudentsSource.includes('id="studentIdFilter"'));
+  assert(initStudentsSource.includes('id="openExcelImportBtn"'));
+  assert(initStudentsSource.includes('"导入成功！"'));
   assert(initStudentsSource.includes('name: "deleteStudentAdmin"'));
   assert(dashboardSource.includes('name: "createExperimentRecordAdmin"'));
   assert(dashboardSource.includes('name: "deleteExperimentRecordAdmin"'));
+  assert(dashboardSource.includes('name: "updateExperimentRecordAdmin"'));
   assert(!initStudentsSource.includes('window.db.collection("students")'));
   assert(!dashboardSource.includes('window.db.collection("experiment_submissions")'));
 
   const cloudbaseConfig = JSON.parse(fs.readFileSync(path.join(root, "cloudbase.json"), "utf8"));
   const configuredFunctions = new Set(cloudbaseConfig.functions.map((item) => item.name));
-  ["getStudentsAdmin", "deleteStudentAdmin", "createExperimentRecordAdmin", "deleteExperimentRecordAdmin"].forEach((name) => assert(configuredFunctions.has(name)));
+  ["getStudentsAdmin", "deleteStudentAdmin", "createExperimentRecordAdmin", "deleteExperimentRecordAdmin", "updateExperimentRecordAdmin"].forEach((name) => assert(configuredFunctions.has(name)));
 
   console.log("Teacher student and experiment record management checks passed.");
 })().catch((error) => {
