@@ -115,6 +115,20 @@ function baseData() {
   assert.strictEqual(filteredStudents.records.length, 1);
   assert.strictEqual(filteredStudents.records[0].studentId, "002");
   assert.strictEqual((await getStudents.main({ name: "不存在" })).records.length, 0);
+  assert.strictEqual((await getStudents.main({ studentId: "00" })).records.length, 2);
+  assert.strictEqual((await getStudents.main({ name: "李" })).records[0].studentId, "002");
+  assert.strictEqual((await getStudents.main({ class: "一" })).records.length, 2);
+  assert.strictEqual((await getStudents.main({ group: "2" })).records[0].studentId, "002");
+
+  const updateStudent = load("cloudfunctions/updateStudentAdmin/index.js", mock.sdk);
+  mock.setUid("");
+  assert.strictEqual((await updateStudent.main({ studentId: "002", name: "李同学", class: "二班", group: "2组" })).code, "FORBIDDEN");
+  mock.setUid("teacher-1");
+  assert.strictEqual((await updateStudent.main({ studentId: "002", name: "李同学", class: "二班", group: "2组" })).code, "UPDATED");
+  assert.strictEqual(mock.stores.students.get("s2").class, "二班");
+  assert.strictEqual(mock.stores.students.get("s2").password, "secret-2");
+  assert.strictEqual((await updateStudent.main({ studentId: "002", name: "李同学", class: "二班", group: "2组", password: "new-secret" })).code, "UPDATED");
+  assert.strictEqual(mock.stores.students.get("s2").password, "new-secret");
 
   const deleteStudent = load("cloudfunctions/deleteStudentAdmin/index.js", mock.sdk);
   assert.strictEqual((await deleteStudent.main({ studentId: "missing" })).code, "NOT_FOUND");
@@ -144,21 +158,30 @@ function baseData() {
 
   const submissionAdmin = load("cloudfunctions/getExperimentSubmissionsAdmin/index.js", mock.sdk);
   assert.strictEqual((await submissionAdmin.main({ studentName: "王同学", groupName: "1组" })).records.length, 1);
+  assert.strictEqual((await submissionAdmin.main({ studentName: "王" })).records.length, 1);
+  assert.strictEqual((await submissionAdmin.main({ studentId: "00" })).records.length, 1);
   assert.strictEqual((await submissionAdmin.main({ studentName: "其他同学" })).records.length, 0);
   const bulkMock = createMock({
     teachers: [{ _id: "t1", uid: "teacher-1", active: true, role: "teacher" }],
-    experiment_submissions: Array.from({ length: 501 }, (_, index) => ({ _id: `bulk-${index}`, studentId: "001", experimentId: "screening", uploadedAt: "2026-08-08T10:30:00.000Z" })),
+    experiment_submissions: Array.from({ length: 501 }, (_, index) => ({ _id: `bulk-${index}`, studentId: "001", studentName: index === 500 ? "目标学生" : "普通学生", experimentId: "screening", uploadedAt: "2026-08-08T10:30:00.000Z" })),
     experimentRecords: []
   });
   const bulkAdmin = load("cloudfunctions/getExperimentSubmissionsAdmin/index.js", bulkMock.sdk);
   assert.strictEqual((await bulkAdmin.main({ exportAll: true })).records.length, 501);
+  assert.strictEqual((await bulkAdmin.main({ studentName: "目标" })).records.length, 1);
   const aiAdmin = load("cloudfunctions/getAiChatRecordsAdmin/index.js", mock.sdk);
   assert.strictEqual((await aiAdmin.main({ studentName: "王同学", sourceModule: "memory" })).records.length, 1);
+  assert.strictEqual((await aiAdmin.main({ groupName: "1" })).records.length, 1);
   assert.strictEqual((await aiAdmin.main({ studentName: "王同学", sourceModule: "nback" })).records.length, 0);
   const memoryAdmin = load("cloudfunctions/getStudentMemoriesAdmin/index.js", mock.sdk);
   assert.strictEqual((await memoryAdmin.main({ studentName: "王同学", groupName: "1组" })).records.length, 1);
+  assert.strictEqual((await memoryAdmin.main({ className: "一" })).records.length, 1);
   const diagnosisAdmin = load("cloudfunctions/getLearningDiagnosesAdmin/index.js", mock.sdk);
   assert.strictEqual((await diagnosisAdmin.main({ studentName: "王同学", groupName: "1组" })).records.length, 1);
+  assert.strictEqual((await diagnosisAdmin.main({ studentId: "00" })).records.length, 1);
+  Object.assign(mock.stores.experimentRecords.get("legacy-good"), { studentId: "001", studentName: "王同学", className: "一班", groupName: "1组" });
+  const legacyRecordsAdmin = load("cloudfunctions/getExperimentRecords/index.js", mock.sdk);
+  assert.strictEqual((await legacyRecordsAdmin.main({ studentId: "00" })).records.length, 1);
   const deleteRecord = load("cloudfunctions/deleteExperimentRecordAdmin/index.js", mock.sdk);
   assert.strictEqual((await deleteRecord.main({ sourceCollection: "student_memories", recordId: "x" })).code, "INVALID_COLLECTION");
   assert.strictEqual((await deleteRecord.main({ sourceCollection: "experimentRecords", recordId: "legacy-ai" })).code, "NOT_FORMAL_SUBMISSION");
@@ -176,6 +199,7 @@ function baseData() {
   assert(initStudentsSource.includes('id="openExcelImportBtn"'));
   assert(initStudentsSource.includes('"导入成功！"'));
   assert(initStudentsSource.includes('name: "deleteStudentAdmin"'));
+  assert(initStudentsSource.includes('name: "updateStudentAdmin"'));
   assert(dashboardSource.includes('name: "createExperimentRecordAdmin"'));
   assert(dashboardSource.includes('name: "deleteExperimentRecordAdmin"'));
   assert(dashboardSource.includes('name: "updateExperimentRecordAdmin"'));
@@ -184,7 +208,7 @@ function baseData() {
 
   const cloudbaseConfig = JSON.parse(fs.readFileSync(path.join(root, "cloudbase.json"), "utf8"));
   const configuredFunctions = new Set(cloudbaseConfig.functions.map((item) => item.name));
-  ["getStudentsAdmin", "deleteStudentAdmin", "createExperimentRecordAdmin", "deleteExperimentRecordAdmin", "updateExperimentRecordAdmin"].forEach((name) => assert(configuredFunctions.has(name)));
+  ["getStudentsAdmin", "deleteStudentAdmin", "updateStudentAdmin", "createExperimentRecordAdmin", "deleteExperimentRecordAdmin", "updateExperimentRecordAdmin"].forEach((name) => assert(configuredFunctions.has(name)));
 
   console.log("Teacher student and experiment record management checks passed.");
 })().catch((error) => {

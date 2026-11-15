@@ -108,7 +108,7 @@ exports.main = async (event) => {
   const payload = parsePayload(event);
   const condition = {};
 
-  ["module", "recordType", "studentId", "studentName", "className", "groupName"].forEach((key) => {
+  ["module", "recordType"].forEach((key) => {
     const value = normalizeText(payload[key]);
     if (value) condition[key] = value;
   });
@@ -120,30 +120,21 @@ exports.main = async (event) => {
     dateTo: parseDateEnd(payload.dateTo),
     sourceModule: normalizeText(payload.sourceModule)
   };
-  const queryLimit = (extraFilters.dateFrom || extraFilters.dateTo || extraFilters.sourceModule)
-    ? Math.min(500, Math.max(limit + skip, 500))
-    : limit;
-
-  const result = await recordsCollection
-    .where(condition)
-    .orderBy("uploadedAt", "desc")
-    .skip(extraFilters.dateFrom || extraFilters.dateTo || extraFilters.sourceModule ? 0 : skip)
-    .limit(queryLimit)
-    .get();
-
-  if (result.code) {
-    return {
-      ok: false,
-      code: result.code,
-      message: "读取实验记录失败",
-      records: []
-    };
+  const personKeys = ["studentId", "studentName", "className", "groupName"];
+  const matchesPerson = (record) => personKeys.every((key) => !normalizeText(payload[key]) || normalizeText(record[key]).toLocaleLowerCase().includes(normalizeText(payload[key]).toLocaleLowerCase()));
+  const needsScan = personKeys.some((key) => normalizeText(payload[key])) || extraFilters.dateFrom || extraFilters.dateTo || extraFilters.sourceModule;
+  if (!needsScan) {
+    const result = await recordsCollection.where(condition).orderBy("uploadedAt", "desc").skip(skip).limit(limit).get();
+    if (result.code) return { ok: false, code: "QUERY_FAILED", message: "读取实验记录失败", records: [] };
+    return { ok: true, records: Array.isArray(result.data) ? result.data : [] };
   }
-
-  return {
-    ok: true,
-    records: (Array.isArray(result.data) ? result.data : [])
-      .filter((record) => matchesExtraFilters(record, extraFilters))
-      .slice(skip, skip + limit)
-  };
+  const matched = [];
+  for (let offset = 0; matched.length < skip + limit; offset += 500) {
+    const result = await recordsCollection.where(condition).orderBy("uploadedAt", "desc").skip(offset).limit(500).get();
+    if (result.code) return { ok: false, code: "QUERY_FAILED", message: "读取实验记录失败", records: [] };
+    const page = Array.isArray(result.data) ? result.data : [];
+    matched.push(...page.filter((record) => matchesPerson(record) && matchesExtraFilters(record, extraFilters)));
+    if (page.length < 500) break;
+  }
+  return { ok: true, records: matched.slice(skip, skip + limit) };
 };

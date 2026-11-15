@@ -25,6 +25,11 @@
       "runtime": "Nodejs20.19"
     },
     {
+      "name": "updateStudentAdmin",
+      "timeout": 60,
+      "runtime": "Nodejs20.19"
+    },
+    {
       "name": "studentLogin",
       "timeout": 60,
       "runtime": "Nodejs16.13"

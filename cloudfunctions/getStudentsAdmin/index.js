@@ -50,6 +50,11 @@ function publicStudent(record) {
   };
 }
 
+function matchesFilters(record, filters) {
+  return Object.entries(filters).every(([key, value]) =>
+    !value || text(record && record[key]).toLocaleLowerCase().includes(value.toLocaleLowerCase()));
+}
+
 exports.main = async (event) => {
   try {
     if (!await isTeacher()) {
@@ -58,19 +63,30 @@ exports.main = async (event) => {
     const input = body(event);
     const limit = normalizeLimit(input.limit);
     const skip = normalizeSkip(input.skip);
-    const condition = {};
+    const filters = {};
     ["studentId", "name", "class", "group"].forEach((key) => {
-      if (text(input[key])) condition[key] = text(input[key]);
+      if (text(input[key])) filters[key] = text(input[key]);
     });
-    const result = await students.where(condition).orderBy("studentId", "asc").skip(skip).limit(limit + 1).get();
-    if (result && result.code) {
-      return { ok: false, code: "QUERY_FAILED", message: "读取学生名单失败。", records: [], hasMore: false };
+    let items;
+    if (!Object.keys(filters).length) {
+      const result = await students.orderBy("studentId", "asc").skip(skip).limit(limit + 1).get();
+      if (result && result.code) throw new Error("QUERY_FAILED");
+      items = Array.isArray(result.data) ? result.data : [];
+    } else {
+      items = [];
+      for (let offset = 0; items.length <= skip + limit; offset += 100) {
+        const result = await students.orderBy("studentId", "asc").skip(offset).limit(100).get();
+        if (result && result.code) throw new Error("QUERY_FAILED");
+        const page = Array.isArray(result.data) ? result.data : [];
+        items.push(...page.filter((record) => matchesFilters(record, filters)));
+        if (page.length < 100) break;
+      }
     }
-    const items = Array.isArray(result.data) ? result.data : [];
+    const pageItems = Object.keys(filters).length ? items.slice(skip) : items;
     return {
       ok: true,
-      records: items.slice(0, limit).map(publicStudent),
-      hasMore: items.length > limit,
+      records: pageItems.slice(0, limit).map(publicStudent),
+      hasMore: pageItems.length > limit,
       skip,
       limit
     };
@@ -79,4 +95,4 @@ exports.main = async (event) => {
   }
 };
 
-exports.__test = { normalizeLimit, normalizeSkip, publicStudent };
+exports.__test = { normalizeLimit, normalizeSkip, publicStudent, matchesFilters };

@@ -956,6 +956,24 @@
     </form>
   </dialog>
 
+  <dialog id="editStudentDialog" aria-labelledby="editStudentTitle">
+    <div class="dialog-head"><h2 id="editStudentTitle">编辑学生账号</h2></div>
+    <form class="dialog-body" id="editStudentForm">
+      <div class="dialog-grid">
+        <label class="dialog-field">学号<input id="editStudentId" readonly></label>
+        <label class="dialog-field">姓名<input id="editStudentName" required maxlength="100"></label>
+        <label class="dialog-field">班级<input id="editStudentClass" required maxlength="100"></label>
+        <label class="dialog-field">小组<input id="editStudentGroup" required maxlength="100"></label>
+        <label class="dialog-field">新密码（留空则不修改）<input id="editStudentPassword" type="password" maxlength="100" autocomplete="new-password"></label>
+      </div>
+      <p class="dialog-status" id="editStudentStatus" role="alert"></p>
+      <div class="dialog-actions">
+        <button class="btn" id="cancelEditStudentBtn" type="button">取消</button>
+        <button class="btn" id="confirmEditStudentBtn" type="submit">保存修改</button>
+      </div>
+    </form>
+  </dialog>
+
   <dialog id="deleteStudentDialog" aria-labelledby="deleteStudentTitle">
     <div class="dialog-head"><h2 id="deleteStudentTitle">删除学生账号</h2></div>
     <div class="dialog-body">
@@ -1024,6 +1042,9 @@
     const addStudentDialog = document.getElementById("addStudentDialog");
     const addStudentForm = document.getElementById("addStudentForm");
     const addStudentStatus = document.getElementById("addStudentStatus");
+    const editStudentDialog = document.getElementById("editStudentDialog");
+    const editStudentForm = document.getElementById("editStudentForm");
+    const editStudentStatus = document.getElementById("editStudentStatus");
     const deleteStudentDialog = document.getElementById("deleteStudentDialog");
     const deleteStudentSummary = document.getElementById("deleteStudentSummary");
     const deleteStudentStatus = document.getElementById("deleteStudentStatus");
@@ -1033,6 +1054,7 @@
     let currentStudents = [];
     let studentHasMore = false;
     let pendingDeleteStudent = null;
+    let pendingEditStudent = null;
 
     /*
      * admin 页面不再自行初始化 CloudBase，也不再自行创建 Auth 实例。
@@ -1094,10 +1116,13 @@
             <td>${escapeHtml(student.studentId)}</td><td>${escapeHtml(student.name)}</td>
             <td>${escapeHtml(student.class)}</td><td>${escapeHtml(student.group)}</td>
             <td>${escapeHtml(formatDate(student.createdAt))}</td>
-            <td><button class="btn danger-btn" type="button" data-delete-student="${index}">删除</button></td>
+            <td><button class="btn" type="button" data-edit-student="${index}">编辑</button> <button class="btn danger-btn" type="button" data-delete-student="${index}">删除</button></td>
           </tr>`).join("");
         studentListBody.querySelectorAll("[data-delete-student]").forEach((button) => {
           button.addEventListener("click", () => openDeleteStudentDialog(Number(button.dataset.deleteStudent)));
+        });
+        studentListBody.querySelectorAll("[data-edit-student]").forEach((button) => {
+          button.addEventListener("click", () => openEditStudentDialog(Number(button.dataset.editStudent)));
         });
       }
       studentPrevBtn.disabled = studentPageSkip === 0;
@@ -1136,6 +1161,18 @@
       deleteStudentSummary.textContent = `确定删除 ${pendingDeleteStudent.name || "该学生"}（学号：${pendingDeleteStudent.studentId}）的账号吗？`;
       deleteStudentStatus.textContent = "";
       deleteStudentDialog.showModal();
+    }
+
+    function openEditStudentDialog(index) {
+      pendingEditStudent = currentStudents[index] || null;
+      if (!pendingEditStudent) return;
+      document.getElementById("editStudentId").value = pendingEditStudent.studentId;
+      document.getElementById("editStudentName").value = pendingEditStudent.name;
+      document.getElementById("editStudentClass").value = pendingEditStudent.class;
+      document.getElementById("editStudentGroup").value = pendingEditStudent.group;
+      document.getElementById("editStudentPassword").value = "";
+      editStudentStatus.textContent = "";
+      editStudentDialog.showModal();
     }
 
     function setStatus(message) {
@@ -1465,6 +1502,7 @@
     document.getElementById("cancelExcelImportBtn").addEventListener("click", () => excelImportDialog.close());
 
     document.getElementById("cancelAddStudentBtn").addEventListener("click", () => addStudentDialog.close());
+    document.getElementById("cancelEditStudentBtn").addEventListener("click", () => editStudentDialog.close());
     document.getElementById("cancelDeleteStudentBtn").addEventListener("click", () => deleteStudentDialog.close());
 
     addStudentForm.addEventListener("submit", async (event) => {
@@ -1493,6 +1531,34 @@
         addStudentStatus.textContent = getErrorMessage(error);
       } finally {
         submitButton.disabled = false;
+      }
+    });
+
+    editStudentForm.addEventListener("submit", async (event) => {
+      event.preventDefault();
+      if (!pendingEditStudent || !isLoggedIn) return;
+      const button = document.getElementById("confirmEditStudentBtn");
+      button.disabled = true;
+      editStudentStatus.textContent = "正在保存学生账号...";
+      try {
+        const response = await window.app.callFunction({ name: "updateStudentAdmin", data: {
+          studentId: pendingEditStudent.studentId,
+          name: normalizeCell(document.getElementById("editStudentName").value),
+          class: normalizeCell(document.getElementById("editStudentClass").value),
+          group: normalizeCell(document.getElementById("editStudentGroup").value),
+          password: normalizeCell(document.getElementById("editStudentPassword").value)
+        } });
+        const result = response && (response.result || response);
+        if (!result || !result.ok) throw new Error((result && result.message) || "保存学生账号失败。");
+        const editedStudentId = pendingEditStudent.studentId;
+        editStudentDialog.close();
+        pendingEditStudent = null;
+        await loadStudents();
+        studentListStatus.textContent = `学生账号 ${editedStudentId} 已更新。`;
+      } catch (error) {
+        editStudentStatus.textContent = getErrorMessage(error);
+      } finally {
+        button.disabled = false;
       }
     });
 
