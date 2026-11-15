@@ -84,13 +84,14 @@
 
     .filters {
       display: grid;
-      grid-template-columns: repeat(5, minmax(120px, 1fr));
+      grid-template-columns: repeat(6, minmax(0, 1fr));
       gap: 12px;
       margin: 18px 0;
     }
 
     .field {
       display: grid;
+      min-width: 0;
       gap: 6px;
     }
 
@@ -508,7 +509,7 @@
 
     .filters {
       position: relative;
-      grid-template-columns: repeat(5, minmax(120px, 1fr));
+      grid-template-columns: repeat(6, minmax(0, 1fr));
       gap: 14px 12px;
       margin: 18px 0;
       padding: 54px 18px 20px;
@@ -1057,12 +1058,29 @@
     </div>
   </dialog>
 
+  <dialog id="editRecordDialog" aria-labelledby="editRecordTitle">
+    <div class="dialog-head"><h2 id="editRecordTitle">编辑实验记录</h2></div>
+    <form class="record-form" id="editRecordForm">
+      <p id="editRecordSummary"></p>
+      <label class="record-field full">实验数据 JSON<textarea id="editRecordJson" required spellcheck="false"></textarea></label>
+      <p class="record-dialog-status" id="editRecordStatus" role="alert"></p>
+      <div class="record-dialog-actions">
+        <button class="btn secondary" id="cancelEditRecordBtn" type="button">取消</button>
+        <button class="btn" id="confirmEditRecordBtn" type="submit">保存修改</button>
+      </div>
+    </form>
+  </dialog>
+
   <script src="https://static.cloudbase.net/cloudbase-js-sdk/3.0.0/cloudbase.full.js"></script>
   <script src="../assets/experiment-registry.js"></script>
   <script src="../assets/platform-core.js"></script>
   <script src="../assets/experiment-integration.js"></script>
   <script src="../assets/knowledge-pretest.js"></script>
   <script src="../assets/knowledge-posttest.js"></script>
+  <script src="../assets/knowledge-post-memory.js"></script>
+  <script src="../assets/knowledge-post-nback.js"></script>
+  <script src="../assets/knowledge-post-interference.js"></script>
+  <script src="../assets/knowledge-post-strategy.js"></script>
   <script src="../assets/knowledge-assessment.js"></script>
   <script src="../assets/inquiry-ability-survey.js"></script>
   <script src="../cloudbase.js"></script>
@@ -1096,6 +1114,9 @@
     const deleteRecordSummary = document.getElementById("deleteRecordSummary");
     const deleteRecordStatus = document.getElementById("deleteRecordStatus");
     const confirmDeleteRecordBtn = document.getElementById("confirmDeleteRecordBtn");
+    const editRecordDialog = document.getElementById("editRecordDialog");
+    const editRecordForm = document.getElementById("editRecordForm");
+    const editRecordStatus = document.getElementById("editRecordStatus");
     const filters = {
       module: document.getElementById("moduleFilter"),
       studentId: document.getElementById("studentIdFilter"),
@@ -1136,6 +1157,7 @@
     let isLoggedIn = false;
     let records = [];
     let pendingDeleteRecord = null;
+    let pendingEditRecord = null;
     let currentRecordView = "submissions";
     const DEFAULT_RECORD_DATA = Object.freeze({
       answers: {}, experimentResults: {}, knowledgeQuiz: { attempts: [] },
@@ -1358,6 +1380,7 @@
                   <td>${escapeHtml(detailCount)}</td>
                   <td>
                     <button class="btn secondary" type="button" data-detail="${index}">详情</button>
+                    ${canManageSubmission(record) ? `<button class="btn secondary" type="button" data-edit-record="${index}">编辑</button>` : ""}
                     ${canManageSubmission(record) ? `<button class="btn danger-btn" type="button" data-delete-record="${index}">删除</button>` : ""}
                   </td>
                 </tr>
@@ -1372,6 +1395,9 @@
       });
       tableWrap.querySelectorAll("[data-delete-record]").forEach((button) => {
         button.addEventListener("click", () => openDeleteRecordDialog(Number(button.dataset.deleteRecord)));
+      });
+      tableWrap.querySelectorAll("[data-edit-record]").forEach((button) => {
+        button.addEventListener("click", () => openEditRecordDialog(Number(button.dataset.editRecord)));
       });
     }
 
@@ -1388,6 +1414,19 @@
       deleteRecordSummary.textContent = `确定删除 ${record.studentName || record.studentId || "该学生"} 的“${getModuleLabel(record.module)}”正式提交（${formatDate(record.uploadedAt || record.createdAt)}）吗？`;
       deleteRecordStatus.textContent = "";
       deleteRecordDialog.showModal();
+    }
+
+    function openEditRecordDialog(index) {
+      const record = records[index];
+      if (!canManageSubmission(record)) return;
+      pendingEditRecord = record;
+      const data = record.sourceCollection === "experiment_submissions"
+        ? Object.fromEntries(["answers", "experimentResults", "knowledgeQuiz", "knowledgeAssessment", "surveys", "reflections", "aiSummary"].map((key) => [key, record.data?.[key] ?? null]))
+        : record.payload || record.data || {};
+      document.getElementById("editRecordSummary").textContent = `${record.studentName || record.studentId} · ${getModuleLabel(record.module)} · ${formatDate(record.uploadedAt || record.createdAt)}`;
+      document.getElementById("editRecordJson").value = JSON.stringify(data, null, 2);
+      editRecordStatus.textContent = "";
+      editRecordDialog.showModal();
     }
 
     function formatDate(value) {
@@ -2424,13 +2463,13 @@
         const state = record.data?.fullState || record.data || {};
         const studentId = String(record.studentId || state.studentId || "").trim();
         const timeline = state.knowledgeAssessment || {};
-        if (!studentId || (!timeline.T0 && !timeline.T5)) return;
-        if (!students.has(studentId)) students.set(studentId, { studentId, T0: null, T5: null });
+        if (!studentId || !["T0", "T1", "T2", "T3", "T4", "T5"].some((stage) => timeline[stage])) return;
+        if (!students.has(studentId)) students.set(studentId, { studentId, T0: null, T1: null, T2: null, T3: null, T4: null, T5: null });
         const student = students.get(studentId);
         student.studentName ||= record.studentName || state.studentName || "";
         student.className ||= record.className || state.className || "";
         student.groupName ||= record.groupName || state.groupName || state.groupId || "";
-        ["T0", "T5"].forEach((stage) => {
+        ["T0", "T1", "T2", "T3", "T4", "T5"].forEach((stage) => {
           const assessment = timeline[stage];
           if (assessment?.assessmentId && (!student[stage] || String(assessment.timestamp || "") > String(student[stage].timestamp || ""))) {
             student[stage] = assessment;
@@ -2441,6 +2480,7 @@
       if (!orderedStudents.length) return [];
       const pretestQuestions = window.BrainKnowledgePretestQuestions;
       const posttestQuestions = window.BrainKnowledgePosttestQuestions;
+      const stageQuestions = { T0: pretestQuestions, T1: window.BrainKnowledgePostMemoryQuestions, T2: window.BrainKnowledgePostNbackQuestions, T3: window.BrainKnowledgePostInterferenceQuestions, T4: window.BrainKnowledgePostStrategyQuestions, T5: posttestQuestions };
       const questionSetVersion = window.BrainKnowledgeAssessment.questionSetVersion;
       const posttestQuestionSetVersion = window.BrainKnowledgeAssessment.posttestQuestionSetVersion;
       const summaryRows = orderedStudents.map((student) => {
@@ -2451,12 +2491,12 @@
           t5?.correctCount ?? "", t5?.score ?? "", t5?.questionSetVersion ?? "",
           t0 && t5 ? Number(t5.score) - Number(t0.score) : ""];
       });
-      const detailRows = orderedStudents.flatMap((student) => ["T0", "T5"].flatMap((stage) => {
+      const detailRows = orderedStudents.flatMap((student) => ["T0", "T1", "T2", "T3", "T4", "T5"].flatMap((stage) => {
         const assessment = student[stage];
         if (!assessment) return [];
         const isNewPosttest = stage === "T5" && assessment.questionSetVersion === posttestQuestionSetVersion;
         const expectedVersion = isNewPosttest ? posttestQuestionSetVersion : questionSetVersion;
-        const questions = isNewPosttest ? posttestQuestions : pretestQuestions;
+        const questions = stage === "T5" && !isNewPosttest ? pretestQuestions : stageQuestions[stage];
         if (assessment.questionSetVersion !== expectedVersion) {
           return [[student.studentId, student.studentName, student.className, student.groupName,
             stage, "", "", "", "", "", "", "", "", assessment.questionSetVersion,
@@ -2682,7 +2722,7 @@
         const isAiChatExport = searchTypeFilter.value === "aiChat";
         const exportSourceRecords = isAiChatExport
           ? await fetchRecords(Object.assign({}, buildQueryPayload("submission"), { exportAll: true, skip: 0 }))
-          : records;
+          : await fetchRecords(Object.assign({}, buildQueryPayload("submission"), { exportAll: true, skip: 0 }));
         const latestStateRecords = isAiChatExport
           ? exportSourceRecords
           : getLatestStateRecords(exportSourceRecords);
@@ -2702,9 +2742,12 @@
         });
         const strategyAttemptHistory = collectStrategyAttemptHistory(latestStateRecords, cloudAttemptRecords);
         const attemptSheets = strategyAttemptHistory.length ? [buildStrategyAttemptHistorySheet(strategyAttemptHistory)] : [];
-        sheets = [buildOverviewSheet(latestStateRecords), ...buildKnowledgeComparisonSheets(latestStateRecords), ...detailSheets, ...attemptSheets];
+        sheets = [buildOverviewSheet(exportSourceRecords), ...buildKnowledgeComparisonSheets(exportSourceRecords), ...detailSheets, ...attemptSheets,
+          ["提交原始数据", [["学号", "姓名", "模块", "记录ID", "提交时间", "完整JSON"], ...exportSourceRecords.map((record) => [record.studentId, record.studentName, getModuleLabel(record.module), record.recordId, formatDate(record.createdAt), JSON.stringify(record.data || record.payload || {})])]]];
       } catch (error) {
-        console.warn("读取完整状态快照失败，将使用明细记录导出。", getErrorSummary(error));
+        console.error("读取完整状态快照失败", getErrorSummary(error));
+        setStatus(error.message || "读取完整记录失败，无法导出。");
+        return;
       }
 
       if (!sheets.length) {
@@ -2766,6 +2809,36 @@
 
     document.getElementById("cancelAddRecordBtn").addEventListener("click", () => addRecordDialog.close());
     document.getElementById("cancelDeleteRecordBtn").addEventListener("click", () => deleteRecordDialog.close());
+    document.getElementById("cancelEditRecordBtn").addEventListener("click", () => editRecordDialog.close());
+
+    editRecordForm.addEventListener("submit", async (event) => {
+      event.preventDefault();
+      if (!pendingEditRecord || !canManageSubmission(pendingEditRecord) || !isLoggedIn) return;
+      const button = document.getElementById("confirmEditRecordBtn");
+      button.disabled = true;
+      editRecordStatus.textContent = "正在保存修改...";
+      try {
+        let data;
+        try { data = JSON.parse(document.getElementById("editRecordJson").value); }
+        catch (error) { throw new Error("实验数据不是有效的 JSON。"); }
+        if (!isPlainObject(data)) throw new Error("实验数据必须是 JSON 对象。");
+        if (pendingEditRecord.sourceCollection === "experiment_submissions") validateRecordData(data);
+        const response = await window.app.callFunction({
+          name: "updateExperimentRecordAdmin",
+          data: { sourceCollection: pendingEditRecord.sourceCollection, recordId: pendingEditRecord.recordId, data }
+        });
+        const result = response && (response.result || response);
+        if (!result || !result.ok) throw new Error((result && result.message) || "保存修改失败。");
+        editRecordDialog.close();
+        pendingEditRecord = null;
+        await loadRecords();
+        setStatus("实验记录已更新。");
+      } catch (error) {
+        editRecordStatus.textContent = error && error.message ? error.message : "保存修改失败。";
+      } finally {
+        button.disabled = false;
+      }
+    });
 
     addRecordForm.addEventListener("submit", async (event) => {
       event.preventDefault();

@@ -58,7 +58,11 @@ exports.main = async (event) => {
     const input = body(event);
     const limit = normalizeLimit(input.limit);
     const skip = normalizeSkip(input.skip);
-    const result = await students.orderBy("studentId", "asc").skip(skip).limit(limit + 1).get();
+    const condition = {};
+    ["studentId", "name", "class", "group"].forEach((key) => {
+      if (text(input[key])) condition[key] = text(input[key]);
+    });
+    const result = await students.where(condition).orderBy("studentId", "asc").skip(skip).limit(limit + 1).get();
     if (result && result.code) {
       return { ok: false, code: "QUERY_FAILED", message: "读取学生名单失败。", records: [], hasMore: false };
     }

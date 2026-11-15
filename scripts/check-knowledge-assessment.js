@@ -160,16 +160,19 @@ const exportSource = dashboardSource.slice(
   dashboardSource.indexOf("function buildKnowledgeComparisonSheets(stateRecords)"),
   dashboardSource.indexOf("function buildPosterStateSheets(stateRecord)")
 );
-assert(exportSource && dashboardSource.includes("...buildKnowledgeComparisonSheets(latestStateRecords)"));
+assert(exportSource && dashboardSource.includes("...buildKnowledgeComparisonSheets(exportSourceRecords)"));
 const ids = pretest.map((item) => item.id);
 const answers = Object.fromEntries(pretest.map((item) => [item.id, item.answer]));
 const posttestIds = posttest.map((item) => item.id);
 const posttestAnswers = Object.fromEntries(posttest.map((item) => [item.id, item.answer]));
 const exportContext = {
-  window: { BrainKnowledgePretestQuestions: pretest, BrainKnowledgePosttestQuestions: posttest, BrainKnowledgeAssessment: api },
+  window: { BrainKnowledgePretestQuestions: pretest, BrainKnowledgePosttestQuestions: posttest,
+    BrainKnowledgePostMemoryQuestions: posts[0], BrainKnowledgePostNbackQuestions: posts[1],
+    BrainKnowledgePostInterferenceQuestions: posts[2], BrainKnowledgePostStrategyQuestions: posts[3], BrainKnowledgeAssessment: api },
   formatDate: (value) => value,
   stateRecords: [
     { studentId: "S2", data: { knowledgeAssessment: { T0: { assessmentId: "S2-T0", questionSetVersion: api.questionSetVersion, questionOrder: ids.slice().reverse(), answers, correctCount: 20, score: 100, timestamp: "2026-08-01" } } } },
+    { studentId: "S2", data: { knowledgeAssessment: { T1: { assessmentId: "S2-T1", questionSetVersion: api.questionSetVersion, questionOrder: posts[0].map((item) => item.id), answers: Object.fromEntries(posts[0].map((item) => [item.id, item.answer])), correctCount: 5, score: 100, timestamp: "2026-08-02" } } } },
     { studentId: "S1", data: { knowledgeAssessment: { T5: { assessmentId: "S1-T5", questionSetVersion: api.posttestQuestionSetVersion, questionOrder: posttestIds.slice().reverse(), answers: posttestAnswers, correctCount: 20, score: 100, timestamp: "2026-08-02" }, T0: { assessmentId: "S1-T0", questionSetVersion: api.questionSetVersion, questionOrder: ids, answers, correctCount: 20, score: 100, timestamp: "2026-08-01" } } } }
   ]
 };
@@ -179,8 +182,9 @@ assert.strictEqual(vm.runInNewContext("buildKnowledgeComparisonSheets([]).length
 const summaryRows = comparisonSheets[0][1];
 const detailRows = comparisonSheets[1][1];
 assert.deepStrictEqual(Array.from(summaryRows.slice(1), (row) => row[0]), ["S1", "S2"]);
-assert.strictEqual(detailRows.length, 61);
-assert.deepStrictEqual(Array.from(detailRows.filter((row) => row[0] === "S2"), (row) => row[6]), Array.from(ids));
+assert.strictEqual(detailRows.length, 66);
+assert.deepStrictEqual(Array.from(detailRows.filter((row) => row[0] === "S2" && row[4] === "T0"), (row) => row[6]), Array.from(ids));
+assert.strictEqual(detailRows.filter((row) => row[0] === "S2" && row[4] === "T1").length, 5);
 assert.deepStrictEqual(Array.from(detailRows.filter((row) => row[0] === "S1" && row[4] === "T5"), (row) => row[6]), Array.from(posttestIds));
 assert.strictEqual(detailRows.find((row) => row[0] === "S2")[12], 20, "export order must be independent of the displayed order");
 assert.strictEqual(detailRows.find((row) => row[0] === "S2")[11], 1);

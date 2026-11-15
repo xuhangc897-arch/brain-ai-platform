@@ -615,6 +615,31 @@
       font-family: var(--handwriting);
     }
 
+    .student-filters {
+      display: grid;
+      grid-template-columns: repeat(4, minmax(0, 1fr));
+      gap: 12px;
+      margin: 20px 0 12px;
+    }
+
+    .student-filters label {
+      display: grid;
+      gap: 6px;
+      color: var(--muted);
+      font-weight: 800;
+    }
+
+    .student-filters input {
+      width: 100%;
+      min-width: 0;
+      min-height: 42px;
+      border: 1px solid #8b623b;
+      border-radius: 3px;
+      padding: 0 11px;
+      color: #352619;
+      background: rgba(245, 224, 174, 0.82);
+    }
+
     .student-table-wrap {
       overflow-x: auto;
     }
@@ -650,6 +675,10 @@
         repeating-linear-gradient(0deg, transparent 0 31px, rgba(96, 62, 31, 0.055) 32px),
         #e4ca91;
       box-shadow: 0 28px 80px rgba(0, 0, 0, 0.62), inset 0 0 30px rgba(91, 56, 25, 0.1);
+    }
+
+    #importResultDialog {
+      width: min(900px, calc(100% - 28px));
     }
 
     dialog::backdrop {
@@ -782,6 +811,16 @@
       .dialog-grid {
         grid-template-columns: 1fr;
       }
+
+      .student-filters {
+        grid-template-columns: repeat(2, minmax(0, 1fr));
+      }
+    }
+
+    @media (max-width: 440px) {
+      .student-filters {
+        grid-template-columns: 1fr;
+      }
     }
 
     @media (prefers-reduced-motion: reduce) {
@@ -799,7 +838,7 @@
     <section class="panel" aria-labelledby="pageTitle">
       <div class="page-header">
         <div>
-          <h1 id="pageTitle">学生账号导入</h1>
+          <h1 id="pageTitle">学生账号管理</h1>
         </div>
         <a class="btn" href="../index.html">返回首页</a>
       </div>
@@ -809,41 +848,6 @@
         <a class="btn" href="login.html?redirect=initStudents.html">去登录</a>
       </div>
 
-      <div class="upload-box">
-        <strong>Excel 表头必须包含：学号、姓名、班级、小组；可选包含：密码</strong>
-        <div class="upload-controls">
-          <input id="excelFile" type="file" accept=".xlsx,.xls" />
-          <button class="btn" id="importBtn" type="button">开始导入</button>
-        </div>
-      </div>
-
-      <div class="actions">
-        <span class="status" id="statusText">请选择 Excel 文件。</span>
-      </div>
-
-      <table aria-label="导入结果">
-        <thead>
-          <tr>
-            <th>学号</th>
-            <th>姓名</th>
-            <th>班级</th>
-            <th>小组</th>
-            <th>结果</th>
-            <th>原因</th>
-          </tr>
-        </thead>
-        <tbody id="resultBody">
-          <tr>
-            <td colspan="6">尚未导入。</td>
-          </tr>
-        </tbody>
-      </table>
-
-      <section class="error-details" id="errorDetails" aria-labelledby="errorDetailsTitle">
-        <h2 id="errorDetailsTitle">详细错误信息</h2>
-        <pre id="errorDetailsContent">暂无错误。</pre>
-      </section>
-
       <section class="management-section" aria-labelledby="studentListTitle">
         <div class="management-head">
           <div>
@@ -851,6 +855,16 @@
             <p>名单仅显示学生资料，不显示账号密码。</p>
           </div>
           <button class="btn" id="openAddStudentBtn" type="button">添加账号</button>
+        </div>
+        <div class="student-filters" aria-label="查询学生账号">
+          <label>学号<input id="studentIdFilter" placeholder="输入学号"></label>
+          <label>姓名<input id="studentNameFilter" placeholder="输入姓名"></label>
+          <label>班级<input id="studentClassFilter" placeholder="输入班级"></label>
+          <label>小组<input id="studentGroupFilter" placeholder="输入小组"></label>
+        </div>
+        <div class="actions">
+          <button class="btn" id="searchStudentsBtn" type="button">查询</button>
+          <button class="btn" id="clearStudentFiltersBtn" type="button">清空筛选</button>
         </div>
         <p class="status" id="studentListStatus">登录后读取当前学生名单。</p>
         <div class="student-table-wrap">
@@ -868,6 +882,35 @@
     </section>
   </main>
 
+  <dialog id="addMethodDialog" aria-labelledby="addMethodTitle">
+    <div class="dialog-head"><h2 id="addMethodTitle">添加账号</h2></div>
+    <div class="dialog-body">
+      <p>请选择添加方式。</p>
+      <div class="dialog-actions">
+        <button class="btn" id="openDirectAddBtn" type="button">直接添加</button>
+        <button class="btn" id="openExcelImportBtn" type="button">Excel 导入</button>
+        <button class="btn" id="cancelAddMethodBtn" type="button">取消</button>
+      </div>
+    </div>
+  </dialog>
+
+  <dialog id="excelImportDialog" aria-labelledby="excelImportTitle">
+    <div class="dialog-head"><h2 id="excelImportTitle">Excel 导入</h2></div>
+    <div class="dialog-body">
+      <p><strong>Excel 表头必须包含：学号、姓名、班级、小组；可选包含：密码</strong></p>
+      <input id="excelFile" type="file" accept=".xlsx,.xls" />
+      <p class="dialog-status" id="statusText" role="status">请选择 Excel 文件。</p>
+      <section class="error-details" id="errorDetails" aria-labelledby="errorDetailsTitle">
+        <h2 id="errorDetailsTitle">详细错误信息</h2>
+        <pre id="errorDetailsContent">暂无错误。</pre>
+      </section>
+      <div class="dialog-actions">
+        <button class="btn" id="cancelExcelImportBtn" type="button">取消</button>
+        <button class="btn" id="importBtn" type="button">开始导入</button>
+      </div>
+    </div>
+  </dialog>
+
   <dialog id="importResultDialog" aria-labelledby="importResultTitle">
     <div class="dialog-head"><h2 id="importResultTitle">导入结果</h2></div>
     <div class="dialog-body">
@@ -884,6 +927,12 @@
           <span>失败</span>
           <strong id="failedCount">0</strong>
         </div>
+      </div>
+      <div class="student-table-wrap">
+        <table aria-label="导入结果">
+          <thead><tr><th>学号</th><th>姓名</th><th>班级</th><th>小组</th><th>结果</th><th>原因</th></tr></thead>
+          <tbody id="resultBody"><tr><td colspan="6">尚未导入。</td></tr></tbody>
+        </table>
       </div>
       <div class="dialog-actions"><button class="btn" id="closeImportResultBtn" type="button">关闭</button></div>
     </div>
@@ -954,6 +1003,8 @@
     const skippedCount = document.getElementById("skippedCount");
     const failedCount = document.getElementById("failedCount");
     const importResultDialog = document.getElementById("importResultDialog");
+    const excelImportDialog = document.getElementById("excelImportDialog");
+    const addMethodDialog = document.getElementById("addMethodDialog");
     document.getElementById("closeImportResultBtn").addEventListener("click", () => importResultDialog.close());
     const authGate = document.getElementById("authGate");
     const errorDetails = document.getElementById("errorDetails");
@@ -964,6 +1015,12 @@
     const studentNextBtn = document.getElementById("studentNextBtn");
     const studentPageLabel = document.getElementById("studentPageLabel");
     const openAddStudentBtn = document.getElementById("openAddStudentBtn");
+    const studentFilters = {
+      studentId: document.getElementById("studentIdFilter"),
+      name: document.getElementById("studentNameFilter"),
+      class: document.getElementById("studentClassFilter"),
+      group: document.getElementById("studentGroupFilter")
+    };
     const addStudentDialog = document.getElementById("addStudentDialog");
     const addStudentForm = document.getElementById("addStudentForm");
     const addStudentStatus = document.getElementById("addStudentStatus");
@@ -1010,7 +1067,7 @@
         authGate.classList.remove("is-visible");
         importBtn.disabled = false;
         openAddStudentBtn.disabled = false;
-        setStatus("已登录，请选择 Excel 文件。");
+        setStatus("请选择 Excel 文件。");
         await loadStudents();
       } else {
         authGate.classList.add("is-visible");
@@ -1054,7 +1111,11 @@
       studentNextBtn.disabled = true;
       studentListStatus.textContent = "正在读取学生名单...";
       try {
-        const response = await window.app.callFunction({ name: "getStudentsAdmin", data: { limit: STUDENT_PAGE_SIZE, skip: studentPageSkip } });
+        const response = await window.app.callFunction({ name: "getStudentsAdmin", data: {
+          limit: STUDENT_PAGE_SIZE, skip: studentPageSkip,
+          studentId: studentFilters.studentId.value.trim(), name: studentFilters.name.value.trim(),
+          class: studentFilters.class.value.trim(), group: studentFilters.group.value.trim()
+        } });
         const result = response && (response.result || response);
         if (!result || !result.ok) throw new Error((result && result.message) || "读取学生名单失败。");
         currentStudents = Array.isArray(result.records) ? result.records : [];
@@ -1385,11 +1446,23 @@
       failedCount.textContent = String(results.filter((item) => item.status === "failed").length);
     }
 
-    openAddStudentBtn.addEventListener("click", () => {
+    openAddStudentBtn.addEventListener("click", () => addMethodDialog.showModal());
+    document.getElementById("cancelAddMethodBtn").addEventListener("click", () => addMethodDialog.close());
+    document.getElementById("openDirectAddBtn").addEventListener("click", () => {
+      addMethodDialog.close();
       addStudentForm.reset();
       addStudentStatus.textContent = "";
       addStudentDialog.showModal();
     });
+    document.getElementById("openExcelImportBtn").addEventListener("click", () => {
+      addMethodDialog.close();
+      excelFile.value = "";
+      document.getElementById("importResultTitle").textContent = "导入结果";
+      setStatus("请选择 Excel 文件。");
+      hideErrorDetails();
+      excelImportDialog.showModal();
+    });
+    document.getElementById("cancelExcelImportBtn").addEventListener("click", () => excelImportDialog.close());
 
     document.getElementById("cancelAddStudentBtn").addEventListener("click", () => addStudentDialog.close());
     document.getElementById("cancelDeleteStudentBtn").addEventListener("click", () => deleteStudentDialog.close());
@@ -1455,6 +1528,19 @@
       await loadStudents();
     });
 
+    document.getElementById("searchStudentsBtn").addEventListener("click", () => {
+      studentPageSkip = 0;
+      loadStudents();
+    });
+    document.getElementById("clearStudentFiltersBtn").addEventListener("click", () => {
+      Object.values(studentFilters).forEach((input) => { input.value = ""; });
+      studentPageSkip = 0;
+      loadStudents();
+    });
+    Object.values(studentFilters).forEach((input) => input.addEventListener("keydown", (event) => {
+      if (event.key === "Enter") { event.preventDefault(); studentPageSkip = 0; loadStudents(); }
+    }));
+
     importBtn.addEventListener("click", async () => {
       if (!isLoggedIn) {
         authGate.classList.add("is-visible");
@@ -1516,6 +1602,7 @@
           renderResults(results);
           updateCounts(results);
           setStatus(NO_STUDENTS_MESSAGE);
+          excelImportDialog.close();
           importResultDialog.showModal();
           return;
         }
@@ -1541,7 +1628,8 @@
         renderResults(results);
         updateCounts(results);
 
-        setStatus("导入结束，详细结果见下表。");
+        document.getElementById("importResultTitle").textContent = results.some((item) => item.status === "success") && !results.some((item) => item.status === "failed") ? "导入成功！" : "导入结果";
+        excelImportDialog.close();
         importResultDialog.showModal();
         studentPageSkip = 0;
         await loadStudents();

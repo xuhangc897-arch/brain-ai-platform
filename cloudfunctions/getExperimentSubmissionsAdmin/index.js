@@ -23,6 +23,15 @@ function asLegacyDashboardRecord(item) {
     sourceCollection: "experimentRecords"
   });
 }
+async function readAll(collection, condition) {
+  const records = [];
+  for (let skip = 0; ; skip += 500) {
+    const result = await collection.where(condition).orderBy("uploadedAt", "desc").skip(skip).limit(500).get();
+    const page = Array.isArray(result.data) ? result.data : [];
+    records.push(...page);
+    if (page.length < 500) return records;
+  }
+}
 
 exports.main = async (event) => {
   if (!await isTeacher()) return { ok: false, code: "FORBIDDEN", records: [] };
@@ -31,16 +40,19 @@ exports.main = async (event) => {
   if (text(input.studentId)) { newCondition.studentId = text(input.studentId); legacyCondition.studentId = text(input.studentId); }
   if (text(input.module)) { newCondition.experimentId = text(input.module); legacyCondition.module = text(input.module); }
   ["studentName", "className", "groupName"].forEach((key) => { if (text(input[key])) { newCondition[key] = text(input[key]); legacyCondition[key] = text(input[key]); } });
-  const [newResult, legacyResult] = await Promise.all([
-    submissions.where(newCondition).orderBy("uploadedAt", "desc").limit(limit).get(),
-    legacyRecords.where(legacyCondition).orderBy("uploadedAt", "desc").limit(limit).get()
-  ]);
-  const records = (Array.isArray(newResult.data) ? newResult.data.map(asDashboardRecord) : []).concat(Array.isArray(legacyResult.data) ? legacyResult.data.map(asLegacyDashboardRecord) : []);
+  const exportAll = Boolean(input.exportAll);
+  const [newResult, legacyResult] = await Promise.all(exportAll
+    ? [readAll(submissions, newCondition), readAll(legacyRecords, legacyCondition)]
+    : [submissions.where(newCondition).orderBy("uploadedAt", "desc").limit(limit).get(), legacyRecords.where(legacyCondition).orderBy("uploadedAt", "desc").limit(limit).get()]);
+  const newData = exportAll ? newResult : newResult.data;
+  const legacyData = exportAll ? legacyResult : legacyResult.data;
+  const records = (Array.isArray(newData) ? newData.map(asDashboardRecord) : []).concat(Array.isArray(legacyData) ? legacyData.map(asLegacyDashboardRecord) : []);
   records.sort((left, right) => timeValue(right.uploadedAt || right.createdAt) - timeValue(left.uploadedAt || left.createdAt));
   const from = text(input.dateFrom) ? Date.parse(`${text(input.dateFrom)}T00:00:00+08:00`) : 0;
   const to = text(input.dateTo) ? Date.parse(`${text(input.dateTo)}T23:59:59.999+08:00`) : Number.MAX_SAFE_INTEGER;
   const skip = Math.max(0, Number(input.skip) || 0);
-  return { ok: true, records: records.filter((record) => { const value = timeValue(record.uploadedAt || record.createdAt); return value >= from && value <= to; }).slice(skip, skip + limit) };
+  const filtered = records.filter((record) => { const value = timeValue(record.uploadedAt || record.createdAt); return value >= from && value <= to; });
+  return { ok: true, records: exportAll ? filtered : filtered.slice(skip, skip + limit) };
 };
 
 exports.__test = { asDashboardRecord, asLegacyDashboardRecord, timeValue };
