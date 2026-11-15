@@ -1136,16 +1136,20 @@
       studentNextBtn.disabled = true;
       studentListStatus.textContent = "正在读取学生名单...";
       try {
-        const response = await window.app.callFunction({ name: "getStudentsAdmin", data: {
-          limit: STUDENT_PAGE_SIZE, skip: studentPageSkip,
-          studentId: studentFilters.studentId.value.trim(), name: studentFilters.name.value.trim(),
-          class: studentFilters.class.value.trim(), group: studentFilters.group.value.trim()
-        } });
-        const result = response && (response.result || response);
-        if (!result || !result.ok) throw new Error((result && result.message) || "读取学生名单失败。");
-        currentStudents = Array.isArray(result.records) ? result.records : [];
-        studentHasMore = Boolean(result.hasMore);
-        studentListStatus.textContent = `当前页共 ${currentStudents.length} 个学生账号。`;
+        const allStudents = [];
+        for (let skip = 0; ; skip += STUDENT_PAGE_SIZE) {
+          const response = await window.app.callFunction({ name: "getStudentsAdmin", data: { limit: STUDENT_PAGE_SIZE, skip } });
+          const result = response && (response.result || response);
+          if (!result || !result.ok) throw new Error((result && result.message) || "读取学生名单失败。");
+          allStudents.push(...(Array.isArray(result.records) ? result.records : []));
+          if (!result.hasMore) break;
+        }
+        const filtered = allStudents.filter((student) => Object.entries(studentFilters).every(([key, input]) =>
+          !input.value.trim() || String(student[key] || "").toLocaleLowerCase().includes(input.value.trim().toLocaleLowerCase())));
+        if (studentPageSkip >= filtered.length) studentPageSkip = Math.max(0, Math.floor((filtered.length - 1) / STUDENT_PAGE_SIZE) * STUDENT_PAGE_SIZE);
+        currentStudents = filtered.slice(studentPageSkip, studentPageSkip + STUDENT_PAGE_SIZE);
+        studentHasMore = filtered.length > studentPageSkip + STUDENT_PAGE_SIZE;
+        studentListStatus.textContent = `共找到 ${filtered.length} 个学生账号。`;
         renderStudentList();
       } catch (error) {
         currentStudents = [];
