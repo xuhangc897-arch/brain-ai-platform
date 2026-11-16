@@ -1480,11 +1480,7 @@
     }
 
     function formatDate(value) {
-      if (!value) return "";
-      if (typeof value === "string") return value;
-      if (value.$date) return new Date(value.$date).toLocaleString();
-      if (value.seconds) return new Date(value.seconds * 1000).toLocaleString();
-      return String(value);
+      return BrainPlatform.time.formatBeijing(value);
     }
 
     function showDetail(index) {
@@ -1565,7 +1561,7 @@
           '</td><td>' + escapeHtml(record.memoryType === "overall" ? "综合记忆" : "实验记忆") +
           '</td><td>' + escapeHtml(record.experimentId || record.lastCompletedExperiment || "-") +
           '</td><td>' + escapeHtml(record.version || 1) +
-          '</td><td>' + escapeHtml(record.completedAt || "") +
+          '</td><td>' + escapeHtml(formatDate(record.completedAt)) +
           '</td><td><button class="btn secondary" type="button" data-memory-detail="' + index + '">查看摘要</button></td></tr>').join("") +
         '</tbody></table>';
       tableWrap.querySelectorAll("[data-memory-detail]").forEach((button) => {
@@ -1827,18 +1823,6 @@
       inquiryParticipation: MEMORY_SURVEY_DEFS.inquiryParticipation
     };
 
-    const MEMORY_KNOWLEDGE_ITEMS = [
-      { question: "本次实验主要探究的是（ ）", options: { A: "长时记忆容量", B: "工作记忆能力", C: "短时记忆容量", D: "情绪对记忆的影响" }, answer: "C" },
-      { question: "实验中我们可以使用什么材料测量短时记忆容量？", options: { A: "图形", B: "汉字", C: "数字", D: "以上都可以" }, answer: "D" },
-      { question: "随着数字长度不断增加，大多数人的正确率通常会（ ）", options: { A: "提高", B: "保持不变", C: "降低", D: "先升高再降低" }, answer: "C" },
-      { question: "下列哪项最可能影响短时记忆实验结果？", options: { A: "是否专心", B: "数字呈现速度", C: "数字长度", D: "以上都有可能" }, answer: "D" },
-      { question: "为了保证实验公平，下列哪项最好保持一致？", options: { A: "测试方式", B: "数字呈现时间", C: "实验环境", D: "以上都要" }, answer: "D" },
-      { question: "本次实验结论主要依据什么得出？", options: { A: "老师讲解", B: "同学猜测", C: "实验数据", D: "网络资料" }, answer: "C" },
-      { question: "如果连续两次实验结果差别很大，下列哪项最值得先检查？", options: { A: "是否认真完成实验", B: "是否记录准确", C: "是否受到干扰", D: "以上都有可能" }, answer: "D" },
-      { question: "为了让实验结果更加可靠，可以怎样做？", options: { A: "增加测试次数", B: "增加参与人数", C: "比较多次结果", D: "以上都可以" }, answer: "D" },
-      { question: "如果要记住一串较长的电话号码，下面哪种方法更符合今天实验得到的启示？", options: { A: "一次全部记住", B: "分成几段分别记忆", C: "只看一遍", D: "闭眼等待" }, answer: "B" },
-      { question: "如果老师一次说了很多内容，你应该怎样做更容易记住？", options: { A: "全部硬记", B: "边听边整理重点", C: "什么也不记", D: "等别人告诉自己" }, answer: "B" }
-    ];
 
     function buildSurveySheet(studentLabel, state, surveyKey, surveyDefs = MEMORY_SURVEY_DEFS) {
       const def = surveyDefs[surveyKey];
@@ -1864,20 +1848,31 @@
 
     function buildKnowledgeQuizSheet(studentLabel, state) {
       const quiz = state.knowledgeQuiz || {};
-      const answers = quiz.answers || {};
+      const attempt = (Array.isArray(quiz.attempts) && quiz.attempts.length ? quiz.attempts : quiz.history || []).at(-1) || quiz;
+      const answers = attempt.answers || quiz.answers || {};
+      const snapshot = Array.isArray(attempt.questionSnapshot) ? attempt.questionSnapshot : [];
+      const totalCount = Number(attempt.totalCount) || snapshot.length || Object.keys(answers).length;
+      const snapshotValid = snapshot.length === totalCount && snapshot.every((item) => item && item.question && item.options && item.answer);
+      const snapshotCorrect = snapshotValid ? snapshot.filter((item, index) => answers[`q${index + 1}`] === item.answer).length : null;
+      const snapshotWrong = snapshotValid ? snapshot.flatMap((item, index) => answers[`q${index + 1}`] === item.answer ? [] : [index + 1]) : [];
+      const canVerify = snapshotValid && (attempt.correctCount == null || snapshotCorrect === Number(attempt.correctCount)) &&
+        (attempt.score == null || Math.round(snapshotCorrect / totalCount * 100) === Number(attempt.score)) &&
+        (!Array.isArray(attempt.wrongQuestions) || JSON.stringify(snapshotWrong) === JSON.stringify(attempt.wrongQuestions));
 
       return [`${studentLabel}-案件知识验证`, [
         ["题号", "题目", "学生答案", "正确答案", "是否正确"],
-        ...MEMORY_KNOWLEDGE_ITEMS.map((item, index) => {
+        ...Array.from({ length: totalCount }, (_, index) => {
+          const item = snapshot[index];
           const itemKey = `q${index + 1}`;
-          const answer = answers[itemKey] || "";
-          const answerText = answer ? `${answer} ${item.options[answer] || ""}` : "";
-          const correctText = `${item.answer} ${item.options[item.answer]}`;
-          return [String(index + 1), item.question, answerText, correctText, answer ? (answer === item.answer ? "正确" : "错误") : "未作答"];
+          const answer = answers[itemKey] ?? "";
+          const answerText = answer && canVerify ? `${answer} ${item.options[answer] || ""}` : answer;
+          const correctText = canVerify ? `${item.answer} ${item.options[item.answer] || ""}` : "";
+          return [String(index + 1), item?.question || "", answerText, correctText, answer ? (canVerify ? (answer === item.answer ? "正确" : "错误") : "无法核验") : "未作答"];
         }),
-        ["汇总", "答对数量", `${quiz.correctCount || 0} / ${MEMORY_KNOWLEDGE_ITEMS.length}`, "", ""],
-        ["汇总", "知识验证得分", quiz.score || 0, "总成绩", `${quiz.score || 0} / 100`],
-        ["汇总", "提交时间", quiz.submittedAt ? new Date(quiz.submittedAt).toLocaleString() : "", "", ""]
+        ["汇总", "答对数量", `${attempt.correctCount ?? quiz.correctCount ?? ""} / ${totalCount}`, "", ""],
+        ["汇总", "知识验证得分", attempt.score ?? quiz.score ?? "", "总成绩", `${attempt.score ?? quiz.score ?? ""} / 100`],
+        ["汇总", "正确率", attempt.accuracy ?? quiz.accuracy ?? "", "错误题号", Array.isArray(attempt.wrongQuestions) ? attempt.wrongQuestions.join("、") : ""],
+        ["汇总", "提交时间", (attempt.submittedAt || attempt.timestamp || quiz.submittedAt) ? formatDate(attempt.submittedAt || attempt.timestamp || quiz.submittedAt) : "", "", ""]
       ]];
     }
 
@@ -1887,7 +1882,7 @@
         ["提交次数", "提交时间", "得分", "正确题数", "总题数", "正确率", "错误题号"],
         ...history.map((record) => [
           record.attemptNumber,
-          record.submittedAt ? new Date(record.submittedAt).toLocaleString() : "",
+          record.submittedAt ? formatDate(record.submittedAt) : "",
           record.score,
           record.correctCount,
           record.totalCount,
@@ -1918,8 +1913,8 @@
           ["学生年龄", state.studentAge || ""],
           ["学生编号", state.studentId || stateRecord.studentId],
           ["小组编号", state.groupId || state.groupName || stateRecord.groupName || ""],
-          ["实验时间", state.savedAt || ""],
-          ["导出时间", new Date().toLocaleString()]
+          ["实验时间", formatDate(state.savedAt)],
+          ["导出时间", BrainPlatform.time.formatBeijing(new Date())]
         ]],
         [`${studentLabel}-实验过程`, [
           ["字段", "内容"],
@@ -1969,7 +1964,7 @@
             record.answer,
             record.isCorrect ? "正确" : "错误",
             record.finalCapacity,
-            record.createdAt
+            formatDate(record.createdAt)
           ])
         ]],
         [`${studentLabel}-容量汇总`, [
@@ -1984,14 +1979,15 @@
         buildSurveySheet(studentLabel, state, "cognitiveLoad", NBACK_SURVEY_DEFS),
         buildSurveySheet(studentLabel, state, "inquiryParticipation", NBACK_SURVEY_DEFS),
         buildSurveySheet(studentLabel, state, "inquiryAbility", NBACK_SURVEY_DEFS),
+        buildKnowledgeQuizSheet(studentLabel, state),
         ...(Number(stateRecord.schemaVersion) >= 2
           ? [buildKnowledgeAssessmentSheet(studentLabel, state)]
-          : [buildKnowledgeQuizSheet(studentLabel, state), buildKnowledgeHistorySheet(studentLabel, state)]),
+          : [buildKnowledgeHistorySheet(studentLabel, state)]),
         [`${studentLabel}-系统信息`, [
           ["项目", "内容"],
           ["实验版本", "science-inquiry-static-v1"],
-          ["保存时间", state.savedAt || ""],
-          ["导出时间", new Date().toLocaleString()],
+          ["保存时间", formatDate(state.savedAt)],
+          ["导出时间", BrainPlatform.time.formatBeijing(new Date())],
           ["当前步骤", state.currentStep == null ? "" : String(Number(state.currentStep) + 1)],
           ["过程性实验记录数", memoryRecords.length]
         ]],
@@ -2061,7 +2057,7 @@
               data.answer,
               data.isCorrect ? "正确" : "错误",
               data.finalCapacity ?? data.capacityAfterTrial ?? "",
-              data.createdAt
+              formatDate(data.createdAt)
             ];
           })
         ]
@@ -2148,8 +2144,8 @@
           ["学生年龄", state.studentAge || ""],
           ["学生编号", state.studentId || stateRecord.studentId],
           ["小组编号", state.groupId || state.groupName || stateRecord.groupName || ""],
-          ["实验时间", state.savedAt || ""],
-          ["导出时间", new Date().toLocaleString()]
+          ["实验时间", formatDate(state.savedAt)],
+          ["导出时间", BrainPlatform.time.formatBeijing(new Date())]
         ]],
         [`${studentLabel}-实验过程`, [
           ["字段", "内容"],
@@ -2204,7 +2200,7 @@
               recordType === "miss" ? "是" : "否",
               recordType === "observe" ? "无需判断" : recordType === "miss" ? "漏答" : record.isCorrect ? "正确" : "错误",
               record.responseTime,
-              record.createdAt
+              formatDate(record.createdAt)
             ];
           })
         ]],
@@ -2222,11 +2218,12 @@
         buildSurveySheet(studentLabel, state, "cognitiveLoad"),
         buildSurveySheet(studentLabel, state, "inquiryParticipation"),
         buildSurveySheet(studentLabel, state, "inquiryAbility"),
+        buildKnowledgeQuizSheet(studentLabel, state),
         [`${studentLabel}-系统信息`, [
           ["项目", "内容"],
           ["实验版本", "science-inquiry-static-v1"],
-          ["保存时间", state.savedAt || ""],
-          ["导出时间", new Date().toLocaleString()],
+          ["保存时间", formatDate(state.savedAt)],
+          ["导出时间", BrainPlatform.time.formatBeijing(new Date())],
           ["当前步骤", state.currentStep == null ? "" : String(Number(state.currentStep) + 1)],
           ["过程性实验记录数", testRuns.length]
         ]],
@@ -2261,9 +2258,9 @@
             ["班级", state.className || stateRecord.className || ""],
             ["小组", state.groupName || state.groupId || stateRecord.groupName || ""],
             ["学生年龄", state.studentAge || ""],
-            ["实验时间", state.savedAt || ""],
+            ["实验时间", formatDate(state.savedAt)],
             ["后台提交时间", formatDate(stateRecord.uploadedAt || stateRecord.createdAt)],
-            ["导出时间", new Date().toLocaleString()]
+            ["导出时间", BrainPlatform.time.formatBeijing(new Date())]
           ]],
           [`${studentLabel}-探究填写字段`, [
             ["字段", "内容"],
@@ -2273,6 +2270,7 @@
           buildSurveySheet(studentLabel, state, "cognitiveLoad"),
           buildSurveySheet(studentLabel, state, "inquiryParticipation"),
           buildSurveySheet(studentLabel, state, "inquiryAbility"),
+          buildKnowledgeQuizSheet(studentLabel, state),
           [`${studentLabel}-localStorage原始数据`, [
             ["localStorage key", "JSON"],
             [storageKey, JSON.stringify(state)]
@@ -2316,7 +2314,7 @@
           record.headband,
           record.emotionRating,
           record.reactionTime,
-          record.createdAt
+          formatDate(record.createdAt)
         ])
       ]];
 
@@ -2392,7 +2390,7 @@
           record.reactionTime,
           record.headband,
           record.scoreTotal,
-          record.createdAt
+          formatDate(record.createdAt)
         ])
       ]];
       const summarySheet = [`${base.studentLabel}-轮次阶段汇总`, [
@@ -2420,7 +2418,7 @@
           record.scoreUse,
           record.scoreConfidence,
           adjustedScoreTotal(record),
-          record.createdAt
+          formatDate(record.createdAt)
         ])
       ]];
 
@@ -2487,7 +2485,7 @@
           record.correctCount ?? "",
           record.accuracy == null ? "" : `${record.accuracy}%`,
           record.reactionTime || "",
-          record.createdAt || "",
+          formatDate(record.createdAt),
           record.cloudUploadedAt || "",
           record.clientRecordId || ""
         ])
@@ -2517,6 +2515,7 @@
           const assessment = timeline[stage];
           if (assessment?.assessmentId && (!student[stage] || String(assessment.timestamp || "") > String(student[stage].timestamp || ""))) {
             student[stage] = assessment;
+            student[`${stage}Quiz`] = state.knowledgeQuiz || {};
           }
         });
       });
@@ -2538,6 +2537,27 @@
       const detailRows = orderedStudents.flatMap((student) => ["T0", "T1", "T2", "T3", "T4", "T5"].flatMap((stage) => {
         const assessment = student[stage];
         if (!assessment) return [];
+        if (["T1", "T2", "T3", "T4"].includes(stage)) {
+          const quiz = student[`${stage}Quiz`] || {};
+          const attempt = (Array.isArray(quiz.attempts) && quiz.attempts.length ? quiz.attempts : quiz.history || []).at(-1) || quiz;
+          const snapshot = Array.isArray(attempt.questionSnapshot) ? attempt.questionSnapshot : [];
+          const ids = assessment.questionOrder?.length ? assessment.questionOrder : Object.keys(assessment.answers || {});
+          const byId = new Map(snapshot.map((item) => [item.id, item]));
+          const snapshotWrong = ids.flatMap((id, index) => assessment.answers?.[id] === byId.get(id)?.answer ? [] : [index + 1]);
+          const verified = snapshot.length === ids.length && ids.every((id) => byId.get(id)?.answer) &&
+            ids.every((id, index) => attempt.answers?.[`q${index + 1}`] === assessment.answers?.[id]) &&
+            ids.length - snapshotWrong.length === Number(assessment.correctCount) &&
+            Math.round((ids.length - snapshotWrong.length) / ids.length * 100) === Number(assessment.score) &&
+            (!Array.isArray(attempt.wrongQuestions) || JSON.stringify(snapshotWrong) === JSON.stringify(attempt.wrongQuestions));
+          return ids.map((id, index) => {
+            const item = byId.get(id);
+            const answer = assessment.answers?.[id] || "";
+            return [student.studentId, student.studentName, student.className, student.groupName,
+              stage, index + 1, id, verified ? item.category || "" : "", verified ? item.question : "", answer,
+              verified ? item.answer : "", verified && answer ? Number(answer === item.answer) : "无法核验",
+              index + 1, assessment.questionSetVersion, formatDate(assessment.timestamp), verified ? "" : "缺少可信的提交时题目快照，无法核验"];
+          });
+        }
         const isNewPosttest = stage === "T5" && assessment.questionSetVersion === posttestQuestionSetVersion;
         const expectedVersion = isNewPosttest ? posttestQuestionSetVersion : questionSetVersion;
         const questions = stage === "T5" && !isNewPosttest ? pretestQuestions : stageQuestions[stage];
@@ -2580,9 +2600,9 @@
           ["班级", state.className || stateRecord.className || ""],
           ["小组", state.groupName || state.groupId || stateRecord.groupName || ""],
           ["学生年龄", state.studentAge || ""],
-          ["实验时间", state.savedAt || ""],
+          ["实验时间", formatDate(state.savedAt)],
           ["后台提交时间", formatDate(stateRecord.uploadedAt || stateRecord.createdAt)],
-          ["导出时间", new Date().toLocaleString()]
+          ["导出时间", BrainPlatform.time.formatBeijing(new Date())]
         ]],
         buildKnowledgeAssessmentSheet(studentLabel, state, Number(stateRecord.schemaVersion) < 2),
         [`${studentLabel}-海报方案与反思`, [
@@ -2646,7 +2666,7 @@
             record.title,
             record.targetGroup,
             record.score,
-            record.createdAt
+            formatDate(record.createdAt)
           ]),
           ...Object.entries(scores).map(([key, value]) => [
             state.studentId || stateRecord.studentId,
@@ -2687,9 +2707,9 @@
           ["班级", state.className || stateRecord.className || ""],
           ["小组", state.groupName || state.groupId || stateRecord.groupName || ""],
           ["学生年龄", state.studentAge || ""],
-          ["完成时间", state.completedAt || ""],
+          ["完成时间", formatDate(state.completedAt)],
           ["后台提交时间", formatDate(stateRecord.uploadedAt || stateRecord.createdAt)],
-          ["导出时间", new Date().toLocaleString()]
+          ["导出时间", BrainPlatform.time.formatBeijing(new Date())]
         ]],
         [`${studentLabel}-资格审查结果`, [
           ["题号", "题目", "作答结果", "每题得分"],
@@ -2732,7 +2752,7 @@
             data.sourceModule || "",
             log.experimentName || data.experimentName || log.pageTitle || data.pageTitle || "",
             log.currentStep || "",
-            log.timestamp || "",
+            formatDate(log.timestamp),
             log.question || "",
             log.answer || ""
           ])
@@ -2742,7 +2762,7 @@
           ["来源模块", data.sourceModule || ""],
           ["页面路径", data.path || ""],
           ["对话条数", logs.length],
-          ["提交时间", data.createdAt || stateRecord.createdAt || ""],
+          ["提交时间", formatDate(data.createdAt || stateRecord.createdAt)],
           ["JSON", JSON.stringify(data)]
         ]]
       ];
@@ -2813,7 +2833,7 @@
       const url = URL.createObjectURL(blob);
       const link = document.createElement("a");
       link.href = url;
-      link.download = `实验完整数据_${new Date().toISOString().slice(0, 10)}.xls`;
+      link.download = `实验完整数据_${new Date(Date.now() + 8 * 60 * 60 * 1000).toISOString().slice(0, 10)}.xls`;
       document.body.appendChild(link);
       link.click();
       document.body.removeChild(link);
@@ -2822,8 +2842,7 @@
     }
 
     function localDateTimeValue(date = new Date()) {
-      const local = new Date(date.getTime() - date.getTimezoneOffset() * 60000);
-      return local.toISOString().slice(0, 16);
+      return new Date(date.getTime() + 8 * 60 * 60 * 1000).toISOString().slice(0, 16);
     }
 
     function isPlainObject(value) {
@@ -2902,7 +2921,7 @@
         const studentId = document.getElementById("recordStudentId").value.trim();
         const experimentId = document.getElementById("recordExperimentId").value.trim();
         const submissionTimeValue = document.getElementById("recordSubmissionTime").value;
-        const submissionTime = new Date(submissionTimeValue);
+        const submissionTime = new Date(`${submissionTimeValue}+08:00`);
         if (!submissionTimeValue || Number.isNaN(submissionTime.getTime())) throw new Error("提交时间无效。");
         const response = await window.app.callFunction({
           name: "createExperimentRecordAdmin",

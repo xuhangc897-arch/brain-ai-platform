@@ -1333,7 +1333,7 @@
         <div class="actions">
           <button class="btn ghost" type="button" id="prevStep">上一页</button>
           ${isFinalStep && page === pageCount - 1
-            ? (state.posttestSurveysSubmitted ? '<button class="btn secondary final-step-action" type="button" id="reviewReportBtn">生成记忆侦探报告</button>' : '<button class="btn" type="button" id="posttestSubmit">提交侦探小结</button>')
+            ? (state.posttestSurveysSubmitted ? '<button class="btn secondary final-step-action" type="button" id="reviewReportBtn">提交侦探小结</button>' : '<button class="btn" type="button" id="posttestSubmit">提交侦探小结</button>')
             : '<button class="btn" type="button" id="nextStep">下一页</button>'}
         </div>
       `;
@@ -1352,7 +1352,7 @@
     }
 
     function renderPosttestStep(page) {
-      if (state.posttestSurveysSubmitted) return `<div class="knowledge-complete"><h3>侦探小结已完成</h3><p>问卷已提交，现在可以生成最终报告。</p></div>`;
+      if (state.posttestSurveysSubmitted) return `<div class="knowledge-complete"><h3>侦探小结已完成</h3><p>问卷已提交，请提交侦探小结以查看报告。</p></div>`;
       const metaPages = Math.ceil(metaSurvey.items.length / SURVEY_PAGE_SIZE);
       const inquiryPages = Math.ceil(inquiryAbilitySurvey.items.length / SURVEY_PAGE_SIZE);
       if (page < metaPages + inquiryPages) {
@@ -1362,7 +1362,7 @@
       }
       const record = state.knowledgeAssessment?.T5;
       if (record) {
-        return `<div class="knowledge-complete"><h3>侦探小结已完成</h3><p>作答已提交并锁定，现在可以生成最终报告。</p></div>`;
+        return `<div class="knowledge-complete"><h3>侦探小结已完成</h3><p>作答已提交并锁定，请提交侦探小结以查看报告。</p></div>`;
       }
       const draft = state.knowledgeDraftT5;
       const knowledgePage = page - metaPages - inquiryPages;
@@ -1747,7 +1747,7 @@
       state.posttestSurveysSubmitted = true;
       saveState();
       renderApp();
-      showStepMessage("侦探小结已完成，作答已锁定。");
+      generateReviewReport("poster");
     }
 
     function savePosterScoreRecord(indicatorKey, groupNumber, value) {
@@ -1765,7 +1765,7 @@
         title: indicator.title || "",
         targetGroup,
         score: value || "",
-        createdAt: new Date().toLocaleString(),
+        createdAt: new Date().toISOString(),
         ...getStudentIdentityFields()
       };
 
@@ -1781,12 +1781,19 @@
         showStepMessage("请先完成侦探小结。");
         return;
       }
+      const reportTab = window.open("about:blank", "_blank");
+      if (reportTab) window.focus();
       const button = document.getElementById("reviewReportBtn");
       if (button) button.disabled = true;
       saveState();
       const result = await submitPosterRecord();
-      if (result?.ok) window.BrainExperimentBridge.finishReport(activityType, result.submissionId || "");
-      else alert(result?.queued ? "正式提交尚未上传成功，请保持联网后重试。" : "正式提交失败，请稍后重试。");
+      if (result?.ok) {
+        alert("活动五侦探小结已完成！");
+        window.BrainExperimentBridge.finishReport(activityType, result.submissionId || "", reportTab);
+      } else {
+        reportTab?.close();
+        alert(result?.queued ? "正式提交尚未上传成功，请保持联网后重试。" : "正式提交失败，请稍后重试。");
+      }
       if (button) button.disabled = false;
     }
     function submitPosterRecord() {
@@ -1863,7 +1870,7 @@
           ["学生年龄", state.studentAge || ""],
           ["学生编号", state.studentId],
           ["小组编号", state.groupId],
-          ["导出时间", new Date().toLocaleString()]
+          ["导出时间", BrainPlatform.time.formatBeijing(new Date())]
         ]],
         ["校园委托档案", [
           ["字段", "内容"],
@@ -1908,7 +1915,7 @@
         ]],
         ["海报评分明细", [
           ["学号", "姓名", "班级", "小组", "评价维度", "具体指标", "被评分小组", "得分", "记录时间"],
-          ...(state.scoreRecords || []).map((record) => [record.studentId || state.studentId, record.studentName || state.studentName || "", record.className || state.className || "", record.groupName || record.groupId || state.groupName || state.groupId || "", record.dimension, record.title, record.targetGroup, record.score, record.createdAt]),
+          ...(state.scoreRecords || []).map((record) => [record.studentId || state.studentId, record.studentName || state.studentName || "", record.className || state.className || "", record.groupName || record.groupId || state.groupName || state.groupId || "", record.dimension, record.title, record.targetGroup, record.score, BrainPlatform.time.formatBeijing(record.createdAt)]),
           ...scoreRows.map((row) => [state.studentId, state.studentName || "", state.className || "", state.groupName || state.groupId || "", ...row, ""])
         ]],
         ["各组汇总得分", [

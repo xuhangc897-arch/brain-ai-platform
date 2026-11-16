@@ -22,11 +22,7 @@
   }
 
   function formatDate(value) {
-    if (!value) return "";
-    if (typeof value === "string") return new Date(value).toLocaleString();
-    if (value.$date) return new Date(value.$date).toLocaleString();
-    if (value.seconds) return new Date(value.seconds * 1000).toLocaleString();
-    return "";
+    return window.BrainPlatform.time.formatBeijing(value);
   }
 
   function renderDiagnosis(diagnosis) {

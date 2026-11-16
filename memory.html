@@ -1777,7 +1777,8 @@
         totalCount,
         accuracy: Number(record.accuracy || (totalCount ? Math.round((correctCount / totalCount) * 100) : 0)),
         answers: Object.assign({}, record.answers || {}),
-        wrongQuestions: Array.isArray(record.wrongQuestions) ? record.wrongQuestions : []
+        wrongQuestions: Array.isArray(record.wrongQuestions) ? record.wrongQuestions : [],
+        questionSnapshot: Array.isArray(record.questionSnapshot) ? record.questionSnapshot.map((item) => ({ id: item.id, question: item.question, options: { ...item.options }, answer: item.answer })) : []
       };
     }
 
@@ -1796,7 +1797,8 @@
           correctCount: incoming.correctCount,
           totalCount: KNOWLEDGE_QUIZ.items.length,
           answers: incoming.answers || {},
-          wrongQuestions: incoming.wrongQuestions
+          wrongQuestions: incoming.wrongQuestions,
+          questionSnapshot: incoming.questionSnapshot
         }, 0));
       }
       merged.history = history;
@@ -1867,8 +1869,8 @@
         trialsPerParticipant: 3,
         brainFinding: "",
         conclusionCapacity: "",
-        hypothesisRelation: "一致",
-        millerRelation: "一致",
+        hypothesisRelation: "",
+        millerRelation: "",
         finalConclusion: "",
         designImprove: "",
         teamwork: "",
@@ -2039,7 +2041,7 @@
     function renderQuestionSentence(field, label) {
       const suffix = getQuestionSuffix(state.fields[field]);
       state.fields[field] = buildQuestionValue(suffix);
-      return `<label class="question-sentence"><span>${QUESTION_PREFIX}</span><input type="text" data-question-suffix="${field}" data-agent-track="true" data-experiment-id="memory" data-stage-id="question" data-task-id="${field}" aria-label="${escapeHtml(label)}后半句" value="${escapeHtml(suffix)}" placeholder="大约是多少个信息单位"><span>？</span></label>`;
+      return `<label class="question-sentence"><span>${QUESTION_PREFIX}</span><input type="text" data-question-suffix="${field}" data-agent-track="true" data-experiment-id="memory" data-stage-id="question" data-task-id="${field}" aria-label="${escapeHtml(label)}后半句" value="${escapeHtml(suffix)}"><span>？</span></label>`;
     }
     function renderGroupInput(field, placeholder = "") {
       return `<input type="number" min="0" max="12" step="0.1" data-field="${field}" value="${escapeHtml(state.fields[field])}" placeholder="${escapeHtml(placeholder)}" />`;
@@ -2282,13 +2284,13 @@
       pages.push({
         title: "完成侦探小结",
         className: "posttest-summary-page",
-        content: () => `${renderSurveySummaryCards()}<div class="survey-intro"><p>确认知识验证和全部问卷均已完成后，生成记忆侦探报告。</p></div>${renderPosttestExportArea()}`
+        content: () => `${renderSurveySummaryCards()}<div class="survey-intro"><p>确认知识验证和全部问卷均已完成后，提交侦探小结并查看记忆侦探报告。</p></div>${renderPosttestExportArea()}`
       });
       return renderPagedStep("posttest", pages);
     }
 
     function renderPosttestExportArea() {
-      return '<div class="actions" style="justify-content:flex-end;"><button class="btn secondary" type="button" id="reviewReportBtn">生成记忆侦探报告</button></div>';
+      return '<div class="actions" style="justify-content:flex-end;"><button class="btn secondary" type="button" id="reviewReportBtn">提交侦探小结</button></div>';
     }
 
     function getSurveyItems(surveyKey, defKey) {
@@ -2382,7 +2384,8 @@
         totalCount,
         accuracy: score,
         answers: state.knowledgeQuiz.answers,
-        wrongQuestions
+        wrongQuestions,
+        questionSnapshot: KNOWLEDGE_QUIZ.items.map((item) => ({ id: item.id, question: item.question, options: { ...item.options }, answer: item.answer }))
       }, state.knowledgeQuiz.history.length);
       state.knowledgeQuiz.history.push(record);
       state.knowledgeQuiz.correctCount = record.correctCount;
@@ -2954,8 +2957,8 @@
         ["项目", "内容"],
         ["实验版本", "science-inquiry-static-v1"],
         ["localStorage key", STORAGE_KEY],
-        ["保存时间", state.savedAt || ""],
-        ["导出时间", new Date().toLocaleString()],
+        ["保存时间", BrainPlatform.time.formatBeijing(state.savedAt)],
+        ["导出时间", BrainPlatform.time.formatBeijing(new Date())],
         ["当前步骤", `${state.currentStep + 1}/${steps.length}`],
         ["过程性实验记录数", recordCount],
         ["AI聊天记录", "不包含，AI 对话请在 AI 助手窗口单独导出"]
@@ -3026,9 +3029,9 @@
         {
           title: "核对实验结果",
           content: () => `<div class="single-step-layout"><div class="panel"><div class="panel-body"><div class="form-grid">
-            <div class="field"><label>短时记忆容量约为</label><input type="number" min="0" max="12" step="0.1" data-field="conclusionCapacity" value="${escapeHtml(state.fields.conclusionCapacity)}" placeholder="例如：7" /></div>
-            <div class="field"><label>与假设是否一致</label><select data-field="hypothesisRelation"><option value="一致" ${selected("hypothesisRelation", "一致")}>一致</option><option value="不一致" ${selected("hypothesisRelation", "不一致")}>不一致</option></select></div>
-            <div class="field"><label>与 7±2 理论是否一致</label><select data-field="millerRelation"><option value="一致" ${selected("millerRelation", "一致")}>一致</option><option value="不一致" ${selected("millerRelation", "不一致")}>不一致</option></select></div>
+            <div class="field"><label>短时记忆容量约为</label><input type="number" min="0" max="12" step="0.1" data-field="conclusionCapacity" value="${escapeHtml(state.fields.conclusionCapacity)}" /></div>
+            <div class="field"><label>与假设是否一致</label><select data-field="hypothesisRelation"><option value="" ${selected("hypothesisRelation", "")}>未判断</option><option value="一致" ${selected("hypothesisRelation", "一致")}>一致</option><option value="不一致" ${selected("hypothesisRelation", "不一致")}>不一致</option></select></div>
+            <div class="field"><label>与 7±2 理论是否一致</label><select data-field="millerRelation"><option value="" ${selected("millerRelation", "")}>未判断</option><option value="一致" ${selected("millerRelation", "一致")}>一致</option><option value="不一致" ${selected("millerRelation", "不一致")}>不一致</option></select></div>
           </div></div></div></div>`
         },
         {
@@ -3198,14 +3201,22 @@
         return;
       }
       if (!finalizeKnowledgeQuizOnce()) return;
+      const reportTab = window.open("about:blank", "_blank");
+      if (reportTab) window.focus();
       const button = document.getElementById("reviewReportBtn");
       if (button) button.disabled = true;
       window.LearningBehaviorTracker?.markStageSubmitted(steps[state.currentStep].id);
       await Promise.resolve(window.LearningBehaviorTracker?.flush());
       saveState();
       const result = await submitMemoryRecord();
-      if (result?.ok) window.BrainExperimentBridge.finishReport(activityType, result.submissionId || "");
-      else alert(result?.queued ? "正式提交尚未上传成功，请保持联网后重试。" : "正式提交失败，请稍后重试。");
+      if (result?.ok) {
+        alert("实验一侦探小结已完成！");
+        window.BrainExperimentBridge.finishReport(activityType, result.submissionId || "", reportTab);
+      }
+      else {
+        reportTab?.close();
+        alert(result?.queued ? "正式提交尚未上传成功，请保持联网后重试。" : "正式提交失败，请稍后重试。");
+      }
       if (button) button.disabled = false;
     }
 
@@ -3525,7 +3536,7 @@
         answer: answer.join(" "),
         isCorrect,
         capacityAfterTrial: game.lastCapacity,
-        createdAt: new Date().toLocaleString()
+        createdAt: new Date().toISOString()
       };
       Object.assign(record, getStudentIdentityFields());
       if (isCorrect) {
@@ -3689,8 +3700,8 @@
           ["学生年龄", state.studentAge || ""],
           ["学生编号", state.studentId],
           ["小组编号", state.groupId],
-          ["实验时间", state.savedAt || ""],
-          ["导出时间", new Date().toLocaleString()]
+          ["实验时间", BrainPlatform.time.formatBeijing(state.savedAt)],
+          ["导出时间", BrainPlatform.time.formatBeijing(new Date())]
         ]],
         ["实验过程", [
           ["字段", "内容"],
@@ -3739,7 +3750,7 @@
             record.answer,
             record.isCorrect ? "正确" : "错误",
             record.finalCapacity,
-            record.createdAt
+            BrainPlatform.time.formatBeijing(record.createdAt)
           ])
         ]],
         ["容量汇总", [

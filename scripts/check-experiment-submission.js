@@ -46,7 +46,7 @@ const state = {
   records: [{ runId: "r1", raw: true }],
   attemptHistory: [{ runId: "r1" }],
   surveys: { postMeta: { q1: 4 }, cognitiveLoad: { q1: 6 }, inquiryParticipation: { q1: 5, q10: 4, attentionPosition: 3 } },
-  knowledgeQuiz: { history: [{ attemptNumber: 1, score: 80, correctCount: 8, totalCount: 10, accuracy: 80, answers: { q1: "A" }, submittedAt: "2026-08-03T00:00:00.000Z" }, { attemptNumber: 2, score: 100, correctCount: 10, totalCount: 10, accuracy: 100, answers: { q1: "B" }, submittedAt: "2026-08-03T01:00:00.000Z" }] }
+  knowledgeQuiz: { history: [{ attemptNumber: 1, score: 80, correctCount: 8, totalCount: 10, accuracy: 80, answers: { q1: "A" }, questionSnapshot: [{ id: "q1", question: "提交时题目", options: { A: "选项A" }, answer: "A" }], submittedAt: "2026-08-03T00:00:00.000Z" }, { attemptNumber: 2, score: 100, correctCount: 10, totalCount: 10, accuracy: 100, answers: { q1: "B" }, submittedAt: "2026-08-03T01:00:00.000Z" }] }
 };
 
 const built = context.BrainExperimentSubmission.build({ experimentId: "memory", state, submissionTime: "2026-08-03T02:00:00.000Z" });
@@ -58,6 +58,7 @@ assert.strictEqual(built.knowledgeQuiz.attempts.length, 1);
 assert.strictEqual(built.knowledgeQuiz.firstScore, 80);
 assert.strictEqual(built.knowledgeQuiz.bestScore, 80);
 assert.strictEqual(built.knowledgeQuiz.finalScore, 80);
+assert.strictEqual(built.knowledgeQuiz.attempts[0].questionSnapshot[0].question, "提交时题目");
 assert.strictEqual(built.surveys.meta.q1, 4);
 assert.strictEqual(built.surveys.inquiryParticipation.q10, 4);
 assert.strictEqual(built.surveys.inquiryParticipation.attentionPosition, 3);
