@@ -253,6 +253,21 @@
   global.BrainPlatform = Object.freeze({
     config,
     contracts,
+    time: Object.freeze({
+      formatBeijing(value) {
+        if (!value) return "";
+        const source = value && typeof value === "object" && !(value instanceof Date)
+          ? value.$date || (value.seconds != null ? new Date(value.seconds * 1000) : value)
+          : value;
+        if (typeof source === "string" && !/(?:Z|[+-]\d{2}:?\d{2})$/i.test(source)) return source;
+        const date = source instanceof Date ? source : new Date(source);
+        if (Number.isNaN(date.getTime())) return String(value);
+        return new Intl.DateTimeFormat("zh-CN", {
+          timeZone: "Asia/Shanghai", year: "numeric", month: "2-digit", day: "2-digit",
+          hour: "2-digit", minute: "2-digit", second: "2-digit", hourCycle: "h23"
+        }).format(date) + " 北京时间";
+      }
+    }),
     identity: Object.freeze({
       normalizeStudentSession,
       readStudentSession,

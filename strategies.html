@@ -642,7 +642,8 @@
         totalCount,
         accuracy: Number(record.accuracy || (totalCount ? Math.round((correctCount / totalCount) * 100) : 0)),
         answers: Object.assign({}, record.answers || {}),
-        wrongQuestions: Array.isArray(record.wrongQuestions) ? record.wrongQuestions : []
+        wrongQuestions: Array.isArray(record.wrongQuestions) ? record.wrongQuestions : [],
+        questionSnapshot: Array.isArray(record.questionSnapshot) ? record.questionSnapshot.map((item) => ({ id: item.id, question: item.question, options: { ...item.options }, answer: item.answer })) : []
       };
     }
 
@@ -661,7 +662,8 @@
           correctCount: incoming.correctCount,
           totalCount: KNOWLEDGE_QUIZ.items.length,
           answers: incoming.answers || {},
-          wrongQuestions: incoming.wrongQuestions
+          wrongQuestions: incoming.wrongQuestions,
+          questionSnapshot: incoming.questionSnapshot
         }, 0));
       }
       merged.history = history;
@@ -1233,12 +1235,12 @@
           pages.push({ title: `${def.title}：第 ${startIndex + 1}–${endIndex} 题`, className: "survey-page", content: () => `<div class="survey-shell">${renderSurveyForm(surveyKey, defKey, startIndex, 3)}</div>` });
         }
       });
-      pages.push({ title: "完成侦探小结", className: "posttest-summary-page", content: () => `${renderSurveySummaryCards()}<div class="survey-intro"><h3>完成案件调查</h3><p>确认知识验证和全部问卷均已完成后，生成记忆侦探报告。</p></div>${renderPosttestExportArea()}` });
+      pages.push({ title: "完成侦探小结", className: "posttest-summary-page", content: () => `${renderSurveySummaryCards()}<div class="survey-intro"><h3>完成案件调查</h3><p>确认知识验证和全部问卷均已完成后，提交侦探小结并查看记忆侦探报告。</p></div>${renderPosttestExportArea()}` });
       return renderPagedStep("posttest", pages);
     }
 
     function renderPosttestExportArea() {
-      return '<div class="actions" style="justify-content:flex-end;"><button class="btn secondary" type="button" id="reviewReportBtn">生成记忆侦探报告</button></div>';
+      return '<div class="actions" style="justify-content:flex-end;"><button class="btn secondary" type="button" id="reviewReportBtn">提交侦探小结</button></div>';
     }
 
     function getSurveyItems(surveyKey, defKey) {
@@ -1366,7 +1368,8 @@
         totalCount,
         accuracy: score,
         answers: state.knowledgeQuiz.answers,
-        wrongQuestions
+        wrongQuestions,
+        questionSnapshot: KNOWLEDGE_QUIZ.items.map((item) => ({ id: item.id, question: item.question, options: { ...item.options }, answer: item.answer }))
       }, state.knowledgeQuiz.history.length);
       state.knowledgeQuiz.history.push(record);
       state.knowledgeQuiz.correctCount = record.correctCount;
@@ -1708,7 +1711,7 @@
         return `<div class="trial-result-row ${correct ? "is-correct" : "is-wrong"}"><span>${itemIndex + 1}</span><span title="正确答案">${escapeHtml(item.display || item.answer)}</span><span title="参与者作答">${escapeHtml(response || "未作答")}</span><strong>${correct ? "正确" : "错误"}</strong></div>`;
       }).join("");
       const valid = items.length > 0 && Number(record.itemCount || items.length) > 0;
-      return `<article class="run-result-card"><h4>第 ${index + 1} 次测量</h4><div class="run-result-meta"><span>参与者：${escapeHtml(record.studentId || state.fields.participantId || state.studentId)}</span><span>${escapeHtml(record.roundLabel || getRoundLabel(record.round))} · ${escapeHtml(record.stageLabel || getStageLabel(record.stage))}</span><span>策略：${escapeHtml(record.strategy)}</span><span>材料：${escapeHtml(record.materialTypeLabel || MATERIAL_TYPE_LABELS[record.materialType] || record.materialType)}</span><span>难度：${escapeHtml(record.difficultySummary || formatDifficultyCounts(record.difficultyCounts))}</span><span>结果：${Number(record.correctCount) || 0}/${Number(record.itemCount) || items.length}，${Number(record.accuracy) || 0}%</span><span>有效测量：${valid ? "是" : "否"}</span><span>记录时间：${escapeHtml(record.createdAt || "--")}</span></div><div class="trial-result-list">${rows || '<div class="tip-box">本轮历史记录缺少题目明细，无法逐题还原。</div>'}</div>${valid ? "" : '<p class="hint">本轮没有可评分题目，无法精确测得结果。</p>'}</article>`;
+      return `<article class="run-result-card"><h4>第 ${index + 1} 次测量</h4><div class="run-result-meta"><span>参与者：${escapeHtml(record.studentId || state.fields.participantId || state.studentId)}</span><span>${escapeHtml(record.roundLabel || getRoundLabel(record.round))} · ${escapeHtml(record.stageLabel || getStageLabel(record.stage))}</span><span>策略：${escapeHtml(record.strategy)}</span><span>材料：${escapeHtml(record.materialTypeLabel || MATERIAL_TYPE_LABELS[record.materialType] || record.materialType)}</span><span>难度：${escapeHtml(record.difficultySummary || formatDifficultyCounts(record.difficultyCounts))}</span><span>结果：${Number(record.correctCount) || 0}/${Number(record.itemCount) || items.length}，${Number(record.accuracy) || 0}%</span><span>有效测量：${valid ? "是" : "否"}</span><span>记录时间：${escapeHtml(BrainPlatform.time.formatBeijing(record.createdAt) || "--")}</span></div><div class="trial-result-list">${rows || '<div class="tip-box">本轮历史记录缺少题目明细，无法逐题还原。</div>'}</div>${valid ? "" : '<p class="hint">本轮没有可评分题目，无法精确测得结果。</p>'}</article>`;
     }
     function getPersonalStrategyResult(summary) {
       const result = getPersonalStrategyMetrics(summary);
@@ -1738,7 +1741,7 @@
       return ["小组记录", [["成员","编号","平均正确数","平均回忆率"], ["本人", state.fields.participantId || state.studentId, personal.avgCorrect, personal.avgAccuracy], ...Array.from({length:getTeamSize() - 1}, (_, index) => { const number = index + 1; return [`组员${number}`, state.fields[`teammate${number}Id`] || "", state.fields[`teammate${number}AvgCorrect`] || "", state.fields[`teammate${number}AvgAccuracy`] || ""]; })]];
     }
     function getSystemInfoSheet(recordCount) {
-      return ["系统信息", [["项目","内容"],["实验版本","science-inquiry-static-v1"],["localStorage key",STORAGE_KEY],["保存时间",state.savedAt || ""],["导出时间",new Date().toLocaleString()],["当前步骤",`${state.currentStep + 1}/${steps.length}`],["过程性实验记录数",recordCount],["AI聊天记录","不包含，AI 对话请在 AI 助手窗口单独导出"]]];
+      return ["系统信息", [["项目","内容"],["实验版本","science-inquiry-static-v1"],["localStorage key",STORAGE_KEY],["保存时间",BrainPlatform.time.formatBeijing(state.savedAt)],["导出时间",BrainPlatform.time.formatBeijing(new Date())],["当前步骤",`${state.currentStep + 1}/${steps.length}`],["过程性实验记录数",recordCount],["AI聊天记录","不包含，AI 对话请在 AI 助手窗口单独导出"]]];
     }
     function getRawStorageSheet() {
       return ["localStorage原始数据", [["localStorage key","JSON"],[STORAGE_KEY, localStorage.getItem(STORAGE_KEY) || ""]]];
@@ -1761,7 +1764,7 @@
       return `<div class="analysis-layout"><div class="panel"><div class="panel-body">${summary.length ? `<table><thead><tr><th>轮次</th><th>阶段</th><th>策略</th><th>次数</th><th>平均正确数</th><th>平均回忆率</th><th>平均反应时</th></tr></thead><tbody>${rows}</tbody></table>` : `<div class="empty-state">还没有实验数据。请先完成四个轮次与阶段组合。</div>`}<div class="chart">${chart}</div></div></div></div>`;
     }
     function renderScoreHistoryCard(record) {
-      return `<article class="score-record-card"><h4>${escapeHtml(record.strategyName)}</h4><p>答案准确性 ${record.scoreAccuracy}；策略利用率 ${record.scoreUse}；记忆信心度 ${record.scoreConfidence}</p><p><strong>总分：${getAdjustedScoreTotal(record)} / 15</strong></p><p>${escapeHtml(record.createdAt || "")}</p><button class="btn danger" type="button" data-delete-score="${record.id}">删除</button></article>`;
+      return `<article class="score-record-card"><h4>${escapeHtml(record.strategyName)}</h4><p>答案准确性 ${record.scoreAccuracy}；策略利用率 ${record.scoreUse}；记忆信心度 ${record.scoreConfidence}</p><p><strong>总分：${getAdjustedScoreTotal(record)} / 15</strong></p><p>${escapeHtml(BrainPlatform.time.formatBeijing(record.createdAt))}</p><button class="btn danger" type="button" data-delete-score="${record.id}">删除</button></article>`;
     }
     function renderScoreField(field, label) {
       return `<div class="field"><label>${label}</label><select data-field="${field}">${[1,2,3,4,5].map((n)=>`<option value="${n}" ${Number(state.fields[field])===n ? "selected" : ""}>${n} 分</option>`).join("")}</select></div>`;
@@ -1800,7 +1803,7 @@
         scoreUse: Number(state.fields.scoreUse) || 1,
         scoreConfidence: Number(state.fields.scoreConfidence) || 1,
         scoreTotal: getScoreTotal(),
-        createdAt: new Date().toLocaleString()
+        createdAt: new Date().toISOString()
       };
       Object.assign(record, getStudentIdentityFields());
       state.strategyScores.push(record);
@@ -1890,14 +1893,21 @@
         return;
       }
       if (!finalizeKnowledgeQuizOnce()) return;
+      const reportTab = window.open("about:blank", "_blank");
+      if (reportTab) window.focus();
       const button = document.getElementById("reviewReportBtn");
       if (button) button.disabled = true;
       window.LearningBehaviorTracker?.markStageSubmitted(steps[state.currentStep].id);
       await Promise.resolve(window.LearningBehaviorTracker?.flush());
       saveState();
       const result = await submitStrategiesRecord();
-      if (result?.ok) window.BrainExperimentBridge.finishReport(activityType, result.submissionId || "");
-      else alert(result?.queued ? "正式提交尚未上传成功，请保持联网后重试。" : "正式提交失败，请稍后重试。");
+      if (result?.ok) {
+        alert("实验四侦探小结已完成！");
+        window.BrainExperimentBridge.finishReport(activityType, result.submissionId || "", reportTab);
+      } else {
+        reportTab?.close();
+        alert(result?.queued ? "正式提交尚未上传成功，请保持联网后重试。" : "正式提交失败，请稍后重试。");
+      }
       if (button) button.disabled = false;
     }
     function submitStrategiesRecord() {
@@ -2182,7 +2192,7 @@
       const correct = scoreRecall(recallValues, session.items);
       const accuracy = session.items.length ? Math.round((correct.length / session.items.length) * 100) : 0;
       const reactionTime = Math.round(performance.now() - session.recallStartedAt);
-      const record = { runId: session.id, studentName: state.studentName, studentAge: state.studentAge, studentId: state.studentId, groupId: state.groupId, round: session.round, roundLabel: session.roundLabel, stage: session.stage, stageLabel: session.stageLabel, combinationKey: session.combinationKey, strategy: session.strategy, materialType: session.materialPlan.materialType, materialTypeLabel: session.materialPlan.materialTypeLabel, difficultyCounts: structuredClone(session.materialPlan.difficultyCounts), difficultySummary: formatDifficultyCounts(session.materialPlan.difficultyCounts), itemCount: session.items.length, itemDetails: structuredClone(session.items), memorySeconds: state.fields.memorySeconds, puzzleSeconds: state.fields.puzzleSeconds, testSeconds: state.fields.testSeconds, items: session.items.map((item) => item.display).join("；"), recall, orderRequired: true, correctItems: correct.map((item) => item.display).join("；"), correctCount: correct.length, accuracy, reactionTime, puzzleHits: session.puzzleHits, puzzleAttempts: session.puzzleAttempts, headband, scoreTotal: getScoreTotal(), createdAt: new Date().toLocaleString() };
+      const record = { runId: session.id, studentName: state.studentName, studentAge: state.studentAge, studentId: state.studentId, groupId: state.groupId, round: session.round, roundLabel: session.roundLabel, stage: session.stage, stageLabel: session.stageLabel, combinationKey: session.combinationKey, strategy: session.strategy, materialType: session.materialPlan.materialType, materialTypeLabel: session.materialPlan.materialTypeLabel, difficultyCounts: structuredClone(session.materialPlan.difficultyCounts), difficultySummary: formatDifficultyCounts(session.materialPlan.difficultyCounts), itemCount: session.items.length, itemDetails: structuredClone(session.items), memorySeconds: state.fields.memorySeconds, puzzleSeconds: state.fields.puzzleSeconds, testSeconds: state.fields.testSeconds, items: session.items.map((item) => item.display).join("；"), recall, orderRequired: true, correctItems: correct.map((item) => item.display).join("；"), correctCount: correct.length, accuracy, reactionTime, puzzleHits: session.puzzleHits, puzzleAttempts: session.puzzleAttempts, headband, scoreTotal: getScoreTotal(), createdAt: new Date().toISOString() };
       Object.assign(record, getStudentIdentityFields());
       state.attemptHistory = Array.isArray(state.attemptHistory) ? state.attemptHistory : [];
       state.attemptHistory.push(structuredClone(record));
@@ -2242,17 +2252,17 @@
       const attemptHistory = Array.isArray(state.attemptHistory) ? state.attemptHistory : state.records;
       const combinationResult = summary.map((item)=>`${item.displayLabel}：平均正确数${item.avgCorrect}，平均回忆率${item.avgAccuracy}%`).join("；");
       const sheets = [
-        ["基本信息", [["项目","内容"],["实验","改善长时记忆的策略有哪些"],["学号",state.studentId],["姓名",state.studentName || ""],["班级",state.className || ""],["小组",state.groupName || state.groupId || ""],["学生姓名",state.studentName || ""],["学生年龄",state.studentAge || ""],["学生编号",state.studentId],["小组编号",state.groupId],["实验时间",state.savedAt || ""],["导出时间",new Date().toLocaleString()]]],
+        ["基本信息", [["项目","内容"],["实验","改善长时记忆的策略有哪些"],["学号",state.studentId],["姓名",state.studentName || ""],["班级",state.className || ""],["小组",state.groupName || state.groupId || ""],["学生姓名",state.studentName || ""],["学生年龄",state.studentAge || ""],["学生编号",state.studentId],["小组编号",state.groupId],["实验时间",BrainPlatform.time.formatBeijing(state.savedAt)],["导出时间",BrainPlatform.time.formatBeijing(new Date())]]],
         ["实验过程", [["字段","内容"], ...getThinkingRows(), ["研究问题",state.fields.question],["材料策略匹配选择",formatMatchSelections()],["材料策略匹配是否成功",state.fields.strategyMatchConfirmed ? "是" : "否"],["策略1假设",state.fields.hypothesis1],["策略2假设",state.fields.hypothesis2],["第一轮第一阶段", "简单复述"],["第一轮第二阶段",state.fields.strategy1],["第一轮材料类型",getRoundMaterialPlan(1).materialTypeLabel],["第一轮难度数量",formatDifficultyCounts(getRoundMaterialPlan(1).difficultyCounts)],["第一轮题目总数",getPlannedItemCount(1)],["第二轮第一阶段", "简单复述"],["第二轮第二阶段",state.fields.strategy2],["第二轮材料类型",getRoundMaterialPlan(2).materialTypeLabel],["第二轮难度数量",formatDifficultyCounts(getRoundMaterialPlan(2).difficultyCounts)],["第二轮题目总数",getPlannedItemCount(2)],["四个组合完成情况",hasRequiredCombinationRecords() ? "已全部完成" : "尚未全部完成"],["轮次阶段结果",combinationResult],["记忆时间s",state.fields.memorySeconds],["找不同时间s",state.fields.puzzleSeconds],["测试时间s",state.fields.testSeconds],["组长",state.fields.leader],["记录员",state.fields.recorder],["组员A",state.fields.memberA],["组员B",state.fields.memberB],["头环观察",state.fields.headband],["结论",state.fields.conclusion],["设计改进",state.fields.designImprove],["结果意外原因",state.fields.surprise],["适用性反思",state.fields.applicability]]],
-        ["测试明细", [["学号","姓名","班级","小组","学生姓名","学生年龄","学生编号","小组编号","实验轮次","实验阶段","使用策略","组合标识","材料类型","难度数量","结构化题目明细","题目总数","记忆时间s","找不同时间s","测试时间s","题目","学生回答","正确项目","正确数","回忆率","找不同命中","找不同点击","反应时ms","头环观察","评分总分","记录时间"], ...state.records.map((r)=>[r.studentId,r.studentName || "",r.className || "",r.groupName || r.groupId || "",r.studentName || "",r.studentAge || "",r.studentId,r.groupId,r.roundLabel || (r.round ? getRoundLabel(r.round) : ""),r.stageLabel || (r.stage ? getStageLabel(r.stage) : ""),r.strategy,r.combinationKey || getRecordCombinationKey(r),r.materialTypeLabel || MATERIAL_TYPE_LABELS[r.materialType] || r.materialType,r.difficultySummary || formatDifficultyCounts(r.difficultyCounts),JSON.stringify(r.itemDetails || []),r.itemCount,r.memorySeconds,r.puzzleSeconds,r.testSeconds,r.items,r.recall,r.correctItems,r.correctCount,`${r.accuracy}%`,r.puzzleHits || 0,r.puzzleAttempts || 0,r.reactionTime,r.headband,r.scoreTotal,r.createdAt])]],
-        ["全部测试历史", [["测试序号","运行ID","学号","姓名","班级","小组","实验轮次","实验阶段","使用策略","组合标识","材料类型","难度数量","题目总数","记忆时间s","找不同时间s","测试时间s","题目","学生回答","正确项目","正确数","回忆率","反应时ms","记录时间"], ...attemptHistory.map((r,index)=>[index+1,r.runId || "",r.studentId,r.studentName || "",r.className || "",r.groupName || r.groupId || "",r.roundLabel || (r.round ? getRoundLabel(r.round) : ""),r.stageLabel || (r.stage ? getStageLabel(r.stage) : ""),r.strategy,r.combinationKey || getRecordCombinationKey(r),r.materialTypeLabel || MATERIAL_TYPE_LABELS[r.materialType] || r.materialType,r.difficultySummary || formatDifficultyCounts(r.difficultyCounts),r.itemCount,r.memorySeconds,r.puzzleSeconds,r.testSeconds,r.items,r.recall,r.correctItems,r.correctCount,`${r.accuracy}%`,r.reactionTime,r.createdAt])]],
+        ["测试明细", [["学号","姓名","班级","小组","学生姓名","学生年龄","学生编号","小组编号","实验轮次","实验阶段","使用策略","组合标识","材料类型","难度数量","结构化题目明细","题目总数","记忆时间s","找不同时间s","测试时间s","题目","学生回答","正确项目","正确数","回忆率","找不同命中","找不同点击","反应时ms","头环观察","评分总分","记录时间"], ...state.records.map((r)=>[r.studentId,r.studentName || "",r.className || "",r.groupName || r.groupId || "",r.studentName || "",r.studentAge || "",r.studentId,r.groupId,r.roundLabel || (r.round ? getRoundLabel(r.round) : ""),r.stageLabel || (r.stage ? getStageLabel(r.stage) : ""),r.strategy,r.combinationKey || getRecordCombinationKey(r),r.materialTypeLabel || MATERIAL_TYPE_LABELS[r.materialType] || r.materialType,r.difficultySummary || formatDifficultyCounts(r.difficultyCounts),JSON.stringify(r.itemDetails || []),r.itemCount,r.memorySeconds,r.puzzleSeconds,r.testSeconds,r.items,r.recall,r.correctItems,r.correctCount,`${r.accuracy}%`,r.puzzleHits || 0,r.puzzleAttempts || 0,r.reactionTime,r.headband,r.scoreTotal,BrainPlatform.time.formatBeijing(r.createdAt)])]],
+        ["全部测试历史", [["测试序号","运行ID","学号","姓名","班级","小组","实验轮次","实验阶段","使用策略","组合标识","材料类型","难度数量","题目总数","记忆时间s","找不同时间s","测试时间s","题目","学生回答","正确项目","正确数","回忆率","反应时ms","记录时间"], ...attemptHistory.map((r,index)=>[index+1,r.runId || "",r.studentId,r.studentName || "",r.className || "",r.groupName || r.groupId || "",r.roundLabel || (r.round ? getRoundLabel(r.round) : ""),r.stageLabel || (r.stage ? getStageLabel(r.stage) : ""),r.strategy,r.combinationKey || getRecordCombinationKey(r),r.materialTypeLabel || MATERIAL_TYPE_LABELS[r.materialType] || r.materialType,r.difficultySummary || formatDifficultyCounts(r.difficultyCounts),r.itemCount,r.memorySeconds,r.puzzleSeconds,r.testSeconds,r.items,r.recall,r.correctItems,r.correctCount,`${r.accuracy}%`,r.reactionTime,BrainPlatform.time.formatBeijing(r.createdAt)])]],
         ["轮次阶段汇总", [["实验轮次","实验阶段","使用策略","组合标识","次数","平均正确数","平均回忆率","平均反应时ms","头环观察结果"], ...summary.map((item)=>[item.roundLabel,item.stageLabel,item.strategy,item.combinationKey,item.count,item.avgCorrect,`${item.avgAccuracy}%`,item.avgRt,item.headbandSummary || ""])],
         ],
         getTeamResultSheet(summary),
         getHeadbandSummarySheet(),
         getSystemInfoSheet(state.records.length),
         getRawStorageSheet(),
-        ["策略评分记录", [["学号","姓名","班级","小组","策略名称","答案准确性得分","策略利用率得分","记忆信心度得分","策略总分（满分15分）","记录时间"], ...(state.strategyScores || []).map((record)=>[record.studentId, record.studentName || "", record.className || "", record.groupName || record.groupId || "", record.strategyName, record.scoreAccuracy, record.scoreUse, record.scoreConfidence, getAdjustedScoreTotal(record), record.createdAt])]],
+        ["策略评分记录", [["学号","姓名","班级","小组","策略名称","答案准确性得分","策略利用率得分","记忆信心度得分","策略总分（满分15分）","记录时间"], ...(state.strategyScores || []).map((record)=>[record.studentId, record.studentName || "", record.className || "", record.groupName || record.groupId || "", record.strategyName, record.scoreAccuracy, record.scoreUse, record.scoreConfidence, getAdjustedScoreTotal(record), BrainPlatform.time.formatBeijing(record.createdAt)])]],
         ...getSurveySheets()
       ];
       const html = `<html><head><meta charset="utf-8"></head><body>${sheets.map(([title,rows])=>`<h2>${escapeHtml(title)}</h2><table border="1">${rows.map((row)=>`<tr>${row.map((cell)=>`<td>${escapeHtml(cell)}</td>`).join("")}</tr>`).join("")}</table><br>`).join("")}</body></html>`;

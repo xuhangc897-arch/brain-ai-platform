@@ -43,7 +43,7 @@
     });
   }
 
-  function finishReport(moduleId, submitAction) {
+  function finishReport(moduleId, submitAction, reportTab) {
     const entry = requireModule(moduleId);
     const reportUrl = registry.getReportUrl(entry.id);
     if (!reportUrl) {
@@ -55,6 +55,11 @@
     const target = submissionId
       ? `${reportUrl}${separator}submissionId=${encodeURIComponent(submissionId)}`
       : reportUrl;
+    if (reportTab && !reportTab.closed) {
+      reportTab.location.href = target;
+      reportTab.focus();
+      return reportTab;
+    }
     return global.open(target, "_blank");
   }
 

@@ -15,6 +15,7 @@ function render(activity, experimentResults) {
     document, URLSearchParams, Date,
     location: { search: `?archiveRender=1&activityType=${activity}` },
     BrainPlatform: {
+      time: { formatBeijing: () => "2026/11/16 08:30:00 北京时间" },
       storage: { migrateScopedJson: (value) => value },
       identity: { readStudentSession: () => ({}) }
     },
@@ -38,15 +39,21 @@ function render(activity, experimentResults) {
 }
 
 const memory = render("memory", { records: [
-  { subject: "本人", finalCapacity: 4 }, { subject: "组员", finalCapacity: 8 }
+  { subject: "本人", runNumber: 1, length: 4, method: "顺背法", itemInterval: 1, materialType: "number", sequence: "1 2 3 4", expected: "1 2 3 4", answer: "1 2 3 4", isCorrect: true, finalCapacity: 4 },
+  { subject: "组员", runNumber: 1, length: 8, method: "倒背法", itemInterval: 2, materialType: "letter", sequence: "A B C D E F G H", expected: "H G F E D C B A", answer: "H G F E D C B A", isCorrect: true, finalCapacity: 8 }
 ] });
 assert.match(memory.html, /本案发现/);
 assert.match(memory.html, /探究与数据/);
 assert.match(memory.html, /证据与判断/);
 assert.match(memory.html, /侦探小结/);
 assert.match(memory.html, /有效次数/);
-assert.match(memory.html, /width:50%/);
-assert.match(memory.html, /width:100%/);
+assert.doesNotMatch(memory.html, /class="science-chart"/);
+assert.match(memory.html, /组内成绩/);
+assert.match(memory.html, /逐次测试记录/);
+assert.match(memory.html, /数字：1 2 3 4/);
+assert.match(memory.html, /H G F E D C B A/);
+assert.match(memory.html, /倒背法 · 2 秒\/项/);
+assert.doesNotMatch(memory.html, /知识验证的分数、答案和解析不在学生报告中展示。/);
 assert.match(memory.html, /知识验证[\s\S]*已完成/);
 assert.doesNotMatch(memory.html, /PRIVATE_QUIZ_ANSWER|987/);
 assert.doesNotMatch(memory.html, /绘制了结果图表/);

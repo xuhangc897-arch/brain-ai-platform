@@ -32,7 +32,8 @@
       totalCount,
       accuracy: Number(record && record.accuracy) || (totalCount ? Math.round((correctCount / totalCount) * 100) : 0),
       timestamp: iso(record && (record.timestamp || record.submittedAt)),
-      wrongQuestions: clone(record && record.wrongQuestions || [])
+      wrongQuestions: clone(record && record.wrongQuestions || []),
+      questionSnapshot: clone(record && record.questionSnapshot || [])
     };
   }
 

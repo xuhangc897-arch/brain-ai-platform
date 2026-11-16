@@ -1742,7 +1742,8 @@
         totalCount,
         accuracy: Number(record.accuracy || (totalCount ? Math.round((correctCount / totalCount) * 100) : 0)),
         answers: Object.assign({}, record.answers || {}),
-        wrongQuestions: Array.isArray(record.wrongQuestions) ? record.wrongQuestions : []
+        wrongQuestions: Array.isArray(record.wrongQuestions) ? record.wrongQuestions : [],
+        questionSnapshot: Array.isArray(record.questionSnapshot) ? record.questionSnapshot.map((item) => ({ id: item.id, question: item.question, options: { ...item.options }, answer: item.answer })) : []
       };
     }
 
@@ -1761,7 +1762,8 @@
           correctCount: incoming.correctCount,
           totalCount: KNOWLEDGE_QUIZ.items.length,
           answers: incoming.answers || {},
-          wrongQuestions: incoming.wrongQuestions
+          wrongQuestions: incoming.wrongQuestions,
+          questionSnapshot: incoming.questionSnapshot
         }, 0));
       }
       merged.history = history;
@@ -2295,7 +2297,7 @@
           pages.push({ title: `${def.title}：第 ${first}–${last} 题`, className: "survey-page", content: () => renderSurveyForm(surveyKey, defKey, startIndex, 3) });
         }
       });
-      pages.push({ title: "完成案件调查", content: () => `<div class="survey-shell"><div class="survey-intro"><h3>完成案件调查</h3><p>确认知识验证和全部问卷均已完成后，生成记忆侦探报告。</p></div>${renderSurveySummaryCards()}${renderPosttestExportArea()}</div>` });
+      pages.push({ title: "完成案件调查", content: () => `<div class="survey-shell"><div class="survey-intro"><h3>完成案件调查</h3><p>确认知识验证和全部问卷均已完成后，提交侦探小结并查看记忆侦探报告。</p></div>${renderSurveySummaryCards()}${renderPosttestExportArea()}</div>` });
       return renderPagedStep("posttest", pages);
     }
 
@@ -2312,7 +2314,7 @@
     }
 
     function renderPosttestExportArea() {
-      return '<div class="actions" style="justify-content:flex-end;"><button class="btn secondary" type="button" id="reviewReportBtn">生成记忆侦探报告</button></div>';
+      return '<div class="actions" style="justify-content:flex-end;"><button class="btn secondary" type="button" id="reviewReportBtn">提交侦探小结</button></div>';
     }
 
     function getSurveyItems(surveyKey, defKey) {
@@ -2448,7 +2450,8 @@
         totalCount,
         accuracy: score,
         answers: state.knowledgeQuiz.answers,
-        wrongQuestions
+        wrongQuestions,
+        questionSnapshot: KNOWLEDGE_QUIZ.items.map((item) => ({ id: item.id, question: item.question, options: { ...item.options }, answer: item.answer }))
       }, state.knowledgeQuiz.history.length);
       state.knowledgeQuiz.history.push(record);
       state.knowledgeQuiz.correctCount = record.correctCount;
@@ -2963,8 +2966,8 @@
         ["项目", "内容"],
         ["实验版本", "science-inquiry-static-v1"],
         ["localStorage key", STORAGE_KEY],
-        ["保存时间", state.savedAt || ""],
-        ["导出时间", new Date().toLocaleString()],
+        ["保存时间", BrainPlatform.time.formatBeijing(state.savedAt)],
+        ["导出时间", BrainPlatform.time.formatBeijing(new Date())],
         ["当前步骤", `${state.currentStep + 1}/${steps.length}`],
         ["过程性实验记录数", recordCount],
         ["AI聊天记录", "不包含，AI 对话请在 AI 助手窗口单独导出"]
@@ -3211,14 +3214,21 @@
         return;
       }
       if (!finalizeKnowledgeQuizOnce()) return;
+      const reportTab = window.open("about:blank", "_blank");
+      if (reportTab) window.focus();
       const button = document.getElementById("reviewReportBtn");
       if (button) button.disabled = true;
       window.LearningBehaviorTracker?.markStageSubmitted(steps[state.currentStep].id);
       await Promise.resolve(window.LearningBehaviorTracker?.flush());
       saveState();
       const result = await submitNbackRecord();
-      if (result?.ok) window.BrainExperimentBridge.finishReport(activityType, result.submissionId || "");
-      else alert(result?.queued ? "正式提交尚未上传成功，请保持联网后重试。" : "正式提交失败，请稍后重试。");
+      if (result?.ok) {
+        alert("实验二侦探小结已完成！");
+        window.BrainExperimentBridge.finishReport(activityType, result.submissionId || "", reportTab);
+      } else {
+        reportTab?.close();
+        alert(result?.queued ? "正式提交尚未上传成功，请保持联网后重试。" : "正式提交失败，请稍后重试。");
+      }
       if (button) button.disabled = false;
     }
 
@@ -3570,7 +3580,7 @@
         recordType,
         isMissed: recordType === "miss",
         responseTime,
-        createdAt: new Date().toLocaleString()
+        createdAt: new Date().toISOString()
       };
       Object.assign(record, getStudentIdentityFields());
       return record;
@@ -3744,8 +3754,8 @@
           ["学生年龄", state.studentAge || ""],
           ["学生编号", state.studentId],
           ["小组编号", state.groupId],
-          ["实验时间", state.savedAt || ""],
-          ["导出时间", new Date().toLocaleString()]
+          ["实验时间", BrainPlatform.time.formatBeijing(state.savedAt)],
+          ["导出时间", BrainPlatform.time.formatBeijing(new Date())]
         ]],
         ["实验过程", [
           ["字段", "内容"],
@@ -3799,7 +3809,7 @@
               recordType === "miss" ? "是" : "否",
               recordType === "observe" ? "无需判断" : recordType === "miss" ? "漏答" : record.isCorrect ? "正确" : "错误",
               record.responseTime,
-              record.createdAt
+              BrainPlatform.time.formatBeijing(record.createdAt)
             ];
           })
         ]],

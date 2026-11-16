@@ -1100,11 +1100,7 @@
     }
 
     function formatDate(value) {
-      if (!value) return "";
-      if (typeof value === "string") return value;
-      if (value.$date) return new Date(value.$date).toLocaleString();
-      if (value.seconds) return new Date(value.seconds * 1000).toLocaleString();
-      return "";
+      return BrainPlatform.time.formatBeijing(value);
     }
 
     function renderStudentList() {

@@ -117,6 +117,11 @@ assert.deepStrictEqual(
 );
 assert.strictEqual(calls[1].url, "review.html?activityType=memory&submissionId=submission-1");
 assert.strictEqual(calls[1].target, "_blank");
+const reportTab = { closed: false, location: { href: "about:blank" }, focus() { this.focused = true; } };
+window.BrainExperimentBridge.finishReport("memory", "submission-2", reportTab);
+assert.strictEqual(reportTab.location.href, "review.html?activityType=memory&submissionId=submission-2");
+assert.strictEqual(reportTab.focused, true);
+assert.strictEqual(calls.length, 2);
 
 const rootPages = [
   "index.html",

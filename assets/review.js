@@ -130,7 +130,7 @@
     const state = suppliedState || readState(storageKey);
     const studentSession = readStudentSession();
     const fields = state.fields || {};
-    const generatedAt = new Date().toLocaleString();
+    const generatedAt = BrainPlatform.time.formatBeijing(new Date());
     const base = {
       activityType,
       storageKey,
@@ -228,13 +228,14 @@
       resultTitle: "短时记忆容量结果",
       chartUnit: "个",
       chartRows: summary.filter((item) => item.sampleCount > 0).map((item) => ({ label: item.name, value: item.value, text: item.label, sampleCount: item.sampleCount })),
+      memoryTrials: state.records || [],
       resultHighlight: overall ? `我的短时记忆容量：约 ${overall} 个信息单位` : "",
       evidence: [
         ["研究问题", questionThought],
         ["研究假设", hypothesisThought],
         ["实验材料类别", materialLabel],
         ["实验计划", `采用${safe(fields.method)}，材料类别为${safe(materialLabel)}，每位参与者测量${safe(fields.trialsPerParticipant)}次。`],
-        ["三人成绩", `本人：${safe(personalResult)}；组员1：${safe(fields.teammate1Result)}；组员2：${safe(fields.teammate2Result)}`],
+        ["组内成绩", `本人：${safe(personalResult)}；组员1：${safe(fields.teammate1Result)}；组员2：${safe(fields.teammate2Result)}`],
         ["小组平均长度", groupAverage],
         ["头环观察记录", fields.brainFinding]
       ],
@@ -473,7 +474,8 @@
           </div>
           <h3 class="science-subtitle">${esc(data.resultTitle)}</h3>
           ${renderScienceData(data)}
-          <p class="science-data-note">图表显示各条件的平均值；“有效次数”是参与该平均值计算的记录数。</p>
+          <p class="science-data-note">${data.activityType === "memory" ? "表格" : "图表"}显示各条件的平均值；“有效次数”是参与该平均值计算的记录数。</p>
+          ${data.activityType === "memory" ? renderMemoryTrials(data.memoryTrials) : ""}
         </section>
         <section class="science-page judgement-page">
           <h2 class="science-section-title"><span>03</span> 证据与判断</h2>
@@ -485,7 +487,7 @@
           <dl class="science-evidence">${supportingEvidence.map(([label, value]) => `<div><dt>${esc(label)}</dt><dd>${esc(safe(value))}</dd></div>`).join("")}</dl>
           <div class="science-text-block science-reflection"><h3>反思与改进</h3><p>${esc(safe(data.reflection))}</p></div>
         </section>
-        ${renderPosttestSection(data.posttest)}
+        ${renderPosttestSection(data.posttest, data.activityType)}
         <footer class="science-footer"><span>ZJU BIElab · 记忆侦探社</span><span>报告生成于 ${esc(data.generatedAt)}</span></footer>
       </article>
     `;
@@ -501,16 +503,30 @@
     if (!data.chartRows.length) return '<p class="science-empty">尚无可汇总的实验数据。</p>';
     const rows = data.chartRows;
     const max = data.chartUnit === "%" ? 100 : Math.max(1, ...rows.map((row) => Number(row.value) || 0));
-    return `<div class="science-chart">${rows.map((row) => {
+    return `${data.activityType === "memory" ? "" : `<div class="science-chart">${rows.map((row) => {
       const value = Number(row.value) || 0;
       const width = Math.max(0, Math.min(100, value / max * 100));
       return `<div class="science-chart-row"><span>${esc(row.label)}</span><div class="science-chart-track"><i style="width:${width}%"></i></div><strong>${esc(row.text)}</strong></div>`;
-    }).join("")}</div>
+    }).join("")}</div>`}
     <table class="science-data-table"><thead><tr><th scope="col">实验条件</th><th scope="col">平均结果</th><th scope="col">有效次数</th></tr></thead>
     <tbody>${rows.map((row) => `<tr><td>${esc(row.label)}</td><td>${esc(row.text)}</td><td>${Number(row.sampleCount) || 0}</td></tr>`).join("")}</tbody></table>`;
   }
 
-  function renderPosttestSection(posttest) {
+  function renderMemoryTrials(records) {
+    if (!records?.length) return '<h3 class="science-subtitle">逐次测试记录</h3><p class="science-empty">尚无测试记录。</p>';
+    return `<h3 class="science-subtitle">逐次测试记录</h3>
+      <div class="science-trials-scroll"><table class="science-data-table science-trials-table">
+        <thead><tr><th scope="col">参与者</th><th scope="col">第几次测量</th><th scope="col">记录序号与长度</th><th scope="col">方法与呈现间隔</th><th scope="col">实验材料</th><th scope="col">应复述</th><th scope="col">实际复述</th><th scope="col">结果</th></tr></thead>
+        <tbody>${records.map((record, index) => `<tr>
+          <td>${esc(safe(record.subject))}</td><td>${esc(safe(record.runNumber))}</td><td>${index + 1}（${esc(safe(record.length))} 位）</td>
+          <td>${esc(safe(record.method))} · ${esc(safe(record.itemInterval))} 秒/项</td>
+          <td>${esc(safe(getMemoryMaterialTypeLabel(record.materialType || record.material)))}：${esc(safe(record.sequence))}</td>
+          <td>${esc(safe(record.expected))}</td><td>${esc(safe(record.answer))}</td><td>${record.isCorrect ? "正确" : "错误"}</td>
+        </tr>`).join("")}</tbody>
+      </table></div>`;
+  }
+
+  function renderPosttestSection(posttest, activityType) {
     if (!posttest?.available) return "";
     const status = (complete) => `<strong class="${complete ? "is-complete" : "is-pending"}">${complete ? "已完成" : "未完成"}</strong>`;
     const surveyGroups = posttest.groups.filter((group) => group.answered > 0);
@@ -521,7 +537,7 @@
         <div><span>知识验证</span>${status(posttest.quizComplete)}</div>
         ${posttest.groups.map((group) => `<div><span>${esc(group.title)}</span>${status(group.complete)}</div>`).join("")}
       </div>
-      <p class="science-privacy-note">知识验证的分数、答案和解析不在学生报告中展示。</p>
+      ${activityType !== "memory" ? '<p class="science-privacy-note">知识验证的分数、答案和解析不在学生报告中展示。</p>' : ""}
       ${surveyGroups.length ? surveyGroups.map((group) => `<div class="science-survey-group"><h3>${esc(group.title)} <small>自评量表 1–${group.max}</small></h3>
         <div class="science-survey-rows">${group.rows.map((row) => `<div><span>${esc(row.label)}</span><strong>${row.value === null ? "未填写" : `${row.value} / ${group.max}`}</strong></div>`).join("")}</div></div>`).join("") : '<p class="science-empty">这份历史提交没有保存调查作答。</p>'}
     </section>`;
