@@ -2026,19 +2026,19 @@
         return;
       }
       if (!finalizeKnowledgeQuizOnce()) return;
-      const reportTab = window.open("about:blank", "_blank");
+      const reportTab = window.BrainExperimentBridge.openPendingReport();
       if (reportTab) window.focus();
       const button = document.getElementById("reviewReportBtn");
       if (button) button.disabled = true;
       window.LearningBehaviorTracker?.markStageSubmitted(steps[state.currentStep].id);
-      await Promise.resolve(window.LearningBehaviorTracker?.flush());
+      await window.BrainExperimentBridge.waitForLearningRecords();
       saveState();
       const result = await submitInterferenceRecord();
       if (result?.ok) {
         alert("实验三侦探小结已完成！");
         window.BrainExperimentBridge.finishReport(activityType, result.submissionId || "", reportTab);
       } else {
-        reportTab?.close();
+        window.BrainExperimentBridge.showReportFailure(reportTab, result);
         alert(result?.queued ? "正式提交尚未上传成功，请保持联网后重试。" : "正式提交失败，请稍后重试。");
       }
       if (button) button.disabled = false;
@@ -2418,30 +2418,32 @@
     if (window.LearningBehaviorTracker) {
       window.LearningBehaviorTracker.init({ experimentId: "interference" });
     }
-    if (window.VirtualAgent) {
-      window.VirtualAgent.init({
-        experimentId: "interference",
-        experimentName: "探究干扰长时记忆的因素",
-        getLearningState: () => ({ steps, currentStepIndex: state.currentStep, maxUnlockedStep: state.maxUnlockedStep })
-      });
-    } else {
-      console.warn("[Virtual Agent] Component failed to load; original assistants remain available.");
-    }
-    if (window.TypingSupport) {
-      window.TypingSupport.init({ experimentId: "interference" });
-    }
-    if (window.TaskRelevance) {
-      window.TaskRelevance.init({ experimentId: "interference" });
-    }
-    if (window.StudentMemory) {
-      window.StudentMemory.init({
-        experimentId: "interference",
-        getLearningState: () => ({ steps, currentStepIndex: state.currentStep, maxUnlockedStep: state.maxUnlockedStep })
-      });
-    }
-    if (window.LearningDiagnosis) {
-      window.LearningDiagnosis.init({ experimentId: "interference" });
-    }
+    window.BrainExperimentPageRuntime.afterFirstPaint(() => {
+      if (window.VirtualAgent) {
+        window.VirtualAgent.init({
+          experimentId: "interference",
+          experimentName: "探究干扰长时记忆的因素",
+          getLearningState: () => ({ steps, currentStepIndex: state.currentStep, maxUnlockedStep: state.maxUnlockedStep })
+        });
+      } else {
+        console.warn("[Virtual Agent] Component failed to load; original assistants remain available.");
+      }
+      if (window.TypingSupport) {
+        window.TypingSupport.init({ experimentId: "interference" });
+      }
+      if (window.TaskRelevance) {
+        window.TaskRelevance.init({ experimentId: "interference" });
+      }
+      if (window.StudentMemory) {
+        window.StudentMemory.init({
+          experimentId: "interference",
+          getLearningState: () => ({ steps, currentStepIndex: state.currentStep, maxUnlockedStep: state.maxUnlockedStep })
+        });
+      }
+      if (window.LearningDiagnosis) {
+        window.LearningDiagnosis.init({ experimentId: "interference" });
+      }
+    });
   </script>
 </body>
 </html>

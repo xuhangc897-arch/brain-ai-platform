@@ -54,6 +54,7 @@
 
 - `BrainPlatform.identity` 负责学生/游客浏览器会话的一致读写。
 - `cloudbase.js` 中的 CloudBase Auth 当前只提供教师页面所需的 SDK 登录态和调用通道。
+- 登录页和首页通过 `assets/cloudbase-loader.js` 仅在教师路径按需加载 CloudBase SDK 和 `cloudbase.js`；学生与游客路径不依赖该 SDK。
 - 浏览器身份不是服务端授权依据。
 - `role` 是数据契约字段，不等于已完成权限认证。
 - 服务端角色校验和学生数据归属校验仍属于后续核心授权阶段。

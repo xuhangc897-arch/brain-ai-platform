@@ -1781,7 +1781,7 @@
         showStepMessage("请先完成侦探小结。");
         return;
       }
-      const reportTab = window.open("about:blank", "_blank");
+      const reportTab = window.BrainExperimentBridge.openPendingReport();
       if (reportTab) window.focus();
       const button = document.getElementById("reviewReportBtn");
       if (button) button.disabled = true;
@@ -1791,7 +1791,7 @@
         alert("活动五侦探小结已完成！");
         window.BrainExperimentBridge.finishReport(activityType, result.submissionId || "", reportTab);
       } else {
-        reportTab?.close();
+        window.BrainExperimentBridge.showReportFailure(reportTab, result);
         alert(result?.queued ? "正式提交尚未上传成功，请保持联网后重试。" : "正式提交失败，请稍后重试。");
       }
       if (button) button.disabled = false;
@@ -1972,8 +1972,6 @@
 
     renderApp();
     hydrateKnowledgeTimeline();
-    window.StudentMemory?.init({ experimentId: "poster" });
-    window.LearningDiagnosis?.init({ experimentId: "poster" });
   </script>
   <script src="assets/ai-assistant.js?v=ai-chat-upload-20260708"></script>
   <script>
@@ -1984,15 +1982,19 @@
   <script src="assets/voice-assistant.js"></script>
   <script src="assets/memory-partner.js"></script>
   <script>
-    if (window.VirtualAgent) {
-      window.VirtualAgent.init({
-        experimentId: "poster",
-        experimentName: "海报制作与分享交流",
-        getLearningState: () => ({ steps, currentStepIndex: state.currentStep, maxUnlockedStep: state.maxUnlockedStep })
-      });
-    } else {
-      console.warn("[Virtual Agent] Component failed to load; original assistants remain available.");
-    }
+    window.BrainExperimentPageRuntime.afterFirstPaint(() => {
+      window.StudentMemory?.init({ experimentId: "poster" });
+      window.LearningDiagnosis?.init({ experimentId: "poster" });
+      if (window.VirtualAgent) {
+        window.VirtualAgent.init({
+          experimentId: "poster",
+          experimentName: "海报制作与分享交流",
+          getLearningState: () => ({ steps, currentStepIndex: state.currentStep, maxUnlockedStep: state.maxUnlockedStep })
+        });
+      } else {
+        console.warn("[Virtual Agent] Component failed to load; original assistants remain available.");
+      }
+    });
   </script>
 </body>
 </html>
