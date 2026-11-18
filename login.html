@@ -761,8 +761,7 @@
 
   <script src="assets/experiment-registry.js"></script>
   <script src="assets/platform-core.js"></script>
-  <script src="https://static.cloudbase.net/cloudbase-js-sdk/3.0.0/cloudbase.full.js"></script>
-  <script src="cloudbase.js"></script>
+  <script src="assets/cloudbase-loader.js"></script>
   <script>
     const STUDENT_LOGIN_URL = window.BrainPlatform.config.endpoints.studentLogin;
     const STUDENT_REGISTER_URL = window.BrainPlatform.config.endpoints.studentRegister;
@@ -927,8 +926,8 @@
 
       try {
         if (selectedRole === "teacher") {
-          if (!window.BrainCloudBase) throw new Error("教师登录服务暂时不可用，请稍后重试。");
-          await window.BrainCloudBase.loginTeacher(account, password);
+          const cloudBase = await window.BrainCloudBaseLoader.load();
+          await cloudBase.loginTeacher(account, password);
           window.BrainPlatform.identity.clearStudentSession();
           window.location.href = "index.html";
           return;

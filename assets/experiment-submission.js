@@ -189,17 +189,22 @@
     if (!session.sessionToken || session.isGuest) {
       return { ok: false, code: session.isGuest ? "GUEST" : "UNAUTHORIZED", retryable: !session.isGuest };
     }
+    const controller = new AbortController();
+    const timeout = global.setTimeout(() => controller.abort(), 15000);
     try {
       const response = await global.fetch(platform.config.endpoints.saveExperimentSubmission, {
         method: "POST",
         headers: { "Content-Type": "application/json", Authorization: `Bearer ${session.sessionToken}` },
-        body: JSON.stringify({ schemaVersion: SCHEMA_VERSION, submission })
+        body: JSON.stringify({ schemaVersion: SCHEMA_VERSION, submission }),
+        signal: controller.signal
       });
       const result = await response.json().catch(() => ({}));
       if (result.code === "UNAUTHORIZED") result.retryable = true;
       return Object.assign({ ok: response.ok && Boolean(result.ok) }, result);
     } catch (error) {
-      return { ok: false, code: "NETWORK_ERROR", retryable: true };
+      return { ok: false, code: controller.signal.aborted ? "NETWORK_TIMEOUT" : "NETWORK_ERROR", retryable: true };
+    } finally {
+      global.clearTimeout(timeout);
     }
   }
 

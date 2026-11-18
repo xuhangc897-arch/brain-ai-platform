@@ -59,6 +59,19 @@ function mergeState(base, incoming) {
   return merged;
 }
 
+const deferredWindow = createRuntime();
+let nextFrame;
+let nextTask;
+let assistantStarted = false;
+deferredWindow.requestAnimationFrame = (callback) => { nextFrame = callback; };
+deferredWindow.setTimeout = (callback) => { nextTask = callback; };
+deferredWindow.BrainExperimentPageRuntime.afterFirstPaint(() => { assistantStarted = true; });
+assert.strictEqual(assistantStarted, false);
+nextFrame();
+assert.strictEqual(assistantStarted, false);
+nextTask();
+assert.strictEqual(assistantStarted, true);
+
 const memoryKey = "memory-capacity-state-v1";
 const contextKey = "science-inquiry-context-v1";
 const scopedSuffix = "::student%3ALOGIN-001";
@@ -193,6 +206,7 @@ for (const [page, moduleId] of Object.entries(pages)) {
     source.includes(`BrainExperimentPageRuntime.create("${moduleId}")`),
     `${page} 未绑定正确的实验模块`
   );
+  assert(source.includes("BrainExperimentPageRuntime.afterFirstPaint"), `${page} 未在首次绘制后初始化辅助功能`);
   assert(!/JSON\.parse\(localStorage\.getItem\(STORAGE_KEY\)/.test(source), `${page} 仍直接解析状态`);
   assert(!/localStorage\.setItem\(STORAGE_KEY/.test(source), `${page} 仍直接保存状态`);
 }

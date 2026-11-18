@@ -15,6 +15,12 @@
     return platform.identity.getStudentIdentityFields();
   }
 
+  function afterFirstPaint(callback) {
+    global.requestAnimationFrame(() => {
+      global.setTimeout(callback, 0);
+    });
+  }
+
   function create(moduleId) {
     const experiment = registry.get(moduleId);
     if (!experiment || experiment.kind !== "experiment") {
@@ -91,6 +97,7 @@
   }
 
   global.BrainExperimentPageRuntime = Object.freeze({
-    create
+    create,
+    afterFirstPaint
   });
 })(window);

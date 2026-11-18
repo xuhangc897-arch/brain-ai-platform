@@ -63,6 +63,50 @@
     return global.open(target, "_blank");
   }
 
+  function reportStatus(reportTab, title, message) {
+    if (!reportTab || reportTab.closed) return;
+    try {
+      const doc = reportTab.document;
+      doc.title = title;
+      doc.body.replaceChildren();
+      doc.body.style.cssText = "font:18px/1.7 system-ui,sans-serif;max-width:620px;margin:12vh auto;padding:0 24px;color:#243047";
+      const heading = doc.createElement("h1");
+      heading.textContent = title;
+      const detail = doc.createElement("p");
+      detail.textContent = message;
+      doc.body.append(heading, detail);
+    } catch (error) {
+      // The student may have navigated the pending tab elsewhere.
+    }
+  }
+
+  function waitForLearningRecords() {
+    const flush = global.LearningBehaviorTracker?.flush();
+    return new Promise((resolve) => {
+      const timeout = global.setTimeout(resolve, 5000);
+      Promise.resolve(flush).then(() => {
+        global.clearTimeout(timeout);
+        resolve();
+      }, () => {
+        global.clearTimeout(timeout);
+        resolve();
+      });
+    });
+  }
+
+  function openPendingReport() {
+    const reportTab = global.open("about:blank", "_blank");
+    reportStatus(reportTab, "正在保存实验记录", "保存成功后会自动打开正式报告，请稍候。");
+    return reportTab;
+  }
+
+  function showReportFailure(reportTab, result) {
+    const message = result && result.queued
+      ? "提交尚未确认，记录已保留。请返回实验页，检查网络后再次点击生成报告。"
+      : "正式提交失败。请返回实验页重试。";
+    reportStatus(reportTab, "报告暂未生成", message);
+  }
+
   function submitExperimentState(options) {
     const moduleId = String(options && options.moduleId || "");
     requireModule(moduleId);
@@ -81,6 +125,9 @@
   global.BrainExperimentBridge = Object.freeze({
     submitState,
     submitExperimentState,
-    finishReport
+    finishReport,
+    waitForLearningRecords,
+    openPendingReport,
+    showReportFailure
   });
 })(window);

@@ -3214,19 +3214,19 @@
         return;
       }
       if (!finalizeKnowledgeQuizOnce()) return;
-      const reportTab = window.open("about:blank", "_blank");
+      const reportTab = window.BrainExperimentBridge.openPendingReport();
       if (reportTab) window.focus();
       const button = document.getElementById("reviewReportBtn");
       if (button) button.disabled = true;
       window.LearningBehaviorTracker?.markStageSubmitted(steps[state.currentStep].id);
-      await Promise.resolve(window.LearningBehaviorTracker?.flush());
+      await window.BrainExperimentBridge.waitForLearningRecords();
       saveState();
       const result = await submitNbackRecord();
       if (result?.ok) {
         alert("实验二侦探小结已完成！");
         window.BrainExperimentBridge.finishReport(activityType, result.submissionId || "", reportTab);
       } else {
-        reportTab?.close();
+        window.BrainExperimentBridge.showReportFailure(reportTab, result);
         alert(result?.queued ? "正式提交尚未上传成功，请保持联网后重试。" : "正式提交失败，请稍后重试。");
       }
       if (button) button.disabled = false;
@@ -3908,30 +3908,32 @@
     if (window.LearningBehaviorTracker) {
       window.LearningBehaviorTracker.init({ experimentId: "nback" });
     }
-    if (window.VirtualAgent) {
-      window.VirtualAgent.init({
-        experimentId: "nback",
-        experimentName: "N-back 工作记忆实验",
-        getLearningState: () => ({ steps, currentStepIndex: state.currentStep, maxUnlockedStep: state.maxUnlockedStep })
-      });
-    } else {
-      console.warn("[Virtual Agent] Component failed to load; original assistants remain available.");
-    }
-    if (window.TypingSupport) {
-      window.TypingSupport.init({ experimentId: "nback" });
-    }
-    if (window.TaskRelevance) {
-      window.TaskRelevance.init({ experimentId: "nback" });
-    }
-    if (window.StudentMemory) {
-      window.StudentMemory.init({
-        experimentId: "nback",
-        getLearningState: () => ({ steps, currentStepIndex: state.currentStep, maxUnlockedStep: state.maxUnlockedStep })
-      });
-    }
-    if (window.LearningDiagnosis) {
-      window.LearningDiagnosis.init({ experimentId: "nback" });
-    }
+    window.BrainExperimentPageRuntime.afterFirstPaint(() => {
+      if (window.VirtualAgent) {
+        window.VirtualAgent.init({
+          experimentId: "nback",
+          experimentName: "N-back 工作记忆实验",
+          getLearningState: () => ({ steps, currentStepIndex: state.currentStep, maxUnlockedStep: state.maxUnlockedStep })
+        });
+      } else {
+        console.warn("[Virtual Agent] Component failed to load; original assistants remain available.");
+      }
+      if (window.TypingSupport) {
+        window.TypingSupport.init({ experimentId: "nback" });
+      }
+      if (window.TaskRelevance) {
+        window.TaskRelevance.init({ experimentId: "nback" });
+      }
+      if (window.StudentMemory) {
+        window.StudentMemory.init({
+          experimentId: "nback",
+          getLearningState: () => ({ steps, currentStepIndex: state.currentStep, maxUnlockedStep: state.maxUnlockedStep })
+        });
+      }
+      if (window.LearningDiagnosis) {
+        window.LearningDiagnosis.init({ experimentId: "nback" });
+      }
+    });
   </script>
 </body>
 </html>

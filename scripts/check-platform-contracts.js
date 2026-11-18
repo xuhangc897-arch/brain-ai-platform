@@ -110,4 +110,30 @@ assert.strictEqual(
   "experiment-upload-outbox-v1"
 );
 
-console.log("Platform identity, configuration and data contract checks passed.");
+const loaderSource = fs.readFileSync(path.join(__dirname, "..", "assets", "cloudbase-loader.js"), "utf8");
+const loadedScripts = [];
+const teacherWindow = { setTimeout: () => 1, clearTimeout() {} };
+const teacherDocument = {
+  createElement() { return { remove() {} }; },
+  head: {
+    appendChild(script) {
+      loadedScripts.push(script.src);
+      if (script.src === "cloudbase.js") teacherWindow.BrainCloudBase = { loginTeacher() {} };
+      script.onload();
+    }
+  }
+};
+vm.runInNewContext(loaderSource, { window: teacherWindow, document: teacherDocument, Promise });
+assert.strictEqual(loadedScripts.length, 0, "CloudBase SDK must not load before teacher access");
+teacherWindow.BrainCloudBaseLoader.load().then(() => {
+  assert.deepStrictEqual(loadedScripts, [
+    "https://static.cloudbase.net/cloudbase-js-sdk/3.0.0/cloudbase.full.js",
+    "cloudbase.js"
+  ]);
+  for (const page of ["index.html", "login.html"]) {
+    const html = fs.readFileSync(path.join(__dirname, "..", page), "utf8");
+    assert(!html.includes('<script src="https://static.cloudbase.net/'), `${page} still blocks on CloudBase SDK`);
+    assert(html.includes('src="assets/cloudbase-loader.js"'));
+  }
+  console.log("Platform identity, configuration and data contract checks passed.");
+}).catch((error) => { console.error(error); process.exitCode = 1; });

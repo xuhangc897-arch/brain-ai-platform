@@ -12,6 +12,9 @@ const acknowledgedEvents = [];
 const session = { studentId: "s-1", sessionToken: "token", name: "Student" };
 const context = {
   structuredClone,
+  AbortController,
+  setTimeout,
+  clearTimeout,
   fetch: async () => ({ ok: true, json: async () => ({ ok: true, code: "STORED" }) }),
   localStorage: { getItem: (key) => store.get(key) || null, setItem: (key, value) => store.set(key, value) },
   addEventListener() {},
@@ -85,6 +88,34 @@ context.BrainExperimentSubmission.submit({ experimentId: "memory", state, submis
     .then(() => {
       assert.strictEqual(acknowledgedEvents.length, 1, "the same submission must only emit one acknowledgement");
     });
+}).then(async () => {
+  const originalFetch = context.fetch;
+  const originalSetTimeout = context.setTimeout;
+  const originalClearTimeout = context.clearTimeout;
+  context.setTimeout = (callback) => { callback(); return 1; };
+  context.clearTimeout = () => {};
+  context.fetch = async (_url, options) => {
+    assert.strictEqual(options.signal.aborted, true);
+    throw new Error("aborted");
+  };
+  const timedOut = await context.BrainExperimentSubmission.submit({
+    experimentId: "memory", state, submissionTime: "2026-08-03T03:00:00.000Z"
+  });
+  assert.strictEqual(timedOut.code, "NETWORK_TIMEOUT");
+  assert.strictEqual(timedOut.queued, true);
+  context.setTimeout = originalSetTimeout;
+  context.clearTimeout = originalClearTimeout;
+  context.fetch = async (_url, options) => {
+    assert.strictEqual(JSON.parse(options.body).submission.submissionId, timedOut.submissionId);
+    return { ok: true, json: async () => ({ ok: true, code: "DUPLICATE" }) };
+  };
+  const recovered = await context.BrainExperimentSubmission.submit({
+    experimentId: "memory", state, submissionTime: "2026-08-03T04:00:00.000Z"
+  });
+  assert.strictEqual(recovered.ok, true);
+  assert.strictEqual(recovered.queued, false);
+  assert.strictEqual(recovered.submissionId, timedOut.submissionId);
+  context.fetch = originalFetch;
 }).then(() => {
   const saveSource = fs.readFileSync(path.join(__dirname, "..", "cloudfunctions", "saveExperimentSubmission", "index.js"), "utf8");
   const getSource = fs.readFileSync(path.join(__dirname, "..", "cloudfunctions", "getLatestExperimentSubmission", "index.js"), "utf8");

@@ -1414,8 +1414,7 @@
   <script src="assets/experiment-registry.js"></script>
   <script src="assets/platform-core.js"></script>
   <script src="auth.js"></script>
-  <script src="https://static.cloudbase.net/cloudbase-js-sdk/3.0.0/cloudbase.full.js"></script>
-  <script src="cloudbase.js"></script>
+  <script src="assets/cloudbase-loader.js"></script>
   <script src="assets/case-stories.js"></script>
   <script src="assets/case-intro.js"></script>
   <script>
@@ -1433,7 +1432,8 @@
         checkLogin();
       } else {
         try {
-          currentTeacher = await window.BrainCloudBase?.getTeacherLoginState();
+          const cloudBase = await window.BrainCloudBaseLoader.load();
+          currentTeacher = await cloudBase.getTeacherLoginState();
         } catch (error) {
           currentTeacher = null;
         }
@@ -1572,7 +1572,15 @@
           stories: window.MemoryCaseStories,
           backdropRoot: document.getElementById("experience"),
           onNavigate(route) {
-            window.location.href = route;
+            const startButton = document.querySelector(".case-intro-start");
+            if (startButton) {
+              startButton.disabled = true;
+              startButton.textContent = "正在进入实验…";
+            }
+            sceneStatus.textContent = "正在进入实验页面。";
+            window.requestAnimationFrame(() => {
+              window.setTimeout(() => { window.location.href = route; }, 0);
+            });
           },
           onOpen(story) {
             sceneStatus.textContent = `正在阅读${story.caseNumber}：${story.title}的案件前情提要。`;
@@ -1713,6 +1721,28 @@
       }
 
       function openCaseIntro(card) {
+        if (!connection?.saveData) {
+          const route = card.dataset.caseRoute;
+          const resources = [route];
+          if (window.BrainExperimentRegistry.get(card.dataset.caseId)?.reportEnabled) {
+            resources.push(
+              "assets/experiment-theme.css",
+              "assets/experiment-theme.js",
+              "assets/experiment-uploader.js",
+              "assets/experiment-bridge.js",
+              "assets/experiment-page-runtime.js",
+              "assets/experiment-integration.js",
+              "assets/experiment-submission.js"
+            );
+          }
+          resources.forEach((resource) => {
+            if (!resource || document.querySelector(`link[rel="prefetch"][href="${resource}"]`)) return;
+            const link = document.createElement("link");
+            link.rel = "prefetch";
+            link.href = resource;
+            document.head.appendChild(link);
+          });
+        }
         getCaseIntro().open({
           caseId: card.dataset.caseId,
           route: card.dataset.caseRoute,
