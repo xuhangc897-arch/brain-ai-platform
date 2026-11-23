@@ -197,6 +197,7 @@ function baseData() {
   assert(initStudentsSource.includes('href="../index.html"'));
   assert(initStudentsSource.includes('name: "getStudentsAdmin"'));
   assert(initStudentsSource.includes('id="studentIdFilter"'));
+  assert(initStudentsSource.includes('id="exportStudentsBtn"'));
   assert(initStudentsSource.includes('id="openExcelImportBtn"'));
   assert(initStudentsSource.includes('"导入成功！"'));
   assert(initStudentsSource.includes('name: "deleteStudentAdmin"'));
@@ -209,8 +210,11 @@ function baseData() {
 
   const loadStudentsCode = initStudentsSource.slice(initStudentsSource.indexOf("    async function loadStudents()"), initStudentsSource.indexOf("    function openDeleteStudentDialog"));
   const accountRows = Array.from({ length: 105 }, (_, index) => ({ studentId: String(index + 1).padStart(3, "0"), name: index === 104 ? "新姓名" : "其他", class: "三班", group: "2组" }));
-  const studentPage = { isLoggedIn: true, studentPrevBtn: {}, studentNextBtn: {}, studentListStatus: {}, STUDENT_PAGE_SIZE: 100,
-    studentPageSkip: 0, studentHasMore: false, currentStudents: [], renderStudentList() {}, getErrorMessage: (error) => error.message,
+  let exportedWorkbook = null;
+  const studentPage = { isLoggedIn: true, studentPrevBtn: {}, studentNextBtn: {}, exportStudentsBtn: {}, studentListStatus: {}, STUDENT_PAGE_SIZE: 100,
+    studentPageSkip: 0, studentHasMore: false, currentStudents: [], filteredStudents: [], renderStudentList() {}, getErrorMessage: (error) => error.message,
+    assertXlsxLoaded() {}, XLSX: { utils: { aoa_to_sheet: (rows) => ({ rows }), book_new: () => ({}), book_append_sheet: (workbook, sheet) => { workbook.sheet = sheet; } },
+      writeFile: (workbook, filename) => { exportedWorkbook = { workbook, filename }; } },
     studentFilters: { studentId: { value: "" }, name: { value: "新姓" }, class: { value: "" }, group: { value: "" } },
     window: { app: { async callFunction({ data }) { return { result: { ok: true, records: accountRows.slice(data.skip, data.skip + data.limit), hasMore: data.skip + data.limit < accountRows.length } }; } } } };
   vm.createContext(studentPage);
@@ -218,6 +222,21 @@ function baseData() {
   assert.strictEqual(studentPage.currentStudents.length, 1);
   assert.strictEqual(studentPage.currentStudents[0].studentId, "105");
   assert.strictEqual(studentPage.studentListStatus.textContent, "共找到 1 个学生账号。");
+  vm.runInContext("exportStudents()", studentPage);
+  assert.strictEqual(exportedWorkbook.filename, "学生名单.xlsx");
+  assert.deepStrictEqual(Array.from(exportedWorkbook.workbook.sheet.rows[0]), ["学号", "姓名", "班级", "小组"]);
+  assert.strictEqual(exportedWorkbook.workbook.sheet.rows.length, 2);
+  assert.deepStrictEqual(Array.from(exportedWorkbook.workbook.sheet.rows[1]), ["105", "新姓名", "三班", "2组"]);
+  studentPage.studentFilters.name.value = "";
+  await vm.runInContext("loadStudents()", studentPage);
+  vm.runInContext("exportStudents()", studentPage);
+  assert.strictEqual(exportedWorkbook.workbook.sheet.rows.length, 106, "导出应包含筛选后的全部分页");
+  assert.strictEqual(exportedWorkbook.workbook.sheet.rows[1][0], "001", "学号应保持文本前导零");
+  studentPage.studentFilters.name.value = "不存在的学生";
+  await vm.runInContext("loadStudents()", studentPage);
+  exportedWorkbook = null;
+  vm.runInContext("exportStudents()", studentPage);
+  assert.strictEqual(exportedWorkbook, null, "空筛选结果不应生成文件");
 
   const recordQueryCode = dashboardSource.slice(dashboardSource.indexOf("    function withCurrentProfile(record)"), dashboardSource.indexOf("    async function loadRecords()"));
   const oldRecord = { studentId: "105", studentName: "旧姓名", className: "旧班", groupName: "1组", createdAt: "2026-08-08T10:30:00.000Z",
