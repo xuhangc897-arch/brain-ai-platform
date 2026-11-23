@@ -865,6 +865,7 @@
         <div class="actions">
           <button class="btn" id="searchStudentsBtn" type="button">查询</button>
           <button class="btn" id="clearStudentFiltersBtn" type="button">清空筛选</button>
+          <button class="btn" id="exportStudentsBtn" type="button" disabled>导出 Excel</button>
         </div>
         <p class="status" id="studentListStatus">登录后读取当前学生名单。</p>
         <div class="student-table-wrap">
@@ -1032,6 +1033,7 @@
     const studentPrevBtn = document.getElementById("studentPrevBtn");
     const studentNextBtn = document.getElementById("studentNextBtn");
     const studentPageLabel = document.getElementById("studentPageLabel");
+    const exportStudentsBtn = document.getElementById("exportStudentsBtn");
     const openAddStudentBtn = document.getElementById("openAddStudentBtn");
     const studentFilters = {
       studentId: document.getElementById("studentIdFilter"),
@@ -1052,6 +1054,7 @@
     const STUDENT_PAGE_SIZE = 100;
     let studentPageSkip = 0;
     let currentStudents = [];
+    let filteredStudents = [];
     let studentHasMore = false;
     let pendingDeleteStudent = null;
     let pendingEditStudent = null;
@@ -1123,6 +1126,7 @@
       }
       studentPrevBtn.disabled = studentPageSkip === 0;
       studentNextBtn.disabled = !studentHasMore;
+      exportStudentsBtn.disabled = !isLoggedIn || filteredStudents.length === 0;
       studentPageLabel.textContent = `第 ${Math.floor(studentPageSkip / STUDENT_PAGE_SIZE) + 1} 页`;
     }
 
@@ -1130,6 +1134,7 @@
       if (!isLoggedIn) return;
       studentPrevBtn.disabled = true;
       studentNextBtn.disabled = true;
+      exportStudentsBtn.disabled = true;
       studentListStatus.textContent = "正在读取学生名单...";
       try {
         const allStudents = [];
@@ -1142,6 +1147,7 @@
         }
         const filtered = allStudents.filter((student) => Object.entries(studentFilters).every(([key, input]) =>
           !input.value.trim() || String(student[key] || "").toLocaleLowerCase().includes(input.value.trim().toLocaleLowerCase())));
+        filteredStudents = filtered;
         if (studentPageSkip >= filtered.length) studentPageSkip = Math.max(0, Math.floor((filtered.length - 1) / STUDENT_PAGE_SIZE) * STUDENT_PAGE_SIZE);
         currentStudents = filtered.slice(studentPageSkip, studentPageSkip + STUDENT_PAGE_SIZE);
         studentHasMore = filtered.length > studentPageSkip + STUDENT_PAGE_SIZE;
@@ -1149,9 +1155,29 @@
         renderStudentList();
       } catch (error) {
         currentStudents = [];
+        filteredStudents = [];
         studentHasMore = false;
         studentListStatus.textContent = getErrorMessage(error);
         renderStudentList();
+      }
+    }
+
+    function exportStudents() {
+      if (!isLoggedIn || !filteredStudents.length) return;
+      try {
+        assertXlsxLoaded();
+        const rows = [
+          ["学号", "姓名", "班级", "小组"],
+          ...filteredStudents.map((student) => [student.studentId, student.name, student.class, student.group]
+            .map((value) => String(value ?? "")))
+        ];
+        const sheet = XLSX.utils.aoa_to_sheet(rows);
+        sheet["!cols"] = [{ wch: 18 }, { wch: 18 }, { wch: 18 }, { wch: 14 }];
+        const workbook = XLSX.utils.book_new();
+        XLSX.utils.book_append_sheet(workbook, sheet, "学生名单");
+        XLSX.writeFile(workbook, "学生名单.xlsx");
+      } catch (error) {
+        studentListStatus.textContent = `导出失败：${getErrorMessage(error)}`;
       }
     }
 
@@ -1603,6 +1629,7 @@
       studentPageSkip = 0;
       loadStudents();
     });
+    exportStudentsBtn.addEventListener("click", exportStudents);
     Object.values(studentFilters).forEach((input) => input.addEventListener("keydown", (event) => {
       if (event.key === "Enter") { event.preventDefault(); studentPageSkip = 0; loadStudents(); }
     }));
