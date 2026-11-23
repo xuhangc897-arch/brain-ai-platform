@@ -929,7 +929,7 @@
           const cloudBase = await window.BrainCloudBaseLoader.load();
           await cloudBase.loginTeacher(account, password);
           window.BrainPlatform.identity.clearStudentSession();
-          window.location.href = "index.html";
+          window.location.href = "index.html?role=teacher";
           return;
         }
 

@@ -1060,24 +1060,26 @@
       return `请先完成本步骤内容。（${steps[state.currentStep].title}${pageNumber}/${pageCount}）`;
     }
 
-    function goToStep(targetStep) {
+    async function goToStep(targetStep) {
       const target = clampStepIndex(targetStep);
       if (!isDeveloperMode() && target > state.maxUnlockedStep) {
         showStepMessage("请先完成前一步内容，再进入下一步。");
         return;
       }
+      if (target > state.currentStep && window.isGuestSession() && !await window.confirmGuestNextStep()) return;
       preparePagedInputLifecycle();
       state.currentStep = target;
       if (!isDeveloperMode()) saveState();
       renderApp();
     }
 
-    function goNextStep() {
+    async function goNextStep() {
       if (!validateStep(steps[state.currentStep].id)) {
         showStepMessage(getIncompleteStepMessage(steps[state.currentStep].id));
         return;
       }
       if (state.currentStep < steps.length - 1) {
+        if (window.isGuestSession() && !await window.confirmGuestNextStep()) return;
         window.LearningBehaviorTracker?.markStageSubmitted(steps[state.currentStep].id);
         if (!isDeveloperMode()) state.maxUnlockedStep = Math.max(state.maxUnlockedStep || 0, state.currentStep + 1);
         state.currentStep += 1;
