@@ -986,6 +986,14 @@
           <label for="moduleFilter" id="moduleFilterLabel">实验记录</label>
           <select id="moduleFilter"></select>
         </div>
+        <div class="field" id="aiStatusField" hidden>
+          <label for="aiStatusFilter">对话状态</label>
+          <select id="aiStatusFilter"><option value="">全部状态</option><option value="answered">已回答</option><option value="pending">处理中</option><option value="failed">失败</option></select>
+        </div>
+        <div class="field" id="aiSourceField" hidden>
+          <label for="aiSourceFilter">提问来源</label>
+          <select id="aiSourceFilter"><option value="">全部来源</option><option value="student">主动提问</option><option value="reminder">提醒后提问</option></select>
+        </div>
         <div class="field">
           <label for="studentIdFilter">学号</label>
           <input id="studentIdFilter" placeholder="例如：001">
@@ -1128,6 +1136,8 @@
     function updateModuleOptions() {
       const type = searchTypeFilter.value;
       moduleField.hidden = type === "diagnoses";
+      document.getElementById("aiStatusField").hidden = type !== "aiChat";
+      document.getElementById("aiSourceField").hidden = type !== "aiChat";
       diagnosisHistoryOption.hidden = type !== "diagnoses";
       exportBtn.hidden = type === "memories" || type === "diagnoses";
       addRecordBtn.hidden = type !== "records";
@@ -1236,6 +1246,8 @@
         className: filters.className.value.trim(),
         groupName: filters.groupName.value.trim(),
         sourceModule: isAiChat ? filters.module.value.trim() : "",
+        aiStatus: isAiChat ? document.getElementById("aiStatusFilter").value : "",
+        aiSource: isAiChat ? document.getElementById("aiSourceFilter").value : "",
         limit: 100,
         skip: 0
       };
@@ -2743,7 +2755,7 @@
 
       return [
         [`${studentLabel}-${data.sourceModule || "AI"}-AI对话`, [
-          ["学号", "姓名", "班级", "小组", "来源模块", "实验/页面", "阶段", "提问时间", "学生问题", "AI回答"],
+          ["学号", "姓名", "班级", "小组", "来源模块", "实验/页面", "阶段", "提问时间", "学生问题", "AI回答", "状态", "提问来源", "失败原因", "回答时间", "对话ID"],
           ...logs.map((log) => [
             log.studentId || data.studentId || stateRecord.studentId,
             log.studentName || data.studentName || stateRecord.studentName || "",
@@ -2754,7 +2766,12 @@
             log.currentStep || "",
             formatDate(log.timestamp),
             log.question || "",
-            log.answer || ""
+            log.answer || "",
+            log.status || "",
+            log.promptSource || "",
+            log.failureCode || "",
+            formatDate(log.answeredAt),
+            log.turnId || ""
           ])
         ]],
         [`${studentLabel}-${data.sourceModule || "AI"}-AI原始数据`, [
@@ -2809,6 +2826,14 @@
         const attemptSheets = strategyAttemptHistory.length ? [buildStrategyAttemptHistorySheet(strategyAttemptHistory)] : [];
         sheets = [buildOverviewSheet(exportSourceRecords), ...buildKnowledgeComparisonSheets(exportSourceRecords), ...detailSheets, ...attemptSheets,
           ["提交数据（当前账号资料）", [["学号", "姓名", "模块", "记录ID", "提交时间", "完整JSON"], ...exportSourceRecords.map((record) => [record.studentId, record.studentName, getModuleLabel(record.module), record.recordId, formatDate(record.createdAt), JSON.stringify(record.data || record.payload || {})])]]];
+        if (isAiChatExport) {
+          const response = await window.app.callFunction({ name: "getAiChatRecordsAdmin", data: { ...buildQueryPayload("submission"), action: "promptEvents" } });
+          const result = response && (response.result || response);
+          if (!result?.ok) throw new Error("读取 AI 提问提醒记录失败");
+          const events = (result.records || []).filter((item) => matchesCurrentProfile(withCurrentProfile({ studentId: item.studentId }), buildQueryPayload("submission")));
+          sheets.push(["AI提问提醒事件", [["学号", "来源模块", "步骤", "事件", "发生时间", "上传时间", "事件ID"],
+            ...events.map((item) => [item.studentId, item.experimentId, item.step, item.type, formatDate(item.timestamp), formatDate(item.uploadedAt), item.eventId])]]);
+        }
       } catch (error) {
         console.error("读取完整状态快照失败", getErrorSummary(error));
         setStatus(error.message || "读取完整记录失败，无法导出。");
@@ -2977,6 +3002,8 @@
       filters.className.value = "";
       filters.groupName.value = "";
       searchTypeFilter.value = "records";
+      document.getElementById("aiStatusFilter").value = "";
+      document.getElementById("aiSourceFilter").value = "";
       updateModuleOptions();
       loadSelectedRecords();
     });

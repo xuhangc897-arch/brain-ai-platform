@@ -4,7 +4,9 @@
 
 - localStorage：仅保存学生当前未提交状态、页面进度和可靠上传队列，不作为正式研究数据来源。
 - `experiment_submissions`：保存资格审查、四个实验和海报的正式成果，每次主动提交形成不可变记录。
-- `learning_records`、`ai_chat_records`、`agent_interventions`：分别保存学习行为、有效 AI 问答和智能支架过程。
+- `learning_records`、`ai_chat_records`、`agent_interventions`：分别保存学习行为、AI 提问及回答状态和智能支架过程。
+- `ai_chat_records` 的新记录先保存问题，再保存 AI 回答；`ai_prompt_events` 单独保存提问提醒的展示、点击和关闭事件。
+- 正式学生的 AI 待同步队列按学生隔离，最多 1000 条、最长保留 365 天；满额时停止发送新问题，不丢弃旧问题。提醒事件队列使用相同上限。
 - `experimentRecords`：只作为历史兼容集合保留；新实验正式提交和新 AI 问答不再写入该集合。
 
 ## 正式提交与报告
@@ -21,10 +23,12 @@
 
 - `experiment_submissions`
 - `ai_chat_records`
+- `ai_prompt_events`
 
-两个集合均应禁止 Web 客户端直接读写，只允许云函数访问。建议索引：
+三个集合均应禁止 Web 客户端直接读写，只允许云函数访问。`askAiChat` 需要与学生登录函数相同的 `STUDENT_SESSION_SECRET` 和 AI 服务密钥 `OPENAI_API_KEY`。部署云函数与静态页面时，先部署云函数并确认其 HTTP 网关可用，再切换页面请求地址。建议索引：
 
 - `experiment_submissions`：`studentId + experimentId + uploadedAt`、`submissionId`
-- `ai_chat_records`：`studentId + experimentId + uploadedAt`、`clientRecordId`
+- `ai_chat_records`：`studentId + experimentId + uploadedAt`、`clientRecordId`、`recordId`
+- `ai_prompt_events`：`studentId + experimentId + uploadedAt`、`eventId`
 
 部署顺序：先创建集合、权限和索引，再部署 `cloudbase.json` 中列出的云函数，最后部署静态站点。部署后使用正式测试学生和教师账号验证提交、最新报告、AI 单条记录、学生账号管理、正式实验记录管理及后台导出。

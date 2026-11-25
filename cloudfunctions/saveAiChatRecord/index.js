@@ -5,6 +5,7 @@ const cloudbase = require("@cloudbase/node-sdk");
 const app = cloudbase.init({ env: cloudbase.SYMBOL_CURRENT_ENV });
 const db = app.database();
 const records = db.collection("ai_chat_records");
+const promptEvents = db.collection("ai_prompt_events");
 const students = db.collection("students");
 const EXPERIMENTS = new Set(["memory", "nback", "interference", "strategies", "poster"]);
 const ID_PATTERN = /^[A-Za-z0-9_.:-]{1,100}$/;
@@ -23,7 +24,18 @@ function valid(record, studentId) { return record && text(record.studentId) === 
 
 exports.main = async (event) => {
   const auth = session(event); if (!auth) return { ok: false, code: "UNAUTHORIZED", retryable: false };
-  const record = body(event).record; if (!valid(record, text(auth.studentId))) return { ok: false, code: "INVALID_RECORD", retryable: false };
+  const input = body(event);
+  if (input.action === "prompt_event") {
+    const item = input.promptEvent || {};
+    if (!ID_PATTERN.test(text(item.eventId)) || !EXPERIMENTS.has(text(item.experimentId)) || !text(item.step) || !["shown", "clicked", "dismissed"].includes(text(item.type))) return { ok: false, code: "INVALID_EVENT", retryable: false };
+    const eventId = `prompt_${crypto.createHash("sha256").update(`${auth.studentId}:${item.eventId}`).digest("hex")}`;
+    try {
+      const result = await promptEvents.doc(eventId).set({ schemaVersion: 1, eventId, studentId: auth.studentId, experimentId: text(item.experimentId), step: text(item.step), type: text(item.type), timestamp: text(item.timestamp), uploadedAt: db.serverDate() });
+      if (result?.code) throw new Error("WRITE_FAILED");
+      return { ok: true, code: "STORED", eventId };
+    } catch (_) { return { ok: false, code: "WRITE_FAILED", retryable: true }; }
+  }
+  const record = input.record; if (!valid(record, text(auth.studentId))) return { ok: false, code: "INVALID_RECORD", retryable: false };
   const studentResult = await students.where({ studentId: text(auth.studentId) }).limit(1).get(); const student = Array.isArray(studentResult.data) ? studentResult.data[0] : null;
   if (!student) return { ok: false, code: "UNKNOWN_STUDENT", retryable: false };
   const recordId = id(text(record.clientRecordId));

@@ -29,7 +29,9 @@ assert.match(bridge, /submissionId=/);
 const assistant = read("assets/ai-assistant.js");
 assert.doesNotMatch(assistant, /data-ai-export|data-ai-clear|function exportLogs|function clearLogs|submitAiChatRecord|uploadExperimentRecords/);
 assert.match(assistant, /saveAiChatRecord/);
-assert.match(assistant, /uploadAiChatRecord\(context, answer\)/);
+assert.match(assistant, /queueQuestion\(context, promptSource\)/);
+assert.match(assistant, /endpoints\.askAiChat/);
+assert.doesNotMatch(assistant, /uploadAiChatRecord\(context, answer\)\.catch/);
 assert.match(assistant, /saveChatLog\(context, `错误：\$\{message\}`, true\)/);
 
 const review = read("assets/review.js");
@@ -61,7 +63,7 @@ for (const file of [
 
 const cloudbase = JSON.parse(read("cloudbase.json"));
 const functions = new Set(cloudbase.functions.map((item) => item.name));
-for (const name of ["saveExperimentSubmission", "getLatestExperimentSubmission", "getExperimentSubmissionsAdmin", "saveAiChatRecord", "getAiChatRecordsAdmin"]) {
+for (const name of ["saveExperimentSubmission", "getLatestExperimentSubmission", "getExperimentSubmissionsAdmin", "saveAiChatRecord", "askAiChat", "getAiChatRecordsAdmin"]) {
   assert(functions.has(name), `${name} must be included in cloudbase.json`);
 }
 
