@@ -87,6 +87,11 @@
       "runtime": "Nodejs20.19"
     },
     {
+      "name": "askAiChat",
+      "timeout": 60,
+      "runtime": "Nodejs20.19"
+    },
+    {
       "name": "getAiChatRecordsAdmin",
       "timeout": 60,
       "runtime": "Nodejs20.19"

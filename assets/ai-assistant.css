@@ -57,8 +57,46 @@
 }
 
 .ai-assistant.is-open .ai-hint,
+.ai-assistant.is-assessment-locked .ai-hint,
 .ai-assistant.is-dragging .ai-hint {
   opacity: 0 !important;
+}
+
+.ai-nudge:not([hidden]) {
+  position: absolute;
+  right: calc(100% + 12px);
+  bottom: 10px;
+  display: flex;
+  align-items: flex-start;
+  gap: 6px;
+  width: min(250px, calc(100vw - 125px));
+  padding: 9px;
+  border: 1px solid rgba(126, 190, 255, 0.4);
+  border-radius: 12px;
+  background: #102744;
+  box-shadow: 0 12px 30px rgba(2, 9, 22, 0.35);
+}
+
+.ai-nudge button {
+  border: 0;
+  background: transparent;
+  color: #edf6ff;
+  cursor: pointer;
+}
+
+.ai-nudge-ask { flex: 1; text-align: left; line-height: 1.5; }
+.ai-nudge-close { font-size: 20px; line-height: 1; }
+.ai-assistant:has(.ai-nudge:not([hidden])) .ai-hint { display: none; }
+body.has-virtual-agent .ai-nudge:not([hidden]) {
+  position: fixed;
+  right: calc(max(18px, env(safe-area-inset-right)) + 104px);
+  bottom: max(28px, env(safe-area-inset-bottom));
+}
+
+.ai-sync-status:not([hidden]) {
+  margin: 0 0 8px;
+  color: #a9dfff;
+  font-size: 12px;
 }
 
 .ai-toggle {

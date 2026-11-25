@@ -7,6 +7,8 @@
   const CONTEXT_KEY = platform.storage.migrateScopedJson(platform.config.storageKeys.inquiryContext);
   const LOG_KEY = platform.storage.migrateScopedJson(platform.config.storageKeys.aiChatLogs);
   const MAX_QUESTION_LENGTH = 500;
+  const MAX_OUTBOX_ENTRIES = 1000;
+  const OUTBOX_RETENTION_MS = 365 * 24 * 60 * 60 * 1000;
   const DRAG_MARGIN = 12;
   const DRAG_THRESHOLD = 5;
 
@@ -14,6 +16,10 @@
   root.className = "ai-assistant";
   root.innerHTML = `
     <div class="ai-hint" aria-hidden="true">我是你的AI侦探助手，有什么问题都可以问我噢！</div>
+    <div class="ai-nudge" hidden>
+      <button class="ai-nudge-ask" type="button"></button>
+      <button class="ai-nudge-close" type="button" aria-label="本步骤不再提醒">×</button>
+    </div>
     <button class="ai-toggle" type="button" aria-label="打开 AI 助手">
       <span class="ai-brain-wrap" aria-hidden="true">
         <svg class="ai-brain-icon" viewBox="0 0 64 64" focusable="false">
@@ -39,6 +45,7 @@
       <div class="ai-messages" aria-live="polite"></div>
       <form class="ai-form">
         <p class="ai-assessment-notice" data-ai-assessment-notice hidden>知识验证和问卷需要独立完成，完成后可继续使用 AI 助手。</p>
+        <p class="ai-sync-status" data-ai-sync-status role="status" hidden></p>
         <div class="ai-voice-row">
           <button class="ai-voice" type="button" data-ai-voice aria-label="使用语音输入问题">🎙 语音提问</button>
           <p class="ai-voice-status" data-ai-voice-status role="status" aria-live="polite"></p>
@@ -58,12 +65,23 @@
   const voiceButton = root.querySelector("[data-ai-voice]");
   const voiceStatus = root.querySelector("[data-ai-voice-status]");
   const assessmentNotice = root.querySelector("[data-ai-assessment-notice]");
+  const syncStatus = root.querySelector("[data-ai-sync-status]");
+  const nudge = root.querySelector(".ai-nudge");
+  const nudgeAsk = root.querySelector(".ai-nudge-ask");
+  const nudgeClose = root.querySelector(".ai-nudge-close");
   const panel = root.querySelector(".ai-panel");
   const head = root.querySelector(".ai-head");
   let voiceSession = null;
   let voiceState = "idle";
   let assessmentLocked = false;
   let requestPending = false;
+  const activeTurns = new Set();
+  const activePromptEvents = new Set();
+  let promptStep = "";
+  let activeStepMs = 0;
+  let lastPromptTick = Date.now();
+  let lastActivityAt = Date.now();
+  let promptSource = "student";
 
   function installDraggable(options) {
     const { dragRoot, visibleWhenClosed, visibleWhenOpen, handles } = options;
@@ -247,6 +265,105 @@
     return /(?:^|\s)posttest(?:\s|$)|侦探小结|知识后测|知识验证|调查问卷/.test(String(value || ""));
   }
 
+  function currentPromptStep() {
+    const experimentId = integration.resolveSourceModule("", location.pathname);
+    const step = getCurrentStep();
+    const active = document.querySelector(".progress-step.is-active, [data-stage-id].is-active");
+    const stepId = active?.dataset.stageId || active?.dataset.step || step;
+    return experimentId && step && !isAssessmentStep(step) ? `${experimentId}:${stepId}` : "";
+  }
+
+  function readPromptState() {
+    return readJson(platform.storage.scopedKey(platform.config.storageKeys.aiPromptState), { steps: {}, lastShownAt: 0 });
+  }
+
+  function writePromptState(value) {
+    localStorage.setItem(platform.storage.scopedKey(platform.config.storageKeys.aiPromptState), JSON.stringify(value));
+  }
+
+  function promptOutboxKey() { return platform.storage.scopedKey(platform.config.storageKeys.aiPromptOutbox); }
+  function readPromptOutbox() { const value = readJson(promptOutboxKey(), { entries: [] }); return Array.isArray(value.entries) ? value.entries : []; }
+  function writePromptOutbox(entries) { localStorage.setItem(promptOutboxKey(), JSON.stringify({ entries })); }
+  function queuePromptEvent(type, step) {
+    const session = platform.identity.readStudentSession() || {};
+    if (session.isGuest || !session.studentId || !step) return;
+    if (readPromptOutbox().length >= MAX_OUTBOX_ENTRIES) return;
+    const item = { eventId: window.crypto?.randomUUID?.() || `prompt-${Date.now()}-${Math.random().toString(36).slice(2)}`,
+      experimentId: step.split(":", 1)[0], step, type, timestamp: new Date().toISOString() };
+    writePromptOutbox(readPromptOutbox().concat(item));
+    flushPromptOutbox().catch(() => {});
+  }
+  async function flushPromptOutbox() {
+    const session = platform.identity.readStudentSession() || {};
+    if (!session.sessionToken) return;
+    for (const item of readPromptOutbox()) {
+      if (Date.now() - Date.parse(item.timestamp || 0) > OUTBOX_RETENTION_MS) {
+        writePromptOutbox(readPromptOutbox().filter((entry) => entry.eventId !== item.eventId));
+        continue;
+      }
+      if (activePromptEvents.has(item.eventId)) continue;
+      activePromptEvents.add(item.eventId);
+      try {
+        const response = await fetch(platform.config.endpoints.saveAiChatRecord, { method: "POST",
+          headers: { "Content-Type": "application/json", Authorization: `Bearer ${session.sessionToken}` },
+          body: JSON.stringify({ action: "prompt_event", promptEvent: item }) });
+        const result = await response.json();
+        if (result.ok || result.retryable === false) writePromptOutbox(readPromptOutbox().filter((entry) => entry.eventId !== item.eventId));
+      } catch (_) { /* Retry on the next flush. */ }
+      finally { activePromptEvents.delete(item.eventId); }
+    }
+  }
+
+  function hideNudge() { nudge.hidden = true; }
+
+  function promptTick() {
+    syncAssessmentLock();
+    const now = Date.now();
+    const step = currentPromptStep();
+    if (step !== promptStep) {
+      promptStep = step;
+      activeStepMs = 0;
+      promptSource = "student";
+      hideNudge();
+    }
+    if (step && document.visibilityState === "visible" && now - lastActivityAt < 15000) {
+      activeStepMs += Math.min(now - lastPromptTick, 5000);
+    }
+    lastPromptTick = now;
+    if (!step || root.classList.contains("is-open") || !nudge.hidden || activeStepMs < 60000) return;
+    const state = readPromptState();
+    const stepState = state.steps[step] || {};
+    const session = platform.identity.readStudentSession() || {};
+    if (!session.isGuest && readPromptOutbox().length >= MAX_OUTBOX_ENTRIES) return;
+    if (stepState.dismissed || stepState.asked || (stepState.count || 0) >= 3 || now - (state.lastShownAt || 0) < 180000) return;
+    stepState.count = (stepState.count || 0) + 1;
+    state.steps[step] = stepState;
+    state.lastShownAt = now;
+    writePromptState(state);
+    queuePromptEvent("shown", step);
+    nudgeAsk.textContent = `正在学习“${getCurrentStep()}”？可以问 AI 帮你梳理思路`;
+    nudge.hidden = false;
+    window.setTimeout(() => { if (promptStep === step) hideNudge(); }, 15000);
+  }
+
+  nudgeAsk.addEventListener("click", () => {
+    queuePromptEvent("clicked", promptStep);
+    hideNudge();
+    promptSource = "reminder";
+    setOpen(true);
+    input.value = `我在“${getCurrentStep()}”这一步应该关注哪些证据？`;
+    input.focus();
+  });
+  nudgeClose.addEventListener("click", () => {
+    queuePromptEvent("dismissed", promptStep);
+    hideNudge();
+    const state = readPromptState();
+    state.steps[promptStep] = { ...(state.steps[promptStep] || {}), dismissed: true };
+    writePromptState(state);
+  });
+  ["pointerdown", "keydown"].forEach((name) => document.addEventListener(name, () => { lastActivityAt = Date.now(); }, { passive: true }));
+  window.setInterval(promptTick, 5000);
+
   function getExperimentName() {
     const title = document.title.replace(/\s+/g, " ").trim();
     const headerTitle = getText(".brand-title h1") || getText("h1") || getText(".ai-page-title");
@@ -276,6 +393,7 @@
 
   function setAssessmentLock(nextLocked) {
     assessmentLocked = Boolean(nextLocked);
+    root.classList.toggle("is-assessment-locked", assessmentLocked);
     assessmentNotice.hidden = !assessmentLocked;
     if (assessmentLocked && voiceSession) voiceSession.cancel();
     updateControls();
@@ -379,6 +497,7 @@
 
   function setOpen(open) {
     root.classList.toggle("is-open", open);
+    if (open) hideNudge();
     dragControls.clamp();
     if (open) {
       renderHistory();
@@ -392,7 +511,7 @@
     }
   }
 
-  function buildLog(context, answer, failed = false) {
+  function buildLog(context, answer, failed = false, turnId = "") {
     return {
       timestamp: new Date().toISOString(),
       studentName: context.studentName,
@@ -407,14 +526,97 @@
       question: context.question,
       answer,
       experimentId: integration.resolveSourceModule("", context.path),
+      turnId,
       failed
     };
   }
 
-  function saveChatLog(context, answer, failed = false) {
+  function saveChatLog(context, answer, failed = false, turnId = "") {
     const logs = readLogs();
-    logs.push(buildLog(context, answer, failed));
+    if (turnId && logs.some((log) => log.turnId === turnId)) return;
+    logs.push(buildLog(context, answer, failed, turnId));
     saveLogs(logs);
+  }
+
+  function questionOutboxKey() {
+    return platform.storage.scopedKey(platform.config.storageKeys.aiQuestionOutbox);
+  }
+
+  function readQuestionOutbox() {
+    const value = readJson(questionOutboxKey(), { entries: [] });
+    return Array.isArray(value.entries) ? value.entries : [];
+  }
+
+  function writeQuestionOutbox(entries) {
+    localStorage.setItem(questionOutboxKey(), JSON.stringify({ schemaVersion: 1, entries }));
+    syncStatus.hidden = entries.length === 0;
+    syncStatus.textContent = entries.length ? `${entries.length} 条提问待同步` : "";
+  }
+
+  function removeQuestion(turnId) {
+    writeQuestionOutbox(readQuestionOutbox().filter((item) => item.turnId !== turnId));
+  }
+
+  function queueQuestion(context, promptSource) {
+    const entries = readQuestionOutbox();
+    if (entries.length >= MAX_OUTBOX_ENTRIES) throw new Error("AI_QUESTION_OUTBOX_FULL");
+    const entry = {
+      turnId: window.crypto?.randomUUID?.() || `turn-${Date.now()}-${Math.random().toString(36).slice(2)}`,
+      timestamp: new Date().toISOString(),
+      studentId: context.studentId,
+      experimentId: integration.resolveSourceModule("", context.path),
+      page: context.path,
+      step: context.currentStep,
+      question: context.question,
+      promptSource
+    };
+    writeQuestionOutbox(entries.concat(entry));
+    return entry;
+  }
+
+  async function sendQuestion(entry) {
+    const session = platform.identity.readStudentSession() || {};
+    if (!session.sessionToken || session.studentId !== entry.studentId) return { ok: false, code: "UNAUTHORIZED", retryable: true };
+    try {
+      const response = await fetch(platform.config.endpoints.askAiChat, {
+        method: "POST",
+        headers: { "Content-Type": "application/json", Authorization: `Bearer ${session.sessionToken}` },
+        body: JSON.stringify(entry)
+      });
+      return await response.json();
+    } catch (_) { return { ok: false, code: "NETWORK_ERROR", retryable: true }; }
+  }
+
+  async function deliverQuestion(entry, context) {
+    if (activeTurns.has(entry.turnId)) return { ok: false, code: "IN_PROGRESS", retryable: true };
+    activeTurns.add(entry.turnId);
+    try {
+      const result = await sendQuestion(entry);
+      if (result.ok && result.answer) {
+        saveChatLog(context || { ...readIdentity(), question: entry.question, path: entry.page,
+          currentStep: entry.step, pageTitle: document.title, experimentName: getExperimentName() }, result.answer, false, entry.turnId);
+        removeQuestion(entry.turnId);
+      } else if (result.retryable === false) {
+        removeQuestion(entry.turnId);
+      }
+      return result;
+    } finally { activeTurns.delete(entry.turnId); }
+  }
+
+  async function flushQuestionOutbox() {
+    let expired = 0;
+    for (const entry of readQuestionOutbox()) {
+      if (Date.now() - Date.parse(entry.timestamp || 0) > OUTBOX_RETENTION_MS) {
+        removeQuestion(entry.turnId);
+        expired += 1;
+        continue;
+      }
+      if (!activeTurns.has(entry.turnId)) await deliverQuestion(entry).catch(() => {});
+    }
+    if (expired) {
+      syncStatus.hidden = false;
+      syncStatus.textContent = `${expired} 条提问超过本地保留期，未能自动同步。`;
+    }
   }
 
   function aiOutboxKey() {
@@ -427,7 +629,7 @@
   }
 
   function writeAiOutbox(entries) {
-    localStorage.setItem(aiOutboxKey(), JSON.stringify({ schemaVersion: 1, updatedAt: new Date().toISOString(), entries: entries.slice(-200) }));
+    localStorage.setItem(aiOutboxKey(), JSON.stringify({ schemaVersion: 1, updatedAt: new Date().toISOString(), entries }));
   }
 
   function buildAiChatRecord(context, answer) {
@@ -466,18 +668,19 @@
 
   async function flushAiChatOutbox() {
     const entries = readAiOutbox();
-    const remaining = [];
     for (const record of entries) {
       const result = await sendAiChatRecord(record);
-      if (!result.ok && result.code !== "DUPLICATE" && result.retryable !== false) remaining.push(record);
+      if (result.ok || result.code === "DUPLICATE" || result.retryable === false) {
+        writeAiOutbox(readAiOutbox().filter((item) => item.clientRecordId !== record.clientRecordId));
+      }
     }
-    writeAiOutbox(remaining);
-    return { ok: remaining.length === 0, queued: remaining.length };
+    return { ok: readAiOutbox().length === 0, queued: readAiOutbox().length };
   }
 
   async function uploadAiChatRecord(context, answer) {
     const record = buildAiChatRecord(context, answer);
     const entries = readAiOutbox();
+    if (entries.length >= 200) return { ok: false, code: "OUTBOX_FULL", retryable: true };
     if (!entries.some((item) => item.clientRecordId === record.clientRecordId)) entries.push(record);
     writeAiOutbox(entries);
     const result = await sendAiChatRecord(record);
@@ -507,7 +710,12 @@
     return `AI 助手连接失败：${reason}`;
   }
 
-  async function askAssistant(context) {
+  async function askAssistant(context, entry) {
+    if (entry) {
+      const result = await deliverQuestion(entry, context);
+      if (result.ok && result.answer) return result.answer;
+      throw new Error(result.code === "IN_PROGRESS" ? "AI 正在处理，请稍后查看对话记录。" : "请求未完成，已保留问题并将在恢复连接后重试。");
+    }
     const endpoint = getEndpoint();
     if (!endpoint) {
       throw new Error("AI 接口地址未配置，请在 assets/ai-assistant.js 中填写 AI_API_ENDPOINT。");
@@ -586,6 +794,22 @@
     if (!question) return;
 
     const context = getContext(question);
+    const session = platform.identity.readStudentSession() || {};
+    if (!session.isGuest && !session.sessionToken) {
+      voiceStatus.textContent = "登录已过期，请重新登录后发送问题。";
+      return;
+    }
+    let entry;
+    try { entry = session.isGuest ? null : queueQuestion(context, promptSource); }
+    catch (_) { voiceStatus.textContent = "待同步提问过多或浏览器存储不足，问题暂未发送，请稍后重试。"; return; }
+    promptSource = "student";
+    const step = currentPromptStep();
+    if (step) {
+      const state = readPromptState();
+      state.steps[step] = { ...(state.steps[step] || {}), asked: true };
+      writePromptState(state);
+      hideNudge();
+    }
     appendMessage("user", question);
     input.value = "";
     requestPending = true;
@@ -593,15 +817,14 @@
     const loading = appendMessage("ai", "我正在思考，先试着回到材料里找一个线索...");
 
     try {
-      const answer = await askAssistant(context);
+      const answer = await askAssistant(context, entry);
       loading.textContent = answer;
-      saveChatLog(context, answer);
-      uploadAiChatRecord(context, answer).catch(() => {});
+      if (!entry) saveChatLog(context, answer);
     } catch (error) {
       const reason = error && error.message ? error.message : "网络请求失败。";
       const message = makeAssistantError(reason);
       loading.textContent = message;
-      saveChatLog(context, `错误：${message}`, true);
+      if (!entry || !readQuestionOutbox().some((item) => item.turnId === entry.turnId)) saveChatLog(context, `错误：${message}`, true);
     } finally {
       requestPending = false;
       syncAssessmentLock();
@@ -615,6 +838,9 @@
     document.body.appendChild(root);
     renderHistory();
     updateControls();
+    const pendingCount = readQuestionOutbox().length;
+    syncStatus.hidden = pendingCount === 0;
+    syncStatus.textContent = pendingCount ? `${pendingCount} 条提问待同步` : "";
     window.BrainAIChat = {
       readLogs,
       getCurrentPageLogs,
@@ -623,6 +849,8 @@
       flushAiChatOutbox
     };
     flushAiChatOutbox().catch(() => {});
+    flushQuestionOutbox().catch(() => {});
+    flushPromptOutbox().catch(() => {});
   }
 
   if (document.readyState === "loading") {
@@ -630,5 +858,6 @@
   } else {
     initAssistant();
   }
-  window.addEventListener("online", () => flushAiChatOutbox().catch(() => {}));
+  window.addEventListener("online", () => { flushAiChatOutbox().catch(() => {}); flushQuestionOutbox().catch(() => {}); flushPromptOutbox().catch(() => {}); });
+  window.setInterval(() => { if (navigator.onLine) { flushQuestionOutbox().catch(() => {}); flushPromptOutbox().catch(() => {}); } }, 30000);
 })();

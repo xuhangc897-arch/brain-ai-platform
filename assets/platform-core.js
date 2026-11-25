@@ -34,6 +34,7 @@
       getLearningDiagnosis: `${HTTP_BASE}/getLearningDiagnosis`,
       getExperimentRecords: `${HTTP_BASE}/getExperimentRecords`,
       saveAiChatRecord: `${HTTP_BASE}/saveAiChatRecord`,
+      askAiChat: `${HTTP_BASE}/askAiChat`,
       aiChat: "https://1441391469-6rhud8ln4o.ap-shanghai.tencentscf.com"
     }),
     storageKeys: Object.freeze({
@@ -41,6 +42,9 @@
       uploadOutbox: "experiment-upload-outbox-v1",
       submissionOutbox: "experiment-submission-outbox-v1",
       aiChatOutbox: "ai-chat-outbox-v1",
+      aiQuestionOutbox: "ai-question-outbox-v1",
+      aiPromptState: "ai-prompt-state-v1",
+      aiPromptOutbox: "ai-prompt-outbox-v1",
       learningBehaviorOutbox: "learning-behavior-outbox-v1",
       agentInterventionOutbox: "agent-intervention-outbox-v1",
       typingSupportState: "typing-support-state-v1",
